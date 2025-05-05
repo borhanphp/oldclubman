@@ -77,7 +77,7 @@ function FeedHeader() {
         <div className="mx-auto">
           <div className="flex">
             <Link 
-              href="/nfc" 
+              href="/user/nfc" 
               className={`px-6 py-3 font-medium ${
                 isLinkActive('/nfc') ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-600'
               }`}
@@ -85,7 +85,7 @@ function FeedHeader() {
               NFC
             </Link>
             <Link 
-              href="/about" 
+              href="/user/about" 
               className={`px-6 py-3 font-medium ${
                 isLinkActive('/about') ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-600'
               }`}
@@ -93,7 +93,7 @@ function FeedHeader() {
               ABOUT
             </Link>
             <Link 
-              href="/gathering" 
+              href="/user/gathering" 
               className={`px-6 py-3 font-medium ${
                 isLinkActive('/gathering') ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-600'
               }`}

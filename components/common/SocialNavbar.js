@@ -1,15 +1,14 @@
 "use client";
 
 import React, { useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { 
   FaSearch, FaChevronDown, FaCommentAlt, FaCog, FaBell, 
-  FaUser, FaCreditCard, FaShippingFast, FaSignOutAlt, 
-  FaUserCog, FaSun, FaMoon, FaAdjust, FaQuestionCircle,
-  FaComment, FaUserFriends, FaGlobe, FaPlus, FaMapMarkerAlt,
-  FaHistory, FaBuilding
+  FaShippingFast, FaSignOutAlt, 
+  FaSun, FaMoon, FaAdjust, 
+  FaComment, FaMapMarkerAlt
 } from 'react-icons/fa';
+import { logout } from '@/utility';
 
 const SocialNavbar = () => {
   const [openProfileDropdown, setOpenProfileDropdown] = useState(false);
@@ -17,7 +16,7 @@ const SocialNavbar = () => {
   return (
     <nav className="sticky top-0 z-10 px-10 flex justify-between items-center bg-white p-2 shadow-sm">
       <div className="flex items-center">
-        <Link href="/gathering" className="flex items-center">
+        <Link href="/user/gathering" className="flex items-center">
           <div className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center mr-2">
             <img src='/oldman-logo.png'/>
           </div>
@@ -41,17 +40,17 @@ const SocialNavbar = () => {
           </div>
           
           <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 hidden group-hover:block">
-            <Link href="/social" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+            <Link href="/user/social" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
               <span>Profile</span>
             </Link>
             
-            <Link href="/about" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+            <Link href="/user/about" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
               <span>Settings & Privacy</span>
             </Link>
-            <Link href="/company" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+            <Link href="/user/company" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
               <span>Companies</span>
             </Link>
-            <Link href="/bank" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+            <Link href="/user/bank" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
               <span>Bank</span>
             </Link>
             
@@ -93,14 +92,14 @@ const SocialNavbar = () => {
         
         {/* Messages Icon with Dropdown */}
         <div className="relative mr-2 p-3 rounded-md group bg-gray-200">
-          <Link href="/messages" className="icon-button text-gray-600 hover:text-black cursor-pointer">
+          <Link href="/user/messages" className="icon-button text-gray-600 hover:text-black cursor-pointer">
             <FaCommentAlt size={14} />
           </Link>
         </div>
         
         {/* Settings Icon*/}
         <div className="relative mr-2 p-3 rounded-md group bg-gray-200">
-          <Link href='/account-settings' className="icon-button text-gray-600 hover:text-black cursor-pointer">
+          <Link href='/user/account-settings' className="icon-button text-gray-600 hover:text-black cursor-pointer">
             <FaCog size={14} />
           </Link>
         </div>
@@ -140,7 +139,7 @@ const SocialNavbar = () => {
                 
               </div>
 
-              <Link href="/about" className="block hover:text-white hover:bg-blue-700 bg-blue-100 py-[6px] mt-2 w-full text-blue-600 font-semibold text-sm text-center mx-auto mb-2">
+              <Link href="/user/about" className="block hover:text-white hover:bg-blue-700 bg-blue-100 py-[6px] mt-2 w-full text-blue-600 font-semibold text-sm text-center mx-auto mb-2">
                 View profile
               </Link>
               
@@ -149,17 +148,17 @@ const SocialNavbar = () => {
                 <span className='font-[600] text-gray-500 text-[15px]'>Settings & Privacy</span>
               </Link>
               
-              <Link href="/messages" className="flex items-center px-4 py-3 text-sm text-gray-600">
+              <Link href="/user/messages" className="flex items-center px-4 py-3 text-sm text-gray-600">
                 <FaComment className="mr-2 text-gray-500" />
                 <span className='font-[600] text-gray-500 text-[15px]'>Chat</span>
               </Link>
               
               <div className="border-t border-gray-200 my-1"></div>
               
-              <button className="flex items-center px-4 py-3 text-sm text-gray-600 hover:bg-gray-100 w-full text-left">
+              <Link onClick={() => {logout()}} href="/auth/login" className="flex items-center px-4 py-3 text-sm text-gray-600 hover:bg-gray-100 w-full text-left">
                 <FaSignOutAlt className="mr-2 text-gray-500" />
                 <span className='font-[600] text-gray-500 text-[15px]'>Sign Out</span>
-              </button>
+              </Link>
               
               <div className="border-t border-gray-200 mt-1 mb-2"></div>
               

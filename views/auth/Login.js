@@ -3,10 +3,15 @@ import Link from 'next/link'
 import React, { useState } from 'react'
 import OldInput from '@/components/custom/OldInput'
 import { IoMdEye , IoMdEyeOff } from "react-icons/io";
+import api from '@/app/helpers/axios';
+import { setLocal } from '@/utility';
+import { useRouter } from 'next/navigation';
+import Cookies from 'js-cookie';
 
 const Login = () => {
+  const router = useRouter();
   const [formData, setFormData] = useState({
-    email: '',
+    username: '',
     password: '',
     rememberMe: false
   })
@@ -34,31 +39,13 @@ const Login = () => {
     setError('')
     
     try {
-      const response = await fetch('http://localhost/oldclubman-backend/api/client/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': "*"
-        },
-        body: JSON.stringify({
-          username: formData.email,
-          password: formData.password
-        }),
-      })
-      
-      const data = await response.json()
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to login')
-      }
-      
-      // On successful login
-      if (data.success) {
-        // Redirect to the appropriate page
-        navigate(from, { replace: true })
-      } else {
-        setError(data.message || 'An unknown error occurred')
-      }
+      const response = await api.post('/client/login', formData)
+      console.log(response.data.access_token);
+      setLocal('old_token', response.data.access_token)
+      // Set cookie for auth middleware
+      Cookies.set('old_token', response.data.access_token, { expires: 7 })
+      router.push("/user/gathering")
+     
     } catch (err) {
       setError(err.message || 'An error occurred during login')
     } finally {
@@ -85,9 +72,8 @@ const Login = () => {
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <OldInput
-              type="email"
-              name="email"
-              value={formData.email}
+              name="username"
+              value={formData.username}
               onChange={handleChange}
               placeholder="Email"
               className="w-full bg-slate-100"
