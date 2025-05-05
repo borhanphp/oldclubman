@@ -1,3 +1,4 @@
+import { getLocal } from "@/utility";
 import axios from "axios";
 
 export default axios.create({
@@ -5,7 +6,7 @@ export default axios.create({
     credentials: 'include',
     headers: {
         Accept: "application/json",
-        "Authorization": `Bearer ${getToken("old_token")}`,
+        "Authorization": `Bearer ${getLocal("old_token")}`,
         "Content-Type": 'multipart/form-data',
     },
     withCredentials: true
