@@ -1,4 +1,27 @@
 import Cookies from 'js-cookie';
+import toast from 'react-hot-toast';
+
+
+export default function errorResponse(err) {
+  if (err.response && err.response.status === 500) {
+      toast.error(err.response.statusText || "Internal Server Error");
+  } else if (err.response && err.response.data) {
+      const errors = err.response.data.data; // Access the nested `data` object
+      if (errors) {
+          // Extract and show all error messages
+          Object.entries(errors).forEach(([key, messages]) => {
+              messages.forEach(message => toast.error(message));
+          });
+      } else {
+          toast.error(err.response.data.message || "An error occurred");
+      }
+  } else {
+      toast.error("An unexpected error occurred");
+  }
+  console.log(err);
+  throw new Error(err);
+}
+
 
 /**
  * Safely retrieves data from localStorage

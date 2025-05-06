@@ -1,13 +1,23 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { FaEllipsisH, FaVideo, FaGlobe, FaComment, FaPlus, FaUserFriends } from 'react-icons/fa';
 import FeedHeader from '@/components/common/FeedHeader';
 import PostModal from '@/components/custom/PostModal';
+import { useDispatch, useSelector } from 'react-redux';
+import { getMyNfc } from './store';
+import moment from 'moment';
 
 const NfcContent = () => {
+  const {nfcData, loading} = useSelector(({nfc}) => nfc);
+  const dispatch = useDispatch();
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+  console.log(nfcData?.nfc_cards?.data  )
+  useEffect(() => {
+    dispatch(getMyNfc());
+  }, [])
+  
 
   const openPostModal = () => {
     setIsPostModalOpen(true);
@@ -67,13 +77,15 @@ const NfcContent = () => {
               <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-lg font-semibold">LIST OF NFC CARD</h3>
-                  <Link href="/nfc/create" className="text-blue-500 cursor-pointer bg-gray-100 p-2 rounded-full">
+                  <Link href="/user/nfc/create" className="text-blue-500 cursor-pointer bg-gray-100 p-2 rounded-full">
                     <FaPlus />
                   </Link>
                 </div>
                 
                 {/* NFC Card */}
-                <div className="nfc-card border rounded-lg overflow-hidden mb-4 bg-white shadow-sm max-w-[320px]">
+                {nfcData.nfc_cards?.data?.map((card, index) => {
+                  return(
+                    <div className="nfc-card border rounded-lg overflow-hidden mb-4 bg-white shadow-sm max-w-[320px]">
                   <div className="p-4">
                     <div className="relative w-full mb-3">
                       <div className="aspect-square rounded-lg overflow-hidden relative">
@@ -92,14 +104,16 @@ const NfcContent = () => {
                       </div>
                     </div>
                     <div className="border-l-2 border-gray-300 pl-3 py-1">
-                      <h4 className="font-semibold">Borhan Uddin</h4>
+                      <h4 className="font-semibold">{card.client.fname + " " + card.client.last_name}</h4>
                     </div>
                     <div className="flex justify-between items-center mt-3">
-                      <p className="text-sm text-gray-600">Personal Card</p>
-                      <p className="text-sm text-gray-600">Apr 27, 2025</p>
+                      <p className="text-sm text-gray-600">{card?.card_name}</p>
+                      <p className="text-sm text-gray-600">{moment( card?.created_at).format("DD MMM, yyyy")}</p>
                     </div>
                   </div>
                 </div>
+                  )
+                })}
                 
                 {/* Add more cards here if needed */}
               </div>
@@ -123,7 +137,7 @@ const NfcContent = () => {
 
       {/* Floating Chat Button */}
       <div className="fixed bottom-5 right-5">
-        <Link href="/messages">
+        <Link href="/user/messages">
           <button className="bg-blue-500 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg">
             <FaComment size={20} />
           </button>

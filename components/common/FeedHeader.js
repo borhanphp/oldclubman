@@ -79,7 +79,7 @@ function FeedHeader() {
             <Link 
               href="/user/nfc" 
               className={`px-6 py-3 font-medium ${
-                isLinkActive('/nfc') ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-600'
+                isLinkActive('/user/nfc') ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-600'
               }`}
             >
               NFC
@@ -87,7 +87,7 @@ function FeedHeader() {
             <Link 
               href="/user/about" 
               className={`px-6 py-3 font-medium ${
-                isLinkActive('/about') ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-600'
+                isLinkActive('/user/about') ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-600'
               }`}
             >
               ABOUT
@@ -95,7 +95,7 @@ function FeedHeader() {
             <Link 
               href="/user/gathering" 
               className={`px-6 py-3 font-medium ${
-                isLinkActive('/gathering') ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-600'
+                isLinkActive('/user/gathering') ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-600'
               }`}
             >
               GATHERING

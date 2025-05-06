@@ -7,9 +7,14 @@ import api from '@/app/helpers/axios';
 import { setLocal } from '@/utility';
 import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
+import { handleLoginFunc } from './store';
+import { useDispatch, useSelector } from 'react-redux';
 
 const Login = () => {
+  const {loading} = useSelector(({auth}) => auth);
+
   const router = useRouter();
+  const dispatch = useDispatch();
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -17,7 +22,6 @@ const Login = () => {
   })
   
   const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
  
   const from = '/dashboard'
@@ -35,22 +39,10 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setIsLoading(true)
-    setError('')
-    
-    try {
-      const response = await api.post('/client/login', formData)
-      console.log(response.data.access_token);
-      setLocal('old_token', response.data.access_token)
-      // Set cookie for auth middleware
-      Cookies.set('old_token', response.data.access_token, { expires: 7 })
+    dispatch(handleLoginFunc(formData))
+    .then((res) => {
       router.push("/user/gathering")
-     
-    } catch (err) {
-      setError(err.message || 'An error occurred during login')
-    } finally {
-      setIsLoading(false)
-    }
+    })
   }
 
   return (
@@ -78,7 +70,7 @@ const Login = () => {
               placeholder="Email"
               className="w-full bg-slate-100"
               required
-              disabled={isLoading}
+              disabled={loading}
             />
           </div>
           
@@ -91,13 +83,13 @@ const Login = () => {
               placeholder="Password"
               className="w-full bg-slate-100"
               required
-              disabled={isLoading}
+              disabled={loading}
             />
             <button 
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute cursor-pointer right-2 top-1/2 transform -translate-y-1/2"
-              disabled={isLoading}
+              disabled={loading}
             >
               {showPassword ? (
                 <IoMdEyeOff size={20}/>
@@ -115,7 +107,7 @@ const Login = () => {
                 checked={formData.rememberMe}
                 onChange={handleChange}
                 className="mr-2"
-                disabled={isLoading}
+                disabled={loading}
               />
               <span>Remember me</span>
             </label>
@@ -124,11 +116,11 @@ const Login = () => {
           <button
             type="submit"
             className={`w-full bg-blue-500 text-white py-[.4rem] rounded-md hover:bg-blue-600 ${
-              isLoading ? 'opacity-70 cursor-not-allowed' : ''
+              loading ? 'opacity-70 cursor-not-allowed' : ''
             }`}
-            disabled={isLoading}
+            disabled={loading}
           >
-            {isLoading ? 'Signing in...' : 'Sign in'}
+            {loading ? 'Signing in...' : 'Sign in'}
           </button>
           
           <div className="mt-4 text-center">

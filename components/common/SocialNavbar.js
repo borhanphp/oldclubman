@@ -143,7 +143,7 @@ const SocialNavbar = () => {
                 View profile
               </Link>
               
-              <Link href="/account-settings" className="flex items-center hover:text-blue-500 px-4 py-3 text-sm text-gray-600 ">
+              <Link href="/user/account-settings" className="flex items-center hover:text-blue-500 px-4 py-3 text-sm text-gray-600 ">
                 <FaCog className="mr-2 text-gray-500" />
                 <span className='font-[600] text-gray-500 text-[15px]'>Settings & Privacy</span>
               </Link>

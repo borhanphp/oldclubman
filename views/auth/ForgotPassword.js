@@ -2,12 +2,17 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import OldInput from '@/components/custom/OldInput'
+import { useDispatch, useSelector } from 'react-redux'
+import { handleResetPassword } from './store'
 
 const ForgotPassword = () => {
+  const {loading} = useSelector(({auth}) => auth);
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+
+  const dispatch = useDispatch();
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -15,10 +20,10 @@ const ForgotPassword = () => {
     setError('')
     setMessage('')
     // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
-      setMessage('If this email is registered, a reset link has been sent.')
-    }, 1200)
+    dispatch(handleResetPassword({email}))
+    .then((res) => {
+      return;
+    })
   }
 
   return (
@@ -36,7 +41,7 @@ const ForgotPassword = () => {
               placeholder="Enter Email"
               className="w-full bg-white"
               required
-              disabled={isLoading}
+              disabled={loading}
             />
           </div>
           <div className="text-center mb-4">
@@ -45,9 +50,9 @@ const ForgotPassword = () => {
           <button
             type="submit"
             className="w-full bg-blue-600 text-white font-semibold py-3 rounded-md hover:bg-blue-700 transition disabled:opacity-60"
-            disabled={isLoading}
+            disabled={loading}
           >
-            {isLoading ? 'Sending...' : 'Send Password Reset Link'}
+            {loading ? 'Sending...' : 'Send Password Reset Link'}
           </button>
           {message && <div className="mt-4 text-green-600 text-center text-sm">{message}</div>}
           {error && <div className="mt-4 text-red-600 text-center text-sm">{error}</div>}

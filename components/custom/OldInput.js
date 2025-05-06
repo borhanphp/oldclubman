@@ -2,6 +2,7 @@ import React from 'react'
 
 const OldInput = ({
   type = 'text',
+  label = "",
   name,
   value,
   onChange,
@@ -11,6 +12,11 @@ const OldInput = ({
   ...props
 }) => {
   return (
+   <>
+
+    {label && <label htmlFor="middle_name" className="block text-sm font-medium text-gray-600 mb-2">
+      {label}
+    </label>}
     <input
       type={type}
       name={name}
@@ -21,6 +27,7 @@ const OldInput = ({
       required={required}
       {...props}
     />
+   </>
   )
 }
 

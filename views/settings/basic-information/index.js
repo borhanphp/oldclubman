@@ -1,188 +1,504 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
+import OldInput from '@/components/custom/OldInput';
+import OldSelect from '@/components/custom/OldSelect';
+import api from '@/helpers/axios';
+import errorResponse from '@/utility';
 
 const BasicInformation = () => {
+  const [formData, setFormData] = useState({
+    fname: '',
+    middle_name: '',
+    last_name: '',
+    display_name: '',
+    username: '',
+    email: '',
+    dob: '',
+    nationality: '',
+    phone_code: '',
+    contact_no: '',
+    id_no_type: '',
+    id_no: '',
+    address_line_1: '',
+    address_line_2: '',
+    current_country_id: '',
+    current_state_id: '',
+    from_country_id: '',
+    from_state_id: '',
+    from_city_id: '',
+    zip_code: '',
+    marital_status: '',
+    designation: ''
+  });
+  
+  const [loading, setLoading] = useState(false);
+  const [countries, setCountries] = useState([]);
+  const [states, setStates] = useState([]);
+  const [cities, setCities] = useState([]);
+  
+  // Fetch user data on component mount
+  useEffect(() => {
+    fetchUserData();
+    fetchCountries();
+  }, []);
+  
+  const fetchUserData = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/client/profile');
+      
+      if (response.data && response.data.data) {
+        const userData = response.data.data;
+        setFormData({
+          fname: userData.fname || '',
+          middle_name: userData.middle_name || '',
+          last_name: userData.last_name || '',
+          display_name: userData.display_name || '',
+          username: userData.username || '',
+          email: userData.email || '',
+          dob: userData.dob || '',
+          nationality: userData.nationality || '',
+          phone_code: userData.phone_code || '',
+          contact_no: userData.contact_no || '',
+          id_no_type: userData.id_no_type || '',
+          id_no: userData.id_no || '',
+          address_line_1: userData.address_line_1 || '',
+          address_line_2: userData.address_line_2 || '',
+          current_country_id: userData.current_country_id || '',
+          current_state_id: userData.current_state_id || '',
+          from_country_id: userData.from_country_id || '',
+          from_state_id: userData.from_state_id || '',
+          from_city_id: userData.from_city_id || '',
+          zip_code: userData.zip_code || '',
+          marital_status: userData.marital_status || '',
+          designation: userData.designation || ''
+        });
+        
+        // Fetch states related to the selected countries
+        if (userData.current_country_id) {
+          fetchStates(userData.current_country_id);
+        }
+        if (userData.from_country_id) {
+          fetchStates(userData.from_country_id, 'from');
+        }
+        
+        // Fetch cities for the selected state
+        if (userData.from_state_id) {
+          fetchCities(userData.from_state_id);
+        }
+      }
+    } catch (error) {
+      errorResponse(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const fetchCountries = async () => {
+    try {
+      const response = await api.get('/api/countries');
+      if (response.data && response.data.data) {
+        const countryOptions = response.data.data.map(country => ({
+          value: country.id.toString(),
+          label: country.name
+        }));
+        setCountries(countryOptions);
+      }
+    } catch (error) {
+      errorResponse(error);
+    }
+  };
+  
+  const fetchStates = async (countryId, type = 'current') => {
+    try {
+      const response = await api.get(`/api/states/${countryId}`);
+      if (response.data && response.data.data) {
+        const stateOptions = response.data.data.map(state => ({
+          value: state.id.toString(),
+          label: state.name
+        }));
+        setStates(prev => ({
+          ...prev,
+          [type]: stateOptions
+        }));
+      }
+    } catch (error) {
+      errorResponse(error);
+    }
+  };
+  
+  const fetchCities = async (stateId) => {
+    try {
+      const response = await api.get(`/api/cities/${stateId}`);
+      if (response.data && response.data.data) {
+        const cityOptions = response.data.data.map(city => ({
+          value: city.id.toString(),
+          label: city.name
+        }));
+        setCities(cityOptions);
+      }
+    } catch (error) {
+      errorResponse(error);
+    }
+  };
+  
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Handle dependent dropdowns
+    if (name === 'current_country_id') {
+      fetchStates(value, 'current');
+    } else if (name === 'from_country_id') {
+      fetchStates(value, 'from');
+      // Reset dependent fields
+      setFormData(prev => ({
+        ...prev,
+        from_state_id: '',
+        from_city_id: ''
+      }));
+    } else if (name === 'from_state_id') {
+      fetchCities(value);
+      // Reset city field
+      setFormData(prev => ({
+        ...prev,
+        from_city_id: ''
+      }));
+    }
+  };
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      const response = await api.post('/client/save_profile', formData);
+      if (response.data) {
+        toast.success('Profile updated successfully');
+      }
+    } catch (error) {
+      errorResponse(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // ID type options
+  const idTypeOptions = [
+    { value: 'passport', label: 'Passport' },
+    { value: 'national_id', label: 'National ID' },
+    { value: 'driving_license', label: 'Driving License' }
+  ];
+  
+  // Marital status options
+  const maritalStatusOptions = [
+    { value: 'single', label: 'Single' },
+    { value: 'married', label: 'Married' },
+    { value: 'divorced', label: 'Divorced' },
+    { value: 'widowed', label: 'Widowed' }
+  ];
+
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
       <h2 className="text-xl font-semibold mb-8">Basic Information</h2>
       
-      <form>
+      <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div>
-            <label htmlFor="firstName" className="block text-sm font-medium text-gray-600 mb-2">
-              First name
-            </label>
-            <input
+            <OldInput
+            label="First name"
               type="text"
-              id="firstName"
-              className="w-full h-11 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              name="fname"
+              value={formData.fname}
+              onChange={handleInputChange}
               placeholder="First name"
-              defaultValue="Borhan"
+              className="w-full"
             />
           </div>
           
           <div>
-            <label htmlFor="middleName" className="block text-sm font-medium text-gray-600 mb-2">
-              Middle name
-            </label>
-            <input
+           
+            <OldInput
+            label="Middle name"
               type="text"
-              id="middleName"
-              className="w-full h-11 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              name="middle_name"
+              value={formData.middle_name}
+              onChange={handleInputChange}
               placeholder="Middle name"
+              className="w-full"
             />
           </div>
           
           <div>
-            <label htmlFor="lastName" className="block text-sm font-medium text-gray-600 mb-2">
-              Last name
-            </label>
-            <input
+            <OldInput
+            label="Last name"
               type="text"
-              id="lastName"
-              className="w-full h-11 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              name="last_name"
+              value={formData.last_name}
+              onChange={handleInputChange}
               placeholder="Last name"
-              defaultValue="Uddin"
+              className="w-full"
             />
           </div>
         </div>
         
         <div className="mb-6">
-          <label htmlFor="displayName" className="block text-sm font-medium text-gray-600 mb-2">
-            Display name
-          </label>
-          <input
+          <OldInput
+            label="Display name"
             type="text"
-            id="displayName"
-            className="w-full h-11 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            name="display_name"
+            value={formData.display_name}
+            onChange={handleInputChange}
             placeholder="Display name"
+            className="w-full"
           />
         </div>
         
         <div className="mb-6">
-          <label htmlFor="username" className="block text-sm font-medium text-gray-600 mb-2">
-            User name
-          </label>
-          <input
+          <OldInput
+            label="User name"
             type="text"
-            id="username"
-            className="w-full h-11 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            name="username"
+            value={formData.username}
+            onChange={handleInputChange}
             placeholder="Username"
-            defaultValue="uddin5"
+            className="w-full"
           />
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-600 mb-2">
-              Email
-            </label>
-            <input
+            <OldInput
+              label="Email"
               type="email"
-              id="email"
-              className="w-full h-11 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
               placeholder="Email address"
-              defaultValue="borhanidb@gmail.com"
+              className="w-full"
             />
           </div>
           
           <div>
-            <label htmlFor="dob" className="block text-sm font-medium text-gray-600 mb-2">
-              Date of Birth
-            </label>
             <div className="relative">
-              <input
-                type="text"
-                id="dob"
-                className="w-full h-11 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="MM/DD/YYYY"
-                defaultValue="09/20/1996"
+              <OldInput
+                label="Date of Birth"
+                type="date"
+                name="dob"
+                value={formData.dob}
+                onChange={handleInputChange}
+                placeholder="YYYY-MM-DD"
+                className="w-full"
               />
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                </svg>
-              </div>
             </div>
           </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div>
-            <label htmlFor="nationality" className="block text-sm font-medium text-gray-600 mb-2">
-              Nationality
-            </label>
-            <select
-              id="nationality"
-              className="w-full h-11 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-            >
-              <option value="">Select country</option>
-              <option value="us">United States</option>
-              <option value="ca">Canada</option>
-              <option value="uk">United Kingdom</option>
-              <option value="au">Australia</option>
-            </select>
-          </div>
-          
-          <div>
-            <label htmlFor="countryCode" className="block text-sm font-medium text-gray-600 mb-2">
-              Country Code
-            </label>
-            <input
+            <OldInput
+              label="Nationality"
               type="text"
-              id="countryCode"
-              className="w-full h-11 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="+1"
+              name="nationality"
+              value={formData.nationality}
+              onChange={handleInputChange}
+              placeholder="Nationality"
+              className="w-full"
             />
           </div>
           
           <div>
-            <label htmlFor="contact" className="block text-sm font-medium text-gray-600 mb-2">
-              Contact
-            </label>
-            <input
+            <OldInput
+              label="Country Code"
               type="text"
-              id="contact"
-              className="w-full h-11 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              name="phone_code"
+              value={formData.phone_code}
+              onChange={handleInputChange}
+              placeholder="+1"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <OldInput
+              label="Contact"
+              type="text"
+              name="contact_no"
+              value={formData.contact_no}
+              onChange={handleInputChange}
               placeholder="Phone number"
+              className="w-full"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div>
+            <OldSelect
+              label="Photo ID Type"
+              name="id_no_type"
+              value={formData.id_no_type}
+              onChange={handleInputChange}
+              options={idTypeOptions}
+              placeholder="Select ID Type"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <OldInput
+              label="Photo ID Number"
+              type="text"
+              name="id_no"
+              value={formData.id_no}
+              onChange={handleInputChange}
+              placeholder="ID Number"
+              className="w-full"
             />
           </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
-            <label htmlFor="photoIdType" className="block text-sm font-medium text-gray-600 mb-2">
-              Photo ID Type
-            </label>
-            <select
-              id="photoIdType"
-              className="w-full h-11 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-              defaultValue="passport"
-            >
-              <option value="">Select ID type</option>
-              <option value="passport">Passport</option>
-              <option value="driver">Driver's License</option>
-              <option value="national">National ID</option>
-            </select>
+            <OldInput
+              label="Address Line 1"
+              type="text"
+              name="address_line_1"
+              value={formData.address_line_1}
+              onChange={handleInputChange}
+              placeholder="Address Line 1"
+              className="w-full"
+            />
           </div>
           
           <div>
-            <label htmlFor="photoIdNo" className="block text-sm font-medium text-gray-600 mb-2">
-              Photo ID No
-            </label>
-            <input
+            <OldInput
+              label="Address Line 2"
               type="text"
-              id="photoIdNo"
-              className="w-full h-11 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="ID number"
+              name="address_line_2"
+              value={formData.address_line_2}
+              onChange={handleInputChange}
+              placeholder="Address Line 2"
+              className="w-full"
+            />
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div>
+            <OldSelect
+              label="Current Country"
+              name="current_country_id"
+              value={formData.current_country_id}
+              onChange={handleInputChange}
+              options={countries}
+              placeholder="Select Country"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <OldSelect
+              label="Current State"
+              name="current_state_id"
+              value={formData.current_state_id}
+              onChange={handleInputChange}
+              options={states.current || []}
+              placeholder="Select State"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <OldInput
+              label="Zip Code"
+              type="text"
+              name="zip_code"
+              value={formData.zip_code}
+              onChange={handleInputChange}
+              placeholder="Zip Code"
+              className="w-full"
+            />
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div>
+            <OldSelect
+              label="From Country"
+              name="from_country_id"
+              value={formData.from_country_id}
+              onChange={handleInputChange}
+              options={countries}
+              placeholder="Select Country"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <OldSelect
+              label="From State"
+              name="from_state_id"
+              value={formData.from_state_id}
+              onChange={handleInputChange}
+              options={states.from || []}
+              placeholder="Select State"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <OldSelect
+              label="From City"
+              name="from_city_id"
+              value={formData.from_city_id}
+              onChange={handleInputChange}
+              options={cities}
+              placeholder="Select City"
+              className="w-full"
+            />
+          </div>
+        </div>
+        
+       
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div>
+            <OldSelect
+              label="Marital Status"
+              name="marital_status"
+              value={formData.marital_status}
+              onChange={handleInputChange}
+              options={maritalStatusOptions}
+              placeholder="Select Marital Status"
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <OldInput
+              label="Designation"
+              type="text"
+              name="designation"
+              value={formData.designation}
+              onChange={handleInputChange}
+              placeholder="Designation"
+              className="w-full"
             />
           </div>
         </div>
         
         <div className="mt-8">
-          <button type="submit" className="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition">
-            Save Changes
+          <button 
+            type="submit" 
+            className="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition"
+            disabled={loading}
+          >
+            {loading ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </form>

@@ -1,22 +1,31 @@
 import { NextResponse } from 'next/server';
 
 export function middleware(req) {
-    const token = req.cookies.get('old_token')?.value || "";
+    // Get the token and explicitly check if it exists
+    const tokenCookie = req.cookies.get('old_token');
+    const token = tokenCookie?.value || "";
+    const hasValidToken = token !== undefined && token !== null && token !== "";
+    
     const url = req.nextUrl.clone();
-    const origin = req.nextUrl.origin
+    const origin = req.nextUrl.origin;
     const authPages = url.pathname === '/auth/login' || url.pathname === '/auth/register';
-    console.log('middleware',token)
-    if (url.pathname === '/' && !token) {
+    
+    console.log('Middleware check - Path:', url.pathname, 'Token exists:', hasValidToken);
+    
+    // Handle root path - redirect to login if no valid token
+    if (url.pathname === '/' && !hasValidToken) {
+        url.pathname = '/auth/login';
+        return NextResponse.redirect(url);
+    }
+    
+    // Handle protected routes - redirect to login if no valid token
+    if (!hasValidToken && !authPages) {
         url.pathname = '/auth/login';
         return NextResponse.redirect(url);
     }
 
-    if (!token && !authPages) {
-        url.pathname = '/auth/login';
-        return NextResponse.redirect(url);
-    }
-
-    if (token && authPages) {
+    // Handle auth pages when logged in - redirect to dashboard
+    if (hasValidToken && authPages) {
         url.pathname = '/user/gathering';
         return NextResponse.redirect(url);
     }

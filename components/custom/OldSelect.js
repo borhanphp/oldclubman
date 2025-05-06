@@ -2,6 +2,7 @@ import React from 'react'
 
 const OldSelect = ({
   name,
+  label = "",
   value,
   onChange,
   options,
@@ -11,6 +12,10 @@ const OldSelect = ({
   ...props
 }) => {
   return (
+    <>
+    {label && <label htmlFor="middle_name" className="block text-sm font-medium text-gray-600 mb-2">
+      {label}
+    </label>}
     <select
       name={name}
       value={value}
@@ -26,6 +31,7 @@ const OldSelect = ({
         </option>
       ))}
     </select>
+    </>
   )
 }
 
