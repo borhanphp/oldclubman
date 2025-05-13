@@ -12,7 +12,7 @@ const Intro = () => {
   useEffect(() => {
     dispatch(getMyProfile());
     dispatch(getAllFollowers())
-  }, [])
+  }, [dispatch])
 
   console.log(profileData)
   return (

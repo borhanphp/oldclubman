@@ -15,7 +15,7 @@ function FeedHeader() {
   useEffect(() => {
     dispatch(getAllFollowers())
     dispatch(getMyProfile())
-  }, [])
+  }, [dispatch])
   
   const isLinkActive = (path) => {
     return pathname.startsWith(path);

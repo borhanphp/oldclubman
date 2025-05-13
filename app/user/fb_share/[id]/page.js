@@ -5,7 +5,7 @@ import React, { useEffect } from 'react'
 import { FaBullhorn, FaThumbsUp } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux'
 
-const fbShare = () => {
+const FbShare = () => {
     const {basicNfcData} = useSelector(({nfc}) => nfc);
     const dispatch = useDispatch();
     const params = useParams();
@@ -108,4 +108,4 @@ const fbShare = () => {
   )
 }
 
-export default fbShare
+export default FbShare;

@@ -23,7 +23,7 @@ const PostModal = ({ isOpen, onClose, editMode = false, editPostId = null, editP
       dispatch(bindPostData(initialPostData));
       setFilePreviews([]);
     }
-  }, [])
+  }, [dispatch])
 
   // Add effect to handle image previews in edit mode
   useEffect(() => {
@@ -34,7 +34,7 @@ const PostModal = ({ isOpen, onClose, editMode = false, editPostId = null, editP
       }));
       setFilePreviews(previews);
     }
-  }, [isOpen, editMode, basicPostData]);
+  }, [isOpen, editMode, basicPostData, dispatch]);
 
   const handleOnchange = (e) => {
     const {name, value} = e.target;
