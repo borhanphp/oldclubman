@@ -1,14 +1,24 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { FaEllipsisH, FaVideo, FaGlobe, FaComment, FaMapMarkerAlt, FaEnvelope, FaBirthdayCake, FaCalendarAlt } from 'react-icons/fa';
 import PostModal from '@/components/custom/PostModal';
 import FeedHeader from '@/components/common/FeedHeader';
+import Intro from '@/components/common/Intro';
+import { useDispatch, useSelector } from 'react-redux';
+import { getMyProfile } from '../settings/store';
+import moment from 'moment';
 
 const AboutContent = () => {
+  const {profileData, myFollowers, personalPosts, totalFollowers} = useSelector(({settings}) => settings)
+const dispatch = useDispatch()
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
 
+  console.log('profileData',profileData)
+  useEffect(() => {
+    dispatch(getMyProfile());
+  }, [])
   const openPostModal = () => {
     setIsPostModalOpen(true);
   };
@@ -28,31 +38,7 @@ const AboutContent = () => {
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
             {/* Left Sidebar - INTRO */}
             <div className="md:col-span-3">
-              <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-lg font-semibold">INTRO</h3>
-                  <button className="text-blue-500 p-1 rounded">
-                    <FaEllipsisH />
-                  </button>
-                </div>
-                
-                <div className="text-center py-4">
-                  <div className="stats flex justify-between px-8 mb-4">
-                    <div className="text-center">
-                      <div className="font-semibold">4</div>
-                      <div className="text-sm text-gray-500">Post</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="font-semibold">0</div>
-                      <div className="text-sm text-gray-500">Followers</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="font-semibold">0</div>
-                      <div className="text-sm text-gray-500">Following</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+             <Intro/>
               
               {/* Photos Section */}
               <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
@@ -100,7 +86,7 @@ const AboutContent = () => {
                         </div>
                         <div className='flex items-center gap-2'>
                           <div className="text-sm text-gray-500">Born:</div>
-                          <div className="text-gray-700 font-medium">Sep-20-1996</div>
+                          <div className="text-gray-700 font-medium">{moment(profileData?.dob).format("MMM-DD-YYYY")}</div>
                         </div>
                       </div>
                       <button className="text-gray-400">

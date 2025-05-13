@@ -7,36 +7,23 @@ import {
   FaFileWord, FaFileExcel, FaFileImage, FaTimesCircle, 
   FaCommentAlt, FaAddressBook, FaEnvelope
 } from 'react-icons/fa';
+import api from '@/helpers/axios';
+import { useDispatch, useSelector } from 'react-redux';
+import { getAllChat } from './store';
 
 const MessagingContent = () => {
+  const {allChat} = useSelector(({chat}) => chat);
+  const dispatch = useDispatch();
+
+  console.log('allChat',allChat)
   // State for active chats
-  const [activeChats, setActiveChats] = useState([
-    { id: 1, name: 'Sharif', message: 'hi', time: '27/04', isOnline: true, unread: 0 },
-    { id: 2, name: 'Md Saiful', message: 'hi', time: '27/04', isOnline: false, unread: 2 },
-    { id: 3, name: 'John Doe', message: 'Hello there!', time: '26/04', isOnline: true, unread: 1 },
-    { id: 4, name: 'Jane Smith', message: 'Are you available?', time: '25/04', isOnline: false, unread: 0 }
-  ]);
+  const [activeChats, setActiveChats] = useState([]);
 
   // State for contacts
-  const [contacts, setContacts] = useState([
-    { id: 1, name: 'Sharif', status: 'Works at Google', isOnline: true },
-    { id: 2, name: 'Md Saiful', status: 'Works at Facebook', isOnline: false },
-    { id: 3, name: 'John Doe', status: 'Business Owner', isOnline: true },
-    { id: 4, name: 'Jane Smith', status: 'Freelancer', isOnline: false },
-    { id: 5, name: 'Robert Johnson', status: 'Web Developer', isOnline: true },
-    { id: 6, name: 'Emily Davis', status: 'UI/UX Designer', isOnline: false }
-  ]);
+  const [contacts, setContacts] = useState([]);
 
   // State for current chat
-  const [currentChat, setCurrentChat] = useState({
-    id: 1,
-    name: 'Sharif',
-    isOnline: true,
-    messages: [
-      { id: 1, text: 'hi', sent: false, time: '27 Apr 25, 04:08 pm', read: true },
-      { id: 2, text: 'hi', sent: true, time: '27 Apr 25, 04:08 pm', read: true }
-    ]
-  });
+  const [currentChat, setCurrentChat] = useState(null);
 
   // Tab state
   const [activeTab, setActiveTab] = useState('chats');
@@ -51,6 +38,20 @@ const MessagingContent = () => {
   const fileInputRef = useRef(null);
   
   const messagesEndRef = useRef(null);
+
+  // Modal state
+  const [showNewContactModal, setShowNewContactModal] = useState(false);
+  const [showNewGroupModal, setShowNewGroupModal] = useState(false);
+
+  // New chat/group form state
+  const [newContactUserId, setNewContactUserId] = useState('');
+  const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupUserIds, setNewGroupUserIds] = useState([]);
+  const [newGroupAvatar, setNewGroupAvatar] = useState(null);
+
+  useEffect(() => {
+    dispatch(getAllChat())
+  }, [])
 
   // Filter chats based on search term
   const filteredChats = activeChats.filter(chat => 
@@ -69,7 +70,25 @@ const MessagingContent = () => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [currentChat.messages]);
+  }, [currentChat?.messages]);
+
+  // Fetch chats from API
+  useEffect(() => {
+    fetchChats();
+  }, []);
+
+  const fetchChats = async () => {
+    try {
+      const res = await api.get('/chat');
+      setActiveChats(res.data.data || []);
+      // Optionally select the first chat
+      if (!currentChat && res.data.data && res.data.data.length > 0) {
+        setCurrentChat(res.data.data[0]);
+      }
+    } catch (err) {
+      console.error('Failed to fetch chats', err);
+    }
+  };
 
   // Handle chat selection
   const handleChatSelect = (chatId) => {
@@ -83,15 +102,7 @@ const MessagingContent = () => {
     
     // Set the current chat
     if (selectedChat) {
-      setCurrentChat({
-        id: selectedChat.id,
-        name: selectedChat.name,
-        isOnline: selectedChat.isOnline,
-        messages: currentChat.id === chatId ? currentChat.messages : [
-          { id: 1, text: 'hi', sent: false, time: '27 Apr 25, 04:08 pm', read: true },
-          { id: 2, text: 'hi', sent: true, time: '27 Apr 25, 04:08 pm', read: true }
-        ]
-      });
+      setCurrentChat(selectedChat);
     }
   };
 
@@ -118,13 +129,7 @@ const MessagingContent = () => {
       }
       
       // Set current chat and switch to chats tab
-      setCurrentChat({
-        id: selectedContact.id,
-        name: selectedContact.name,
-        isOnline: selectedContact.isOnline,
-        messages: existingChat ? currentChat.messages : []
-      });
-      
+      setCurrentChat(selectedContact);
       setActiveTab('chats');
     }
   };
@@ -184,7 +189,7 @@ const MessagingContent = () => {
     
     // Create new message
     const newMessageObj = {
-      id: currentChat.messages.length + 1,
+      id: currentChat?.messages?.length + 1,
       text: newMessage,
       sent: true,
       time: timeString,
@@ -221,7 +226,7 @@ const MessagingContent = () => {
     setIsTyping(true);
     setTimeout(() => {
       const responseMsg = {
-        id: currentChat.messages.length + 2,
+        id: currentChat?.messages?.length + 2,
         text: getRandomResponse(),
         sent: false,
         time: new Date().toLocaleString('en-US', options).replace(',', ''),
@@ -269,7 +274,42 @@ const MessagingContent = () => {
     setActiveTab(tab);
     setSearchTerm('');
   };
-  
+
+  // Create one-to-one chat
+  const handleCreateContactChat = async () => {
+    try {
+      const formData = new FormData();
+      formData.append('user_ids[]', newContactUserId);
+      formData.append('is_group', 0);
+      formData.append('name', '');
+      const res = await api.post('/chat', formData);
+      setShowNewContactModal(false);
+      setNewContactUserId('');
+      fetchChats();
+    } catch (err) {
+      alert('Failed to create chat');
+    }
+  };
+
+  // Create group chat
+  const handleCreateGroupChat = async () => {
+    try {
+      const formData = new FormData();
+      newGroupUserIds.forEach(id => formData.append('user_ids[]', id));
+      formData.append('is_group', 1);
+      formData.append('name', newGroupName);
+      if (newGroupAvatar) formData.append('avatar', newGroupAvatar);
+      const res = await api.post('/chat', formData);
+      setShowNewGroupModal(false);
+      setNewGroupName('');
+      setNewGroupUserIds([]);
+      setNewGroupAvatar(null);
+      fetchChats();
+    } catch (err) {
+      alert('Failed to create group chat');
+    }
+  };
+
   return (
     <div className="messaging-content bg-gray-100 min-h-screen">
       <div className="container mx-auto py-4">
@@ -416,16 +456,16 @@ const MessagingContent = () => {
                 <div className="flex items-center">
                   <div className="relative mr-3">
                     <div className="w-10 h-10 rounded-full bg-orange-300 flex items-center justify-center text-white">
-                      {currentChat.name.charAt(0)}
+                      {currentChat?.name.charAt(0)}
                     </div>
-                    {currentChat.isOnline && (
+                    {currentChat?.isOnline && (
                       <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
                     )}
                   </div>
                   <div>
-                    <h3 className="font-medium">{currentChat.name}</h3>
+                    <h3 className="font-medium">{currentChat?.name}</h3>
                     <p className="text-xs text-gray-500">
-                      {isTyping ? 'Typing...' : currentChat.isOnline ? 'Online' : 'Offline'}
+                      {isTyping ? 'Typing...' : currentChat?.isOnline ? 'Online' : 'Offline'}
                     </p>
                   </div>
                 </div>
@@ -441,7 +481,7 @@ const MessagingContent = () => {
               
               {/* Chat Messages */}
               <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
-                {currentChat.messages.length > 0 ? (
+                {currentChat?.messages.length > 0 ? (
                   <div className="space-y-4">
                     {currentChat.messages.map(message => (
                       <div 

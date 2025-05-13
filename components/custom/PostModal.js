@@ -1,29 +1,53 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { FaTimes, FaImage, FaGlobe, FaLock } from 'react-icons/fa';
-import { useDispatch } from 'react-redux';
-import { getGathering, storePost } from '@/views/gathering/store';
+import { useDispatch, useSelector } from 'react-redux';
+import { bindPostData, getGathering, getPosts, initialPostData, storePost, updatePost } from '@/views/gathering/store';
 
-const PostModal = ({ isOpen, onClose }) => {
+const PostModal = ({ isOpen, onClose, editMode = false, editPostId = null, editPostContent = "" }) => {
+  const {singlePostData, basicPostData} = useSelector(({gathering}) => gathering)
   const dispatch = useDispatch();
-  const [postText, setPostText] = useState('');
-  const [files, setFiles] = useState([]);
   const [filePreviews, setFilePreviews] = useState([]);
   const [privacyMode, setPrivacyMode] = useState('public');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPrivacyDropdown, setShowPrivacyDropdown] = useState(false);
   const fileInputRef = useRef(null);
+  const [removeFiles, setRemoveFiles] = useState([]);
 
-  const handleTextChange = (e) => {
-    setPostText(e.target.value);
-  };
+  const {id} = basicPostData;
+
+  useEffect(() => {
+    return () => {
+      dispatch(bindPostData(initialPostData));
+      setFilePreviews([]);
+    }
+  }, [])
+
+  // Add effect to handle image previews in edit mode
+  useEffect(() => {
+    if (isOpen && id && basicPostData?.files?.length > 0) {
+      const previews = basicPostData.files.map(file => ({
+        id: file.id || (Date.now() + Math.random().toString(36).substring(2, 9)),
+        src: `${process.env.NEXT_PUBLIC_FILE_PATH}/${file.file_path}`,
+      }));
+      setFilePreviews(previews);
+    }
+  }, [isOpen, editMode, basicPostData]);
+
+  const handleOnchange = (e) => {
+    const {name, value} = e.target;
+    dispatch(bindPostData({...basicPostData, [name]: value}))
+  }
 
   const handleFilesChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
     if (selectedFiles.length > 0) {
-      setFiles(prev => [...prev, ...selectedFiles]);
+      dispatch(bindPostData({
+        ...basicPostData, 
+        files: [...(basicPostData.files || []), ...selectedFiles]
+      }));
       
       // Generate previews for the new files
       selectedFiles.forEach(file => {
@@ -46,7 +70,10 @@ const PostModal = ({ isOpen, onClose }) => {
     
     if (e.dataTransfer.files.length > 0) {
       const droppedFiles = Array.from(e.dataTransfer.files);
-      setFiles(prev => [...prev, ...droppedFiles]);
+      dispatch(bindPostData({
+        ...basicPostData,
+        files: [...(basicPostData.files || []), ...droppedFiles]
+      }));
       
       // Generate previews for the new files
       droppedFiles.forEach(file => {
@@ -66,10 +93,24 @@ const PostModal = ({ isOpen, onClose }) => {
   const handleRemoveFile = (idToRemove) => {
     const previewToRemove = filePreviews.find(preview => preview.id === idToRemove);
     if (previewToRemove) {
-      // Remove the file from the files array
-      setFiles(files.filter(file => file !== previewToRemove.file));
-      // Remove the preview
+      // If the file has an id (existing file), add to removeFiles
+      if (previewToRemove.id && typeof previewToRemove.id === 'number') {
+        setRemoveFiles(prev => [...prev, previewToRemove.id]);
+      }
+      // Remove from previews
       setFilePreviews(filePreviews.filter(preview => preview.id !== idToRemove));
+      // Remove from basicPostData.files as well
+      dispatch(bindPostData({
+        ...basicPostData,
+        files: basicPostData.files.filter(file => {
+          // For new files, compare by object reference
+          if (file instanceof File) {
+            return file !== previewToRemove.file;
+          }
+          // For existing files, compare by id
+          return file.id !== previewToRemove.id;
+        })
+      }));
     }
   };
 
@@ -79,40 +120,43 @@ const PostModal = ({ isOpen, onClose }) => {
   };
   
   const handlePrivacyChange = (mode) => {
+    dispatch(bindPostData({...basicPostData, privacy_mode: mode}))
     setPrivacyMode(mode);
     setShowPrivacyDropdown(false);
   };
   
-  const handlePost = async () => {
-    if (!postText.trim() && files.length === 0) return;
-    
+  const handlePost = async () => {    
     try {
       setIsSubmitting(true);
       
       // Create FormData for API request
       const formData = new FormData();
-      formData.append('message', postText);
-      formData.append('privacy_mode', privacyMode);
+      formData.append('message', basicPostData.message);
+      formData.append('privacy_mode', basicPostData.privacy_mode);
       
       // Add files if present
-      if (files.length > 0) {
-        files.forEach((file, index) => {
-          formData.append(`files[${index}]`, file);
+      if (basicPostData.files?.length > 0) {
+        basicPostData.files.forEach((file, index) => {
+          if (file instanceof File) {
+            formData.append(`files[${index}]`, file);
+          }
         });
       }
-      
-      // Dispatch action to store post
-      await dispatch(storePost(formData)).unwrap()
-      .then((res) => {
-        dispatch(getGathering())
-      })
-      
-      // Reset form and close modal
-      setPostText('');
-      setFiles([]);
-      setFilePreviews([]);
-      setPrivacyMode('public');
-      onClose();
+
+      // Add remove_files if any
+      if (removeFiles.length > 0) {
+        formData.append('removefiles', JSON.stringify(removeFiles));
+      }
+
+      const action = id ? updatePost({ id, ...Object.fromEntries(formData) }) : storePost(formData);
+      dispatch(action).unwrap()
+        .then(() => {
+          dispatch(getPosts());
+          dispatch(bindPostData(initialPostData));
+          setFilePreviews([]);
+          setRemoveFiles([]);
+          onClose();
+        });
     } catch (error) {
       console.error('Error posting:', error);
     } finally {
@@ -126,7 +170,7 @@ const PostModal = ({ isOpen, onClose }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/30">
       <div className="bg-white/95 backdrop-blur-md rounded-lg w-full max-w-lg mx-4 shadow-xl">
         <div className="flex justify-between items-center p-4 border-b">
-          <h2 className="text-xl font-semibold">Add post photo</h2>
+          <h2 className="text-xl font-semibold">{editMode ? 'Edit Post' : 'Add post photo'}</h2>
           <button 
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
@@ -142,8 +186,9 @@ const PostModal = ({ isOpen, onClose }) => {
             </div>
             <div className="flex-1">
               <textarea
-                value={postText}
-                onChange={handleTextChange}
+                name="message"
+                value={basicPostData?.message}
+                onChange={(e) => {handleOnchange(e)}}
                 placeholder="Share your thoughts..."
                 className="w-full border-0 resize-none outline-none text-gray-700 p-2 bg-transparent"
                 rows={3}
@@ -155,7 +200,7 @@ const PostModal = ({ isOpen, onClose }) => {
                     onClick={() => setShowPrivacyDropdown(!showPrivacyDropdown)}
                     className="flex items-center text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full"
                   >
-                    {privacyMode === 'public' ? (
+                    {basicPostData?.privacy_mode === 'public' ? (
                       <>
                         <FaGlobe className="mr-1" /> 
                         <span>Public</span>
@@ -255,10 +300,10 @@ const PostModal = ({ isOpen, onClose }) => {
           </button>
           <button
             onClick={handlePost}
-            className="px-4 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition"
-            disabled={(!postText.trim() && files.length === 0) || isSubmitting}
+            className="px-4 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 cursor-pointer transition"
+            disabled={isSubmitting}
           >
-            {isSubmitting ? 'Posting...' : 'Post'}
+            {isSubmitting ? 'Posting...' : (id ? 'Update' : 'Post')}
           </button>
         </div>
       </div>

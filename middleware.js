@@ -17,6 +17,11 @@ export function middleware(req) {
         url.pathname = '/auth/login';
         return NextResponse.redirect(url);
     }
+
+    if (url.pathname === '/' && hasValidToken) {
+        url.pathname = '/user/gathering';
+        return NextResponse.redirect(url);
+    }
     
     // Handle protected routes - redirect to login if no valid token
     if (!hasValidToken && !authPages) {

@@ -32,9 +32,7 @@ const Login = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }))
-    
-    // Clear error when user types
-    if (error) setError('')
+      if (error) setError('')
   }
 
   const handleSubmit = async (e) => {

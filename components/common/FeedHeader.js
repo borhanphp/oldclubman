@@ -1,11 +1,21 @@
 import Link from 'next/link'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { FaEllipsisH, FaBookmark, FaEdit, FaMegaphone } from 'react-icons/fa'
 import { usePathname } from 'next/navigation'
+import { getAllFollowers, getMyProfile } from '@/views/settings/store';
+import { useDispatch, useSelector } from 'react-redux';
 
 function FeedHeader() {
+  const {myFollowers, personalPosts, totalFollowers, profileData} = useSelector(({settings}) => settings)
   const pathname = usePathname();
+  const dispatch = useDispatch();
   const [showDropdown, setShowDropdown] = useState(false);
+
+  console.log('profileData', profileData)
+  useEffect(() => {
+    dispatch(getAllFollowers())
+    dispatch(getMyProfile())
+  }, [])
   
   const isLinkActive = (path) => {
     return pathname.startsWith(path);
@@ -37,9 +47,9 @@ function FeedHeader() {
             
             {/* Profile Info */}
             <div className="profile-info mb-2">
-              <h2 className="text-xl font-bold">Borhan Uddin</h2>
+              <h2 className="text-xl font-bold">{profileData?.fname + " " + profileData?.last_name}</h2>
               <p className="text-gray-600 text-sm">
-                <span>0 Followers</span> · <span>0 Following</span>
+                <span>{totalFollowers && totalFollowers} Followers</span> · <span>0 Following</span>
               </p>
             </div>
           </div>
