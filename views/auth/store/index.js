@@ -11,12 +11,12 @@ export const handleLoginFunc = createAsyncThunk("login/handleLoginFunc", async (
       .post('/client/login', data)
       .then((response) => {
         const resData = response?.data?.data;
-        if(resData?.access_token !== undefined){
+        // if(resData?.access_token !== undefined){
           setLocal('old_token', resData?.access_token);
           Cookies.set('old_token', resData?.access_token, { expires: 7 });
-        }else{
-          toast.error(response?.data?.message);
-        }
+        // }else{
+        //   toast.error(response?.data?.message);
+        // }
        
       })
       .catch((err) => {
