@@ -6,28 +6,23 @@ import Cookies from "js-cookie";
 import toast from "react-hot-toast";
 // import toast from "react-hot-toast";
 
-export const handleLoginFunc = createAsyncThunk("login/handleLoginFunc", async (data) => {
-    const result = axios
-      .post('/client/login', data)
-      .then((response) => {
-        const resData = response?.data?.data;
-        // if(resData?.access_token !== undefined){
-          setLocal('old_token', resData?.access_token);
-          Cookies.set('old_token', resData?.access_token, { expires: 7 });
-        // }else{
-        //   toast.error(response?.data?.message);
-        // }
-       
-      })
-      .catch((err) => {
-        if(err.response.status === 500){
-            toast.error(err.response.statusText + ', ' + "Contact with authority")
-        }else{
-            toast.error(err.response.data.data.error)
-        }
-        console.log("err from async", err);
-      });
-    return result;
+export const handleLoginFunc = createAsyncThunk(
+  "login/handleLoginFunc",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await axios.post('/client/login', data);
+      const resData = response?.data?.data;
+      setLocal('old_token', resData?.access_token);
+      Cookies.set('old_token', resData?.access_token);
+      return resData;
+    } catch (err) {
+      if (err.response?.status === 500) {
+        toast.error(err.response.statusText + ', ' + "Contact with authority");
+      } else {
+        toast.error(err.response?.data?.data?.error || "Login failed");
+      }
+      return rejectWithValue(err.response?.data);
+    }
   }
 );
 
