@@ -5,8 +5,11 @@ import Image from 'next/image';
 import { FaTimes, FaImage, FaGlobe, FaLock } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
 import { bindPostData, getGathering, getPosts, initialPostData, storePost, updatePost } from '@/views/gathering/store';
+import { getAllFollowers, getMyProfile } from '@/views/settings/store';
 
 const PostModal = ({ isOpen, onClose, editMode = false, editPostId = null, editPostContent = "" }) => {
+  const {myFollowers, personalPosts, totalFollowers, profileData} = useSelector(({settings}) => settings)
+
   const {singlePostData, basicPostData} = useSelector(({gathering}) => gathering)
   const dispatch = useDispatch();
   const [filePreviews, setFilePreviews] = useState([]);
@@ -19,6 +22,8 @@ const PostModal = ({ isOpen, onClose, editMode = false, editPostId = null, editP
   const {id} = basicPostData;
 
   useEffect(() => {
+    dispatch(getAllFollowers())
+    dispatch(getMyProfile())
     return () => {
       dispatch(bindPostData(initialPostData));
       setFilePreviews([]);
@@ -168,8 +173,8 @@ const PostModal = ({ isOpen, onClose, editMode = false, editPostId = null, editP
   
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/30">
-      <div className="bg-white/95 backdrop-blur-md rounded-lg w-full max-w-lg mx-4 shadow-xl">
-        <div className="flex justify-between items-center p-4 border-b">
+      <div className="bg-white backdrop-blur-md rounded-lg w-full max-w-lg mx-4 shadow-xl">
+        <div className="flex justify-between items-center p-4">
           <h2 className="text-xl font-semibold">{editMode ? 'Edit Post' : 'Add post photo'}</h2>
           <button 
             onClick={onClose}
@@ -180,9 +185,9 @@ const PostModal = ({ isOpen, onClose, editMode = false, editPostId = null, editP
         </div>
         
         <div className="p-4">
-          <div className="flex mb-4">
+          <div className="flex mb-2">
             <div className="w-10 h-10 rounded-full overflow-hidden bg-blue-400 flex items-center justify-center text-white mr-3">
-              BU
+            <img src='/common-avator.jpg'/>
             </div>
             <div className="flex-1">
               <textarea
@@ -193,8 +198,9 @@ const PostModal = ({ isOpen, onClose, editMode = false, editPostId = null, editP
                 className="w-full border-0 resize-none outline-none text-gray-700 p-2 bg-transparent"
                 rows={3}
               />
-              
-              <div className="flex items-center mt-1">
+            </div>
+          </div>
+          <div className="flex items-center mb-5">
                 <div className="relative">
                   <button 
                     onClick={() => setShowPrivacyDropdown(!showPrivacyDropdown)}
@@ -214,7 +220,7 @@ const PostModal = ({ isOpen, onClose, editMode = false, editPostId = null, editP
                   </button>
                   
                   {showPrivacyDropdown && (
-                    <div className="absolute top-full left-0 mt-1 bg-white shadow-md rounded-md z-10 w-36 overflow-hidden">
+                    <div className="absolute left-0 mt-1 bg-white shadow-md rounded-md z-10 w-36 overflow-hidden">
                       <button 
                         onClick={() => handlePrivacyChange('public')}
                         className="flex items-center w-full px-3 py-2 text-sm hover:bg-gray-100"
@@ -233,8 +239,6 @@ const PostModal = ({ isOpen, onClose, editMode = false, editPostId = null, editP
                   )}
                 </div>
               </div>
-            </div>
-          </div>
           
           <div className="mb-4">
             <p className="text-gray-500 mb-2">Upload attachments</p>
@@ -290,10 +294,10 @@ const PostModal = ({ isOpen, onClose, editMode = false, editPostId = null, editP
           </div>
         </div>
         
-        <div className="flex justify-end gap-2 p-4 border-t">
+        <div className="flex justify-end gap-2 p-4">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-md bg-red-50 text-red-500 hover:bg-red-100 transition"
+            className="px-4 py-2 cursor-pointer rounded-md bg-red-50 text-red-500 hover:bg-red-100 transition"
             disabled={isSubmitting}
           >
             Cancel

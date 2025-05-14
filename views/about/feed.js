@@ -9,13 +9,15 @@ import Intro from '@/components/common/Intro';
 import { useDispatch, useSelector } from 'react-redux';
 import { getMyProfile } from '../settings/store';
 import moment from 'moment';
+import CreatePostBox from '@/components/common/CreatePostBox';
+import PostList from '@/components/common/PostList';
 
 const AboutContent = () => {
-  const {profileData, myFollowers, personalPosts, totalFollowers} = useSelector(({settings}) => settings)
+  const {profile} = useSelector(({settings}) => settings)
 const dispatch = useDispatch()
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
 
-  console.log('profileData',profileData)
+  console.log('profile',profile)
   useEffect(() => {
     dispatch(getMyProfile());
   }, [])
@@ -33,7 +35,7 @@ const dispatch = useDispatch()
       
       
       {/* Content Area - 3 Column Layout */}
-      <div className="content-area bg-gray-50 py-4">
+      <div className="content-area py-3">
         <div className="mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
             {/* Left Sidebar - INTRO */}
@@ -86,7 +88,7 @@ const dispatch = useDispatch()
                         </div>
                         <div className='flex items-center gap-2'>
                           <div className="text-sm text-gray-500">Born:</div>
-                          <div className="text-gray-700 font-medium">{moment(profileData?.dob).format("MMM-DD-YYYY")}</div>
+                          <div className="text-gray-700 font-medium">{moment(profile?.client?.dob).format("MMM-DD-YYYY")}</div>
                         </div>
                       </div>
                       <button className="text-gray-400">
@@ -124,7 +126,7 @@ const dispatch = useDispatch()
                         </div>
                         <div className='flex items-center gap-2'>
                           <div className="text-sm text-gray-500">Contact:</div>
-                          <div className="text-gray-700 font-medium"> 01829521200</div>
+                          <div className="text-gray-700 font-medium"> {profile?.client?.contact_no}</div>
                         </div>
                       </div>
                       <button className="text-gray-400">
@@ -164,7 +166,7 @@ const dispatch = useDispatch()
                         </div>
                         <div className='flex items-center gap-2'>
                           <div className="text-sm text-gray-500">Joined on:</div>
-                          <div className="text-gray-700 font-medium">27 Apr,2025</div>
+                          <div className="text-gray-700 font-medium">{moment(profile?.client?.created_at).format("DD, MMM YYYY")}</div>
                         </div>
                       </div>
                       <button className="text-gray-400">
@@ -184,7 +186,7 @@ const dispatch = useDispatch()
                         </div>
                         <div className='flex items-center gap-2'>
                           <div className="text-sm text-gray-500">Email:</div>
-                          <div className="text-gray-700 font-medium">borhanidb@gmail.com</div>
+                          <div className="text-gray-700 font-medium">{profile?.client?.email}</div>
                         </div>
                       </div>
                       <button className="text-gray-400">
@@ -194,64 +196,14 @@ const dispatch = useDispatch()
                   </div>
                 </div>
                 
-                {/* Create Post Section */}
-                <div className="bg-white p-4 rounded-lg mt-4 border border-gray-100">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
-                      <img src="/common-avator.jpg" className="w-full h-full object-cover" alt="User" />
-                    </div>
-                    <div className="flex-grow">
-                      <input 
-                        type="text" 
-                        placeholder="Share your thoughts..." 
-                        className="w-full focus:ring-1 focus:ring-blue-500  bg-white cursor-text rounded-full px-4 py-2 text-sm"
-                        onClick={openPostModal}
-                        readOnly
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="flex mt-3">
-                    <button 
-                      className="flex items-center text-gray-600 bg-gray-100 rounded-md px-3 py-1 text-sm hover:bg-gray-200"
-                      onClick={openPostModal}
-                    >
-                      <svg className="mr-2 text-blue-500" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M23 7L16 12L23 17V7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M14 5H3C1.89543 5 1 5.89543 1 7V17C1 18.1046 1.89543 19 3 19H14C15.1046 19 16 18.1046 16 17V7C16 5.89543 15.1046 5 14 5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                      <span>Video</span>
-                    </button>
-                  </div>
-                </div>
+                
               </div>
+
+              {/* Create Post Section */}
+              <CreatePostBox openPostModal={openPostModal} />
               
               {/* Post */}
-              <div className="bg-white rounded-lg shadow-sm p-4">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex">
-                    <div className="w-10 h-10 rounded-full bg-red-400 flex items-center justify-center text-white mr-3">
-                      BU
-                    </div>
-                    <div>
-                      <h4 className="font-medium">Borhan Uddin</h4>
-                      <p className="text-sm text-gray-500">6 days ago</p>
-                    </div>
-                  </div>
-                  <button className="text-gray-500">
-                    <FaEllipsisH />
-                  </button>
-                </div>
-                
-                <div className="post-content">
-                  <p className="text-gray-700">
-                    This Account Location Not Set Yet. <FaGlobe className="inline ml-1" />
-                  </p>
-                  <p className="mt-2 text-gray-700">
-                    hi this is my first post
-                  </p>
-                </div>
-              </div>
+              <PostList postsData={profile?.post}/>
             </div>
             
             {/* Right Sidebar */}

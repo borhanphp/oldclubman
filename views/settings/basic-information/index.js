@@ -1,61 +1,63 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { toast } from 'react-hot-toast';
-import OldInput from '@/components/custom/OldInput';
-import OldSelect from '@/components/custom/OldSelect';
-import api from '@/helpers/axios';
-import errorResponse from '@/utility';
-import { useDispatch, useSelector } from 'react-redux';
-import { bindProfileData, getMyProfile, storeBsicInformation } from '../store';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { toast } from "react-hot-toast";
+import OldInput from "@/components/custom/OldInput";
+import OldSelect from "@/components/custom/OldSelect";
+import api from "@/helpers/axios";
+import errorResponse from "@/utility";
+import { useDispatch, useSelector } from "react-redux";
+import { bindProfileData, getMyProfile, storeBsicInformation } from "../store";
 
 const BasicInformation = () => {
-  const {profileData, profile} = useSelector(({settings}) => settings)
-  console.log('profile',profile)
+  const { profileData, loading } = useSelector(({ settings }) => settings);
   const dispatch = useDispatch();
 
-  const {fname, 
-    middle_name, 
-    last_name, 
-    display_name, 
-    username, 
-    email, 
-    dob, 
-    nationality, 
-    phone_code, 
-    contact_no, 
-    id_no_type, 
-    id_no, 
-    address_line_1, 
-    address_line_2, 
-    current_country_id, 
-    current_state_id, 
-    from_country_id, 
-    from_state_id, 
-    from_city_id, 
-    zip_code, 
-    marital_status, 
-    designation} = profileData;
-  
-  const [loading, setLoading] = useState(false);
+  const {
+    fname,
+    middle_name,
+    last_name,
+    display_name,
+    username,
+    email,
+    dob,
+    nationality,
+    phone_code,
+    contact_no,
+    id_no_type,
+    id_no,
+    address_line_1,
+    address_line_2,
+    current_country_id,
+    current_state_id,
+    from_country_id,
+    from_state_id,
+    from_city_id,
+    zip_code,
+    marital_status,
+    designation,
+  } = profileData;
+
   const [countries, setCountries] = useState([]);
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
-  
+
   // Fetch user data on component mount
   useEffect(() => {
     dispatch(getMyProfile());
     fetchCountries();
   }, []);
-  
+
   const fetchCountries = async () => {
     try {
-      const response = await api.get(`${process.env.NEXT_PUBLIC_API_URL}/location/country`);
+      const response = await api.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/location/country`
+      );
       if (response.data && response.data.data) {
-        const countryOptions = response.data.data.map(country => ({
+        const countryOptions = response.data.data.map((country) => ({
           value: country.id.toString(),
-          label: country.name
+          label: country.name,
         }));
         setCountries(countryOptions);
       }
@@ -63,32 +65,36 @@ const BasicInformation = () => {
       errorResponse(error);
     }
   };
-  
-  const fetchStates = async (countryId, type = 'current') => {
+
+  const fetchStates = async (countryId, type = "current") => {
     try {
-      const response = await api.get(`${process.env.NEXT_PUBLIC_API_URL}/location/state?country_id=${countryId}`);
+      const response = await api.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/location/state?country_id=${countryId}`
+      );
       if (response.data && response.data.data) {
-        const stateOptions = response.data.data.map(state => ({
+        const stateOptions = response.data.data.map((state) => ({
           value: state.id.toString(),
-          label: state.name
+          label: state.name,
         }));
-        setStates(prev => ({
+        setStates((prev) => ({
           ...prev,
-          [type]: stateOptions
+          [type]: stateOptions,
         }));
       }
     } catch (error) {
       errorResponse(error);
     }
   };
-  
+
   const fetchCities = async (stateId) => {
     try {
-      const response = await api.get(`${process.env.NEXT_PUBLIC_API_URL}/location/city?state_id=${stateId}`);
+      const response = await api.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/location/city?state_id=${stateId}`
+      );
       if (response.data && response.data.data) {
-        const cityOptions = response.data.data.map(city => ({
+        const cityOptions = response.data.data.map((city) => ({
           value: city.id.toString(),
-          label: city.name
+          label: city.name,
         }));
         setCities(cityOptions);
       }
@@ -96,69 +102,70 @@ const BasicInformation = () => {
       errorResponse(error);
     }
   };
-  
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-   dispatch(bindProfileData({...profileData, [name]: value}))
-    
+    dispatch(bindProfileData({ ...profileData, [name]: value }));
+
     // Handle dependent dropdowns
-    if (name === 'current_country_id') {
-      fetchStates(value, 'current');
-    } else if (name === 'from_country_id') {
-      fetchStates(value, 'from');
-      dispatch(bindProfileData({
-        ...profileData, 
-        from_state_id: '',
-        from_city_id: ''
-      }))
-    } else if (name === 'from_state_id') {
+    if (name === "current_country_id") {
+      fetchStates(value, "current");
+    } else if (name === "from_country_id") {
+      fetchStates(value, "from");
+      dispatch(
+        bindProfileData({
+          ...profileData,
+          from_state_id: "",
+          from_city_id: "",
+        })
+      );
+    } else if (name === "from_state_id") {
       fetchCities(value);
-      dispatch(bindProfileData({
-        ...profileData, 
-         from_city_id: ''
-      }))
+      dispatch(
+        bindProfileData({
+          ...profileData,
+          from_city_id: "",
+        })
+      );
     }
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      setLoading(true);
-      dispatch(storeBsicInformation(profileData))
-      .then((res) => {
-        toast.success('Profile updated successfully');
-      })
+      dispatch(storeBsicInformation(profileData)).then((res) => {
+        toast.success("Profile updated successfully");
+        dispatch(getMyProfile());
+      });
     } catch (error) {
       errorResponse(error);
-    } finally {
-      setLoading(false);
     }
   };
-  
+
   // ID type options
   const idTypeOptions = [
-    { value: 'passport', label: 'Passport' },
-    { value: 'national_id', label: 'National ID' },
-    { value: 'driving_license', label: 'Driving License' }
+    { value: "passport", label: "Passport" },
+    { value: "national_id", label: "National ID" },
+    { value: "driving_license", label: "Driving License" },
   ];
-  
+
   // Marital status options
   const maritalStatusOptions = [
-    { value: 'single', label: 'Single' },
-    { value: 'married', label: 'Married' },
-    { value: 'divorced', label: 'Divorced' },
-    { value: 'widowed', label: 'Widowed' }
+    { value: "single", label: "Single" },
+    { value: "married", label: "Married" },
+    { value: "divorced", label: "Divorced" },
+    { value: "widowed", label: "Widowed" },
   ];
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
       <h2 className="text-xl font-semibold mb-8">Basic Information</h2>
-      
+
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div>
             <OldInput
-            label="First name"
+              label="First name"
               type="text"
               name="fname"
               value={fname}
@@ -167,11 +174,10 @@ const BasicInformation = () => {
               className="w-full"
             />
           </div>
-          
+
           <div>
-           
             <OldInput
-            label="Middle name"
+              label="Middle name"
               type="text"
               name="middle_name"
               value={middle_name}
@@ -180,10 +186,10 @@ const BasicInformation = () => {
               className="w-full"
             />
           </div>
-          
+
           <div>
             <OldInput
-            label="Last name"
+              label="Last name"
               type="text"
               name="last_name"
               value={last_name}
@@ -193,7 +199,7 @@ const BasicInformation = () => {
             />
           </div>
         </div>
-        
+
         <div className="mb-6">
           <OldInput
             label="Display name"
@@ -205,7 +211,7 @@ const BasicInformation = () => {
             className="w-full"
           />
         </div>
-        
+
         <div className="mb-6">
           <OldInput
             label="User name"
@@ -217,7 +223,7 @@ const BasicInformation = () => {
             className="w-full"
           />
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
             <OldInput
@@ -230,7 +236,7 @@ const BasicInformation = () => {
               className="w-full"
             />
           </div>
-          
+
           <div>
             <div className="relative">
               <OldInput
@@ -245,7 +251,7 @@ const BasicInformation = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div>
             <OldInput
@@ -258,7 +264,7 @@ const BasicInformation = () => {
               className="w-full"
             />
           </div>
-          
+
           <div>
             <OldInput
               label="Country Code"
@@ -270,7 +276,7 @@ const BasicInformation = () => {
               className="w-full"
             />
           </div>
-          
+
           <div>
             <OldInput
               label="Contact"
@@ -295,7 +301,7 @@ const BasicInformation = () => {
               className="w-full"
             />
           </div>
-          
+
           <div>
             <OldInput
               label="Photo ID Number"
@@ -308,7 +314,7 @@ const BasicInformation = () => {
             />
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
             <OldInput
@@ -321,7 +327,7 @@ const BasicInformation = () => {
               className="w-full"
             />
           </div>
-          
+
           <div>
             <OldInput
               label="Address Line 2"
@@ -334,7 +340,7 @@ const BasicInformation = () => {
             />
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div>
             <OldSelect
@@ -347,7 +353,7 @@ const BasicInformation = () => {
               className="w-full"
             />
           </div>
-          
+
           <div>
             <OldSelect
               label="Current State"
@@ -359,7 +365,7 @@ const BasicInformation = () => {
               className="w-full"
             />
           </div>
-          
+
           <div>
             <OldInput
               label="Zip Code"
@@ -372,7 +378,7 @@ const BasicInformation = () => {
             />
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div>
             <OldSelect
@@ -385,7 +391,7 @@ const BasicInformation = () => {
               className="w-full"
             />
           </div>
-          
+
           <div>
             <OldSelect
               label="From State"
@@ -397,7 +403,7 @@ const BasicInformation = () => {
               className="w-full"
             />
           </div>
-          
+
           <div>
             <OldSelect
               label="From City"
@@ -410,9 +416,7 @@ const BasicInformation = () => {
             />
           </div>
         </div>
-        
-       
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
             <OldSelect
@@ -425,7 +429,7 @@ const BasicInformation = () => {
               className="w-full"
             />
           </div>
-          
+
           <div>
             <OldInput
               label="Designation"
@@ -438,14 +442,14 @@ const BasicInformation = () => {
             />
           </div>
         </div>
-        
+
         <div className="mt-8">
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="bg-blue-500 cursor-pointer text-white px-6 py-2 rounded-md hover:bg-blue-600 transition"
             disabled={loading}
           >
-            {loading ? 'Saving...' : 'Save Changes'}
+            {loading ? "Saving..." : "Save Changes"}
           </button>
         </div>
       </form>

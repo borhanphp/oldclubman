@@ -6,14 +6,11 @@ import { getAllFollowers, getMyProfile } from '@/views/settings/store';
 import { useDispatch, useSelector } from 'react-redux';
 
 function FeedHeader() {
-  const {myFollowers, personalPosts, totalFollowers, profileData} = useSelector(({settings}) => settings)
+  const { profile} = useSelector(({settings}) => settings)
   const pathname = usePathname();
   const dispatch = useDispatch();
   const [showDropdown, setShowDropdown] = useState(false);
-
-  console.log('profileData', profileData)
   useEffect(() => {
-    dispatch(getAllFollowers())
     dispatch(getMyProfile())
   }, [dispatch])
   
@@ -30,7 +27,7 @@ function FeedHeader() {
         {/* Cover Photo */}
       <div className="cover-photo rounded-t-md relative w-full h-60 overflow-hidden">
         <div className="absolute inset-0 w-full">
-          <img src='/oldman-bg.jpg' className="w-full h-full object-cover"/>
+          <img src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + profile?.client?.cover_photo} className="w-full h-full object-cover"/>
         </div>
       </div>
       
@@ -40,16 +37,16 @@ function FeedHeader() {
           <div className="flex items-end">
             {/* Profile Picture */}
             <div className="profile-pic relative -mt-16 mr-4">
-              <div className="w-28 h-28 rounded-xl border-4 border-white overflow-hidden bg-blue-400 flex items-center justify-center text-white text-2xl">
-                <img src='/common-avator.jpg'/>
+              <div className="w-28 h-28 rounded-xl border-4 border-white overflow-hidden bg-white flex items-center justify-center text-white text-2xl">
+                <img src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + profile?.client?.image} className="w-full h-full object-cover rounded-full"/>
               </div>
             </div>
             
             {/* Profile Info */}
             <div className="profile-info mb-2">
-              <h2 className="text-xl font-bold">{profileData?.fname + " " + profileData?.last_name}</h2>
+              <h2 className="text-xl font-bold">{profile?.client?.fname + " " + profile?.client?.last_name}</h2>
               <p className="text-gray-600 text-sm">
-                <span>{totalFollowers && totalFollowers} Followers</span> · <span>0 Following</span>
+                <span>{profile.followers && profile.followers} Followers</span> · <span>{profile.following && profile.following} Following</span>
               </p>
             </div>
           </div>

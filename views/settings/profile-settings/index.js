@@ -1,44 +1,68 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
-import { storeProfileSetting } from '../store';
-import { useDispatch, useSelector } from 'react-redux';
-import toast from 'react-hot-toast';
+import React, { useState, useRef, useEffect } from "react";
+import {
+  bindProfileSettingData,
+  getMyProfile,
+  storeProfileSetting,
+} from "../store";
+import { useDispatch, useSelector } from "react-redux";
+import toast from "react-hot-toast";
 
 const ProfileSettings = () => {
-  const {profileData} = useSelector(({settings}) => settings)
-  const [profileOverview, setProfileOverview] = useState('');
-  const [tagline, setTagline] = useState('');
-  const [profilePhotoFile, setProfilePhotoFile] = useState(null);
-  const [coverPhotoFile, setCoverPhotoFile] = useState(null);
-  const [profilePhotoPreview, setProfilePhotoPreview] = useState(null);
-  const [coverPhotoPreview, setCoverPhotoPreview] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+  const { profileSettingData, loading } = useSelector(
+    ({ settings }) => settings
+  );
+
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState(
+    profileSettingData?.image || null
+  );
+  const [coverPhotoPreview, setCoverPhotoPreview] = useState(
+    profileSettingData?.cover_photo || null
+  );
+  const [errorMessage, setErrorMessage] = useState("");
   const dispatch = useDispatch();
   const profilePhotoRef = useRef(null);
   const coverPhotoRef = useRef(null);
 
- 
-  
-  const handleProfileOverviewChange = (e) => {
-    if (e.target.value.length <= 300) {
-      setProfileOverview(e.target.value);
+  const { cover_photo, image, profile_overview, tagline } = profileSettingData;
+
+  useEffect(() => {
+    setProfilePhotoPreview(
+      process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + profileSettingData?.image ||
+        null
+    );
+    setCoverPhotoPreview(
+      process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
+        profileSettingData?.cover_photo || null
+    );
+  }, []);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name === "profile_overview") {
+      if (value.length <= 300) {
+        dispatch(
+          bindProfileSettingData({ ...profileSettingData, [name]: value })
+        );
+      } else {
+        toast.error("You can not write more then 300 charecter");
+      }
+    } else {
+      if (value.length <= 14) {
+        dispatch(
+          bindProfileSettingData({ ...profileSettingData, [name]: value })
+        );
+      } else {
+        toast.error("You can not write more then 14 charecter");
+      }
     }
   };
-  
-  const handleTaglineChange = (e) => {
-    if (e.target.value.length <= 14) {
-      setTagline(e.target.value);
-    }
-  };
-  
+
   const handleProfilePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setProfilePhotoFile(file);
-      // Create preview
+      dispatch(bindProfileSettingData({ ...profileSettingData, image: file }));
       const reader = new FileReader();
       reader.onload = () => {
         setProfilePhotoPreview(reader.result);
@@ -46,12 +70,13 @@ const ProfileSettings = () => {
       reader.readAsDataURL(file);
     }
   };
-  
+
   const handleCoverPhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setCoverPhotoFile(file);
-      // Create preview
+      dispatch(
+        bindProfileSettingData({ ...profileSettingData, cover_photo: file })
+      );
       const reader = new FileReader();
       reader.onload = () => {
         setCoverPhotoPreview(reader.result);
@@ -59,184 +84,204 @@ const ProfileSettings = () => {
       reader.readAsDataURL(file);
     }
   };
-  
+
   const triggerProfilePhotoUpload = () => {
     profilePhotoRef.current.click();
   };
-  
+
   const triggerCoverPhotoUpload = () => {
     coverPhotoRef.current.click();
   };
-  
+
   const storeProfileSettings = async (e) => {
     e.preventDefault();
-    
+
     try {
-      setIsSubmitting(true);
-      setErrorMessage('');
-      
       // Create FormData object
       const formData = new FormData();
-      
+
       // Add text fields
-      formData.append('profile_overview', profileOverview);
-      formData.append('tagline', tagline);
-      
+      formData.append("profile_overview", profile_overview);
+      formData.append("tagline", tagline);
+
       // Add files if they exist
-      if (profilePhotoFile) {
-        formData.append('profilePhoto', profilePhotoFile);
+      if (image) {
+        formData.append("image", image);
       }
-      
-      if (coverPhotoFile) {
-        formData.append('coverPhoto', coverPhotoFile);
+
+      if (cover_photo) {
+        formData.append("cover_photo", cover_photo);
       }
-      
-      dispatch(storeProfileSetting(formData))
-      .then((res) => {
-        toast.success("Successfully Updated")
-      })
+
+      dispatch(storeProfileSetting(formData)).then((res) => {
+        toast.success("Successfully Updated");
+        dispatch(getMyProfile());
+      });
     } catch (error) {
-      console.error('Error saving profile settings:', error);
-      setErrorMessage('Failed to save profile settings. Please try again.');
-    } finally {
-      setIsSubmitting(false);
+      console.error("Error saving profile settings:", error);
+      setErrorMessage("Failed to save profile settings. Please try again.");
     }
   };
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
       <h2 className="text-xl font-semibold mb-8">Profile Settings</h2>
-      
-      {successMessage && (
-        <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-md">
-          {successMessage}
-        </div>
-      )}
-      
-      {errorMessage && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
-          {errorMessage}
-        </div>
-      )}
-      
+
       <form onSubmit={storeProfileSettings}>
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <label className="block text-sm font-medium text-gray-600">
-              Profile Photo <span className="text-gray-500 text-sm font-normal">Recommended Size (128×128)</span>
+              Profile Photo{" "}
+              <span className="text-gray-500 text-sm font-normal">
+                Recommended Size (128×128)
+              </span>
             </label>
           </div>
-          
+
           <div className="flex items-center gap-3">
             {profilePhotoPreview && (
               <div className="w-16 h-16 rounded-full overflow-hidden mr-2">
-                <img src={profilePhotoPreview} alt="Profile Preview" className="w-full h-full object-cover" />
+                <img
+                  src={profilePhotoPreview}
+                  alt="Profile Preview"
+                  className="w-full h-full object-cover"
+                />
               </div>
             )}
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={triggerProfilePhotoUpload}
               className="px-4 py-2 border border-gray-300 rounded-md bg-white text-sm text-gray-700 hover:bg-gray-50 focus:outline-none"
             >
               Choose File
             </button>
             <span className="text-gray-500 text-sm">
-              {profilePhotoFile ? profilePhotoFile.name : 'No file chosen'}
+              {image ? image.name : "No file chosen"}
             </span>
-            <input 
-              type="file" 
-              ref={profilePhotoRef} 
-              className="hidden" 
+            <input
+              type="file"
+              ref={profilePhotoRef}
+              className="hidden"
               accept="image/*"
               onChange={handleProfilePhotoChange}
             />
           </div>
         </div>
-        
+
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <label className="block text-sm font-medium text-gray-600">
-              Cover Photo <span className="text-gray-500 text-sm font-normal">Recommended Size (1090×250)</span>
+              Cover Photo{" "}
+              <span className="text-gray-500 text-sm font-normal">
+                Recommended Size (1090×250)
+              </span>
             </label>
           </div>
-          
+
           <div className="flex items-center gap-3">
             {coverPhotoPreview && (
               <div className="w-24 h-12 rounded overflow-hidden mr-2">
-                <img src={coverPhotoPreview} alt="Cover Preview" className="w-full h-full object-cover" />
+                <img
+                  src={coverPhotoPreview}
+                  alt="Cover Preview"
+                  className="w-full h-full object-cover"
+                />
               </div>
             )}
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={triggerCoverPhotoUpload}
               className="px-4 py-2 border border-gray-300 rounded-md bg-white text-sm text-gray-700 hover:bg-gray-50 focus:outline-none"
             >
               Choose File
             </button>
             <span className="text-gray-500 text-sm">
-              {coverPhotoFile ? coverPhotoFile.name : 'No file chosen'}
+              {cover_photo ? cover_photo.name : "No file chosen"}
             </span>
-            <input 
-              type="file" 
-              ref={coverPhotoRef} 
-              className="hidden" 
+            <input
+              type="file"
+              name="cover_photo"
+              ref={coverPhotoRef}
+              className="hidden"
               accept="image/*"
               onChange={handleCoverPhotoChange}
             />
           </div>
         </div>
-        
+
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
-            <label htmlFor="profileOverview" className="block text-sm font-medium text-gray-600">
-              Profile Overview <span className="text-gray-500 text-sm font-normal">(For Intro)</span>
+            <label
+              htmlFor="profileOverview"
+              className="block text-sm font-medium text-gray-600"
+            >
+              Profile Overview{" "}
+              <span className="text-gray-500 text-sm font-normal">
+                (For Intro)
+              </span>
             </label>
           </div>
-          
+
           <textarea
-            id="profileOverview"
+            id="profile_overview"
+            name="profile_overview"
             rows={5}
             className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500"
             placeholder="Profile Overview (Required)"
-            value={profileOverview}
-            onChange={handleProfileOverviewChange}
+            value={profile_overview}
+            onChange={handleChange}
             required
           ></textarea>
-          
+
           <div className="text-right mt-1">
-            <span className="text-sm text-gray-500">Character limit: {300 - profileOverview.length}</span>
+            <span className="text-sm text-gray-500">
+              Character limit: {300 - profile_overview.length}
+            </span>
           </div>
         </div>
-        
+
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
-            <label htmlFor="tagline" className="block text-sm font-medium text-gray-600">
-              Tagline <span className="text-gray-500 text-sm font-normal">(For Intro)</span>
+            <label
+              htmlFor="tagline"
+              className="block text-sm font-medium text-gray-600"
+            >
+              Tagline{" "}
+              <span className="text-gray-500 text-sm font-normal">
+                (For Intro)
+              </span>
             </label>
           </div>
-          
+
           <textarea
             id="tagline"
+            name="tagline"
             rows={3}
             className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500"
             placeholder="Tagline (Required)"
             value={tagline}
-            onChange={handleTaglineChange}
+            onChange={handleChange}
             required
           ></textarea>
-          
+
           <div className="text-right mt-1">
-            <span className="text-sm text-gray-500">Character limit: {14 - tagline.length}</span>
+            <span className="text-sm text-gray-500">
+              Character limit: {14 - tagline.length}
+            </span>
           </div>
         </div>
-        
-        <div className="mt-8">
-          <button 
-            type="submit" 
-            className={`${isSubmitting ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'} text-white px-6 py-2.5 rounded-md transition`}
-            disabled={isSubmitting}
+
+        <div className="mt-8 text-right">
+          <button
+            type="submit"
+            className={`${
+              loading
+                ? "bg-blue-300 cursor-not-allowed"
+                : "bg-blue-500 hover:bg-blue-600"
+            } text-white cursor-pointer px-6 py-2.5 rounded-md transition`}
+            disabled={loading}
           >
-            {isSubmitting ? 'Saving...' : 'Save Changes'}
+            {loading ? "Saving..." : "Save Changes"}
           </button>
         </div>
       </form>
