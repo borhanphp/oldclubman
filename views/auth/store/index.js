@@ -11,12 +11,12 @@ export const handleLoginFunc = createAsyncThunk(
   async (data, { rejectWithValue }) => {
     try {
       const response = await axios.post('/client/login', data);
-      const resData = response?.data?.data;
-      if(resData.access_token !== undefined){
-        setLocal('old_token', resData?.access_token);
-        Cookies.set('old_token', resData?.access_token);
-      }
-      
+      const resData = await response?.data?.data;
+      const access_token = await resData?.access_token || "";
+       setLocal('old_token', access_token);
+          Cookies.set('old_token', access_token);
+          window.location.assign("/user/gathering");
+     
       return resData;
     } catch (err) {
       if (err.response?.status === 500) {

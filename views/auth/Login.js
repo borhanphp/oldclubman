@@ -37,10 +37,7 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    dispatch(handleLoginFunc(formData))
-    .then((res) => {
-      router.push("/user/gathering")
-    })
+    dispatch(handleLoginFunc(formData));
   }
 
   return (
