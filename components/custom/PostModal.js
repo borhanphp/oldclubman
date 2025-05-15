@@ -1,45 +1,37 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import Image from 'next/image';
 import { FaTimes, FaImage, FaGlobe, FaLock } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
-import { bindPostData, getGathering, getPosts, initialPostData, storePost, updatePost } from '@/views/gathering/store';
-import { getAllFollowers, getMyProfile } from '@/views/settings/store';
+import { bindPostData, getPosts, initialPostData, setPostModalOpen, storePost, updatePost } from '@/views/gathering/store';
+import { getMyProfile } from '@/views/settings/store';
 
-const PostModal = ({ isOpen, onClose, editMode = false, editPostId = null, editPostContent = "" }) => {
-  const {myFollowers, personalPosts, totalFollowers, profileData} = useSelector(({settings}) => settings)
-
-  const {singlePostData, basicPostData} = useSelector(({gathering}) => gathering)
+const PostModal = () => {
+  const {profile} = useSelector(({settings}) => settings)
+  const { basicPostData, loading, isPostModalOpen} = useSelector(({gathering}) => gathering)
   const dispatch = useDispatch();
   const [filePreviews, setFilePreviews] = useState([]);
-  const [privacyMode, setPrivacyMode] = useState('public');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPrivacyDropdown, setShowPrivacyDropdown] = useState(false);
   const fileInputRef = useRef(null);
   const [removeFiles, setRemoveFiles] = useState([]);
 
   const {id} = basicPostData;
-
   useEffect(() => {
-    dispatch(getAllFollowers())
     dispatch(getMyProfile())
-    return () => {
-      dispatch(bindPostData(initialPostData));
-      setFilePreviews([]);
-    }
-  }, [dispatch])
 
-  // Add effect to handle image previews in edit mode
-  useEffect(() => {
-    if (isOpen && id && basicPostData?.files?.length > 0) {
+    if (isPostModalOpen && id && basicPostData?.files?.length > 0) {
       const previews = basicPostData.files.map(file => ({
         id: file.id || (Date.now() + Math.random().toString(36).substring(2, 9)),
         src: `${process.env.NEXT_PUBLIC_FILE_PATH}/${file.file_path}`,
       }));
       setFilePreviews(previews);
     }
-  }, [isOpen, editMode, basicPostData, dispatch]);
+
+    return () => {
+      setFilePreviews([]);
+    }
+  }, []);
 
   const handleOnchange = (e) => {
     const {name, value} = e.target;
@@ -126,7 +118,6 @@ const PostModal = ({ isOpen, onClose, editMode = false, editPostId = null, editP
   
   const handlePrivacyChange = (mode) => {
     dispatch(bindPostData({...basicPostData, privacy_mode: mode}))
-    setPrivacyMode(mode);
     setShowPrivacyDropdown(false);
   };
   
@@ -160,7 +151,7 @@ const PostModal = ({ isOpen, onClose, editMode = false, editPostId = null, editP
           dispatch(bindPostData(initialPostData));
           setFilePreviews([]);
           setRemoveFiles([]);
-          onClose();
+          dispatch(setPostModalOpen(false))
         });
     } catch (error) {
       console.error('Error posting:', error);
@@ -169,16 +160,20 @@ const PostModal = ({ isOpen, onClose, editMode = false, editPostId = null, editP
     }
   };
   
-  if (!isOpen) return null;
+   const close = () => {
+    dispatch(setPostModalOpen(false));
+      dispatch(bindPostData(initialPostData));
+
+   }
   
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/30">
       <div className="bg-white backdrop-blur-md rounded-lg w-full max-w-lg mx-4 shadow-xl">
         <div className="flex justify-between items-center p-4">
-          <h2 className="text-xl font-semibold">{editMode ? 'Edit Post' : 'Add post photo'}</h2>
+          <h2 className="text-xl font-semibold">{id ? 'Edit Post' : 'Add post'}</h2>
           <button 
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            onClick={() => {close()}}
+            className="text-gray-500 cursor-pointer hover:text-gray-700"
           >
             <FaTimes size={20} />
           </button>
@@ -187,7 +182,7 @@ const PostModal = ({ isOpen, onClose, editMode = false, editPostId = null, editP
         <div className="p-4">
           <div className="flex mb-2">
             <div className="w-10 h-10 rounded-full overflow-hidden bg-blue-400 flex items-center justify-center text-white mr-3">
-            <img src='/common-avator.jpg'/>
+            <img src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + profile?.client?.image}/>
             </div>
             <div className="flex-1">
               <textarea
@@ -296,18 +291,18 @@ const PostModal = ({ isOpen, onClose, editMode = false, editPostId = null, editP
         
         <div className="flex justify-end gap-2 p-4">
           <button
-            onClick={onClose}
+            onClick={() => {close()}}    
             className="px-4 py-2 cursor-pointer rounded-md bg-red-50 text-red-500 hover:bg-red-100 transition"
-            disabled={isSubmitting}
+            disabled={loading}
           >
             Cancel
           </button>
           <button
             onClick={handlePost}
             className="px-4 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 cursor-pointer transition"
-            disabled={isSubmitting}
+            disabled={loading}
           >
-            {isSubmitting ? 'Posting...' : (id ? 'Update' : 'Post')}
+            {loading ? 'Posting...' : (id ? 'Update' : 'Post')}
           </button>
         </div>
       </div>

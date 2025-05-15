@@ -13,30 +13,33 @@ import { IoMdShareAlt } from "react-icons/io";
 import { FaRegComment } from "react-icons/fa6";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  bindPostData,
   deletePost,
   getGathering,
   getPostById,
   getPosts,
+  initialPostData,
+  setPostModalOpen,
   storeComments,
   storePostReactions,
   storeReactions,
   updatePost,
   updatePostPrivacy,
+  likeComment,
+  replyToComment,
 } from "../../views/gathering/store";
 import moment from "moment";
-import { getMyProfile } from "@/views/settings/store";
 
 const PostList = ({postsData}) => {
-  const { gatheringData, loading, basicPostData } = useSelector(
+  const { basicPostData } = useSelector(
     ({ gathering }) => gathering
   );
-console.log('postsData',postsData)
   const dispatch = useDispatch();
 
   useEffect(() => {
     dispatch(getGathering());
     dispatch(getPosts());
-  }, []);
+  }, [dispatch]);
 
   const [showReactionsFor, setShowReactionsFor] = useState(null);
   const [commentInputs, setCommentInputs] = useState({});
@@ -65,22 +68,25 @@ console.log('postsData',postsData)
   };
 
   const handleCommentLike = (postId, commentIndex) => {
-    const key = `${postId}-${commentIndex}`;
-    setCommentLikes((prev) => ({
-      ...prev,
-      [key]: (prev[key] || 0) + 1,
-    }));
+    const comment = 1
+    dispatch(likeComment({ commentId: comment.id }))
+      .then(() => {
+        // Optionally refresh comments or update state
+        dispatch(getPosts());
+      });
   };
 
   const handleReplySubmit = (postId, commentIndex) => {
     const key = `${postId}-${commentIndex}`;
     const reply = replyInputs[key];
+    const comment = 1
     if (!reply) return;
-    setCommentReplies((prev) => ({
-      ...prev,
-      [key]: [...(prev[key] || []), { user: "You", text: reply }],
-    }));
-    setReplyInputs((prev) => ({ ...prev, [key]: "" }));
+    dispatch(replyToComment({ commentId: comment.id, content: reply }))
+      .then(() => {
+        // Optionally refresh comments or update state
+        dispatch(getPosts());
+        setReplyInputs(prev => ({ ...prev, [key]: "" }));
+      });
   };
 
   const handleReaction = (postId, reaction) => {
@@ -124,9 +130,12 @@ console.log('postsData',postsData)
 
   const handleEditPost = (postId) => {
     dispatch(getPostById(postId)).then(() => {
+      dispatch(setPostModalOpen(true));
       setOpenDropdownFor(null);
     });
   };
+
+
 
 
   const handleOnlyMe = (mode) => {
@@ -144,6 +153,8 @@ console.log('postsData',postsData)
         setOpenDropdownFor(null);
       });
   };
+
+
   const handleDeletePost = (postId) => {
     dispatch(deletePost(postId))
       .then(() => {
@@ -835,6 +846,7 @@ console.log('postsData',postsData)
           </div>
         </div>
       )}
+
     </div>
   );
 };

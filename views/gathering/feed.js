@@ -6,7 +6,7 @@ import { FaComment } from 'react-icons/fa';
 import PostModal from '@/components/custom/PostModal';
 import FeedHeader from '@/components/common/FeedHeader';
 import { useDispatch, useSelector } from 'react-redux';
-import { deletePost, getGathering, getPostById, getPosts, storeComments, storePostReactions, storeReactions, updatePost, updatePostPrivacy } from './store';
+import { deletePost, getGathering, getPostById, getPosts, setPostModalOpen, storeComments, storePostReactions, storeReactions, updatePost, updatePostPrivacy } from './store';
 import FollowSuggestion from '@/components/common/FollowSuggestion';
 import CreatePostBox from "@/components/common/CreatePostBox";
 import PostList from '@/components/common/PostList';
@@ -14,18 +14,15 @@ import PostList from '@/components/common/PostList';
 
 
 const GatheringContent = () => {
-  const {gatheringData, postsData, loading, basicPostData} = useSelector(({gathering}) => gathering);
+  const {gatheringData, postsData, loading, basicPostData, isPostModalOpen} = useSelector(({gathering}) => gathering);
   const dispatch = useDispatch();
-  console.log('gatheringData',gatheringData)
-  console.log('basicPostData',basicPostData)
+
 
   useEffect(() => {
     dispatch(getGathering());
     dispatch(getPosts());
   }, [])
   
-
-  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
   const [showReactionsFor, setShowReactionsFor] = useState(null);
   const [openDropdownFor, setOpenDropdownFor] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -34,11 +31,11 @@ const GatheringContent = () => {
   
 
   const openPostModal = () => {
-    setIsPostModalOpen(true);
+    dispatch(setPostModalOpen(true));
   };
 
   const closePostModal = () => {
-    setIsPostModalOpen(false);
+    dispatch(setPostModalOpen(false));
   };
   
 
@@ -117,7 +114,7 @@ const GatheringContent = () => {
             {/* Center Content / Feed */}
             <div className="md:col-span-6">
               {/* Create Post */}
-              <CreatePostBox openPostModal={openPostModal} />
+              <CreatePostBox />
               
               {/* Post */}
               <PostList postsData={postsData}/>
@@ -156,35 +153,10 @@ const GatheringContent = () => {
       </div>
       
       {/* Post Modal */}
-      <PostModal isOpen={isPostModalOpen} onClose={closePostModal} />
+      {isPostModalOpen && <PostModal />}
+      
       {/* Edit Post Modal */}
-      {isEditModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Edit Post</h2>
-            <textarea
-              className="w-full p-2 border rounded mb-4"
-              value={editPostContent}
-              onChange={(e) => setEditPostContent(e.target.value)}
-              rows="4"
-            />
-            <div className="flex justify-end gap-2">
-              <button
-                className="px-4 py-2 bg-gray-300 rounded"
-                onClick={closeEditModal}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 bg-blue-500 text-white rounded"
-                onClick={handleUpdatePost}
-              >
-                Update
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+    
     </div>
   );
 };

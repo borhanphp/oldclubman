@@ -19,6 +19,7 @@ import {
 import { logout } from "@/utility";
 import { useDispatch, useSelector } from "react-redux";
 import { getMyProfile } from "@/views/settings/store";
+import SearchDropdown from "@/views/search/SearchDropdown";
 
 const SocialNavbar = () => {
   const { profile } = useSelector(({ settings }) => settings);
@@ -36,13 +37,8 @@ const SocialNavbar = () => {
             <img src="/oldman-logo.png" />
           </div>
         </Link>
-        <div className="relative flex items-center bg-gray-100 rounded-md px-3 py-2 ml-2">
-          <FaSearch className="text-gray-500 mr-2" />
-          <input
-            type="text"
-            placeholder="Search..."
-            className="bg-transparent border-none outline-none w-64"
-          />
+        <div className="flex-1 flex items-center justify-center">
+          <SearchDropdown />
         </div>
       </div>
 

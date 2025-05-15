@@ -131,6 +131,22 @@ export const deletePost = createAsyncThunk( 'gathering/deletePost', async ( id) 
   return result;
 } )
 
+export const likeComment = createAsyncThunk(
+  "comments/likeComment",
+  async ({ commentId }) => {
+    const response = await axios.post(`/comments/${commentId}/like`);
+    return response.data;
+  }
+);
+
+export const replyToComment = createAsyncThunk(
+  "comments/replyToComment",
+  async ({ commentId, content }) => {
+    const response = await axios.post(`/comments/${commentId}/reply`, { content });
+    return response.data;
+  }
+);
+
 
 
 
@@ -141,11 +157,16 @@ export const gatheringSlice = createSlice({
     singlePostData: {},
     postsData:[],
     loading: false,
-    basicPostData: initialPostData
+    basicPostData: initialPostData,
+    isPostModalOpen: false
   },
   reducers: {
     bindPostData: (state, action) => {
       state.basicPostData = action.payload || initialPostData
+    },
+
+    setPostModalOpen: (state, action) => {
+        state.isPostModalOpen = action.payload
     }
   },
   extraReducers: (builder) => {
@@ -168,8 +189,28 @@ export const gatheringSlice = createSlice({
         state.basicPostData = action.payload;
         state.loading = false;
       })
+
+      .addCase(storePost.pending, (state, action) => {
+        state.loading = true;
+      })
+      .addCase(storePost.fulfilled, (state, action) => {
+        state.loading = false;
+      })
+      .addCase(storePost.rejected, (state, action) => {
+        state.loading = false;
+      })
+
+      .addCase(updatePost.pending, (state, action) => {
+        state.loading = true;
+      })
+      .addCase(updatePost.fulfilled, (state, action) => {
+        state.loading = false;
+      })
+      .addCase(updatePost.rejected, (state, action) => {
+        state.loading = false;
+      })
   },
 });
 
-export const {bindPostData} = gatheringSlice.actions;
+export const {bindPostData, setPostModalOpen} = gatheringSlice.actions;
 export default gatheringSlice.reducer;
