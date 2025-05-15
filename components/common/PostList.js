@@ -723,7 +723,7 @@ const PostList = ({postsData}) => {
                 </div>
               )}
               {/* Comments Section */}
-              <h4 className="font-semibold mb-4 text-lg">Comments</h4>
+              <h4 className="font-semibold mb-4 text-lg border-t">Comments</h4>
               {basicPostData.comments && basicPostData.comments.length > 0 ? (
                 basicPostData?.comments?.map((c, i) => (
                   <div key={i} className="mb-4 flex items-start">
