@@ -41,6 +41,8 @@ const PostList = ({postsData}) => {
     dispatch(getPosts());
   }, [dispatch]);
 
+  // console.log('postsData',postsData)
+
   const [showReactionsFor, setShowReactionsFor] = useState(null);
   const [commentInputs, setCommentInputs] = useState({});
   const [commentLikes, setCommentLikes] = useState({});
@@ -441,21 +443,23 @@ const PostList = ({postsData}) => {
               View all comments
             </div>
             {/* Comments section */}
-            <div className="mt-2 pl-2">
+            {
+              item?.latest_comment && (
+                <div className="mt-2 pl-2">
               <div className="mb-2">
                 <div className="flex">
                   <div className="w-8 h-8 rounded-full overflow-hidden mr-2 mt-2">
                     <img
-                    src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + item?.client?.image}
+                    src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + item?.latest_comment?.client?.image}
                     className="w-full h-full object-cover"
                     />
                   </div>
                   <div className="p-2 rounded-lg flex-grow">
                     <div className="flex flex-col bg-gray-100 p-2 rounded-md">
                       <span className="font-medium">
-                        {item.client.fname + " " + item.client.last_name }{" "}
+                        {item?.latest_comment?.client.fname + " " + item?.latest_comment?.client.last_name }{" "}
                         <span className="text-xs text-gray-500 ml-2">
-                          {moment(item.created_at)?.fromNow()}
+                          {moment(item?.latest_comment?.created_at)?.fromNow()}
                         </span>
                       </span>
                       <span className="text-gray-700 text-sm">
@@ -515,6 +519,8 @@ const PostList = ({postsData}) => {
                 </div>
               </div>
             </div>
+              )
+            }
             <div className="mt-2 pl-2">
               {(item?.comments || []).map((c, i) => {
                 const key = `${item.id}-${i}`;
