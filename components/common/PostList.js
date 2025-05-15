@@ -681,14 +681,14 @@ const PostList = ({postsData}) => {
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 rounded-full overflow-hidden">
                   <img
-                    src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + basicPostData?.image}
+                    src={process.env.NEXT_PUBLIC_FILE_PATH + basicPostData?.image}
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <div>
                   <div className="font-semibold">
-                    {basicPostData.client.fname}{" "}
-                    {basicPostData.client.last_name}
+                    {basicPostData.client?.fname}{" "}
+                    {basicPostData.client?.last_name}
                   </div>
                   <div className="text-xs text-gray-500">
                     {moment(basicPostData.created_at).fromNow()}
