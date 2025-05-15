@@ -41,7 +41,7 @@ const ProfileSettings = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === "profile_overview") {
-      if (value.length <= 300) {
+      if (value?.length <= 300) {
         dispatch(
           bindProfileSettingData({ ...profileSettingData, [name]: value })
         );
@@ -49,7 +49,7 @@ const ProfileSettings = () => {
         toast.error("You can not write more then 300 charecter");
       }
     } else {
-      if (value.length <= 14) {
+      if (value?.length <= 14) {
         dispatch(
           bindProfileSettingData({ ...profileSettingData, [name]: value })
         );
@@ -235,7 +235,7 @@ const ProfileSettings = () => {
 
           <div className="text-right mt-1">
             <span className="text-sm text-gray-500">
-              Character limit: {300 - profile_overview.length}
+              Character limit: {300 - profile_overview?.length}
             </span>
           </div>
         </div>
@@ -266,7 +266,7 @@ const ProfileSettings = () => {
 
           <div className="text-right mt-1">
             <span className="text-sm text-gray-500">
-              Character limit: {14 - tagline.length}
+              Character limit: {14 - tagline?.length}
             </span>
           </div>
         </div>
