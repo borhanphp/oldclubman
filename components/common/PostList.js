@@ -681,7 +681,7 @@ const PostList = ({postsData}) => {
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 rounded-full overflow-hidden">
                   <img
-                    src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + basicPostData?.image}
+                    src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + basicPostData?.client?.image}
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -826,7 +826,7 @@ const PostList = ({postsData}) => {
             <div className="p-4 bg-gray-50 flex items-center gap-2">
               <div className="w-9 h-9 rounded-full overflow-hidden">
                 <img
-                    src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + basicPostData?.image}
+                    src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + basicPostData?.client?.image}
                     className="w-full h-full object-cover"
                 />
               </div>

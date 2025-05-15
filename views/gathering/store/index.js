@@ -181,6 +181,12 @@ export const gatheringSlice = createSlice({
       .addCase(getGathering.rejected, (state, action) => {
         state.loading = false;
       })
+      .addCase(getPosts.pending, (state, action) => {
+        state.loading = true;
+      })
+      .addCase(getPosts.rejected, (state, action) => {
+        state.loading = false;
+      })
       .addCase(getPosts.fulfilled, (state, action) => {
         state.postsData = action.payload;
         state.loading = false;
