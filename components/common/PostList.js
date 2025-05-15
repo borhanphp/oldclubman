@@ -457,7 +457,7 @@ const PostList = ({postsData}) => {
                   <div className="p-2 rounded-lg flex-grow">
                     <div className="flex flex-col bg-gray-100 p-2 rounded-md">
                       <span className="font-medium">
-                        {item?.latest_comment?.client.fname + " " + item?.latest_comment?.client.last_name }{" "}
+                        {item?.latest_comment?.client?.fname + " " + item?.latest_comment?.client?.last_name }{" "}
                         <span className="text-xs text-gray-500 ml-2">
                           {moment(item?.latest_comment?.created_at)?.fromNow()}
                         </span>
