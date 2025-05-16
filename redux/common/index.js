@@ -18,7 +18,8 @@ export const commonSlice = createSlice( {
         menuClickId: null,
         enableSubmenu: false,
         error: false,
-        company: {}
+        company: {},
+        isLoading: false
     },
     reducers: {
         handleSubmenu: (state, action) => {
@@ -30,6 +31,12 @@ export const commonSlice = createSlice( {
         },
         setError: (state, action) => {
             state.error = action.payload;
+        },
+        showPreloader: (state) => {
+            state.isLoading = true;
+        },
+        hidePreloader: (state) => {
+            state.isLoading = false;
         }
     },
     extraReducers: (builder) => {
@@ -41,6 +48,6 @@ export const commonSlice = createSlice( {
       },
 } );
 
-export const { handleSubmenu, handleMenuId, setError } = commonSlice.actions;
+export const { handleSubmenu, handleMenuId, setError, showPreloader, hidePreloader } = commonSlice.actions;
 
 export default commonSlice.reducer;

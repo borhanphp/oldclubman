@@ -35,7 +35,6 @@ const PostList = ({postsData}) => {
     ({ gathering }) => gathering
   );
   const dispatch = useDispatch();
-
   useEffect(() => {
     dispatch(getGathering());
     dispatch(getPosts());
@@ -44,6 +43,7 @@ const PostList = ({postsData}) => {
   // console.log('postsData',postsData)
 
   const [showReactionsFor, setShowReactionsFor] = useState(null);
+  const [showCommentReactionsFor, setShowCommentReactionsFor] = useState(null);
   const [commentInputs, setCommentInputs] = useState({});
   const [commentLikes, setCommentLikes] = useState({});
   const [replyInputs, setReplyInputs] = useState({});
@@ -78,6 +78,15 @@ const PostList = ({postsData}) => {
       });
   };
 
+  const handleCommentReaction = (comment_id, reaction) => {
+    dispatch(likeComment({ comment_id, reaction_type: reaction }))
+      .then(() => {
+        setShowCommentReactionsFor(null);
+        dispatch(getPosts());
+        dispatch(getPostById(basicPostData.id));
+      });
+  };
+
   const handleReplySubmit = (postId, commentIndex) => {
     const key = `${postId}-${commentIndex}`;
     const reply = replyInputs[key];
@@ -103,6 +112,7 @@ const PostList = ({postsData}) => {
 
   const reactionRef = useRef(null);
   const dropdownRef = useRef(null);
+  const commentReactionRef = useRef(null);
 
   useEffect(() => {
     if (!showReactionsFor) return;
@@ -116,6 +126,19 @@ const PostList = ({postsData}) => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showReactionsFor]);
+
+  useEffect(() => {
+    if (!showCommentReactionsFor) return;
+    function handleClickOutside(event) {
+      if (commentReactionRef.current && !commentReactionRef.current.contains(event.target)) {
+        setShowCommentReactionsFor(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showCommentReactionsFor]);
 
   useEffect(() => {
     if (openDropdownFor === null) return;
@@ -176,24 +199,26 @@ const PostList = ({postsData}) => {
     });
   };
 
-  const handleModalCommentLike = (commentIndex) => {
-    setModalCommentLikes((prev) => ({
-      ...prev,
-      [commentIndex]: (prev[commentIndex] || 0) + 1,
-    }));
+  const handleModalCommentLike = (comment) => {
+    setShowCommentReactionsFor(comment.id);
   };
 
   const handleModalReplySubmit = (commentIndex) => {
     const reply = modalReplyInputs[commentIndex];
     if (!reply) return;
-    setModalReplies((prev) => ({
-      ...prev,
-      [commentIndex]: [
-        ...(prev[commentIndex] || []),
-        { user: "You", text: reply },
-      ],
-    }));
-    setModalReplyInputs((prev) => ({ ...prev, [commentIndex]: "" }));
+    
+    // Get the comment object from basicPostData
+    const comment = basicPostData?.comments?.[commentIndex];
+    
+    // Call API to save reply
+    dispatch(replyToComment({ comment_id: comment.id, parent_id: 1, content: reply }))
+      .then(() => {
+        dispatch(getPostById(basicPostData.id));
+        setModalReplyInputs((prev) => ({ ...prev, [commentIndex]: "" }));
+      })
+      .catch((error) => {
+        console.error("Failed to submit reply:", error);
+      });
   };
 
   return (
@@ -724,7 +749,7 @@ const PostList = ({postsData}) => {
               )}
               {/* Comments Section */}
               <h4 className="font-semibold mb-4 text-lg border-t">Comments</h4>
-              {basicPostData.comments && basicPostData.comments.length > 0 ? (
+              {basicPostData?.comments && basicPostData?.comments?.length > 0 ? (
                 basicPostData?.comments?.map((c, i) => (
                   <div key={i} className="mb-4 flex items-start">
                     <div className="w-9 h-9 rounded-full overflow-hidden mr-3">
@@ -750,11 +775,81 @@ const PostList = ({postsData}) => {
                       {/* Like and Reply buttons */}
                       <div className="flex gap-3 mt-2 text-xs text-gray-500">
                         <button
-                          className="hover:underline"
-                          onClick={() => handleModalCommentLike(i)}
+                          className="hover:underline relative"
+                          onClick={() => handleModalCommentLike(c)}
                           type="button"
                         >
                           Like ({modalCommentLikes[i] || 0})
+                          {showCommentReactionsFor === c.id && (
+                            <div
+                              ref={commentReactionRef}
+                              className="absolute bottom-full w-full left-0 mb-2 bg-white p-2 rounded-full shadow-lg flex space-x-2 z-10"
+                            >
+                              <img 
+                                src="/like.png" 
+                                alt="Like" 
+                                className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer" 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCommentReaction(c.id, "like");
+                                }}
+                              />
+                              <img 
+                                src="/love.png" 
+                                alt="Love" 
+                                className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCommentReaction(c.id, "love");
+                                }}
+                              />
+                              <img 
+                                src="/care.png" 
+                                alt="Care" 
+                                className="w-5 h-5 transform hover:scale-125 transition-transform cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCommentReaction(c.id, "care");
+                                }}
+                              />
+                              <img 
+                                src="/haha.png" 
+                                alt="Haha" 
+                                className="w-5 h-5 transform hover:scale-125 transition-transform cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCommentReaction(c.id, "haha");
+                                }}
+                              />
+                              <img 
+                                src="/wow.png" 
+                                alt="Wow" 
+                                className="w-5 h-5 transform hover:scale-125 transition-transform cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCommentReaction(c.id, "wow");
+                                }}
+                              />
+                              <img 
+                                src="/sad.png" 
+                                alt="Sad" 
+                                className="w-5 h-5 transform hover:scale-125 transition-transform cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCommentReaction(c.id, "sad");
+                                }}
+                              />
+                              <img 
+                                src="/angry.png" 
+                                alt="Angry" 
+                                className="w-5 h-5 transform hover:scale-125 transition-transform cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCommentReaction(c.id, "angry");
+                                }}
+                              />
+                            </div>
+                          )}
                         </button>
                         <button
                           className="hover:underline"
