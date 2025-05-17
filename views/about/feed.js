@@ -14,20 +14,14 @@ import PostList from '@/components/common/PostList';
 
 const AboutContent = () => {
   const {profile} = useSelector(({settings}) => settings)
+  const {isPostModalOpen} = useSelector(({gathering}) => gathering)
 const dispatch = useDispatch()
-  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
 
   console.log('profile',profile)
   useEffect(() => {
     dispatch(getMyProfile());
   }, [])
-  const openPostModal = () => {
-    setIsPostModalOpen(true);
-  };
 
-  const closePostModal = () => {
-    setIsPostModalOpen(false);
-  };
 
   return (
     <div className="about-content">
@@ -200,7 +194,7 @@ const dispatch = useDispatch()
               </div>
 
               {/* Create Post Section */}
-              <CreatePostBox openPostModal={openPostModal} />
+              <CreatePostBox />
               
               {/* Post */}
               <PostList postsData={profile?.post}/>
@@ -238,7 +232,7 @@ const dispatch = useDispatch()
       </div>
 
       {/* Post Modal */}
-      <PostModal isOpen={isPostModalOpen} onClose={closePostModal} />
+      {isPostModalOpen && <PostModal />}
     </div>
   );
 };

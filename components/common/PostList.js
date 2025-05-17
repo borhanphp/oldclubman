@@ -9,7 +9,7 @@ import {
   FaLock,
 } from "react-icons/fa";
 import { SlLike } from "react-icons/sl";
-import { IoMdShareAlt } from "react-icons/io";
+import { IoIosShareAlt, IoMdShareAlt } from "react-icons/io";
 import { FaRegComment } from "react-icons/fa6";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -29,6 +29,7 @@ import {
   replyToComment,
 } from "../../views/gathering/store";
 import moment from "moment";
+import Link from "next/link";
 
 const PostList = ({postsData}) => {
   const { basicPostData } = useSelector(
@@ -40,7 +41,7 @@ const PostList = ({postsData}) => {
     dispatch(getPosts());
   }, [dispatch]);
 
-  // console.log('postsData',postsData)
+  console.log('postsData',postsData)
 
   const [showReactionsFor, setShowReactionsFor] = useState(null);
   const [showCommentReactionsFor, setShowCommentReactionsFor] = useState(null);
@@ -107,6 +108,7 @@ const PostList = ({postsData}) => {
       setShowReactionsFor(null);
       dispatch(getGathering());
       dispatch(getPosts());
+      dispatch(getPostById(postId));
     });
   };
 
@@ -221,6 +223,7 @@ const PostList = ({postsData}) => {
       });
   };
 
+console.log('basicPostData',basicPostData)
   return (
     <div className="">
       {postsData?.data?.map((item, index) => {
@@ -244,9 +247,10 @@ const PostList = ({postsData}) => {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h4 className="font-medium">
+                    <Link href={`/user/user-profile/${item?.client?.id}`}>
+                    <h4 className="font-medium cursor-pointer hover:underline">
                       {item?.client?.fname + " " + item?.client?.last_name}
-                    </h4>
+                    </h4></Link>
                     <span className="text-gray-500">•</span>
                     <p className="text-sm text-gray-500">
                       {moment(item.created_at)?.fromNow()}
@@ -381,7 +385,18 @@ const PostList = ({postsData}) => {
               <div className="flex items-center">
                 <span className="mr-2">
                   <span role="img" aria-label="surprised" className="text-xl">
-                    😯
+                    {item?.multiple_reaction_counts?.length > 0 && 
+                    item?.multiple_reaction_counts?.slice(0, 2).map((reaction, index) => (
+                      <span key={index} className="inline-block">
+                        {reaction?.type === "like" && <img src="/like.png" className="w-4 h-4 mb-[4px] inline-block"/>}
+                        {reaction?.type === "love" && <img src="/love.png" className="w-4 h-4 mb-[4px] inline-block"/>}
+                        {reaction?.type === "care" && <img src="/care.png" className="w-4 h-4 mb-[4px] inline-block"/>}
+                        {reaction?.type === "haha" && <img src="/haha.png" className="w-4 h-4 mb-[4px] inline-block"/>}
+                        {reaction?.type === "wow" && <img src="/wow.png" className="w-4 h-4 mb-[4px] inline-block"/>}
+                        {reaction?.type === "sad" && <img src="/sad.png" className="w-4 h-4 mb-[4px] inline-block"/>}
+                        {reaction?.type === "angry" && <img src="/angry.png" className="w-4 h-4 mb-[4px] inline-block"/>}
+                      </span>
+                    ))}
                   </span>
                 </span>
                 {/* <span className="text-sm">{item?.single_reaction?.client?.fname + " " + item?.single_reaction?.client?.last_name + " and " + totalCount }</span> */}
@@ -404,7 +419,20 @@ const PostList = ({postsData}) => {
                     }
                   >
                     <div className="flex items-center justify-center gap-2">
+                    {!item.single_reaction ?
+                      <>
                       <SlLike /> <span>Like</span>
+                      </>
+                     :
+                      <span className="inline-block">
+                        {item?.single_reaction?.type === "like" && <span className="font-semibold"><img src="/like.png" className="w-5 h-5 mb-[4px] inline-block"/> <span>Like</span></span>}
+                        {item?.single_reaction?.type === "love" && <span className="font-semibold"><img src="/love.png" className="w-5 h-5 inline-block mb-[4px]"/> <span className="text-red-700 text-[14px]">Love</span></span>}
+                        {item?.single_reaction?.type === "care" && <span className="font-semibold"><img src="/care.png" className="w-5 h-5 inline-block mb-[4px]"/> <span className="text-yellow-700 text-[14px]">Care</span></span>}
+                        {item?.single_reaction?.type === "haha" && <span className="font-semibold"><img src="/haha.png" className="w-5 h-5 inline-block mb-[4px]"/> <span className="text-yellow-700 text-[14px]">Haha</span></span>}
+                        {item?.single_reaction?.type === "wow" && <span className="font-semibold"><img src="/wow.png" className="w-5 h-5 inline-block mb-[4px]"/> <span className="text-yellow-700 text-[14px]">Wow</span></span>}
+                        {item?.single_reaction?.type === "sad" && <span className="font-semibold"><img src="/sad.png" className="w-5 h-5 inline-block mb-[4px]"/> <span className="text-yellow-700 text-[14px]">Sad</span></span>}
+                        {item?.single_reaction?.type === "angry" && <span className="font-semibold"><img src="/angry.png" className="w-5 h-5 inline-block mb-[4px]"/> <span className="text-red-500 text-[14px]">Angry</span></span>}
+                      </span>}
                     </div>
                   </button>
                   {showReactionsFor === item.id && (
@@ -413,40 +441,47 @@ const PostList = ({postsData}) => {
                       className="absolute bottom-full left-0 mb-2 bg-white p-2 rounded-full shadow-lg flex space-x-2 z-10"
                     >
                       <button
-                        className="transform hover:scale-125 transition-transform"
+                        className="transform cursor-pointer hover:scale-125 transition-transform"
                         onClick={() => handleReaction(item.id, "like")}
                       >
                         <img src="/like.png" alt="Like" className="w-8 h-8" />
                       </button>
                       <button
-                        className="transform hover:scale-125 transition-transform"
+                        className="transform cursor-pointer hover:scale-125 transition-transform"
                         onClick={() => handleReaction(item.id, "love")}
                       >
                         <img src="/love.png" alt="Love" className="w-8 h-8" />
                       </button>
                       <button
-                        className="transform hover:scale-125 transition-transform"
+                        className="transform cursor-pointer hover:scale-125 transition-transform"
                         onClick={() => handleReaction(item.id, "care")}
                       >
                         <img src="/care.png" alt="Care" className="w-8 h-8" />
                       </button>
                       <button
-                        className="transform hover:scale-125 transition-transform"
+                        className="transform cursor-pointer hover:scale-125 transition-transform"
                         onClick={() => handleReaction(item.id, "haha")}
                       >
                         <img src="/haha.png" alt="Haha" className="w-8 h-8" />
                       </button>
                       <button
-                        className="transform hover:scale-125 transition-transform"
+                        className="transform cursor-pointer hover:scale-125 transition-transform"
                         onClick={() => handleReaction(item.id, "wow")}
                       >
                         <img src="/wow.png" alt="Wow" className="w-8 h-8" />
                       </button>
+                      
                       <button
-                        className="transform hover:scale-125 transition-transform"
+                        className="transform cursor-pointer hover:scale-125 transition-transform"
                         onClick={() => handleReaction(item.id, "sad")}
                       >
                         <img src="/sad.png" alt="Sad" className="w-8 h-8" />
+                      </button>
+                      <button
+                        className="transform cursor-pointer hover:scale-125 transition-transform"
+                        onClick={() => handleReaction(item.id, "angry")}
+                      >
+                        <img src="/angry.png" alt="Angry" className="w-8 h-8" />
                       </button>
                     </div>
                   )}
@@ -454,7 +489,12 @@ const PostList = ({postsData}) => {
               </div>
               <button className="flex-1 py-1 cursor-pointer text-center text-gray-500 hover:bg-gray-100 rounded-md">
                 <div className="flex items-center justify-center gap-2">
-                  <IoMdShareAlt /> <span>Share (1)</span>
+                  <FaComment /> <span>Comment</span>
+                </div>
+              </button>
+              <button className="flex-1 py-1 cursor-pointer text-center text-gray-500 hover:bg-gray-100 rounded-md">
+                <div className="flex items-center justify-center gap-2">
+                  <IoIosShareAlt size={25} /> <span>Share</span>
                 </div>
               </button>
             </div>
@@ -482,7 +522,10 @@ const PostList = ({postsData}) => {
                   <div className="p-2 rounded-lg flex-grow">
                     <div className="flex flex-col bg-gray-100 p-2 rounded-md">
                       <span className="font-medium">
+                 <Link href={`/user/user-profile/${item?.latest_comment?.client_id}`} className="cursor-pointer hover:underline">
+
                         {item?.latest_comment?.client?.fname + " " + item?.latest_comment?.client?.last_name }{" "}
+                        </Link>
                         <span className="text-xs text-gray-500 ml-2">
                           {moment(item?.latest_comment?.created_at)?.fromNow()}
                         </span>
@@ -711,17 +754,19 @@ const PostList = ({postsData}) => {
                   />
                 </div>
                 <div>
+                 <Link href={`/user/user-profile/${basicPostData?.client?.id}`} className="cursor-pointer hover:underline">
                   <div className="font-semibold">
                     {basicPostData.client?.fname}{" "}
                     {basicPostData.client?.last_name}
                   </div>
+                 </Link>
                   <div className="text-xs text-gray-500">
                     {moment(basicPostData.created_at).fromNow()}
                   </div>
                 </div>
               </div>
               <button
-                className="text-2xl text-gray-400 hover:text-gray-700 ml-2"
+                className="text-2xl text-gray-400 cursor-pointer hover:text-gray-700 ml-2"
                 onClick={() => setShowCommentsModal(false)}
                 aria-label="Close"
               >
@@ -735,18 +780,153 @@ const PostList = ({postsData}) => {
               </div>
               {/* Post images if any */}
               {basicPostData.files && basicPostData.files.length > 0 && (
-                <div className="rounded-lg overflow-hidden border bg-white mb-4">
-                  <img
-                    src={
-                      process.env.NEXT_PUBLIC_FILE_PATH +
-                      "/" +
-                      basicPostData.files[0].file_path
-                    }
-                    alt="Post image"
-                    className="w-full h-64 object-cover"
-                  />
+                <div
+                  className={`mt-3 grid ${
+                    basicPostData.files.length === 1
+                      ? "grid-cols-1"
+                      : basicPostData.files.length === 2
+                      ? "grid-cols-2"
+                      : basicPostData.files.length >= 3
+                      ? "grid-cols-3"
+                      : ""
+                  } gap-2 mb-4`}
+                >
+                  {basicPostData.files.map((file, fileIndex) => (
+                    <div
+                      key={fileIndex}
+                      className={`overflow-hidden rounded-lg ${
+                        basicPostData.files.length === 1 ? "max-h-96" : "h-48"
+                      } bg-gray-100`}
+                    >
+                      <img
+                        src={
+                          process.env.NEXT_PUBLIC_FILE_PATH +
+                          "/" +
+                          file.file_path
+                        }
+                        alt={`Post image ${fileIndex + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
                 </div>
               )}
+
+              {/* Reactions section - same as in post list */}
+              <div className="border-gray-200 border-t border-b py-2 mt-2 mb-4">
+                <div className="flex items-center">
+                  <span className="mr-2">
+                    <span role="img" aria-label="surprised" className="text-xl">
+
+{basicPostData?.reactions?.length > 0 && 
+                    basicPostData?.reactions?.slice(0, 2).map((reaction, index) => (
+                      <span key={index} className="inline-block">
+                        {reaction?.type === "like" && <img src="/like.png" className="w-4 h-4 mb-[4px] inline-block"/>}
+                        {reaction?.type === "love" && <img src="/love.png" className="w-4 h-4 mb-[4px] inline-block"/>}
+                        {reaction?.type === "care" && <img src="/care.png" className="w-4 h-4 mb-[4px] inline-block"/>}
+                        {reaction?.type === "haha" && <img src="/haha.png" className="w-4 h-4 mb-[4px] inline-block"/>}
+                        {reaction?.type === "wow" && <img src="/wow.png" className="w-4 h-4 mb-[4px] inline-block"/>}
+                        {reaction?.type === "sad" && <img src="/sad.png" className="w-4 h-4 mb-[4px] inline-block"/>}
+                        {reaction?.type === "angry" && <img src="/angry.png" className="w-4 h-4 mb-[4px] inline-block"/>}
+                      </span>
+                    ))}
+                    </span>
+                  </span>
+                  <span className="text-sm">
+                    {basicPostData?.reactions?.length || 0}
+                  </span>
+                  <span className="flex items-center gap-2 ml-auto text-sm text-gray-500">
+                    {basicPostData.comments?.length || 0} <FaRegComment className="" />
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex justify-between py-1 border-gray-200 border-b mb-4">
+                <div className="flex-1 relative">
+                  <div className="relative">
+                    <button
+                      className="w-full py-1 cursor-pointer text-center text-blue-500 bg-gray-100 rounded-md"
+                      onClick={() =>
+                        setShowReactionsFor(
+                          showReactionsFor === basicPostData.id ? null : basicPostData.id
+                        )
+                      }
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                      {!basicPostData.single_reaction ?
+                      <>
+                      <SlLike /> <span>Like</span>
+                      </>
+                     :
+                      <span className="inline-block">
+                        {basicPostData?.single_reaction?.type === "like" && <span className="font-semibold"><img src="/like.png" className="w-5 h-5 mb-[4px] inline-block"/> <span>Like</span></span>}
+                        {basicPostData?.single_reaction?.type === "love" && <span className="font-semibold"><img src="/love.png" className="w-5 h-5 inline-block mb-[4px]"/> <span className="text-red-700 text-[14px]">Love</span></span>}
+                        {basicPostData?.single_reaction?.type === "care" && <span className="font-semibold"><img src="/care.png" className="w-5 h-5 inline-block mb-[4px]"/> <span className="text-yellow-700 text-[14px]">Care</span></span>}
+                        {basicPostData?.single_reaction?.type === "haha" && <span className="font-semibold"><img src="/haha.png" className="w-5 h-5 inline-block mb-[4px]"/> <span className="text-yellow-700 text-[14px]">Haha</span></span>}
+                        {basicPostData?.single_reaction?.type === "wow" && <span className="font-semibold"><img src="/wow.png" className="w-5 h-5 inline-block mb-[4px]"/> <span className="text-yellow-700 text-[14px]">Wow</span></span>}
+                        {basicPostData?.single_reaction?.type === "sad" && <span className="font-semibold"><img src="/sad.png" className="w-5 h-5 inline-block mb-[4px]"/> <span className="text-yellow-700 text-[14px]">Sad</span></span>}
+                        {basicPostData?.single_reaction?.type === "angry" && <span className="font-semibold"><img src="/angry.png" className="w-5 h-5 inline-block mb-[4px]"/> <span className="text-red-500 text-[14px]">Angry</span></span>}
+                      </span>}
+                      </div>
+                    </button>
+                    {showReactionsFor === basicPostData.id && (
+                      <div
+                        ref={reactionRef}
+                        className="absolute bottom-full left-0 mb-2 bg-white p-2 rounded-full shadow-lg flex space-x-2 z-10"
+                      >
+                        <button
+                          className="transform hover:scale-125 transition-transform"
+                          onClick={() => handleReaction(basicPostData.id, "like")}
+                        >
+                          <img src="/like.png" alt="Like" className="w-8 h-8" />
+                        </button>
+                        <button
+                          className="transform hover:scale-125 transition-transform"
+                          onClick={() => handleReaction(basicPostData.id, "love")}
+                        >
+                          <img src="/love.png" alt="Love" className="w-8 h-8" />
+                        </button>
+                        <button
+                          className="transform hover:scale-125 transition-transform"
+                          onClick={() => handleReaction(basicPostData.id, "care")}
+                        >
+                          <img src="/care.png" alt="Care" className="w-8 h-8" />
+                        </button>
+                        <button
+                          className="transform hover:scale-125 transition-transform"
+                          onClick={() => handleReaction(basicPostData.id, "haha")}
+                        >
+                          <img src="/haha.png" alt="Haha" className="w-8 h-8" />
+                        </button>
+                        <button
+                          className="transform hover:scale-125 transition-transform"
+                          onClick={() => handleReaction(basicPostData.id, "wow")}
+                        >
+                          <img src="/wow.png" alt="Wow" className="w-8 h-8" />
+                        </button>
+                        <button
+                          className="transform hover:scale-125 transition-transform"
+                          onClick={() => handleReaction(basicPostData.id, "sad")}
+                        >
+                          <img src="/sad.png" alt="Sad" className="w-8 h-8" />
+                        </button>
+                         <button
+                          className="transform hover:scale-125 transition-transform"
+                          onClick={() => handleReaction(basicPostData.id, "angry")}
+                        >
+                          <img src="/angry.png" alt="Angry" className="w-8 h-8" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <button className="flex-1 py-1 cursor-pointer text-center text-gray-500 hover:bg-gray-100 rounded-md">
+                  <div className="flex items-center justify-center gap-2">
+                    <IoMdShareAlt /> <span>Share (1)</span>
+                  </div>
+                </button>
+              </div>
+              
               {/* Comments Section */}
               <h4 className="font-semibold mb-4 text-lg border-t">Comments</h4>
               {basicPostData?.comments && basicPostData?.comments?.length > 0 ? (
@@ -761,9 +941,12 @@ const PostList = ({postsData}) => {
                     <div className="flex-1">
                       <div className="bg-gray-100 p-3 rounded-2xl">
                         <div className="font-medium text-sm">
+                 <Link href={`/user/user-profile/${c?.client_id}`} className="cursor-pointer hover:underline">
+
                           {c?.client_comment?.fname +
                             " " +
                             c?.client_comment?.last_name}{" "}
+                            </Link>
                           <span className="text-xs text-gray-500 ml-2">
                             {moment(c.created_at).fromNow()}
                           </span>

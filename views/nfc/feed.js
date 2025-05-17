@@ -13,22 +13,15 @@ import FollowSuggestion from '@/components/common/FollowSuggestion';
 
 const NfcContent = () => {
   const {nfcData, loading} = useSelector(({nfc}) => nfc);
+  const {isPostModalOpen} = useSelector(({gathering}) => gathering);
+
   const dispatch = useDispatch();
-  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
-  console.log(nfcData?.nfc_cards?.data  )
   
   useEffect(() => {
     dispatch(getMyNfc());
   }, [])
   
 
-  const openPostModal = () => {
-    setIsPostModalOpen(true);
-  };
-
-  const closePostModal = () => {
-    setIsPostModalOpen(false);
-  };
 
 
   return (
@@ -118,7 +111,7 @@ const NfcContent = () => {
       </div>
 
       {/* Post Modal */}
-      <PostModal isOpen={isPostModalOpen} onClose={closePostModal} />
+      {isPostModalOpen && <PostModal/>}
     </div>
   );
 };

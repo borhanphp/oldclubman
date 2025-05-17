@@ -5,8 +5,9 @@ import { usePathname } from 'next/navigation'
 import { getAllFollowers, getMyProfile } from '@/views/settings/store';
 import { useDispatch, useSelector } from 'react-redux';
 
-function FeedHeader() {
-  const { profile} = useSelector(({settings}) => settings)
+function FeedHeader({userProfile = false}) {
+  const { profile, userProfileData} = useSelector(({settings}) => settings)
+  const data = userProfile ? userProfileData : profile;
   const pathname = usePathname();
   const dispatch = useDispatch();
   const [showDropdown, setShowDropdown] = useState(false);
@@ -27,26 +28,26 @@ function FeedHeader() {
         {/* Cover Photo */}
       <div className="cover-photo rounded-t-md relative w-full h-60 overflow-hidden">
         <div className="absolute inset-0 w-full">
-          <img src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + profile?.client?.cover_photo} className="w-full h-full object-cover"/>
+          <img src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + data?.client?.cover_photo} className="w-full h-full object-cover"/>
         </div>
       </div>
       
       {/* Profile Section */}
-      <div className="profile-section bg-white px-6 py-4 relative">
+      <div className="data-section bg-white px-6 py-4 relative">
         <div className="flex justify-between ">
           <div className="flex items-end">
             {/* Profile Picture */}
-            <div className="profile-pic relative -mt-16 mr-4">
+            <div className="data-pic relative -mt-16 mr-4">
               <div className="w-28 h-28 rounded-xl border-4 border-white overflow-hidden bg-white flex items-center justify-center text-white text-2xl">
-                <img src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + profile?.client?.image} className="w-full h-full object-cover rounded-full"/>
+                <img src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + data?.client?.image} className="w-full h-full object-cover rounded-full"/>
               </div>
             </div>
             
             {/* Profile Info */}
-            <div className="profile-info mb-2">
-              <h2 className="text-xl font-bold">{profile?.client?.fname + " " + profile?.client?.last_name}</h2>
+            <div className="data-info mb-2">
+              <h2 className="text-xl font-bold">{data?.client?.fname + " " + data?.client?.last_name}</h2>
               <p className="text-gray-600 text-sm">
-                <span>{profile.followers && profile.followers} Followers</span> · <span>{profile.following && profile.following} Following</span>
+                <span>{data.followers && data.followers} Followers</span> · <span>{data.following && data.following} Following</span>
               </p>
             </div>
           </div>
@@ -80,7 +81,7 @@ function FeedHeader() {
       </div>
       
       {/* Navigation Tabs */}
-      <div className="profile-nav rounded-b-md bg-white border-t border-b border-gray-200">
+      <div className="data-nav rounded-b-md bg-white border-t border-b border-gray-200">
         <div className="mx-auto">
           <div className="flex">
             <Link 

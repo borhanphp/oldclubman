@@ -21,6 +21,19 @@ export const getMyProfile = createAsyncThunk( 'settings/getMyProfile', async ( )
     return result;
 } )
 
+export const getUserProfile = createAsyncThunk( 'settings/getUserProfile', async (id, limit = 10) => {
+  const result = axios.get( `client/user_profile/${id}/10` )
+  .then((res) => {
+      const resData = res.data.data;
+      console.log('singal user',resData)
+      return resData;
+  })
+  .catch((err) => {
+      errorResponse(err);
+  })
+  return result;
+} )
+
 export const storeBsicInformation = createAsyncThunk( 'settings/storeBsicInformation', async ( data) => {
   const result = axios.post( "/client/save_profile", data )
   .then((res) => {
@@ -67,7 +80,9 @@ export const settingsSlice = createSlice({
     loading: false,
     myFollowers: [],
     profile:{},
-    totalFollowers: 0
+    totalFollowers: 0,
+    userProfileData: {},
+
   },
   reducers: {
     bindProfileData: (state, action) => {
@@ -102,6 +117,10 @@ export const settingsSlice = createSlice({
       })
       .addCase(storeBsicInformation.fulfilled, (state, action) => {
         state.loading = false;
+      })
+      .addCase(getUserProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        state.userProfileData = action.payload;
       })
   },
 });
