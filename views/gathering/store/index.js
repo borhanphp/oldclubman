@@ -178,12 +178,47 @@ export const likeComment = createAsyncThunk(
   }
 );
 
+export const likeReply = createAsyncThunk(
+  "gathering/likeComment",
+  async (data, { dispatch }) => {
+    dispatch(showPreloader());
+    try {
+      const response = await axios.post(`/comment/replay/reaction`, data);
+      dispatch(hidePreloader());
+      return response.data;
+    } catch (err) {
+      dispatch(hidePreloader());
+      errorResponse(err);
+      throw err;
+    }
+  }
+);
+
 export const replyToComment = createAsyncThunk(
   "gathering/replyToComment",
   async (data, { dispatch }) => {
     dispatch(showPreloader());
     try {
       const response = await axios.post(`/comment/replay`, data);
+      dispatch(hidePreloader());
+      return response.data;
+    } catch (err) {
+      dispatch(hidePreloader());
+      errorResponse(err);
+      throw err;
+    }
+  }
+);
+
+
+
+export const getCommentReplies = createAsyncThunk( 
+  'gathering/getCommentReplies', 
+  async (commentId, { dispatch }) => {
+    dispatch(showPreloader());
+    try {
+      const response = await axios.get(`comment/reply?comment_id=${commentId}`);
+      console.log('comment reply',response)
       dispatch(hidePreloader());
       return response.data;
     } catch (err) {
