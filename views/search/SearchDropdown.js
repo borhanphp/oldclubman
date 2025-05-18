@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setSearchQuery, setSearchResults, setSearchLoading } from './store';
 import api from '@/helpers/axios';
@@ -13,6 +13,31 @@ const SearchDropdown = () => {
   const dispatch = useDispatch();
   const { query, results, loading } = useSelector(state => state.search);
   const dropdownRef = useRef(null);
+  const [followingStatus, setFollowingStatus] = useState({});
+
+  // Function to handle following a user
+  const handleFollow = async (userId) => {
+    try {
+      setFollowingStatus(prev => ({ ...prev, [userId]: 'loading' }));
+      
+      // Make API call to follow the user
+      const response = await api.post('/follow', { 
+        following_id: userId 
+      });
+      
+      if (response.data.success) {
+        // Update local state to show following
+        setFollowingStatus(prev => ({ ...prev, [userId]: 'following' }));
+        console.log('Successfully followed user', response.data);
+      } else {
+        setFollowingStatus(prev => ({ ...prev, [userId]: null }));
+        console.error('Failed to follow user', response.data);
+      }
+    } catch (error) {
+      console.error('Error following user:', error);
+      setFollowingStatus(prev => ({ ...prev, [userId]: null }));
+    }
+  };
 
   useEffect(() => {
     if (query.trim() === '') {
@@ -89,8 +114,20 @@ const SearchDropdown = () => {
                       )}
                     </div>
                   </div>
-                  <button className="px-4 py-2 bg-blue-100 text-blue-600 rounded font-semibold hover:bg-blue-200 transition">
-                    {result.button || 'Follow'}
+                  <button 
+                    className={`px-4 py-2 rounded font-semibold transition ${
+                      followingStatus[result.id] === 'following' 
+                        ? 'bg-green-100 text-green-600 hover:bg-green-200' 
+                        : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                    }`}
+                    onClick={() => handleFollow(result.id)}
+                    disabled={followingStatus[result.id] === 'loading' || followingStatus[result.id] === 'following'}
+                  >
+                    {followingStatus[result.id] === 'loading' 
+                      ? 'Loading...' 
+                      : followingStatus[result.id] === 'following' 
+                        ? 'Following' 
+                        : result.button || 'Follow'}
                   </button>
                 </div>
               ))
