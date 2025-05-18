@@ -314,11 +314,15 @@ const PostList = ({ postsData }) => {
               <div className="flex">
                 <div className="w-10 h-10 border border-blue-600 rounded-full overflow-hidden mr-3">
                   <img
-                    src={
+                    src={ item?.client?.image ?
                       process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
-                      item?.client?.image
+                      item?.client?.image : "/common-avator.jpg"
                     }
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "/common-avator.jpg";
+                    }}
                   />
                 </div>
                 <div>
@@ -695,6 +699,11 @@ const PostList = ({ postsData }) => {
             >
               View all comments
             </div>
+
+
+
+
+
             {/* Comments section */}
             {item?.latest_comment && (
               <div className="mt-2 pl-2">
@@ -702,11 +711,15 @@ const PostList = ({ postsData }) => {
                   <div className="flex">
                     <div className="w-8 h-8 rounded-full overflow-hidden mr-2 mt-2">
                       <img
-                        src={
+                        src={ item?.latest_comment?.client?.image ?
                           process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
-                          item?.latest_comment?.client?.image
+                          item?.latest_comment?.client?.image : "/common-avator.jpg"
                         }
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = "/common-avator.jpg";
+                        }}
                       />
                     </div>
                     <div className="p-2 rounded-lg flex-grow">
@@ -880,6 +893,10 @@ const PostList = ({ postsData }) => {
                 </div>
               </div>
             )}
+
+
+
+            {/* all comments  */}
             <div className="mt-2 pl-2">
               {(item?.comments || []).map((c, i) => {
                 const key = `${item.id}-${i}`;
@@ -1180,6 +1197,11 @@ const PostList = ({ postsData }) => {
         );
       })}
 
+
+
+
+
+{/* comment modal */}
       {showCommentsModal && basicPostData && (
         <div
           className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50"
@@ -1208,11 +1230,15 @@ const PostList = ({ postsData }) => {
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-10 h-10 rounded-full overflow-hidden">
                   <img
-                    src={
+                    src={ basicPostData?.client?.image ?
                       process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
-                      basicPostData?.client?.image
+                      basicPostData?.client?.image : "/common-avator.jpg"
                     }
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "/common-avator.jpg";
+                    }}
                   />
                 </div>
                 <div>
@@ -1529,11 +1555,15 @@ const PostList = ({ postsData }) => {
                   <div key={i} className="mb-4 flex items-start">
                     <div className="w-9 h-9 rounded-full overflow-hidden mr-3">
                       <img
-                        src={
+                        src={ c?.client?.image ?
                           process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
-                          c?.client?.image
+                          c?.client?.image : "/common-avator.jpg"
                         }
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = "/common-avator.jpg";
+                        }}
                       />
                     </div>
                     <div className="flex-1">
@@ -1924,11 +1954,15 @@ const PostList = ({ postsData }) => {
             <div className="p-4 bg-gray-50 flex items-center gap-2">
               <div className="w-9 h-9 rounded-full overflow-hidden">
                 <img
-                  src={
+                  src={ basicPostData?.client?.image ? 
                     process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
-                    basicPostData?.client?.image
+                    basicPostData?.client?.image : "/common-avator.jpg"
                   }
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "/common-avator.jpg";
+                  }}
                 />
               </div>
               <input
