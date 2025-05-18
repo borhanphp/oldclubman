@@ -82,6 +82,18 @@ export const followTo = createAsyncThunk( 'settings/followTo', async ( id) => {
   return result;
 } )
 
+export const unFollowTo = createAsyncThunk( 'settings/unFollowTo', async ( id) => {
+  const result = axios.post( "/unfollow", id )
+  .then((res) => {
+      const resData = res.data.data;
+      return resData;
+  })
+  .catch((err) => {
+      errorResponse(err);
+  })
+  return result;
+} )
+
 
 export const settingsSlice = createSlice({
   name: "settings",
@@ -90,6 +102,7 @@ export const settingsSlice = createSlice({
     profileSettingData: initialProfileSettingsData,
     personalPosts: [],
     loading: false,
+    followLoading: false,
     myFollowers: [],
     profile:{},
     totalFollowers: 0,
@@ -133,6 +146,24 @@ export const settingsSlice = createSlice({
       .addCase(getUserProfile.fulfilled, (state, action) => {
         state.loading = false;
         state.userProfileData = action.payload;
+      })
+      .addCase(unFollowTo.fulfilled, (state, action) => {
+        state.followLoading = false;
+      })
+      .addCase(unFollowTo.pending, (state, action) => {
+        state.followLoading = true;
+      })
+      .addCase(unFollowTo.rejected, (state, action) => {
+        state.followLoading = false;
+      })
+      .addCase(followTo.fulfilled, (state, action) => {
+        state.followLoading = false;
+      })
+      .addCase(followTo.pending, (state, action) => {
+        state.followLoading = true;
+      })
+      .addCase(followTo.rejected, (state, action) => {
+        state.followLoading = false;
       })
   },
 });

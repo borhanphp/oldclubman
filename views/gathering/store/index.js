@@ -87,6 +87,21 @@ export const updatePost = createAsyncThunk( 'gathering/updatePost', async (data,
   return result;
 } )
 
+export const sharePost = createAsyncThunk( 'gathering/sharePost', async (id, { dispatch }) => {
+  dispatch(showPreloader());
+  const result = axios.post( "post/share", id )
+  .then((res) => {
+      const resData = res.data.data;
+      dispatch(hidePreloader());
+      return resData;
+  })
+  .catch((err) => {
+      dispatch(hidePreloader());
+      errorResponse(err);
+  })
+  return result;
+} )
+
 export const storeComments = createAsyncThunk( 'gathering/storeComments', async (data, { dispatch }) => {
   dispatch(showPreloader());
   const result = axios.post( "comment/store", data )

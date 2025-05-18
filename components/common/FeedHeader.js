@@ -1,14 +1,15 @@
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { FaEllipsisH, FaBookmark, FaEdit, FaMegaphone } from "react-icons/fa";
-import { usePathname } from "next/navigation";
-import { followTo, getAllFollowers, getMyProfile } from "@/views/settings/store";
+import { useParams, usePathname } from "next/navigation";
+import { followTo, getAllFollowers, getMyProfile, getUserProfile, unFollowTo } from "@/views/settings/store";
 import { useDispatch, useSelector } from "react-redux";
 
 function FeedHeader({ userProfile = false }) {
-  const { profile, userProfileData } = useSelector(({ settings }) => settings);
+  const { profile, userProfileData, followLoading } = useSelector(({ settings }) => settings);
   const data = userProfile ? userProfileData : profile;
   const pathname = usePathname();
+  const params = useParams();
   const dispatch = useDispatch();
   const [showDropdown, setShowDropdown] = useState(false);
   useEffect(() => {
@@ -24,8 +25,11 @@ function FeedHeader({ userProfile = false }) {
   };
 
   const handleFollow = (following_id) => {
-    console.log('following_id',following_id)
-    dispatch(followTo({following_id}));
+    const action = userProfileData?.isfollowed === 1 ? unFollowTo({following_id}) : followTo({following_id})
+    dispatch(action)
+    .then((res) => {
+      dispatch(getUserProfile(params?.id));
+    })
   }
 
   return (
@@ -88,12 +92,13 @@ function FeedHeader({ userProfile = false }) {
           {/* More Options */}
           {userProfile ? (
             <div className="relative ">
-              <button
-                className={`px-4 py-2 bg-blue-200 mt-2 cursor-pointer rounded font-semibold transition`}
-                onClick={() => {handleFollow(data?.client?.id)}}
-              >
-                Follow
-              </button>
+               <button
+               className={`px-4 py-2 ${userProfileData?.isfollowed === 1 ? "bg-red-200" : "bg-blue-200"} mt-2 cursor-pointer rounded font-semibold transition`}
+               onClick={() => {handleFollow(data?.client?.id)}}
+             >
+               {followLoading ? "Loading..." : userProfileData?.isfollowed === 1 ? "UnFollow" :"Follow"}
+             </button>
+             
             </div>
           ) : (
             <div className="relative ">

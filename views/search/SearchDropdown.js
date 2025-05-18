@@ -2,9 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setSearchQuery, setSearchResults, setSearchLoading } from './store';
 import api from '@/helpers/axios';
+import { followTo, unFollowTo } from '../settings/store';
 
 const searchApi = async (query) => {
-  const response = await api.get(`/client/search_by_people`, query);
+  const response = await api.get(`/client/search_by_people?search=${query}`);
   console.log('response of search',response)
   return response.data.data.follow_connections;
 };
@@ -12,30 +13,73 @@ const searchApi = async (query) => {
 const SearchDropdown = () => {
   const dispatch = useDispatch();
   const { query, results, loading } = useSelector(state => state.search);
+  const { followLoading } = useSelector(state => state.settings);
   const dropdownRef = useRef(null);
   const [followingStatus, setFollowingStatus] = useState({});
+  const [loadingStates, setLoadingStates] = useState({});
 
-  // Function to handle following a user
-  const handleFollow = async (userId) => {
+  // // Function to handle following a user
+  // const handleFollow = async (userId) => {
+  //   try {
+  //     // Set loading state for just this specific user ID
+  //     setLoadingStates(prev => ({ ...prev, [userId]: true }));
+      
+  //     // Make API call to follow the user
+  //     const response = await api.post('/follow', { 
+  //       following_id: userId 
+  //     });
+      
+  //     if (response.data.success) {
+  //       // Update local state to show following
+  //       setFollowingStatus(prev => ({ ...prev, [userId]: 'following' }));
+  //       console.log('Successfully followed user', response.data);
+  //     } else {
+  //       setFollowingStatus(prev => ({ ...prev, [userId]: null }));
+  //       console.error('Failed to follow user', response.data);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error following user:', error);
+  //     setFollowingStatus(prev => ({ ...prev, [userId]: null }));
+  //   } finally {
+  //     setTimeout(() => {
+  //       setLoadingStates(prev => ({ ...prev, [userId]: false }));
+  //     }, 1000);
+  //   }
+  // };
+
+   // Function to handle following a user
+   const handleFollow = async (userId) => {
     try {
-      setFollowingStatus(prev => ({ ...prev, [userId]: 'loading' }));
+      setLoadingStates(prev => ({ ...prev, [userId]: true }));
+      await dispatch(followTo({following_id: userId}));
       
-      // Make API call to follow the user
-      const response = await api.post('/follow', { 
-        following_id: userId 
-      });
-      
-      if (response.data.success) {
-        // Update local state to show following
-        setFollowingStatus(prev => ({ ...prev, [userId]: 'following' }));
-        console.log('Successfully followed user', response.data);
-      } else {
-        setFollowingStatus(prev => ({ ...prev, [userId]: null }));
-        console.error('Failed to follow user', response.data);
-      }
+      // Reload search results after successful follow
+      dispatch(setSearchLoading(true));
+      const newResults = await searchApi(query);
+      dispatch(setSearchResults(newResults));
     } catch (error) {
       console.error('Error following user:', error);
-      setFollowingStatus(prev => ({ ...prev, [userId]: null }));
+    } finally {
+      dispatch(setSearchLoading(false));
+      setLoadingStates(prev => ({ ...prev, [userId]: false }));
+    }
+  };
+
+  // Function to handle unfollowing a user
+  const handleUnFollow = async (userId) => {
+    try {
+      setLoadingStates(prev => ({ ...prev, [userId]: true }));
+      await dispatch(unFollowTo({following_id: userId}));
+      
+      // Reload search results after successful unfollow
+      dispatch(setSearchLoading(true));
+      const newResults = await searchApi(query);
+      dispatch(setSearchResults(newResults));
+    } catch (error) {
+      console.error('Error unfollowing user:', error);
+    } finally {
+      dispatch(setSearchLoading(false));
+      setLoadingStates(prev => ({ ...prev, [userId]: false }));
     }
   };
 
@@ -79,7 +123,7 @@ const SearchDropdown = () => {
       />
       {query && results.length > 0 && (
         <div
-          className="fixed left-1/2 top-[80px] w-[80rem] transform -translate-x-1/2 bg-white shadow-lg z-50 border-gray-200 px-4"
+          className="fixed left-1/2 top-[70px] w-[80rem] transform -translate-x-1/2 bg-white shadow-lg z-50 border-gray-200 px-4"
           style={{ maxHeight: '60vh', overflowY: 'auto' }}
         >
           <div className="py-4">
@@ -114,21 +158,25 @@ const SearchDropdown = () => {
                       )}
                     </div>
                   </div>
-                  <button 
-                    className={`px-4 py-2 rounded font-semibold transition ${
-                      followingStatus[result.id] === 'following' 
-                        ? 'bg-green-100 text-green-600 hover:bg-green-200' 
-                        : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
-                    }`}
-                    onClick={() => handleFollow(result.id)}
-                    disabled={followingStatus[result.id] === 'loading' || followingStatus[result.id] === 'following'}
-                  >
-                    {followingStatus[result.id] === 'loading' 
-                      ? 'Loading...' 
-                      : followingStatus[result.id] === 'following' 
-                        ? 'Following' 
-                        : result.button || 'Follow'}
-                  </button>
+
+                  {result.followed === "followed" ? 
+                   <button 
+                   className={`px-4 py-2 rounded font-semibold transition cursor-pointer bg-blue-100 text-red-400 hover:bg-red-200`}
+                   onClick={() => handleUnFollow(result.id)}
+                   disabled={loadingStates[result.id]}
+                 >
+                   {loadingStates[result.id] ? "UnFollowing..." : "UnFollow"}
+                 </button>
+                  : 
+                   <button 
+                   className={`px-4 py-2 rounded font-semibold transition cursor-pointer bg-blue-100 text-blue-600 hover:bg-blue-200`}
+                   onClick={() => handleFollow(result.id)}
+                   disabled={loadingStates[result.id]}
+                 >
+                   {loadingStates[result.id] ? "Following..." : "Follow"}
+                 </button>
+                  }
+                 
                 </div>
               ))
             )}

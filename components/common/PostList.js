@@ -30,6 +30,7 @@ import {
   replyToComment,
   getCommentReplies,
   likeReply,
+  sharePost,
 } from "../../views/gathering/store";
 import moment from "moment";
 import Link from "next/link";
@@ -305,6 +306,13 @@ const PostList = ({ postsData }) => {
         console.error("Failed to submit reply to reply:", error);
       });
   };
+
+  const handleShare = (post_id) => {
+    dispatch(sharePost({post_id}))
+    .then((res) => {
+      dispatch(getPosts());
+    })
+  }
 
   return (
     <div className="">
@@ -667,7 +675,10 @@ const PostList = ({ postsData }) => {
                 </div>
               </button>
               <button className="flex-1 py-1 cursor-pointer text-center text-gray-500 hover:bg-gray-100 rounded-md">
-                <div className="flex items-center justify-center gap-2">
+                <div 
+                className="flex items-center justify-center gap-2"
+                onClick={() => {handleShare(item?.id)}}
+                >
                   <IoIosShareAlt size={25} /> <span>Share</span>
                 </div>
               </button>
