@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { setSearchQuery, setSearchResults, setSearchLoading } from './store';
+import { setSearchQuery, setSearchResults, setSearchLoading, removeQuery } from './store';
 import api from '@/helpers/axios';
 import { followTo, unFollowTo } from '../settings/store';
 import Link from 'next/link';
@@ -17,6 +17,11 @@ const SearchDropdown = () => {
   const dropdownRef = useRef(null);
   const [loadingStates, setLoadingStates] = useState({});
 
+  useEffect(() => {
+    return () => (
+      dispatch(removeQuery())
+    )
+  }, [])
 
    // Function to handle following a user
    const handleFollow = async (userId) => {
@@ -120,7 +125,7 @@ const SearchDropdown = () => {
                     </div>
                     <div>
                     <Link href={`/user/user-profile/${result?.id}`}>
-                      <div className="flex items-center hover:underline font-semibold text-gray-900">
+                      <div onClick={() => dispatch(removeQuery())} className="flex items-center hover:underline font-semibold text-gray-900">
                         {result.fname + " " + result.last_name}
                       </div>
                       </Link>
