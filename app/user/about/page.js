@@ -3,7 +3,6 @@
 import React from 'react';
 import AboutContent from '@/views/about/feed';
 import CommonLayout from '@/components/common/CommonLayout';
-
 export default function AboutPage() {
   return (
    <CommonLayout>

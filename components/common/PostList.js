@@ -40,8 +40,7 @@ import { TbMessageReport } from "react-icons/tb";
 const PostList = ({ postsData }) => {
   const { basicPostData } = useSelector(({ gathering }) => gathering);
   const { profile } = useSelector(({ settings }) => settings);
-  console.log('profile',profile.client.id)
-  console.log('postsData',postsData)
+ 
   const dispatch = useDispatch();
   useEffect(() => {
     dispatch(getGathering());

@@ -3,8 +3,6 @@
 import React from 'react';
 import GatheringContent from '@/views/gathering/feed';
 import CommonLayout from '@/components/common/CommonLayout';
-import { useSelector } from 'react-redux';
-
 export default function GatheringPage() {
   return (
     <>

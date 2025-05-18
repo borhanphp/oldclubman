@@ -32,8 +32,8 @@ const GatheringContent = () => {
         setAllPosts(postsData.data);
       } else {
         // Filter out any duplicate posts by id before adding new ones
-        const existingPostIds = new Set(allPosts.map(post => post.id));
-        const newPosts = postsData.data.filter(post => !existingPostIds.has(post.id));
+        const existingPostIds = new Set(allPosts?.map(post => post?.id));
+        const newPosts = postsData.data.filter(post => !existingPostIds?.has(post?.id));
         setAllPosts(prev => [...prev, ...newPosts]);
       }
     }
@@ -76,23 +76,12 @@ const GatheringContent = () => {
   
   const [showReactionsFor, setShowReactionsFor] = useState(null);
   const [openDropdownFor, setOpenDropdownFor] = useState(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editPostContent, setEditPostContent] = useState("");
   const [editPostId, setEditPostId] = useState(null);
   
 
-  const openPostModal = () => {
-    dispatch(setPostModalOpen(true));
-  };
-
-  const closePostModal = () => {
-    dispatch(setPostModalOpen(false));
-  };
-  
-
 
   const closeEditModal = () => {
-    setIsEditModalOpen(false);
     setEditPostContent("");
     setEditPostId(null);
   };

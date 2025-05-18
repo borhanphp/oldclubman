@@ -1,3 +1,4 @@
+"use client"
 import SocialNavbar from "@/components/common/SocialNavbar";
 export default function CommonLayout({ children }) {
   return (
