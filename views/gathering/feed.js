@@ -16,12 +16,63 @@ import PostList from '@/components/common/PostList';
 const GatheringContent = () => {
   const {gatheringData, postsData, loading, basicPostData, isPostModalOpen} = useSelector(({gathering}) => gathering);
   const dispatch = useDispatch();
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const [allPosts, setAllPosts] = useState([]);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const loadMoreRef = useRef(null);
 
   useEffect(() => {
     dispatch(getGathering());
-    dispatch(getPosts());
+    dispatch(getPosts(1));
   }, [])
+  
+  useEffect(() => {
+    if (postsData?.data) {
+      if (currentPage === 1) {
+        setAllPosts(postsData.data);
+      } else {
+        // Filter out any duplicate posts by id before adding new ones
+        const existingPostIds = new Set(allPosts.map(post => post.id));
+        const newPosts = postsData.data.filter(post => !existingPostIds.has(post.id));
+        setAllPosts(prev => [...prev, ...newPosts]);
+      }
+    }
+  }, [postsData, currentPage]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && !loadingMore) {
+          handleLoadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+    
+    return () => {
+      if (loadMoreRef.current) {
+        observer.unobserve(loadMoreRef.current);
+      }
+    };
+  }, [loadMoreRef, loadingMore]);
+
+  const handleLoadMore = () => {
+    if (loadingMore) return;
+    
+    setLoadingMore(true);
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    
+    dispatch(getPosts(nextPage))
+      .finally(() => {
+        setLoadingMore(false);
+      });
+  };
   
   const [showReactionsFor, setShowReactionsFor] = useState(null);
   const [openDropdownFor, setOpenDropdownFor] = useState(null);
@@ -117,7 +168,17 @@ const GatheringContent = () => {
               <CreatePostBox />
               
               {/* Post */}
-              <PostList postsData={postsData}/>
+              <PostList postsData={{...postsData, data: allPosts}}/>
+              <div 
+                ref={loadMoreRef}
+                className="flex justify-center mt-4 mb-8 py-4"
+              >
+                {loadingMore ? (
+                  <div className="text-blue-700 font-medium">Loading more posts...</div>
+                ) : (
+                  <div className="text-gray-400">Scroll for more posts</div>
+                )}
+              </div>
              
             </div>
             
@@ -155,7 +216,6 @@ const GatheringContent = () => {
       {/* Post Modal */}
       {isPostModalOpen && <PostModal />}
       
-      {/* Edit Post Modal */}
     
     </div>
   );

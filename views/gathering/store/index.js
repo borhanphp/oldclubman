@@ -26,9 +26,9 @@ export const getGathering = createAsyncThunk( 'gathering/getGathering', async (_
     return result;
 } )
 
-export const getPosts = createAsyncThunk( 'gathering/getPosts', async (_, { dispatch }) => {
+export const getPosts = createAsyncThunk( 'gathering/getPosts', async (page = 1, { dispatch }) => {
   dispatch(showPreloader());
-  const result = axios.get( "post/10?page=1" )
+  const result = axios.get( `post/10?page=${page}` )
   .then((res) => {
       const resData = res.data.data;
       dispatch(hidePreloader());

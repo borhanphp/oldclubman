@@ -671,7 +671,12 @@ const PostList = ({ postsData }) => {
                 </div>
               </div>
               <button className="flex-1 py-1 cursor-pointer text-center text-gray-500 hover:bg-gray-100 rounded-md">
-                <div className="flex items-center justify-center gap-2">
+                <div 
+                  className="flex items-center justify-center gap-2"
+                  onClick={() => {
+                    handleViewAllComments(item.id);
+                  }}
+                >
                   <FaComment /> <span>Comment</span>
                 </div>
               </button>
@@ -1948,6 +1953,7 @@ const PostList = ({ postsData }) => {
           </div>
         </div>
       )}
+
     </div>
   );
 };
