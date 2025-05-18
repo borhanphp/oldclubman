@@ -4,6 +4,7 @@ import Link from 'next/link'
 import OldInput from '@/components/custom/OldInput'
 import { useDispatch, useSelector } from 'react-redux'
 import { handleResetPassword } from './store'
+import toast from 'react-hot-toast'
 
 const ForgotPassword = () => {
   const {loading} = useSelector(({auth}) => auth);
@@ -22,6 +23,7 @@ const ForgotPassword = () => {
     // Simulate API call
     dispatch(handleResetPassword({email}))
     .then((res) => {
+      toast.success('A password reset link sent to your email');
       return;
     })
   }

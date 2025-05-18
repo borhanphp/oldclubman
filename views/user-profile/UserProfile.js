@@ -60,9 +60,33 @@ const params = useParams();
               {/* Photos Section */}
               <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
                 <h3 className="text-lg font-semibold mb-3">Photos</h3>
-                <div className="empty-state text-gray-400 text-sm py-4">
-                  {/* Empty photos section */}
-                </div>
+                {userProfileData?.photos && userProfileData?.photos?.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    {userProfileData?.photos?.map((photo, index) => (
+                      <div 
+                        key={index} 
+                        className="aspect-square overflow-hidden rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+                      >
+                        <img 
+                          src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + "/"  + photo} 
+                          alt={`Photo ${index + 1}`}
+                          className="w-full h-full object-cover"
+                          // onError={(e) => {
+                          //   e.target.onerror = null;
+                          //   e.target.src = "/placeholder-image.jpg";
+                          // }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-state text-gray-400 text-sm py-4 text-center">
+                    <p>No photos to display</p>
+                    <button className="mt-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors">
+                      Add Photos
+                    </button>
+                  </div>
+                )}
               </div>
               
               {/* Who to follow Widget */}
