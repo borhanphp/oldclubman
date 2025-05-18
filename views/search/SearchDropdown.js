@@ -109,8 +109,8 @@ const SearchDropdown = () => {
                 >
                   <div className="flex items-center">
                     <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden mr-4">
-                      {result.avatar ? (
-                        <img src={result.avatar} alt={result.name} className="w-full h-full object-cover" />
+                      {result?.image ? (
+                        <img src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + result?.image} alt={result.name} className="w-full h-full object-cover" />
                       ) : (
                         <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
                           <circle cx="12" cy="8" r="4" />
