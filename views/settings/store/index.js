@@ -70,6 +70,18 @@ export const getAllFollowers = createAsyncThunk( 'settings/getAllFollowers', asy
   return result;
 } )
 
+export const followTo = createAsyncThunk( 'settings/followTo', async ( id) => {
+  const result = axios.post( "/follow", id )
+  .then((res) => {
+      const resData = res.data.data;
+      return resData;
+  })
+  .catch((err) => {
+      errorResponse(err);
+  })
+  return result;
+} )
+
 
 export const settingsSlice = createSlice({
   name: "settings",

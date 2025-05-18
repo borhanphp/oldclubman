@@ -60,9 +60,9 @@ const SocialNavbar = () => {
 
             <Link
               href="/user/about"
-              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              className="flex items-center  px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
             >
-              <span>Settings & Privacy</span>
+              <span className="hover:text-blue-600">Settings & Privacy</span>
             </Link>
             <Link
               href="/user/company"
@@ -201,17 +201,17 @@ const SocialNavbar = () => {
                 className="flex items-center hover:text-blue-500 px-4 py-3 text-sm text-gray-600 "
               >
                 <FaCog className="mr-2 text-gray-500" />
-                <span className="font-[600] text-gray-500 text-[15px]">
+                <span className="font-[600] text-gray-500 hover:text-blue-500 text-[15px]">
                   Settings & Privacy
                 </span>
               </Link>
 
               <Link
                 href="/user/messages"
-                className="flex items-center px-4 py-3 text-sm text-gray-600"
+                className="flex items-center px-4  py-3 text-sm text-gray-600"
               >
                 <FaComment className="mr-2 text-gray-500" />
-                <span className="font-[600] text-gray-500 text-[15px]">
+                <span className="font-[600] text-gray-500 hover:text-blue-500 text-[15px]">
                   Chat
                 </span>
               </Link>

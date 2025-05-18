@@ -33,9 +33,15 @@ import {
 } from "../../views/gathering/store";
 import moment from "moment";
 import Link from "next/link";
+import { CiEdit, CiUnlock } from "react-icons/ci";
+import { MdOutlineDeleteOutline } from "react-icons/md";
+import { TbMessageReport } from "react-icons/tb";
 
 const PostList = ({ postsData }) => {
   const { basicPostData } = useSelector(({ gathering }) => gathering);
+  const { profile } = useSelector(({ settings }) => settings);
+  console.log('profile',profile.client.id)
+  console.log('postsData',postsData)
   const dispatch = useDispatch();
   useEffect(() => {
     dispatch(getGathering());
@@ -198,6 +204,10 @@ const PostList = ({ postsData }) => {
         alert("Failed to update privacy");
         setOpenDropdownFor(null);
       });
+  };
+
+  const handleReportPost = (postId) => {
+    alert('Report this post');
   };
 
   const handleViewAllComments = (id) => {
@@ -363,60 +373,33 @@ const PostList = ({ postsData }) => {
                     ref={dropdownRef}
                     className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl z-20"
                   >
-                    <button
+                    {profile?.client?.id === item?.client?.id && <button
                       onClick={() => handleEditPost(item.id)}
                       className="cursor-pointer flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
-                      <svg
-                        className="w-4 h-4 mr-2"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M15.232 5.232l3.536 3.536M9 13l6-6m2 2l-6 6m-2 2h2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2h-2v-2a2 2 0 00-2-2H9a2 2 0 00-2 2v2a2 2 0 002 2z"
-                        />
-                      </svg>
+                     <CiEdit className="mr-2"/>
                       Edit post
-                    </button>
-                    <button
+                    </button> }
+                    {profile?.client?.id === item?.client?.id && <button
                       onClick={() => handleOnlyMe(item)}
                       className="cursor-pointer flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
-                      <svg
-                        className="w-4 h-4 mr-2"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="15" y1="9" x2="9" y2="15" />
-                        <line x1="9" y1="9" x2="15" y2="15" />
-                      </svg>
+                      <CiUnlock className="mr-2"/>
                       {item?.privacy_mode === "public" ? "Only Me" : "Public"}
-                    </button>
-                    <button
+                    </button>}
+                    {profile?.client?.id === item?.client?.id && <button
                       onClick={() => handleDeletePost(item.id)}
                       className="cursor-pointer flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                     >
-                      <svg
-                        className="w-4 h-4 mr-2"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
+                      <MdOutlineDeleteOutline className="mr-2"/>
                       Delete post
+                    </button>}
+                    <button
+                      onClick={() => handleReportPost(item.id)}
+                      className="cursor-pointer flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                    >
+                      <TbMessageReport className="mr-2"/>
+                      Report Post
                     </button>
                   </div>
                 )}
