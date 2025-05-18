@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setSearchQuery, setSearchResults, setSearchLoading } from './store';
 import api from '@/helpers/axios';
 import { followTo, unFollowTo } from '../settings/store';
+import Link from 'next/link';
 
 const searchApi = async (query) => {
   const response = await api.get(`/client/search_by_people?search=${query}`);
@@ -13,39 +14,9 @@ const searchApi = async (query) => {
 const SearchDropdown = () => {
   const dispatch = useDispatch();
   const { query, results, loading } = useSelector(state => state.search);
-  const { followLoading } = useSelector(state => state.settings);
   const dropdownRef = useRef(null);
-  const [followingStatus, setFollowingStatus] = useState({});
   const [loadingStates, setLoadingStates] = useState({});
 
-  // // Function to handle following a user
-  // const handleFollow = async (userId) => {
-  //   try {
-  //     // Set loading state for just this specific user ID
-  //     setLoadingStates(prev => ({ ...prev, [userId]: true }));
-      
-  //     // Make API call to follow the user
-  //     const response = await api.post('/follow', { 
-  //       following_id: userId 
-  //     });
-      
-  //     if (response.data.success) {
-  //       // Update local state to show following
-  //       setFollowingStatus(prev => ({ ...prev, [userId]: 'following' }));
-  //       console.log('Successfully followed user', response.data);
-  //     } else {
-  //       setFollowingStatus(prev => ({ ...prev, [userId]: null }));
-  //       console.error('Failed to follow user', response.data);
-  //     }
-  //   } catch (error) {
-  //     console.error('Error following user:', error);
-  //     setFollowingStatus(prev => ({ ...prev, [userId]: null }));
-  //   } finally {
-  //     setTimeout(() => {
-  //       setLoadingStates(prev => ({ ...prev, [userId]: false }));
-  //     }, 1000);
-  //   }
-  // };
 
    // Function to handle following a user
    const handleFollow = async (userId) => {
@@ -148,9 +119,11 @@ const SearchDropdown = () => {
                       )}
                     </div>
                     <div>
-                      <div className="flex items-center font-semibold text-gray-900">
+                    <Link href={`/user/user-profile/${result?.id}`}>
+                      <div className="flex items-center hover:underline font-semibold text-gray-900">
                         {result.fname + " " + result.last_name}
                       </div>
+                      </Link>
                       {result?.followers?.length > 0 && (
                         <div className="text-sm text-gray-500">
                           {result.followers.map(f => `${f.follower_client.display_name}`).join(', ')} Following
