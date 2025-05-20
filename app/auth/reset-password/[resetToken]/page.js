@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import axios from '@/helpers/axios';
 
 const ResetPasswordPage = () => {
@@ -12,6 +12,7 @@ const ResetPasswordPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const params = useParams()
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,7 +28,7 @@ const ResetPasswordPage = () => {
     setLoading(true);
     
     try {
-      const response = await axios.post('/client/reset-password', {
+      const response = await axios.post(`/client/reset-password/${params?.id}`, {
         email,
         password,
         password_confirmation: confirmPassword
