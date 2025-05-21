@@ -4,7 +4,7 @@ import FeedHeader from "@/components/common/FeedHeader";
 import Intro from "@/components/common/Intro";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   FaUserEdit,
   FaImage,
@@ -18,6 +18,9 @@ import {
   FaApple,
   FaEdit,
   FaBullhorn,
+  FaFilePdf,
+  FaQrcode,
+  FaRegFilePdf,
 } from "react-icons/fa";
 import { IoIosList } from "react-icons/io";
 import { MdEmail } from "react-icons/md";
@@ -31,6 +34,52 @@ import CardClassic from "../nfc-cards/CardClassic";
 import CardModern from "../nfc-cards/CardModern";
 import CardSleek from "../nfc-cards/CardSleek";
 import CardFlat from "../nfc-cards/CardFlat";
+import { IoQrCodeOutline } from "react-icons/io5";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+
+const DownloadDropdown = ({ onDownloadPDF, onDownloadQR }) => {
+  const [open, setOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative inline-block" ref={dropdownRef}>
+      <button
+        className="cursor-pointer p-2 rounded"
+        onClick={() => setOpen((prev) => !prev)}
+      >
+        <FaDownload size={25} className="text-blue-500" />
+      </button>
+      {open && (
+        <div className="absolute left-0 mt-2 w-55 bg-white border border-gray-200 rounded shadow-lg z-50">
+          {/* <button
+            className="flex items-center cursor-pointer text-[15px] gap-2 w-full px-4 py-2 text-gray-700 hover:bg-gray-100"
+            onClick={() => { setOpen(false); onDownloadPDF(); }}
+          >
+            <FaRegFilePdf size={13} />  Download PDF of Card
+          </button> */}
+          <button
+            className="flex items-center cursor-pointer w-full text-nowrap text-[15px] gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100"
+            onClick={() => { setOpen(false); onDownloadQR(); }}
+          >
+           <IoQrCodeOutline size={13} /> Download QR Code
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const NfcDetails = () => {
   const {basicNfcData} = useSelector(({nfc}) => nfc);
@@ -39,6 +88,8 @@ const NfcDetails = () => {
   console.log('basicNfcData afasdf', basicNfcData)
 
   const [activeTab, setActiveTab] = useState("code");
+  const cardRef = useRef(null);
+  const qrRef = useRef(null);
 
   useEffect(() => {
     dispatch(getNfcById(params?.id))
@@ -66,6 +117,77 @@ const handleCopyLink = () => {
     .catch(() => {
       toast.error("Failed to copy link.");
     });
+};
+
+const handleDownloadPDF = async () => {
+  if (!cardRef.current) return;
+  // Use html2canvas to capture the card as an image
+  const canvas = await html2canvas(cardRef.current, { useCORS: true, scale: 2 });
+  const imgData = canvas.toDataURL('image/png');
+
+  // Create a PDF and add the image
+  const pdf = new jsPDF({
+    orientation: "portrait",
+    unit: "pt",
+    format: [canvas.width, canvas.height]
+  });
+  pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+
+  // Download the PDF
+  pdf.save('nfc-card.pdf');
+};
+
+const handleDownloadQR = () => {
+  const svg = qrRef.current?.querySelector('svg');
+  if (!svg) return;
+
+  // Serialize SVG to string
+  const serializer = new XMLSerializer();
+  const svgString = serializer.serializeToString(svg);
+
+  // Create a canvas and draw the SVG onto it
+  const canvas = document.createElement('canvas');
+  canvas.width = 180;
+  canvas.height = 180;
+  const ctx = canvas.getContext('2d');
+
+  const img = new window.Image();
+  const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(svgBlob);
+
+  img.onload = function () {
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+
+    // Create a link and trigger download
+    const a = document.createElement('a');
+    a.download = 'qr-code.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+  };
+  img.src = url;
+};
+
+const cardUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/user/fb_share/${basicNfcData?.id}`;
+
+const handleShareFacebook = () => {
+  window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(cardUrl)}`, '_blank');
+};
+
+const handleShareLinkedIn = () => {
+  window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(cardUrl)}`, '_blank');
+};
+
+const handleShareWhatsApp = () => {
+  window.open(`https://wa.me/?text=${encodeURIComponent(cardUrl)}`, '_blank');
+};
+
+const handleShareXing = () => {
+  window.open(`https://www.xing.com/spi/shares/new?url=${encodeURIComponent(cardUrl)}`, '_blank');
+};
+
+const handleShareEmail = () => {
+  window.open(`mailto:?subject=Check out my NFC card&body=${encodeURIComponent(cardUrl)}`);
 };
   
   return (
@@ -96,12 +218,15 @@ const handleCopyLink = () => {
                 <Link href="/user/nfc" className="cursor-pointer p-2 rounded" onClick={() => {handleDuplicate()}}>
                   <FaCopy size={25} className="text-blue-500" />
                 </Link>
+                <Link href={`/user/nfc/${params?.id}/virtual-background`}>
                 <button className="cursor-pointer p-2 rounded">
                   <FaImage size={25} className="text-blue-500" />
                 </button>
-                <button className="cursor-pointer p-2 rounded">
-                  <FaDownload size={25} className="text-blue-500" />
-                </button>
+                </Link>
+                <DownloadDropdown
+                  onDownloadPDF={handleDownloadPDF}
+                  onDownloadQR={handleDownloadQR}
+                />
                 <button className="cursor-pointer p-2 rounded">
                   <MdEmail size={25} className="text-blue-500" />
                 </button>
@@ -111,21 +236,24 @@ const handleCopyLink = () => {
               </div>
               <div className="flex gap-6 flex-col lg:flex-row items-stretch">
                 {/* Left: Card Preview */}
-                <div className="bg-white rounded-lg border border-gray-100 p-4 flex flex-col items-center relative w-full max-w-md mx-auto lg:mx-0 lg:w-1/2">
+                <div
+                  ref={cardRef}
+                  style={{ backgroundColor: "#fff" }}
+                  className="bg-white rounded-lg border border-gray-100 p-4 flex flex-col items-center relative w-full max-w-md mx-auto lg:mx-0 lg:w-1/2"
+                >
+                  dfsadfasdf
                   {/* Card Content */}
-           
-    
                   {basicNfcData?.design_card_id === 1 ?
-                        <CardClassic basicNfcData={basicNfcData}/>
-                        :
-                        basicNfcData?.design_card_id === 2 ?
-                        <CardModern basicNfcData={basicNfcData}/>
-                        :
-                        basicNfcData?.design_card_id === 3 ?
-                        <CardSleek basicNfcData={basicNfcData}/>
-                        :
-                        <CardFlat basicNfcData={basicNfcData}/>
-                      }
+                    <CardClassic basicNfcData={basicNfcData}/>
+                    :
+                    basicNfcData?.design_card_id === 2 ?
+                    <CardModern basicNfcData={basicNfcData}/>
+                    :
+                    basicNfcData?.design_card_id === 3 ?
+                    <CardSleek basicNfcData={basicNfcData}/>
+                    :
+                    <CardFlat basicNfcData={basicNfcData}/>
+                  }
                 </div>
                 {/* Right: QR and Send Card */}
                 <div className="bg-white rounded-lg border border-gray-100 p-4 flex flex-col items-center w-full max-w-md mx-auto lg:mx-0 lg:w-1/2 mt-6 lg:mt-0">
@@ -133,7 +261,7 @@ const handleCopyLink = () => {
                   {/* Tab Content */}
                   {activeTab === "code" && (
                     <>
-                      <div className="bg-gray-100 rounded-lg p-4 mb-2 w-full flex justify-center">
+                      <div ref={qrRef} className="bg-gray-100 rounded-lg p-4 mb-2 w-full flex justify-center">
                         <QRCodeSVG
                           value={`${typeof window !== 'undefined' ? window.location.origin : ''}/user/fb_share/${basicNfcData?.id}`}
                           size={180}
@@ -147,11 +275,21 @@ const handleCopyLink = () => {
                         Scan Or Click to Preview
                       </div>
                       <div className="flex justify-center gap-2 mb-3 flex-wrap">
-                        <SocialIcon network="facebook" style={{ height: 32, width: 32 }} />
-                        <SocialIcon network="xing" style={{ height: 32, width: 32 }} />
-                        <SocialIcon network="linkedin" style={{ height: 32, width: 32 }} />
-                        <SocialIcon network="whatsapp" style={{ height: 32, width: 32 }} />
-                        <SocialIcon network="email" style={{ height: 32, width: 32 }} />
+                        <button className="cursor-pointer" onClick={handleShareFacebook} title="Share on Facebook">
+                          <SocialIcon network="facebook" style={{ height: 32, width: 32 }} />
+                        </button>
+                        <button className="cursor-pointer" onClick={handleShareXing} title="Share on Xing">
+                          <SocialIcon network="xing" style={{ height: 32, width: 32 }} />
+                        </button>
+                        <button className="cursor-pointer" onClick={handleShareLinkedIn} title="Share on LinkedIn">
+                          <SocialIcon network="linkedin" style={{ height: 32, width: 32 }} />
+                        </button>
+                        <button className="cursor-pointer" onClick={handleShareWhatsApp} title="Share on WhatsApp">
+                          <SocialIcon network="whatsapp" style={{ height: 32, width: 32 }} />
+                        </button>
+                        <button className="cursor-pointer" onClick={handleShareEmail} title="Share via Email">
+                          <SocialIcon network="email" style={{ height: 32, width: 32 }} />
+                        </button>
                       </div>
                       <button
                        className="flex items-center cursor-pointer gap-2 px-4 py-2 bg-white border rounded mb-4 hover:bg-gray-50 w-full max-w-xs justify-center"

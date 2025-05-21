@@ -135,6 +135,19 @@ export const deleteNfc = createAsyncThunk( 'nfc/deleteNfc', async (id) => {
   return result;
 } )
 
+export const getVertualBackground = createAsyncThunk( 'nfc/getVertualBackground', async () => {
+  const result = axios.get( `/nfc/virtual_background` )
+  .then((res) => {
+    console.log('nfc virtual_background', res.data.data)
+      const resData = res.data.data;
+      return resData;
+  })
+  .catch((err) => {
+      errorResponse(err);
+  })
+  return result;
+} )
+
 
 export const nfcSlice = createSlice({
   name: "nfc",
