@@ -10,6 +10,9 @@ import { getMyNfc, getNfcById } from './store';
 import moment from 'moment';
 import Intro from '@/components/common/Intro';
 import FollowSuggestion from '@/components/common/FollowSuggestion';
+import CardClassic from './nfc-cards/CardClassic';
+import CardModern from './nfc-cards/CardModern';
+import CardSleek from './nfc-cards/CardSleek';
 
 const NfcContent = () => {
   const {nfcData, loading} = useSelector(({nfc}) => nfc);
@@ -50,32 +53,30 @@ const NfcContent = () => {
                 
                 {/* NFC Card */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {nfcData.nfc_cards?.data?.map((card, index) => {
+                  {nfcData?.nfc_cards?.data?.map((card, index) => {
+                    const fullCard = {
+                      ...card, 
+                      ...card.nfc_info, 
+                      ...card.nfc_design,
+                      display_nfc_color: card?.card_design?.color,
+                      profilePhotoUrl: process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + card?.nfc_info?.image,
+                      logoUrl: process.env.NEXT_PUBLIC_CARD_FILE_PATH + card?.card_design?.logo,
+
+                    }
+
                     return(
                       <Link href={`/user/nfc/preview/${card.id}`} key={index}>
-                        <div className="nfc-card border cursor-pointer rounded-lg overflow-hidden bg-white shadow-sm w-full">
-                          <div className="p-4">
-                            <div className="relative w-full mb-3">
-                              <div className="aspect-square rounded-lg overflow-hidden relative">
-                                {/* Checkered transparent background */}
-                                <div className="w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyIDIiPjxwYXRoIGZpbGw9IiNmMGYwZjAiIGQ9Ik0wIDBoMXYxSDB6TTEgMWgxdjFIMXoiLz48cGF0aCBmaWxsPSIjZjhmOGY4IiBkPSJNMSAwaDF2MUgxek0wIDFoMXYxSDB6Ii8+PC9zdmc+')]"><div className="w-full h-full flex items-center justify-center"><div className="w-3/5 h-3/5 rounded-full bg-gray-500"></div></div></div>
-                                {/* Wavy blue line at the bottom */}
-                                <div className="absolute bottom-0 left-0 right-0 h-[22%] overflow-hidden">
-                                  <svg viewBox="0 0 500 150" preserveAspectRatio="none" className="w-full h-full">
-                                    <path d="M0,50 C150,150 350,0 500,50 L500,150 L0,150 Z" className="fill-blue-500 opacity-90"></path>
-                                  </svg>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="border-l-2 border-gray-300 pl-3 py-1">
-                              <h4 className="font-semibold">{card?.nfc_info?.prefix + " " + card?.nfc_info?.first_name + " " + card?.nfc_info?.last_name + " " + card?.nfc_info?.suffix + " (" + card?.nfc_info?.maiden_name + ")"}</h4>
-                            </div>
-                            <div className="flex justify-between items-center mt-3">
-                              <p className="text-sm text-gray-600">{card?.card_name}</p>
-                              <p className="text-sm text-gray-600">{moment( card?.created_at).format("DD MMM, yyyy")}</p>
-                            </div>
-                          </div>
-                        </div>
+                        {card?.card_design?.design_card_id === 1 ?
+                        <CardClassic basicNfcData={fullCard}/>
+                        :
+                        card?.card_design?.design_card_id === 2 ?
+                        <CardModern basicNfcData={fullCard}/>
+                        :
+                        card?.card_design?.design_card_id === 3 ?
+                        <CardSleek basicNfcData={fullCard}/>
+                        :
+                        <CardSleek basicNfcData={fullCard}/>
+                      }
                       </Link>
                     )
                   })}

@@ -8,6 +8,7 @@ export const initialNfcData = {
   first_name: '', 
   middle_name: '', 
   design_card_id: 1,
+  display_nfc_color: "#ff00f",
   last_name: '', 
   suffix: '',
   accreditations: '', 
@@ -59,8 +60,10 @@ const data = res.data.data.nfc_card;
       ...displayData, 
       ...infoData,  
       ...allData, 
-      profilePhotoUrl: process.env.NEXT_PUBLIC_CARD_FILE_PATH + infoData?.image,
+      profilePhotoUrl: process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + infoData?.image,
       logoUrl: process.env.NEXT_PUBLIC_CARD_FILE_PATH + displayData?.logo,
+      display_nfc_color: displayData?.color,
+
     };
     console.log('merged resData',resData)
     return resData;
