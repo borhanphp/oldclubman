@@ -158,9 +158,13 @@ const SocialNavbar = () => {
             <div className="w-8 h-8 rounded-full overflow-hidden bg-red-400 flex items-center justify-center text-white">
               <img
                 src={
-                  process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
-                  profile?.client?.image
+                  (process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
+                  profile?.client?.image) || "/common-avator.jpg"
                 }
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "/common-avator.jpg";
+                }}
                 className="w-full h-full object-cover"
               />
             </div>
@@ -174,8 +178,12 @@ const SocialNavbar = () => {
                     <img
                       src={
                         process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
-                        profile?.client?.image
+                        profile?.client?.image || "/common-avator.jpg"
                       }
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "/common-avator.jpg";
+                      }}
                       className="w-full h-full object-cover"
                     />
                   </div>

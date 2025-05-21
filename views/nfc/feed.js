@@ -13,6 +13,7 @@ import FollowSuggestion from '@/components/common/FollowSuggestion';
 import CardClassic from './nfc-cards/CardClassic';
 import CardModern from './nfc-cards/CardModern';
 import CardSleek from './nfc-cards/CardSleek';
+import CardFlat from './nfc-cards/CardFlat';
 
 const NfcContent = () => {
   const {nfcData, loading} = useSelector(({nfc}) => nfc);
@@ -75,7 +76,7 @@ const NfcContent = () => {
                         card?.card_design?.design_card_id === 3 ?
                         <CardSleek basicNfcData={fullCard}/>
                         :
-                        <CardSleek basicNfcData={fullCard}/>
+                        <CardFlat basicNfcData={fullCard}/>
                       }
                       </Link>
                     )

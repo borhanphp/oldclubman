@@ -30,6 +30,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import CardClassic from "../nfc-cards/CardClassic";
 import CardModern from "../nfc-cards/CardModern";
 import CardSleek from "../nfc-cards/CardSleek";
+import CardFlat from "../nfc-cards/CardFlat";
 
 const NfcDetails = () => {
   const {basicNfcData} = useSelector(({nfc}) => nfc);
@@ -123,7 +124,7 @@ const handleCopyLink = () => {
                         basicNfcData?.design_card_id === 3 ?
                         <CardSleek basicNfcData={basicNfcData}/>
                         :
-                        <CardSleek basicNfcData={basicNfcData}/>
+                        <CardFlat basicNfcData={basicNfcData}/>
                       }
                 </div>
                 {/* Right: QR and Send Card */}

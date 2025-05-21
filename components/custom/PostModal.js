@@ -182,7 +182,13 @@ const PostModal = () => {
         <div className="p-4">
           <div className="flex mb-2">
             <div className="w-10 h-10 rounded-full overflow-hidden bg-blue-400 flex items-center justify-center text-white mr-3">
-            <img src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + profile?.client?.image}/>
+            <img 
+            src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + profile?.client?.image || "/common-avator.jpg"}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = "/common-avator.jpg";
+            }}
+            />
             </div>
             <div className="flex-1">
               <textarea
