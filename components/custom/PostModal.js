@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FaTimes, FaImage, FaGlobe, FaLock } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
-import { bindPostData, getPosts, initialPostData, setPostModalOpen, storePost, updatePost } from '@/views/gathering/store';
+import { bindPostData, getGathering, getPosts, initialPostData, setPostModalOpen, storePost, updatePost } from '@/views/gathering/store';
 import { getMyProfile } from '@/views/settings/store';
 
 const PostModal = () => {
@@ -145,8 +145,9 @@ const PostModal = () => {
       }
 
       const action = id ? updatePost({ id, ...Object.fromEntries(formData) }) : storePost(formData);
-      dispatch(action).unwrap()
+      dispatch(action)
         .then(() => {
+          dispatch(getGathering())
           dispatch(getPosts());
           dispatch(bindPostData(initialPostData));
           setFilePreviews([]);
