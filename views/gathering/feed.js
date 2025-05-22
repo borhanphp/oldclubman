@@ -23,21 +23,30 @@ const GatheringContent = () => {
 
   useEffect(() => {
     dispatch(getGathering());
-    dispatch(getPosts(1));
+    dispatch(getPosts(currentPage));
   }, [])
   
   useEffect(() => {
-    console.log('called from gathering')
+    console.log('called from gathering');
+    console.log('postsData:', postsData);
+    console.log('currentPage:', currentPage);
     if (postsData?.data) {
       // Sort posts by created_at descending (latest first)
       const sortedPosts = [...postsData.data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      console.log('sortedPosts:', sortedPosts);
       if (currentPage === 1) {
         setAllPosts(sortedPosts);
       } else {
-        // Filter out any duplicate posts by id before adding new ones
-        const existingPostIds = new Set(allPosts?.map(post => post?.id));
-        const newPosts = sortedPosts.filter(post => !existingPostIds?.has(post?.id));
-        setAllPosts(prev => [...prev, ...newPosts].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
+        setAllPosts(prev => {
+          // Create a map of previous posts by ID
+          const prevMap = new Map(prev.map(post => [post.id, post]));
+          // Update or add posts from sortedPosts
+          sortedPosts.forEach(post => {
+            prevMap.set(post.id, post);
+          });
+          // Return sorted array
+          return Array.from(prevMap.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        });
       }
     }
   }, [postsData, currentPage]);

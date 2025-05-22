@@ -21,9 +21,10 @@ const PostModal = () => {
     dispatch(getMyProfile())
 
     if (isPostModalOpen && id && basicPostData?.files?.length > 0) {
-      const previews = basicPostData.files.map(file => ({
+      const previews = basicPostData?.files?.map(file => ({
         id: file.id || (Date.now() + Math.random().toString(36).substring(2, 9)),
         src: `${process.env.NEXT_PUBLIC_FILE_PATH}/${file.file_path}`,
+        file_type: file?.file_type
       }));
       setFilePreviews(previews);
     }
@@ -32,6 +33,8 @@ const PostModal = () => {
       setFilePreviews([]);
     }
   }, []);
+
+  console.log('filePreviews',filePreviews)
 
   const handleOnchange = (e) => {
     const {name, value} = e.target;
@@ -141,7 +144,7 @@ const PostModal = () => {
 
       // Add remove_files if any
       if (removeFiles.length > 0) {
-        formData.append('removefiles', JSON.stringify(removeFiles));
+        formData.append('removefiles', removeFiles);
       }
 
       const action = id ? updatePost({ id, ...Object.fromEntries(formData) }) : storePost(formData);
@@ -250,16 +253,22 @@ const PostModal = () => {
               onDrop={handleDrop}
               onDragOver={handleDragOver}
             >
-              {filePreviews.length > 0 ? (
+              {filePreviews?.length > 0 ? (
                 <div>
                   <div className="grid grid-cols-2 gap-3 mb-3">
                     {filePreviews.map(preview => (
                       <div key={preview.id} className="relative">
-                        <img 
-                          src={preview.src} 
-                          alt="Upload preview" 
-                          className="h-32 w-full object-cover rounded"
-                        />
+                        {preview?.file_type === "video" ? (
+                          <video controls className="h-32 w-full object-cover rounded">
+                            <source src={preview.src} />
+                          </video>
+                        ) : (
+                          <img 
+                            src={preview.src} 
+                            alt="Upload preview" 
+                            className="h-32 w-full object-cover rounded"
+                          />
+                        )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -288,7 +297,7 @@ const PostModal = () => {
                 type="file"
                 ref={fileInputRef}
                 onChange={handleFilesChange}
-                accept="image/*"
+                accept="image/*,video/*"
                 className="hidden"
                 multiple
               />

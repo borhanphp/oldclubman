@@ -91,11 +91,12 @@ const PostList = ({ postsData }) => {
     });
   };
 
-  const handleReplyReaction = (reply_id, reaction) => {
+  const handleReplyReaction = (reply_id, reaction, commentId, commentIndex) => {
     dispatch(likeReply({ reply_id, type: reaction })).then(() => {
       setShowCommentReactionsFor(null);
       dispatch(getPosts());
       dispatch(getPostById(basicPostData.id));
+      handleViewAllReplies(commentId, commentIndex);
     });
   };
 
@@ -428,25 +429,34 @@ const PostList = ({ postsData }) => {
                       : ""
                   } gap-2`}
                 >
-                  {item?.files?.map((file, fileIndex) => (
-                    <div
-                      key={fileIndex}
-                      className={`overflow-hidden rounded-lg ${
-                        item.files?.length === 1 ? "max-h-96" : "h-48"
-                      } bg-gray-100`}
-                    >
-                      <img
-                        // src={file.url || file.file_url || file.path || `/uploads/${file.file}` || '/placeholder-image.jpg'}
-                        src={
-                          process.env.NEXT_PUBLIC_FILE_PATH +
-                          "/" +
-                          file.file_path
-                        }
-                        alt={`Post image ${fileIndex + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ))}
+                  {item?.files?.map((file, fileIndex) => {
+                    // Determine if file is a video by extension
+                    const filePath = file.file_path || file.path || file.url || file.file_url || '';
+                    const isVideo = /\.(mp4|webm|ogg|mov|avi)$/i.test(filePath);
+                    const src =
+                      (process.env.NEXT_PUBLIC_FILE_PATH ? process.env.NEXT_PUBLIC_FILE_PATH + "/" : "/uploads/") + filePath;
+                    return (
+                      <div
+                        key={fileIndex}
+                        className={`overflow-hidden rounded-lg ${
+                          item.files?.length === 1 ? "max-h-96" : "h-48"
+                        } bg-gray-100`}
+                      >
+                        {isVideo ? (
+                          <video controls className="w-full h-full object-cover">
+                            <source src={src} />
+                            Your browser does not support the video tag.
+                          </video>
+                        ) : (
+                          <img
+                            src={src}
+                            alt={`Post media ${fileIndex + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -1620,7 +1630,7 @@ const PostList = ({ postsData }) => {
                                       className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        handleReplyReaction(reply.id, "like");
+                                        handleReplyReaction(reply.id, "like", reply.comment_id, ri);
                                       }}
                                     />
                                     <img
@@ -1629,7 +1639,7 @@ const PostList = ({ postsData }) => {
                                       className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        handleReplyReaction(reply.id, "love");
+                                        handleReplyReaction(reply.id, "love", reply.comment_id, ri);
                                       }}
                                     />
                                     <img
@@ -1638,7 +1648,7 @@ const PostList = ({ postsData }) => {
                                       className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        handleReplyReaction(reply.id, "care");
+                                        handleReplyReaction(reply.id, "care", reply.comment_id, ri);
                                       }}
                                     />
                                     <img
@@ -1647,7 +1657,7 @@ const PostList = ({ postsData }) => {
                                       className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        handleReplyReaction(reply.id, "haha");
+                                        handleReplyReaction(reply.id, "haha", reply.comment_id, ri);
                                       }}
                                     />
                                     <img
@@ -1656,7 +1666,7 @@ const PostList = ({ postsData }) => {
                                       className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        handleReplyReaction(reply.id, "wow");
+                                        handleReplyReaction(reply.id, "wow", reply.comment_id, ri);
                                       }}
                                     />
                                     <img
@@ -1665,7 +1675,7 @@ const PostList = ({ postsData }) => {
                                       className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        handleReplyReaction(reply.id, "sad");
+                                        handleReplyReaction(reply.id, "sad", reply.comment_id, ri);
                                       }}
                                     />
                                     <img
@@ -1674,7 +1684,7 @@ const PostList = ({ postsData }) => {
                                       className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        handleReplyReaction(reply.id, "angry");
+                                        handleReplyReaction(reply.id, "angry", reply.comment_id, ri);
                                       }}
                                     />
                                   </div>
