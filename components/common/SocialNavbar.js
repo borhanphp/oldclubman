@@ -25,6 +25,9 @@ const SocialNavbar = () => {
   const { profile } = useSelector(({ settings }) => settings);
   const dispatch = useDispatch();
   const [openProfileDropdown, setOpenProfileDropdown] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [showCardDropdown, setShowCardDropdown] = useState(false);
+  const [showShippingDropdown, setShowShippingDropdown] = useState(false);
 
   useEffect(() => {
     dispatch(getMyProfile());
@@ -44,81 +47,108 @@ const SocialNavbar = () => {
 
       <div className="flex items-center">
         {/* ACCOUNT Dropdown */}
-        <div className="relative mx-2 group">
+        <div 
+          className="relative mx-2 mr-5"
+          onMouseEnter={() => setShowDropdown(true)}
+          onMouseLeave={() => setShowDropdown(false)}
+        >
           <div className="dropdown-menu flex items-center cursor-pointer">
-            <span className="text-gray-600 font-medium mr-1">ACCOUNT</span>
-            <FaChevronDown className="text-gray-500 text-xs transition-transform group-hover:rotate-180" />
+            <span className="text-gray-600 text-[15px] font-medium mr-1">ACCOUNT</span>
+            <FaChevronDown 
+              size={10} 
+              className={`text-gray-500 text-xs transition-transform ${showDropdown ? 'rotate-180' : ''}`} 
+            />
           </div>
 
-          <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 hidden group-hover:block">
-            <Link
-              href="/user/social"
-              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              <span>Profile</span>
-            </Link>
+          {showDropdown && (
+            <div className="absolute -left-10 pt-5 mt-0 w-48 bg-white rounded-md shadow-lg py-1 z-20">
+              <Link
+                href="/user/my-profile"
+                className="flex items-center px-4 py-2 text-[15px] font-medium text-gray-700 hover:bg-gray-100"
+              >
+                <span>Profile</span>
+              </Link>
 
-            <Link
-              href="/user/about"
-              className="flex items-center  px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              <span className="hover:text-blue-600">Settings & Privacy</span>
-            </Link>
-            <Link
-              href="/user/company"
-              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              <span>Companies</span>
-            </Link>
-            <Link
-              href="/user/bank"
-              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              <span>Bank</span>
-            </Link>
-          </div>
+              <Link
+                href="/user/account-settings"
+                className="flex items-center  px-4 py-2 text-[15px] font-medium text-gray-700 hover:bg-gray-100"
+              >
+                <span className="hover:text-blue-600">Settings & Privacy</span>
+              </Link>
+              <Link
+                href="/user/company"
+                className="flex items-center px-4 py-2 text-[15px] font-medium text-gray-700 hover:bg-gray-100"
+              >
+                <span>Companies</span>
+              </Link>
+              <Link
+                href="/user/bank"
+                className="flex items-center px-4 py-2 text-[15px] font-medium text-gray-700 hover:bg-gray-100"
+              >
+                <span>Bank</span>
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* CARD Dropdown */}
-        <div className="relative mx-2 group">
+        <div 
+          className="relative mx-2 mr-5"
+          onMouseEnter={() => setShowCardDropdown(true)}
+          onMouseLeave={() => setShowCardDropdown(false)}
+        >
           <div className="dropdown-menu flex items-center cursor-pointer">
             <span className="text-gray-600 font-medium mr-1">CARD</span>
-            <FaChevronDown className="text-gray-500 text-xs transition-transform group-hover:rotate-180" />
+            <FaChevronDown 
+              size={10} 
+              className={`text-gray-500 text-xs transition-transform ${showCardDropdown ? 'rotate-180' : ''}`} 
+            />
           </div>
 
-          <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 hidden group-hover:block">
-            <Link
-              href="#"
-              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              <span>NFC CARD</span>
-            </Link>
-          </div>
+          {showCardDropdown && (
+            <div className="absolute pt-5 -left-10 w-48 bg-white rounded-md shadow-lg py-1 z-20">
+              <Link
+                href="/user/nfc"
+                className="flex items-center px-4 py-2 text-[15px] font-medium text-gray-700 hover:bg-gray-100"
+              >
+                <span>NFC CARD</span>
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* SHIPPING Dropdown */}
-        <div className="relative mx-2 group">
+        <div 
+          className="relative mx-2 mr-5"
+          onMouseEnter={() => setShowShippingDropdown(true)}
+          onMouseLeave={() => setShowShippingDropdown(false)}
+        >
           <div className="dropdown-menu flex items-center cursor-pointer">
             <span className="text-gray-600 font-medium mr-1">SHIPPING</span>
-            <FaChevronDown className="text-gray-500 text-xs transition-transform group-hover:rotate-180" />
+            <FaChevronDown 
+              size={10} 
+              className={`text-gray-500 text-xs transition-transform ${showShippingDropdown ? 'rotate-180' : ''}`} 
+            />
           </div>
 
-          <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 hidden group-hover:block">
-            <Link
-              href="#"
-              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              <FaShippingFast className="mr-2 text-gray-500" />
-              <span>Shipping order</span>
-            </Link>
-            <Link
-              href="#"
-              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              <FaMapMarkerAlt className="mr-2 text-gray-500" />
-              <span>Order List</span>
-            </Link>
-          </div>
+          {showShippingDropdown && (
+            <div className="absolute pt-5 -left-10 w-48 bg-white rounded-md shadow-lg py-1 z-20">
+              <Link
+                href="#"
+                className="flex items-center px-4 py-2 text-[15px] font-medium text-gray-700 hover:bg-gray-100"
+              >
+                <FaShippingFast className="mr-2 text-gray-500" />
+                <span>Shipping order</span>
+              </Link>
+              <Link
+                href="#"
+                className="flex items-center px-4 py-2 text-[15px] font-medium text-gray-700 hover:bg-gray-100"
+              >
+                <FaMapMarkerAlt className="mr-2 text-gray-500" />
+                <span>Order List</span>
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Messages Icon with Dropdown */}
@@ -198,7 +228,7 @@ const SocialNavbar = () => {
               </div>
 
               <Link
-                href="/user/about"
+                href="/user/my-profile"
                 className="block hover:text-white hover:bg-blue-700 bg-blue-100 py-[6px] mt-2 w-full text-blue-600 font-semibold text-sm text-center mx-auto mb-2"
               >
                 View profile

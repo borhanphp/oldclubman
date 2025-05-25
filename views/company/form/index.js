@@ -53,7 +53,7 @@ const CreateCompanyForm = () => {
   
   return (
     <div className="bg-gray-100 min-h-screen">
-    <div className="container mx-auto">
+    <div className="mx-auto">
       <div className="flex flex-wrap">
         {/* Left Sidebar - User Profile */}
        
@@ -61,7 +61,7 @@ const CreateCompanyForm = () => {
         {/* Main Content - Company List */}
         <div className="w-full lg:w-3/4">
         <div className="bg-gray-100 min-h-screen">
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto">
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex items-center mb-6">
             <Link href="/company" className="text-blue-500 mr-4">

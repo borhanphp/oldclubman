@@ -56,7 +56,7 @@ const CompanyCard = ({ company }) => {
   );
 };
 
-const CompanyContent = () => {
+const BankContent = () => {
   const [sortOrder, setSortOrder] = useState('Alphabetical');
   
   // Mock company data
@@ -83,7 +83,7 @@ const CompanyContent = () => {
           <div className="w-full lg:w-3/4">
             <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
               <div className="flex justify-between items-center mb-6">
-                <h1 className="text-xl font-bold text-gray-800">COMPANY LIST</h1>
+                <h1 className="text-xl font-bold text-gray-800">BANK LIST</h1>
                 <div className="flex items-center space-x-4">
                   <div className="relative">
                     <button className="flex items-center bg-white border rounded-md px-4 py-2 text-gray-700">
@@ -92,9 +92,9 @@ const CompanyContent = () => {
                     </button>
                     {/* Sort order dropdown would go here */}
                   </div>
-                  <Link href="/user/company/create" className="bg-blue-500 hover:bg-blue-600 text-white rounded-md px-4 py-2 flex items-center">
+                  <Link href="/user/bank/create" className="bg-blue-500 hover:bg-blue-600 text-white rounded-md px-4 py-2 flex items-center">
                     <FaPlus className="mr-2" />
-                    CREATE COMPANY
+                    CREATE BANK
                   </Link>
                 </div>
               </div>
@@ -108,7 +108,7 @@ const CompanyContent = () => {
                 {/* If no companies */}
                 {companies.length === 0 && (
                   <div className="col-span-3 text-center py-10 text-gray-500">
-                    <p>No companies found. Create your first company.</p>
+                    <p>No companies found. Create your first bank.</p>
                   </div>
                 )}
               </div>
@@ -120,4 +120,4 @@ const CompanyContent = () => {
   );
 };
 
-export default CompanyContent; 
+export default BankContent; 

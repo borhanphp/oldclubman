@@ -5,19 +5,8 @@ import { FaBullhorn, FaDownload } from "react-icons/fa";
 import { QRCodeSVG } from "qrcode.react";
 import { useDispatch, useSelector } from "react-redux";
 import { getMyNfc, getNfcById, getVertualBackground } from "../store";
-import Link from "next/link";
-import CardClassic from "../nfc-cards/CardClassic";
-import CardModern from "../nfc-cards/CardModern";
-import CardSleek from "../nfc-cards/CardSleek";
-import CardFlat from "../nfc-cards/CardFlat";
 import html2canvas from "html2canvas";
-
-const cardThumbnails = [
-  { label: "Work", img: "/path/to/thumb1.jpg" },
-  { label: "Personal", img: "/path/to/thumb2.jpg" },
-  { label: "Work card", img: "/path/to/thumb3.jpg" },
-  { label: "Work card", img: "/path/to/thumb4.jpg" },
-];
+import domtoimage from 'dom-to-image-more';
 
 const featuredBackgrounds = [
   "/path/to/bg1.jpg",
@@ -55,13 +44,34 @@ const VertualDownload = () => {
   };
 
   const handleDownloadCardImage = async () => {
+    // if (!cardImageRef.current) return;
+
+    // // Wait for all images inside the card to load
+    // const images = cardImageRef.current.querySelectorAll('img');
+    // await Promise.all(Array.from(images).map(img => {
+    //   if (img.complete) return Promise.resolve();
+    //   return new Promise(resolve => {
+    //     img.onload = img.onerror = resolve;
+    //   });
+    // }));
+
+    // const canvas = await html2canvas(cardImageRef.current, { useCORS: true, scale: 2 });
+    // const imgData = canvas.toDataURL('image/png');
+    // const link = document.createElement('a');
+    // link.href = imgData;
+    // link.download = 'virtual-card.png';
+    // link.click();
+
     if (!cardImageRef.current) return;
-    const canvas = await html2canvas(cardImageRef.current, { useCORS: true, scale: 2 });
-    const imgData = canvas.toDataURL('image/png');
+  try {
+    const dataUrl = await domtoimage.toPng(cardImageRef.current);
     const link = document.createElement('a');
-    link.href = imgData;
+    link.href = dataUrl;
     link.download = 'virtual-card.png';
     link.click();
+  } catch (error) {
+    console.error('Download failed:', error);
+  }
   };
 
   const handleUploadClick = () => {

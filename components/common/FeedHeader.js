@@ -115,12 +115,12 @@ function FeedHeader({ userProfile = false }) {
                     <button className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100">
                       <span className="text-gray-700">View As</span>
                     </button>
-                    <button className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100">
+                    <Link href='/user/account-settings' className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100">
                       <span className="text-gray-700">Edit Profile</span>
-                    </button>
-                    <button className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100">
+                    </Link>
+                    <Link href='/user/account-settings' className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100">
                       <span className="text-gray-700">Promote Profile</span>
-                    </button>
+                    </Link>
                   </div>
                 </div>
               )}
