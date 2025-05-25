@@ -106,6 +106,34 @@ export const saveContact = createAsyncThunk( 'settings/saveContact', async ( id)
   return result;
 } )
 
+export const getUserFollowers = createAsyncThunk( 'settings/getUserFollowers', async (id, limit=20 ) => {
+  const result = axios.get( `/client/all_followers_user/${id}/20` )
+  .then((res) => {
+    console.log(res.data.data.followers)
+      const resData = res.data.data.followers.data;
+      return resData;
+  })
+  .catch((err) => {
+      errorResponse(err);
+  })
+  return result;
+} )
+
+export const getUserFollowing = createAsyncThunk( 'settings/getUserFollowing', async (id, limit=20 ) => {
+  const result = axios.get( `/client/all_following_user/${id}/20` )
+  .then((res) => {
+    console.log(res.data.data.followers)
+
+      const resData = res.data.data.followers.data;
+      return resData;
+  })
+  .catch((err) => {
+      errorResponse(err);
+  })
+  return result;
+} )
+
+
 
 export const settingsSlice = createSlice({
   name: "settings",
@@ -119,7 +147,8 @@ export const settingsSlice = createSlice({
     profile:{},
     totalFollowers: 0,
     userProfileData: {},
-
+    userFollowers: [],
+    userFollowing: []
   },
   reducers: {
     bindProfileData: (state, action) => {
@@ -176,6 +205,12 @@ export const settingsSlice = createSlice({
       })
       .addCase(followTo.rejected, (state, action) => {
         state.followLoading = false;
+      })
+      .addCase(getUserFollowers.fulfilled, (state, action) => {
+        state.userFollowers = action.payload;
+      })
+      .addCase(getUserFollowing.fulfilled, (state, action) => {
+        state.userFollowing = action.payload;
       })
   },
 });

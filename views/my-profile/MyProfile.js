@@ -17,7 +17,6 @@ const MyProfile = () => {
   const {isPostModalOpen} = useSelector(({gathering}) => gathering)
 const dispatch = useDispatch()
 
-  console.log('profile',profile)
   useEffect(() => {
     dispatch(getMyProfile());
   }, [])
@@ -25,7 +24,7 @@ const dispatch = useDispatch()
 
   return (
     <div className="max-w-6xl mx-auto">
-      <FeedHeader/>
+      <FeedHeader showFriends={true}/>
       <div className="content-area py-3">
         <div className="mx-auto">
           <div className=" gap-4">

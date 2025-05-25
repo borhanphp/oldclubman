@@ -1,11 +1,12 @@
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
-import { FaEllipsisH, FaBookmark, FaEdit, FaMegaphone } from "react-icons/fa";
+import { FaEllipsisH, FaBookmark, FaEdit, FaMegaphone, FaUserTie } from "react-icons/fa";
 import { useParams, usePathname } from "next/navigation";
 import { followTo, getAllFollowers, getMyProfile, getUserProfile, unFollowTo } from "@/views/settings/store";
 import { useDispatch, useSelector } from "react-redux";
+import { LuMessageCircleMore } from "react-icons/lu";
 
-function FeedHeader({ userProfile = false }) {
+function FeedHeader({ userProfile = false, showMsgBtn = false, showFriends = false }) {
   const { profile, userProfileData, followLoading } = useSelector(({ settings }) => settings);
   const data = userProfile ? userProfileData : profile;
   const pathname = usePathname();
@@ -83,22 +84,53 @@ function FeedHeader({ userProfile = false }) {
                 {data?.client ? data?.client?.fname + " " + data?.client?.last_name : "Loading..."}
               </h2>
               <p className="text-gray-600 text-sm">
-                <span>{data.followers && data.followers} Followers</span> ·{" "}
-                <span>{data.following && data.following} Following</span>
+                <Link href={`/user/user-profile/${userProfile ? params?.id : profile?.client?.id}/friends`}><span className="hover:underline">{data.followers && data.followers} Followers</span></Link> ·{" "}
+                <Link href={`/user/user-profile/${userProfile ? params?.id : profile?.client?.id}/friends`}><span className="hover:underline">{data.following && data.following} Following</span></Link>
               </p>
+              {showFriends && (
+                 <div className="flex items-center mt-2">
+                  {data?.latest_eight_followers?.map((res, index) => {
+                    return(
+                      <div 
+                        key={index}
+                        className={`${
+                          index !== 0 ? '-ml-2' : ''
+                        } cursor-pointer rounded-full w-8 h-8 border-2 border-white overflow-hidden`}
+                      >
+                       <Link href={`/user/user-profile/${userProfile ? params?.id : profile?.client?.id}/friends`}>
+                       <img 
+                          src={res?.follower_client?.image || '/common-avator.jpg'} 
+                          alt={`Profile ${index + 1}`}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "/common-avator.jpg";
+                          }}
+                        />
+                       </Link>
+                      </div>
+                    )
+                  })}
+                 </div>
+              )}
+             
             </div>
           </div>
+          
+
 
           {/* More Options */}
           {userProfile ? (
             <div className="relative ">
                <button
-               className={`px-4 py-2 ${userProfileData?.isfollowed === 1 ? "bg-red-200" : "bg-blue-200"} mt-2 cursor-pointer rounded font-semibold transition`}
+               className={`px-3 py-1 ${userProfileData?.isfollowed === 1 ? "bg-red-200" : "bg-blue-200"} mt-2 cursor-pointer rounded font-semibold transition`}
                onClick={() => {handleFollow(data?.client?.id)}}
              >
-               {followLoading ? "Loading..." : userProfileData?.isfollowed === 1 ? "UnFollow" :"Follow"}
+               <span className="flex gap-2"><FaUserTie className="mt-1"/> {followLoading ? "Loading..." : userProfileData?.isfollowed === 1 ? "UnFollow" :"Follow"}</span>
              </button>
-             
+             <button className="px-3 py-1 bg-blue-600 text-white ml-1 rounded-sm hover:bg-blue-700 cursor-pointer">
+              <span className="flex gap-2"><LuMessageCircleMore className="mt-1"/> Message</span>
+             </button>
             </div>
           ) : (
             <div className="relative ">
@@ -163,6 +195,18 @@ function FeedHeader({ userProfile = false }) {
             >
               GATHERING
             </Link>
+            {userProfile && (
+              <Link
+              href={`/user/user-profile/${params?.id}/friends`}
+              className={`px-6 py-3 font-medium ${
+                isLinkActive(`/user/user-profile/${params?.id}/friends`)
+                  ? "text-blue-500 border-b-2 border-blue-500"
+                  : "text-gray-600"
+              }`}
+            >
+              FRIENDS
+            </Link>
+            )}
           </div>
         </div>
       </div>
