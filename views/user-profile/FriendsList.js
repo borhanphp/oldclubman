@@ -54,7 +54,7 @@ const FriendsList = () => {
       <div className="flex items-center space-x-4">
         <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
           <img
-            src={friend?.image ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + friend.image : "/common-avator.jpg"}
+            src={friend?.image ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + friend?.image : "/common-avator.jpg"}
             alt={friend?.fname}
             className="w-full h-full object-cover"
             onError={(e) => {
@@ -110,17 +110,17 @@ const FriendsList = () => {
 
         <div className="mb-6">
           <nav className="flex space-x-8">
-            {tabs.map((tab) => (
+            {tabs?.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => setActiveTab(tab?.id)}
                 className={`py-4 px-1 cursor-pointer border-b-2 font-medium text-sm ${
-                  activeTab === tab.id
+                  activeTab === tab?.id
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                {tab.label}
+                {tab?.label}
               </button>
             ))}
           </nav>
@@ -137,7 +137,7 @@ const FriendsList = () => {
           })}
           
           {/* Show empty state if no friends */}
-          {(!friendsToDisplay || friendsToDisplay.length === 0) && (
+          {(!friendsToDisplay || friendsToDisplay?.length === 0) && (
             <div className="text-center py-8">
               <p className="text-gray-500 text-lg">No {activeTab} to display</p>
               <p className="text-gray-400 text-sm mt-2">Start connecting with people to build your network</p>
