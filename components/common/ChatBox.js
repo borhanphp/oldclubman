@@ -23,7 +23,7 @@ const ChatBox = ({ user, onClose }) => {
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 rounded-full overflow-hidden">
             <img
-              src={user?.image ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + user.image : "/common-avator.jpg"}
+              src={user?.image ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + user?.image : "/common-avator.jpg"}
               alt={user?.fname}
               className="w-full h-full object-cover"
               onError={(e) => {
@@ -47,10 +47,10 @@ const ChatBox = ({ user, onClose }) => {
 
       {/* Messages Area */}
       <div className="h-96 overflow-y-auto p-4 bg-gray-50">
-        {messages.map((msg, index) => (
+        {messages?.map((msg, index) => (
           <div
             key={index}
-            className={`flex mb-3 ${msg.sent ? 'justify-end' : 'justify-start'}`}
+            className={`flex mb-3 ${msg?.sent ? 'justify-end' : 'justify-start'}`}
           >
             <div
               className={`max-w-[70%] rounded-lg p-2 ${
@@ -59,9 +59,9 @@ const ChatBox = ({ user, onClose }) => {
                   : 'bg-gray-200 text-gray-800 rounded-bl-none'
               }`}
             >
-              <p className="text-sm">{msg.text}</p>
+              <p className="text-sm">{msg?.text}</p>
               <span className="text-xs opacity-70">
-                {new Date(msg.timestamp).toLocaleTimeString([], { 
+                {new Date(msg?.timestamp).toLocaleTimeString([], { 
                   hour: '2-digit', 
                   minute: '2-digit' 
                 })}

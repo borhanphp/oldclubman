@@ -87,7 +87,7 @@ const FriendsList = () => {
   );
 
 
-  const friendsToDisplay = activeTab === 'followers' ? userFollowers : userFollowing;
+  const friendsToDisplay = activeTab === 'followers' ? (userFollowers || []) : (userFollowing || []);
 
   return (
     <div className="about-content md:max-w-4xl mx-auto">
