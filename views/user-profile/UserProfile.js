@@ -35,8 +35,8 @@ const UserProfile = () => {
   }, []);
 
   return (
-    <div className="about-content md:max-w-6xl mx-auto">
-      <FeedHeader showFriends={true} userProfile={true} />
+    <div className="about-content md:max-w-4xl mx-auto">
+      <FeedHeader showMsgBtn={true} showFriends={true} userProfile={true} />
 
       {/* Content Area - 3 Column Layout */}
       <div className="content-area py-3">
@@ -100,9 +100,6 @@ const UserProfile = () => {
                 ) : (
                   <div className="empty-state text-gray-400 text-sm py-4 text-center">
                     <p>No photos to display</p>
-                    <button className="mt-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors">
-                      Add Photos
-                    </button>
                   </div>
                 )}
               </div>

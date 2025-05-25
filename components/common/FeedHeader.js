@@ -1,18 +1,43 @@
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
-import { FaEllipsisH, FaBookmark, FaEdit, FaMegaphone, FaUserTie } from "react-icons/fa";
+import {
+  FaEllipsisH,
+  FaBookmark,
+  FaEdit,
+  FaMegaphone,
+  FaUserTie,
+} from "react-icons/fa";
 import { useParams, usePathname } from "next/navigation";
-import { followTo, getAllFollowers, getMyProfile, getUserProfile, unFollowTo } from "@/views/settings/store";
+import {
+  followTo,
+  getAllFollowers,
+  getMyProfile,
+  getUserFollowers,
+  getUserFollowing,
+  getUserProfile,
+  unFollowTo,
+} from "@/views/settings/store";
 import { useDispatch, useSelector } from "react-redux";
 import { LuMessageCircleMore } from "react-icons/lu";
+import ChatBox from "./ChatBox";
 
-function FeedHeader({ userProfile = false, showMsgBtn = false, showFriends = false }) {
-  const { profile, userProfileData, followLoading } = useSelector(({ settings }) => settings);
+function FeedHeader({
+  userProfile = false,
+  friendsTab = false,
+  showMsgBtn = false,
+  showFriends = false,
+  showEditBtn = false
+}) {
+  const { profile, userProfileData, followLoading } = useSelector(
+    ({ settings }) => settings
+  );
   const data = userProfile ? userProfileData : profile;
   const pathname = usePathname();
   const params = useParams();
   const dispatch = useDispatch();
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showChatBox, setShowChatBox] = useState(false);
+
   useEffect(() => {
     dispatch(getMyProfile());
   }, [dispatch]);
@@ -26,12 +51,14 @@ function FeedHeader({ userProfile = false, showMsgBtn = false, showFriends = fal
   };
 
   const handleFollow = (following_id) => {
-    const action = userProfileData?.isfollowed === 1 ? unFollowTo({following_id}) : followTo({following_id})
-    dispatch(action)
-    .then((res) => {
+    const action =
+      userProfileData?.isfollowed === 1
+        ? unFollowTo({ following_id })
+        : followTo({ following_id });
+    dispatch(action).then((res) => {
       dispatch(getUserProfile(params?.id));
-    })
-  }
+    });
+  };
 
   return (
     <div className="">
@@ -60,7 +87,7 @@ function FeedHeader({ userProfile = false, showMsgBtn = false, showFriends = fal
           <div className="flex items-end">
             {/* Profile Picture */}
             <div className="data-pic relative -mt-16 mr-4">
-              <div className="w-28 h-28 rounded-xl border-4 border-white overflow-hidden bg-white flex items-center justify-center text-white text-2xl">
+              <div className="w-28 -mt-30 h-28 rounded-xl border-4 border-white overflow-hidden bg-white flex items-center justify-center text-white text-2xl">
                 <img
                   src={
                     data?.client?.image
@@ -80,60 +107,124 @@ function FeedHeader({ userProfile = false, showMsgBtn = false, showFriends = fal
             {/* Profile Info */}
             <div className="data-info mb-2">
               <h2 className="text-xl font-bold">
-
-                {data?.client ? data?.client?.fname + " " + data?.client?.last_name : "Loading..."}
+                {data?.client
+                  ? data?.client?.fname + " " + data?.client?.last_name
+                  : "Loading..."}
               </h2>
               <p className="text-gray-600 text-sm">
-                <Link href={`/user/user-profile/${userProfile ? params?.id : profile?.client?.id}/friends`}><span className="hover:underline">{data.followers && data.followers} Followers</span></Link> ·{" "}
-                <Link href={`/user/user-profile/${userProfile ? params?.id : profile?.client?.id}/friends`}><span className="hover:underline">{data.following && data.following} Following</span></Link>
+                <Link
+                  href={`/user/user-profile/${
+                    userProfile ? params?.id : profile?.client?.id
+                  }/friends`}
+                >
+                  <span className="hover:underline">
+                    {data.followers && data.followers} Followers
+                  </span>
+                </Link>{" "}
+                ·{" "}
+                <Link
+                  href={`/user/user-profile/${
+                    userProfile ? params?.id : profile?.client?.id
+                  }/friends`}
+                >
+                  <span className="hover:underline">
+                    {data.following && data.following} Following
+                  </span>
+                </Link>
               </p>
               {showFriends && (
-                 <div className="flex items-center mt-2">
+                <div className="flex items-center mt-2">
                   {data?.latest_eight_followers?.map((res, index) => {
-                    return(
-                      <div 
+                    return (
+                      <div
                         key={index}
                         className={`${
-                          index !== 0 ? '-ml-2' : ''
+                          index !== 0 ? "-ml-2" : ""
                         } cursor-pointer rounded-full w-8 h-8 border-2 border-white overflow-hidden`}
                       >
-                       <Link href={`/user/user-profile/${userProfile ? params?.id : profile?.client?.id}/friends`}>
-                       <img 
-                          src={res?.follower_client?.image || '/common-avator.jpg'} 
-                          alt={`Profile ${index + 1}`}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = "/common-avator.jpg";
-                          }}
-                        />
-                       </Link>
+                        <Link
+                          href={`/user/user-profile/${
+                            userProfile ? params?.id : profile?.client?.id
+                          }/friends`}
+                        >
+                          <img
+                            src={
+                              res?.follower_client?.image ||
+                              "/common-avator.jpg"
+                            }
+                            alt={`Profile ${index + 1}`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = "/common-avator.jpg";
+                            }}
+                          />
+                        </Link>
                       </div>
-                    )
+                    );
                   })}
-                 </div>
+                </div>
               )}
-             
             </div>
           </div>
-          
-
 
           {/* More Options */}
           {userProfile ? (
             <div className="relative ">
-               <button
-               className={`px-3 py-1 ${userProfileData?.isfollowed === 1 ? "bg-red-200" : "bg-blue-200"} mt-2 cursor-pointer rounded font-semibold transition`}
-               onClick={() => {handleFollow(data?.client?.id)}}
-             >
-               <span className="flex gap-2"><FaUserTie className="mt-1"/> {followLoading ? "Loading..." : userProfileData?.isfollowed === 1 ? "UnFollow" :"Follow"}</span>
-             </button>
-             <button className="px-3 py-1 bg-blue-600 text-white ml-1 rounded-sm hover:bg-blue-700 cursor-pointer">
-              <span className="flex gap-2"><LuMessageCircleMore className="mt-1"/> Message</span>
-             </button>
+              <button
+                className={`px-3 py-1 ${
+                  userProfileData?.isfollowed === 1
+                    ? "bg-red-200"
+                    : "bg-blue-200"
+                } mt-2 cursor-pointer rounded font-semibold transition`}
+                onClick={() => {
+                  handleFollow(data?.client?.id);
+                }}
+              >
+                <span className="flex gap-2">
+                  <FaUserTie className="mt-1" />{" "}
+                  {followLoading
+                    ? "Loading..."
+                    : userProfileData?.isfollowed === 1
+                    ? "UnFollow"
+                    : "Follow"}
+                </span>
+              </button>
+              {showMsgBtn && (
+                <button
+                  onClick={() => setShowChatBox(true)}
+                  className="px-3 py-1 bg-blue-600 text-white ml-1 rounded-sm hover:bg-blue-700 cursor-pointer"
+                >
+                  <span className="flex gap-2">
+                    <LuMessageCircleMore className="mt-1" /> Message
+                  </span>
+                </button>
+              )}
             </div>
           ) : (
             <div className="relative ">
+              {showMsgBtn ? (
+                <button
+                onClick={() => setShowChatBox(true)}
+                className="px-3 mr-2 py-1 bg-blue-600 text-white ml-1 rounded-sm hover:bg-blue-700 cursor-pointer">
+                  <span className="flex gap-2">
+                    <LuMessageCircleMore className="mt-1" /> Message
+                  </span>
+                </button>
+              ) : (
+                ""
+              )}
+
+              {showEditBtn ? (
+                <button className="px-3 mr-2 py-1 bg-gray-300 text-black ml-1 rounded-sm hover:bg-gray-200 cursor-pointer">
+                  <Link href="/user/account-settings"  className="flex gap-2">
+                    <LuMessageCircleMore className="mt-1" /> Edit Profile
+                  </Link>
+                </button>
+              ) : (
+                ""
+              )}
+
               <button
                 className="text-gray-600 bg-gray-200 hover:bg-gray-300 p-2 rounded-md cursor-pointer"
                 onClick={toggleDropdown}
@@ -147,10 +238,16 @@ function FeedHeader({ userProfile = false, showMsgBtn = false, showFriends = fal
                     <button className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100">
                       <span className="text-gray-700">View As</span>
                     </button>
-                    <Link href='/user/account-settings' className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100">
+                    <Link
+                      href="/user/account-settings"
+                      className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100"
+                    >
                       <span className="text-gray-700">Edit Profile</span>
                     </Link>
-                    <Link href='/user/account-settings' className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100">
+                    <Link
+                      href="/user/account-settings"
+                      className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100"
+                    >
                       <span className="text-gray-700">Promote Profile</span>
                     </Link>
                   </div>
@@ -195,21 +292,32 @@ function FeedHeader({ userProfile = false, showMsgBtn = false, showFriends = fal
             >
               GATHERING
             </Link>
-            {userProfile && (
+            {(userProfile || friendsTab) && (
               <Link
-              href={`/user/user-profile/${params?.id}/friends`}
-              className={`px-6 py-3 font-medium ${
-                isLinkActive(`/user/user-profile/${params?.id}/friends`)
-                  ? "text-blue-500 border-b-2 border-blue-500"
-                  : "text-gray-600"
-              }`}
-            >
-              FRIENDS
-            </Link>
+                href={`/user/user-profile/${
+                  userProfile ? params?.id : profile?.client?.id
+                }/friends`}
+                className={`px-6 py-3 font-medium ${
+                  isLinkActive(
+                    `/user/user-profile/${
+                      params?.id || profile?.client?.id
+                    }/friends`
+                  )
+                    ? "text-blue-500 border-b-2 border-blue-500"
+                    : "text-gray-600"
+                }`}
+              >
+                FRIENDS
+              </Link>
             )}
           </div>
         </div>
       </div>
+
+      {/* Chat Box */}
+      {showChatBox && (
+      <ChatBox user={data?.client} onClose={() => setShowChatBox(false)} />
+      )}
     </div>
   );
 }

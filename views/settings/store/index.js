@@ -110,7 +110,7 @@ export const getUserFollowers = createAsyncThunk( 'settings/getUserFollowers', a
   const result = axios.get( `/client/all_followers_user/${id}/20` )
   .then((res) => {
     console.log(res.data.data.followers)
-      const resData = res.data.data.followers.data;
+      const resData = res.data.data.followers;
       return resData;
   })
   .catch((err) => {
@@ -124,7 +124,7 @@ export const getUserFollowing = createAsyncThunk( 'settings/getUserFollowing', a
   .then((res) => {
     console.log(res.data.data.followers)
 
-      const resData = res.data.data.followers.data;
+      const resData = res.data.data.followers;
       return resData;
   })
   .catch((err) => {

@@ -23,8 +23,8 @@ const dispatch = useDispatch()
 
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <FeedHeader showFriends={true}/>
+    <div className="max-w-4xl mx-auto">
+      <FeedHeader showEditBtn={true} friendsTab={true} showMsgBtn={true} showFriends={true}/>
       <div className="content-area py-3">
         <div className="mx-auto">
           <div className=" gap-4">

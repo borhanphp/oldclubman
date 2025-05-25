@@ -10,11 +10,11 @@ import {
 } from "react-icons/fa";
 import FeedHeader from "@/components/common/FeedHeader";
 import { useDispatch, useSelector } from "react-redux";
-import { getMyProfile, getUserFollowers, getUserFollowing, getUserProfile } from "../settings/store";
+import { followTo, getMyProfile, getUserFollowers, getUserFollowing, getUserProfile, unFollowTo } from "../settings/store";
 import { useParams } from "next/navigation";
 
 const FriendsList = () => {
-  const { userProfileData, userFollowers, userFollowing } = useSelector(({ settings }) => settings);
+  const { userProfileData, userFollowers, userFollowing, followLoading } = useSelector(({ settings }) => settings);
   const dispatch = useDispatch();
   const params = useParams();
   const [activeTab, setActiveTab] = useState('followers');
@@ -39,8 +39,18 @@ const FriendsList = () => {
     { id: 'following', label: 'Following' }
   ];
 
+  const handleFollow = (id) => {
+    dispatch(followTo({following_id: id}))
+  }
+
+  const handleUnFollow = (id) => {
+    dispatch(unFollowTo({following_id: id}))
+  }
+
   const FriendCard = ({ friend }) => (
-    <div className="bg-white rounded-lg p-4 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
+    
+        <div className="col-span-1">
+        <div className="bg-white rounded-lg p-4 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center space-x-4">
         <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
           <img
@@ -54,42 +64,34 @@ const FriendsList = () => {
           />
         </div>
         <div>
-          <h3 className="font-semibold text-gray-900">{friend?.display_name} {friend?.last_name}</h3>
+          <h3 className="font-semibold text-gray-900">{friend?.follower_client?.fname} {friend?.follower_client?.last_name}</h3>
           <p className="text-sm text-gray-500">{friend?.tagline || 'No tagline'}</p>
         </div>
       </div>
       <div className="flex items-center space-x-2">
-        <button className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors flex items-center space-x-2">
+        {friend?.followed === "not_followed" ? 
+        <button onClick={() => {handleFollow(friend?.id)}} className="px-3 py-1 cursor-pointer bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors flex items-center space-x-2">
           <FaUserPlus className="text-sm" />
-          <span>Follow</span>
-        </button>
-        <button className="text-gray-400 hover:text-gray-600">
-          <FaEllipsisH />
-        </button>
+          <span>{followLoading ? "Following..." :"Follow"}</span>
+        </button> 
+        :
+        <button onClick={() => {handleUnFollow(friend?.id)}} className="px-3 py-1 cursor-pointer bg-red-400 text-white rounded-md hover:bg-blue-600 transition-colors flex items-center space-x-2">
+        <FaUserPlus className="text-sm" />
+        <span>{followLoading ? "UnFollowing..." :"UnFollow"}</span>
+      </button> 
+        }
       </div>
     </div>
+        </div>
+ 
   );
 
-  // Ensure we're working with arrays and handle the data structure properly
-  const getFriendsToDisplay = () => {
-    if (activeTab?.id === 'followers') {
-      return Array.isArray(userFollowers) ? userFollowers : [];
-    }
-    return Array.isArray(userFollowing) ? userFollowing : [];
-  };
 
   const friendsToDisplay = activeTab === 'followers' ? userFollowers : userFollowing;
-console.log('friendsToDisplay',friendsToDisplay)
-
-  // Get the correct client data based on the type
-  const getClientData = (friend) => {
-    if (!friend) return null;
-    return activeTab === 'followers' ? friend.follower_client : friend.following_client;
-  };
 
   return (
-    <div className="about-content md:max-w-6xl mx-auto">
-      <FeedHeader showFriends={true} userProfile={true} />
+    <div className="about-content md:max-w-4xl mx-auto">
+      <FeedHeader showMsgBtn={true} showFriends={true} userProfile={true} />
 
       <div className="bg-white rounded-lg shadow-sm mt-4 p-6">
         <div className="flex justify-between items-center mb-6">
@@ -124,15 +126,12 @@ console.log('friendsToDisplay',friendsToDisplay)
           </nav>
         </div>
 
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           {friendsToDisplay?.map((friend, index) => {
-            const clientData = getClientData(friend);
-            if (!clientData) return null;
-            
             return (
               <FriendCard 
                 key={index} 
-                friend={clientData}
+                friend={friend}
               />
             );
           })}
