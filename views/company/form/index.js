@@ -64,7 +64,7 @@ const CreateCompanyForm = () => {
       <div className="container mx-auto">
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex items-center mb-6">
-            <Link href="/company" className="text-blue-500 mr-4">
+            <Link href="/user/company" className="text-blue-500 mr-4">
               <FaArrowLeft />
             </Link>
             <h1 className="text-xl font-bold text-gray-800">Create New Company</h1>
