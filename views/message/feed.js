@@ -133,6 +133,15 @@ const MessagingContent = () => {
     })
   };
 
+  const handleChatSelect2 = (conversation) => {
+    dispatch(getMessage(conversation))
+    .then((ress) => {
+      console.log('ress from get message', ress)
+    })
+  };
+  
+
+
   // Handle file selection
   const handleFileSelect = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -294,15 +303,15 @@ const MessagingContent = () => {
                     {allChat?.length > 0 ? (
                       allChat?.map(chat => (
                         <div 
-                          key={chat.id} 
-                          className={`flex items-center p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${chat.id === currentChat.id ? 'bg-blue-50' : ''}`}
-                          onClick={() => handleContactSelect(chat.id)}
+                          key={chat?.id} 
+                          className={`flex items-center p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${chat?.id === currentChat?.id ? 'bg-blue-50' : ''}`}
+                          onClick={() => handleChatSelect2(chat)}
                         >
                           <div className="relative mr-3">
                             <div className="w-10 h-10 rounded-full bg-orange-300 flex items-center justify-center text-white">
                               {chat?.name?.charAt(0)}
                             </div>
-                            {chat.isOnline && (
+                            {chat?.isOnline && (
                               <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
                             )}
                           </div>
@@ -313,9 +322,9 @@ const MessagingContent = () => {
                             </div>
                             <div className="flex justify-between items-center">
                               <p className="text-xs text-gray-500 truncate">{chat?.message}</p>
-                              {chat.unread > 0 && (
+                              {chat?.unread > 0 && (
                                 <span className="ml-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                  {chat.unread}
+                                  {chat?.unread}
                                 </span>
                               )}
                             </div>
