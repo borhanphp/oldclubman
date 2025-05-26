@@ -25,7 +25,6 @@ export const getUserProfile = createAsyncThunk( 'settings/getUserProfile', async
   const result = axios.get( `client/user_profile/${id}/10` )
   .then((res) => {
       const resData = res.data.data;
-      console.log('singal user',resData)
       return resData;
   })
   .catch((err) => {

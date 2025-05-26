@@ -9,13 +9,16 @@ import {
 } from 'react-icons/fa';
 import api from '@/helpers/axios';
 import { useDispatch, useSelector } from 'react-redux';
-import { getAllChat } from './store';
+import { getAllChat, getMessage, sendMessage, startConversation } from './store';
+import { getMyProfile, getUserFollowers, getUserProfile } from '../settings/store';
 
 const MessagingContent = () => {
-  const {allChat} = useSelector(({chat}) => chat);
+  const {allChat, prevChat, convarsationData} = useSelector(({chat}) => chat);
+  const {userFollowers, profile, userProfileData} = useSelector(({settings}) => settings);
   const dispatch = useDispatch();
+  console.log('prevChat',prevChat)
 
-  console.log('allChat',allChat)
+  console.log('userFollowers',userFollowers)
   // State for active chats
   const [activeChats, setActiveChats] = useState([]);
 
@@ -51,8 +54,10 @@ const MessagingContent = () => {
 
   useEffect(() => {
     dispatch(getAllChat())
+    dispatch(getMyProfile())
   }, [])
 
+  console.log(profile?.client?.id)
   // Filter chats based on search term
   const filteredChats = activeChats.filter(chat => 
     chat.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -108,30 +113,24 @@ const MessagingContent = () => {
 
   // Handle contact selection
   const handleContactSelect = (contactId) => {
-    const selectedContact = contacts.find(contact => contact.id === contactId);
-    
-    if (selectedContact) {
-      // Check if there's already a chat with this contact
-      const existingChat = activeChats.find(chat => chat.id === selectedContact.id);
-      
-      if (!existingChat) {
-        // Create a new chat if none exists
-        const newChat = {
-          id: selectedContact.id,
-          name: selectedContact.name,
-          message: 'Start a conversation',
-          time: 'New',
-          isOnline: selectedContact.isOnline,
-          unread: 0
-        };
-        
-        setActiveChats(prev => [newChat, ...prev]);
-      }
-      
-      // Set current chat and switch to chats tab
-      setCurrentChat(selectedContact);
-      setActiveTab('chats');
-    }
+    dispatch(getUserProfile(contactId))
+    .then((res) => {
+      const userData = res?.payload?.client;
+      const newChat = {
+        is_group: 0,
+        name: userData?.fname + " " + userData?.last_name,
+        avatar: process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + userData?.image,
+        user_ids: userData?.id
+      };
+      dispatch(startConversation(newChat))
+      .then((response) => {
+        const conversation = response?.payload?.conversation;
+        dispatch(getMessage(conversation))
+        .then((ress) => {
+          console.log('ress from get message', ress)
+        })
+      })
+    })
   };
 
   // Handle file selection
@@ -173,92 +172,21 @@ const MessagingContent = () => {
 
   // Handle sending a message
   const handleSendMessage = () => {
-    if (newMessage.trim() === '' && !selectedFile) return;
-    
-    // Get current timestamp
-    const now = new Date();
-    const options = { 
-      day: '2-digit', 
-      month: 'short', 
-      year: '2-digit', 
-      hour: '2-digit', 
-      minute: '2-digit', 
-      hour12: true 
-    };
-    const timeString = now.toLocaleString('en-US', options).replace(',', '');
-    
-    // Create new message
-    const newMessageObj = {
-      id: currentChat?.messages?.length + 1,
-      text: newMessage,
-      sent: true,
-      time: timeString,
-      read: false,
-      file: selectedFile ? {
-        name: selectedFile.name,
-        size: selectedFile.size,
-        type: selectedFile.type
-      } : null
-    };
-    
-    // Update messages in current chat
-    setCurrentChat(prev => ({
-      ...prev,
-      messages: [...prev.messages, newMessageObj]
-    }));
-    
-    // Update chat list preview
-    const previewText = selectedFile 
-      ? `${newMessage || 'Sent a file'}: ${selectedFile.name}`
-      : newMessage;
-      
-    setActiveChats(prev => prev.map(chat => 
-      chat.id === currentChat.id 
-        ? { ...chat, message: previewText, time: timeString.split(',')[0] } 
-        : chat
-    ));
-    
-    // Clear input and file
-    setNewMessage('');
-    setSelectedFile(null);
-    
-    // Simulate response after delay (for demo purposes)
-    setIsTyping(true);
-    setTimeout(() => {
-      const responseMsg = {
-        id: currentChat?.messages?.length + 2,
-        text: getRandomResponse(),
-        sent: false,
-        time: new Date().toLocaleString('en-US', options).replace(',', ''),
-        read: true
-      };
-      
-      setCurrentChat(prev => ({
-        ...prev,
-        messages: [...prev.messages, responseMsg]
-      }));
-      
-      setIsTyping(false);
-    }, 2000);
+    const chatData = {
+      chatId: convarsationData?.id,
+      type: "text",
+      content: newMessage
+    }
+
+    dispatch(sendMessage(chatData))
+    .then((res) => {
+      dispatch(getMessage({id: convarsationData?.id}))
+    })
   };
 
   // Remove selected file
   const removeSelectedFile = () => {
     setSelectedFile(null);
-  };
-
-  // Get random response for demo
-  const getRandomResponse = () => {
-    const responses = [
-      "Hi there! How can I help you?",
-      "Thanks for your message!",
-      "I'll get back to you soon.",
-      "That sounds great!",
-      "Can you provide more details?",
-      "Let me check and get back to you.",
-      "Thanks for sharing the file!"
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
   };
 
   // Handle key press to send message
@@ -271,6 +199,11 @@ const MessagingContent = () => {
 
   // Tab switching
   const handleTabChange = (tab) => {
+    if(tab === "contacts"){
+        dispatch(getUserFollowers(profile?.client?.id));
+    }else{
+      dispatch(getAllChat())
+    }
     setActiveTab(tab);
     setSearchTerm('');
   };
@@ -310,6 +243,7 @@ const MessagingContent = () => {
     }
   };
 
+  console.log('userProfileData',userProfileData)
   return (
     <div className="messaging-content bg-gray-100 min-h-screen">
       <div className="container mx-auto py-4">
@@ -366,7 +300,7 @@ const MessagingContent = () => {
                         >
                           <div className="relative mr-3">
                             <div className="w-10 h-10 rounded-full bg-orange-300 flex items-center justify-center text-white">
-                              {chat.name.charAt(0)}
+                              {chat?.name?.charAt(0)}
                             </div>
                             {chat.isOnline && (
                               <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
@@ -400,24 +334,24 @@ const MessagingContent = () => {
                 {/* Contacts List */}
                 {activeTab === 'contacts' && (
                   <div className="overflow-y-auto flex-1">
-                    {filteredContacts.length > 0 ? (
-                      filteredContacts.map(contact => (
+                    {userFollowers?.length > 0 ? (
+                      userFollowers?.map(contact => (
                         <div 
-                          key={contact.id} 
+                          key={contact?.id} 
                           className="flex items-center p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
-                          onClick={() => handleContactSelect(contact.id)}
+                          onClick={() => handleContactSelect(contact?.follower_client?.id)}
                         >
                           <div className="relative mr-3">
                             <div className="w-10 h-10 rounded-full bg-orange-300 flex items-center justify-center text-white">
-                              {contact.name.charAt(0)}
+                              {contact.follower_client.fname.charAt(0)}
                             </div>
                             {contact.isOnline && (
                               <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-sm font-medium truncate">{contact.name}</h3>
-                            <p className="text-xs text-gray-500 truncate">{contact.status}</p>
+                            <h3 className="text-sm font-medium truncate">{contact.follower_client?.fname + " " + contact.follower_client.last_name}</h3>
+                            <p className="text-xs text-gray-500 truncate">{contact?.status}</p>
                           </div>
                         </div>
                       ))
@@ -456,14 +390,14 @@ const MessagingContent = () => {
                 <div className="flex items-center">
                   <div className="relative mr-3">
                     <div className="w-10 h-10 rounded-full bg-orange-300 flex items-center justify-center text-white">
-                      {currentChat?.name.charAt(0)}
+                      {userProfileData?.client?.fname.charAt(0)}
                     </div>
                     {currentChat?.isOnline && (
                       <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
                     )}
                   </div>
                   <div>
-                    <h3 className="font-medium">{currentChat?.name}</h3>
+                    <h3 className="font-medium">{userProfileData?.client?.fname + " " + userProfileData?.client?.last_name }</h3>
                     <p className="text-xs text-gray-500">
                       {isTyping ? 'Typing...' : currentChat?.isOnline ? 'Online' : 'Offline'}
                     </p>
@@ -481,46 +415,47 @@ const MessagingContent = () => {
               
               {/* Chat Messages */}
               <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
-                {currentChat?.messages.length > 0 ? (
+                {prevChat?.length > 0 ? (
                   <div className="space-y-4">
-                    {currentChat.messages.map(message => (
+                    {prevChat?.map(message => (
                       <div 
                         key={message.id} 
-                        className={`flex ${message.sent ? 'justify-end' : 'justify-start'}`}
+                        className={`flex ${message.user_id === message.user.id ? 'justify-end' : 'justify-start'}`}
                       >
-                        {!message.sent && (
+                        {message.user_id !== message.user.id && (
                           <div className="w-8 h-8 rounded-full bg-orange-300 flex items-center justify-center text-white mr-2">
-                            {currentChat.name.charAt(0)}
+                            {message?.user?.display_name?.charAt(0)}
                           </div>
                         )}
-                        <div className={`max-w-xs ${message.sent ? 'bg-blue-500 text-white' : 'bg-white border border-gray-200'} rounded-lg p-3 shadow-sm`}>
+                        <div className={`max-w-xs ${message.user_id === message.user.id ? 'bg-blue-500 text-white' : 'bg-white border border-gray-200'} rounded-lg p-3 shadow-sm`}>
                           {message.file && (
-                            <div className={`p-3 mb-2 border rounded-md ${message.sent ? 'border-blue-400 bg-blue-400' : 'border-gray-200 bg-gray-50'}`}>
+                            <div className={`p-3 mb-2 border rounded-md ${message.user_id === message.user.id ? 'border-blue-400 bg-blue-400' : 'border-gray-200 bg-gray-50'}`}>
                               <div className="flex items-center">
                                 {getFileIcon(message.file.name)}
                                 <div className="ml-3 flex-1 min-w-0">
-                                  <p className={`text-sm font-medium truncate ${message.sent ? 'text-white' : 'text-gray-800'}`}>
+                                  <p className={`text-sm font-medium truncate ${message.user_id === message.user.id ? 'text-white' : 'text-gray-800'}`}>
                                     {message.file.name}
                                   </p>
                                   <p className={`text-xs ${message.sent ? 'text-blue-100' : 'text-gray-500'}`}>
                                     {formatFileSize(message.file.size)}
                                   </p>
                                 </div>
-                                <a href="#" className={`ml-2 text-xs px-2 py-1 rounded ${message.sent ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>
+                                <a href="#" className={`ml-2 text-xs px-2 py-1 rounded ${message.user_id === message.user.id ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>
                                   Download
                                 </a>
                               </div>
                             </div>
                           )}
-                          {message.text && <p>{message.text}</p>}
-                          <div className={`text-xs mt-1 flex justify-end items-center ${message.sent ? 'text-blue-100' : 'text-gray-500'}`}>
+                          {message.content && <p>{message.content}</p>}
+                          
+                          <div className={`text-xs mt-1 flex justify-end items-center ${message.user_id === message.user.id ? 'text-blue-100' : 'text-gray-500'}`}>
                             <span>{message.time}</span>
                             {message.sent && message.read && (
                               <FaCheckCircle className="ml-1 text-xs" />
                             )}
                           </div>
                         </div>
-                        {message.sent && (
+                        {message.user_id === message.user.id && (
                           <div className="w-8 h-8 rounded-full bg-red-400 flex items-center justify-center text-white ml-2">
                             BU
                           </div>

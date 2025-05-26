@@ -139,7 +139,7 @@ const Display = ({ designOptions, colorOptions }) => {
     {/* Color */}
     <h3 className="text-md font-semibold mb-3">Color</h3>
     <div className="flex gap-3 mb-8">
-      {colorOptions.map(color => (
+      {colorOptions?.map(color => (
         <div
           key={color}
           onClick={() => handleColorChange(color)}
