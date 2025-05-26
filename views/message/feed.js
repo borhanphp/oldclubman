@@ -184,10 +184,19 @@ const MessagingContent = () => {
   useEffect(() => {
     if (!convarsationData?.id) return;
 
+    // Check if Pusher key is available
+    const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY;
+    console.log('Pusher Key:', pusherKey);
+    
+    if (!pusherKey) {
+      console.error('Pusher key is not defined in environment variables');
+      return;
+    }
+
     // Initialize Pusher
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
-      wsHost: process.env.NEXT_PUBLIC_PUSHER_HOST || `ws-${process.env.NEXT_PUBLIC_PUSHER_CLUSTER}.pusher.com`,
+    const pusher = new Pusher(pusherKey, {
+      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'ap2',
+      wsHost: process.env.NEXT_PUBLIC_PUSHER_HOST || `ws-${process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'ap2'}.pusher.com`,
       wsPort: process.env.NEXT_PUBLIC_PUSHER_PORT || 80,
       wssPort: process.env.NEXT_PUBLIC_PUSHER_PORT || 443,
       forceTLS: true,
