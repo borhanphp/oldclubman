@@ -35,7 +35,7 @@ const UserProfile = () => {
   }, []);
 
   return (
-    <div className="about-content md:max-w-4xl mx-auto">
+    <div className="about-content md:max-w-5xl mx-auto">
       <FeedHeader showMsgBtn={true} showFriends={true} userProfile={true} />
 
       {/* Content Area - 3 Column Layout */}
