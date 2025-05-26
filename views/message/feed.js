@@ -16,7 +16,7 @@ const MessagingContent = () => {
   const {allChat, prevChat, convarsationData} = useSelector(({chat}) => chat);
   const {userFollowers, profile, userProfileData} = useSelector(({settings}) => settings);
   const dispatch = useDispatch();
-  console.log('prevChat',prevChat)
+  console.log('allChat',allChat)
 
   console.log('userFollowers',userFollowers)
   // State for active chats
@@ -181,6 +181,7 @@ const MessagingContent = () => {
     dispatch(sendMessage(chatData))
     .then((res) => {
       dispatch(getMessage({id: convarsationData?.id}))
+      setNewMessage("");
     })
   };
 
@@ -243,7 +244,6 @@ const MessagingContent = () => {
     }
   };
 
-  console.log('userProfileData',userProfileData)
   return (
     <div className="messaging-content bg-gray-100 min-h-screen">
       <div className="container mx-auto py-4">
@@ -291,12 +291,12 @@ const MessagingContent = () => {
                 {/* Chats List */}
                 {activeTab === 'chats' && (
                   <div className="overflow-y-auto flex-1">
-                    {filteredChats.length > 0 ? (
-                      filteredChats.map(chat => (
+                    {allChat?.length > 0 ? (
+                      allChat?.map(chat => (
                         <div 
                           key={chat.id} 
                           className={`flex items-center p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${chat.id === currentChat.id ? 'bg-blue-50' : ''}`}
-                          onClick={() => handleChatSelect(chat.id)}
+                          onClick={() => handleContactSelect(chat.id)}
                         >
                           <div className="relative mr-3">
                             <div className="w-10 h-10 rounded-full bg-orange-300 flex items-center justify-center text-white">
@@ -308,11 +308,11 @@ const MessagingContent = () => {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between items-center">
-                              <h3 className="text-sm font-medium truncate">{chat.name}</h3>
-                              <span className="text-xs text-gray-500">{chat.time}</span>
+                              <h3 className="text-sm font-medium truncate">{chat?.name}</h3>
+                              <span className="text-xs text-gray-500">{chat?.time}</span>
                             </div>
                             <div className="flex justify-between items-center">
-                              <p className="text-xs text-gray-500 truncate">{chat.message}</p>
+                              <p className="text-xs text-gray-500 truncate">{chat?.message}</p>
                               {chat.unread > 0 && (
                                 <span className="ml-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                                   {chat.unread}
@@ -364,22 +364,7 @@ const MessagingContent = () => {
                   </div>
                 )}
                 
-                {/* Bottom Action Button */}
-                <div className="p-3 border-t border-gray-200">
-                  <button className="flex items-center justify-center w-full bg-gray-100 hover:bg-gray-200 rounded-md p-2">
-                    {activeTab === 'chats' ? (
-                      <>
-                        <FaUserFriends className="text-gray-600 mr-2" />
-                        <span className="text-sm text-gray-600">All Contacts</span>
-                      </>
-                    ) : (
-                      <>
-                        <FaUserFriends className="text-gray-600 mr-2" />
-                        <span className="text-sm text-gray-600">Add New Contact</span>
-                      </>
-                    )}
-                  </button>
-                </div>
+              
               </div>
             </div>
             
@@ -420,20 +405,20 @@ const MessagingContent = () => {
                     {prevChat?.map(message => (
                       <div 
                         key={message.id} 
-                        className={`flex ${message.user_id === message.user.id ? 'justify-end' : 'justify-start'}`}
+                        className={`flex ${message.user_id === profile?.client?.id ? 'justify-end' : 'justify-start'}`}
                       >
-                        {message.user_id !== message.user.id && (
+                        {message.user_id !== profile?.client?.id && (
                           <div className="w-8 h-8 rounded-full bg-orange-300 flex items-center justify-center text-white mr-2">
                             {message?.user?.display_name?.charAt(0)}
                           </div>
                         )}
-                        <div className={`max-w-xs ${message.user_id === message.user.id ? 'bg-blue-500 text-white' : 'bg-white border border-gray-200'} rounded-lg p-3 shadow-sm`}>
+                        <div className={`max-w-xs ${message.user_id === profile?.client?.id ? 'bg-blue-500 text-white' : 'bg-white border border-gray-200'} rounded-lg p-3 shadow-sm`}>
                           {message.file && (
-                            <div className={`p-3 mb-2 border rounded-md ${message.user_id === message.user.id ? 'border-blue-400 bg-blue-400' : 'border-gray-200 bg-gray-50'}`}>
+                            <div className={`p-3 mb-2 border rounded-md ${message.user_id === profile?.client?.id ? 'border-blue-400 bg-blue-400' : 'border-gray-200 bg-gray-50'}`}>
                               <div className="flex items-center">
                                 {getFileIcon(message.file.name)}
                                 <div className="ml-3 flex-1 min-w-0">
-                                  <p className={`text-sm font-medium truncate ${message.user_id === message.user.id ? 'text-white' : 'text-gray-800'}`}>
+                                  <p className={`text-sm font-medium truncate ${message.user_id === profile?.client?.id ? 'text-white' : 'text-gray-800'}`}>
                                     {message.file.name}
                                   </p>
                                   <p className={`text-xs ${message.sent ? 'text-blue-100' : 'text-gray-500'}`}>
@@ -455,9 +440,9 @@ const MessagingContent = () => {
                             )}
                           </div>
                         </div>
-                        {message.user_id === message.user.id && (
+                        {message.user_id === profile?.client?.id && (
                           <div className="w-8 h-8 rounded-full bg-red-400 flex items-center justify-center text-white ml-2">
-                            BU
+                            {message?.user?.display_name?.charAt(0) || "N/A"}
                           </div>
                         )}
                       </div>
