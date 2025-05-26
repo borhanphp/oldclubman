@@ -71,11 +71,11 @@ const FriendsList = () => {
       <div className="flex items-center space-x-2">
      
 
-        <button onClick={() => {handleFollow(friend?.id)}} className="px-3 py-1 cursor-pointer bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors flex items-center space-x-2">
+        {/* <button onClick={() => {handleFollow(friend?.id)}} className="px-3 py-1 cursor-pointer bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors flex items-center space-x-2">
           <FaUserPlus className="text-sm" />
           <span>{followLoading ? "Following..." :"Follow"}</span>
         </button> 
-   
+    */}
       </div>
     </div>
         </div>
@@ -122,6 +122,17 @@ const FriendsList = () => {
           </nav>
         </div>
 
+        <div className="grid grid-cols-2 gap-4">
+          {friendsToDisplay?.map((friend, index) => {
+            return (
+              <FriendCard 
+                key={index} 
+                friend={friend}
+              />
+            );
+          })}
+         
+        </div>
          
           {/* Show empty state if no friends */}
           {(!friendsToDisplay || friendsToDisplay?.length === 0) && (
