@@ -69,17 +69,13 @@ const FriendsList = () => {
         </div>
       </div>
       <div className="flex items-center space-x-2">
-        {friend?.followed === "not_followed" ? 
+     
+
         <button onClick={() => {handleFollow(friend?.id)}} className="px-3 py-1 cursor-pointer bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors flex items-center space-x-2">
           <FaUserPlus className="text-sm" />
           <span>{followLoading ? "Following..." :"Follow"}</span>
         </button> 
-        :
-        <button onClick={() => {handleUnFollow(friend?.id)}} className="px-3 py-1 cursor-pointer bg-red-400 text-white rounded-md hover:bg-blue-600 transition-colors flex items-center space-x-2">
-        <FaUserPlus className="text-sm" />
-        <span>{followLoading ? "UnFollowing..." :"UnFollow"}</span>
-      </button> 
-        }
+   
       </div>
     </div>
         </div>
