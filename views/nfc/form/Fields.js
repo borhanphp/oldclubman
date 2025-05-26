@@ -58,8 +58,6 @@ function FieldFormsArea({ fields, onRemoveField, onReorderFields, onUpdateField 
     onReorderFields(reordered);
   }
 
-  console.log('fields',fields)
-
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
       <Droppable droppableId="fields-droppable">

@@ -41,12 +41,16 @@ const Display = ({ designOptions, colorOptions }) => {
           <SocialIcon network="user" style={{ height: 48, width: 48 }} bgColor="transparent" fgColor="#7c3aed" />
         )}
       </div>
-      <input type="file" accept="image/*" onChange={handleProfilePhotoChange} className="block" />
+      <label className="bg-gray-500 hover:bg-gray-400 text-white px-4 py-2 rounded-md cursor-pointer">
+      <input hidden type="file" accept="image/*" onChange={handleProfilePhotoChange} className="block" />
+      Upload Logo
+
+      </label>
     </div>
     {/* Design */}
     <h3 className="text-md font-semibold mb-3">Design</h3>
     <div className="flex gap-6 mb-8">
-      {designOptions.map(design => (
+      {designOptions?.map(design => (
         <div
           key={design.id}
           onClick={() => handleDesignChange(design.id)}
@@ -154,7 +158,11 @@ const Display = ({ designOptions, colorOptions }) => {
           <SocialIcon network="user" style={{ height: 40, width: 40 }} bgColor="transparent" fgColor="#7c3aed" />
         )}
       </div>
-      <input type="file" accept="image/*" onChange={handleLogoChange} className="block" />
+      <label className="bg-gray-500 hover:bg-gray-400 text-white px-4 py-2 rounded-md cursor-pointer">
+      <input hidden type="file" accept="image/*" onChange={handleLogoChange} className="block" />
+      Upload Logo
+
+      </label>
     </div>
   </div>
   )

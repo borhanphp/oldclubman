@@ -13,7 +13,7 @@ const Information = () => {
   };
 
   return (
-    <div className="py-3">
+    <div className="">
       {/* Personal Section */}
       <div className="mb-8">
         <h3 className="font-bold text-md mb-2">Personal</h3>
