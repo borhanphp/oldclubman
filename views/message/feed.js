@@ -11,6 +11,7 @@ import api from '@/helpers/axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { getAllChat, getMessage, sendMessage, startConversation } from './store';
 import { getMyProfile, getUserFollowers, getUserProfile } from '../settings/store';
+import Pusher from 'pusher-js';
 
 const MessagingContent = () => {
   const {allChat, prevChat, convarsationData} = useSelector(({chat}) => chat);
@@ -179,6 +180,36 @@ const MessagingContent = () => {
     else return (bytes / 1048576).toFixed(1) + ' MB';
   };
 
+  // Pusher setup for real-time messaging
+  useEffect(() => {
+    if (!convarsationData?.id) return;
+
+    // Initialize Pusher
+    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
+      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
+      wsHost: process.env.NEXT_PUBLIC_PUSHER_HOST || `ws-${process.env.NEXT_PUBLIC_PUSHER_CLUSTER}.pusher.com`,
+      wsPort: process.env.NEXT_PUBLIC_PUSHER_PORT || 80,
+      wssPort: process.env.NEXT_PUBLIC_PUSHER_PORT || 443,
+      forceTLS: true,
+      enabledTransports: ['ws', 'wss'],
+      disableStats: true
+    });
+
+    // Subscribe to the conversation channel
+    const channel = pusher.subscribe(`private-conversation.${convarsationData.id}`);
+
+    // Listen for new messages
+    channel.bind('App\\Events\\MessageSent', (data) => {
+      // Update messages when a new message is received
+      dispatch(getMessage({id: convarsationData.id}));
+    });
+
+    return () => {
+      channel.unbind('App\\Events\\MessageSent');
+      pusher.unsubscribe(`private-conversation.${convarsationData.id}`);
+    };
+  }, [convarsationData?.id]);
+
   // Handle sending a message
   const handleSendMessage = () => {
     const chatData = {
@@ -189,8 +220,8 @@ const MessagingContent = () => {
 
     dispatch(sendMessage(chatData))
     .then((res) => {
-      dispatch(getMessage({id: convarsationData?.id}))
       setNewMessage("");
+      // No need to manually fetch messages as Pusher will trigger the update
     })
   };
 
