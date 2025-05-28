@@ -456,7 +456,7 @@ const MessagingContent = () => {
                         key={message.id} 
                         className={`flex ${+message.user_id === profile?.client?.id ? 'justify-end' : 'justify-start'}`}
                       >
-                        {message.user_id !== profile?.client?.id && (
+                        {+message.user_id !== profile?.client?.id && (
                           <div className="w-8 h-8 rounded-full bg-orange-300 flex items-center justify-center text-white mr-2">
                             {message?.user?.display_name?.charAt(0)}
                           </div>
