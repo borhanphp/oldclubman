@@ -67,13 +67,13 @@ const NfcContent = () => {
 
                     return(
                       <Link href={`/user/nfc/preview/${card.id}`} key={index}>
-                        {card?.card_design?.design_card_id === 1 ?
+                        {+card?.card_design?.design_card_id === 1 ?
                         <CardClassic basicNfcData={fullCard}/>
                         :
-                        card?.card_design?.design_card_id === 2 ?
+                        +card?.card_design?.design_card_id === 2 ?
                         <CardModern basicNfcData={fullCard}/>
                         :
-                        card?.card_design?.design_card_id === 3 ?
+                        +card?.card_design?.design_card_id === 3 ?
                         <CardSleek basicNfcData={fullCard}/>
                         :
                         <CardFlat basicNfcData={fullCard}/>
