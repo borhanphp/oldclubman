@@ -120,16 +120,16 @@ const NfcForm = () => {
               <div className="flex flex-col md:flex-row w-full">
                 {/* Preview Card on the left */}
                 <div className="w-full md:w-1/3 flex-shrink-0 p-5">
-                  {basicNfcData.design_card_id === 1 && (
+                  {basicNfcData.design_card_id === +1 && (
                     <CardClassic basicNfcData={basicNfcData} />
                   )}
-                  {basicNfcData.design_card_id === 2 && (
+                  {basicNfcData.design_card_id === +2 && (
                     <CardModern basicNfcData={basicNfcData} />
                   )}
-                  {basicNfcData.design_card_id === 3 && (
+                  {basicNfcData.design_card_id === +3 && (
                     <CardSleek basicNfcData={basicNfcData} />
                   )}
-                  {basicNfcData.design_card_id === 4 && (
+                  {basicNfcData.design_card_id === +4 && (
                     <CardFlat basicNfcData={basicNfcData} />
                   )}
                 </div>

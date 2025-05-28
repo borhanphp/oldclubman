@@ -454,27 +454,27 @@ const MessagingContent = () => {
                     {prevChat?.map(message => (
                       <div 
                         key={message.id} 
-                        className={`flex ${message.user_id === profile?.client?.id ? 'justify-end' : 'justify-start'}`}
+                        className={`flex ${+message.user_id === profile?.client?.id ? 'justify-end' : 'justify-start'}`}
                       >
                         {message.user_id !== profile?.client?.id && (
                           <div className="w-8 h-8 rounded-full bg-orange-300 flex items-center justify-center text-white mr-2">
                             {message?.user?.display_name?.charAt(0)}
                           </div>
                         )}
-                        <div className={`max-w-xs ${message.user_id === profile?.client?.id ? 'bg-blue-500 text-white' : 'bg-white border border-gray-200'} rounded-lg p-3 shadow-sm`}>
+                        <div className={`max-w-xs ${+message.user_id === profile?.client?.id ? 'bg-blue-500 text-white' : 'bg-white border border-gray-200'} rounded-lg p-3 shadow-sm`}>
                           {message.file && (
-                            <div className={`p-3 mb-2 border rounded-md ${message.user_id === profile?.client?.id ? 'border-blue-400 bg-blue-400' : 'border-gray-200 bg-gray-50'}`}>
+                            <div className={`p-3 mb-2 border rounded-md ${+message.user_id === profile?.client?.id ? 'border-blue-400 bg-blue-400' : 'border-gray-200 bg-gray-50'}`}>
                               <div className="flex items-center">
                                 {getFileIcon(message.file.name)}
                                 <div className="ml-3 flex-1 min-w-0">
-                                  <p className={`text-sm font-medium truncate ${message.user_id === profile?.client?.id ? 'text-white' : 'text-gray-800'}`}>
+                                  <p className={`text-sm font-medium truncate ${+message.user_id === profile?.client?.id ? 'text-white' : 'text-gray-800'}`}>
                                     {message.file.name}
                                   </p>
                                   <p className={`text-xs ${message.sent ? 'text-blue-100' : 'text-gray-500'}`}>
                                     {formatFileSize(message.file.size)}
                                   </p>
                                 </div>
-                                <a href="#" className={`ml-2 text-xs px-2 py-1 rounded ${message.user_id === message.user.id ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>
+                                <a href="#" className={`ml-2 text-xs px-2 py-1 rounded ${+message.user_id === message.user.id ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>
                                   Download
                                 </a>
                               </div>
@@ -482,14 +482,14 @@ const MessagingContent = () => {
                           )}
                           {message.content && <p>{message.content}</p>}
                           
-                          <div className={`text-xs mt-1 flex justify-end items-center ${message.user_id === message.user.id ? 'text-blue-100' : 'text-gray-500'}`}>
+                          <div className={`text-xs mt-1 flex justify-end items-center ${+message.user_id === message.user.id ? 'text-blue-100' : 'text-gray-500'}`}>
                             <span>{message.time}</span>
                             {message.sent && message.read && (
                               <FaCheckCircle className="ml-1 text-xs" />
                             )}
                           </div>
                         </div>
-                        {message.user_id === profile?.client?.id && (
+                        {+message.user_id === profile?.client?.id && (
                           <div className="w-8 h-8 rounded-full bg-red-400 flex items-center justify-center text-white ml-2">
                             {message?.user?.display_name?.charAt(0) || "N/A"}
                           </div>

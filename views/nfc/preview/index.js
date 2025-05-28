@@ -241,15 +241,14 @@ const handleShareEmail = () => {
                   style={{ backgroundColor: "#fff" }}
                   className="bg-white rounded-lg border border-gray-100 p-4 flex flex-col items-center relative w-full max-w-md mx-auto lg:mx-0 lg:w-1/2"
                 >
-                  dfsadfasdf
                   {/* Card Content */}
-                  {basicNfcData?.design_card_id === 1 ?
+                  {basicNfcData?.design_card_id === +1 ?
                     <CardClassic basicNfcData={basicNfcData}/>
                     :
-                    basicNfcData?.design_card_id === 2 ?
+                    basicNfcData?.design_card_id === +2 ?
                     <CardModern basicNfcData={basicNfcData}/>
                     :
-                    basicNfcData?.design_card_id === 3 ?
+                    basicNfcData?.design_card_id === +3 ?
                     <CardSleek basicNfcData={basicNfcData}/>
                     :
                     <CardFlat basicNfcData={basicNfcData}/>
