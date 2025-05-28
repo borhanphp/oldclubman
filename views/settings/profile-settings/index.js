@@ -139,15 +139,25 @@ const ProfileSettings = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            {profilePhotoPreview && (
+            {(profilePhotoPreview && profileSettingData?.image) ? (
               <div className="w-16 h-16 rounded-full overflow-hidden mr-2">
                 <img
-                  src={profilePhotoPreview}
+                  src={profilePhotoPreview || "/common-avator.jpg"}
                   alt="Profile Preview"
                   className="w-full h-full object-cover"
                 />
+
               </div>
-            )}
+            ):
+            <div className="w-16 h-16 rounded-full overflow-hidden mr-2">
+            <img
+              src={"/common-avator.jpg"}
+              alt="Profile Preview"
+              className="w-full h-full object-cover"
+            />
+
+          </div>
+            }
             <button
               type="button"
               onClick={triggerProfilePhotoUpload}
@@ -179,7 +189,7 @@ const ProfileSettings = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            {coverPhotoPreview && (
+            {(profileSettingData?.cover_photo && coverPhotoPreview ) ? (
               <div className="w-24 h-12 rounded overflow-hidden mr-2">
                 <img
                   src={coverPhotoPreview}
@@ -187,7 +197,15 @@ const ProfileSettings = () => {
                   className="w-full h-full object-cover"
                 />
               </div>
-            )}
+            ) : 
+            <div className="w-24 h-12 rounded overflow-hidden mr-2">
+                <img
+                  src={"/oldman-bg.jpg"}
+                  alt="Cover Preview"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            }
             <button
               type="button"
               onClick={triggerCoverPhotoUpload}

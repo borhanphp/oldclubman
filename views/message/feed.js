@@ -1,72 +1,68 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   FaSearch, FaUserFriends, FaSmile, FaPaperclip, FaPaperPlane, 
   FaCheckCircle, FaImage, FaFile, FaFileAlt, FaFilePdf, 
   FaFileWord, FaFileExcel, FaFileImage, FaTimesCircle, 
   FaCommentAlt, FaAddressBook, FaEnvelope
 } from 'react-icons/fa';
-import api from '@/helpers/axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { getAllChat, getMessage, sendMessage, startConversation } from './store';
 import { getMyProfile, getUserFollowers, getUserProfile } from '../settings/store';
-import Pusher from 'pusher-js';
+import { useChatPusher } from '@/components/custom/useChatPusher';
+import { pusherService } from '@/utility/pusher';
+import { ClientSegmentRoot } from 'next/dist/client/components/client-segment';
 
 const MessagingContent = () => {
-  const {allChat, prevChat, convarsationData} = useSelector(({chat}) => chat);
-  const {userFollowers, profile, userProfileData} = useSelector(({settings}) => settings);
+  const { allChat, prevChat, convarsationData } = useSelector(({chat}) => chat);
+  const { userFollowers, profile, userProfileData } = useSelector(({settings}) => settings);
   const dispatch = useDispatch();
-  console.log('allChat',allChat)
-
-  console.log('userFollowers',userFollowers)
+ 
   // State for active chats
-  const [activeChats, setActiveChats] = useState([]);
-
-  // State for contacts
-  const [contacts, setContacts] = useState([]);
-
-  // State for current chat
   const [currentChat, setCurrentChat] = useState(null);
-
-  // Tab state
   const [activeTab, setActiveTab] = useState('chats');
-
-  // Other states
   const [newMessage, setNewMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  
-  // State for file uploads
   const [selectedFile, setSelectedFile] = useState(null);
   const fileInputRef = useRef(null);
-  
   const messagesEndRef = useRef(null);
 
-  // Modal state
-  const [showNewContactModal, setShowNewContactModal] = useState(false);
-  const [showNewGroupModal, setShowNewGroupModal] = useState(false);
-
-  // New chat/group form state
-  const [newContactUserId, setNewContactUserId] = useState('');
-  const [newGroupName, setNewGroupName] = useState('');
-  const [newGroupUserIds, setNewGroupUserIds] = useState([]);
-  const [newGroupAvatar, setNewGroupAvatar] = useState(null);
-
+  // Initialize Pusher service when component mounts
   useEffect(() => {
-    dispatch(getAllChat())
-    dispatch(getMyProfile())
-  }, [])
+    pusherService.initialize();
+    return () => {
+      pusherService.disconnect();
+    };
+  }, []);
 
-  console.log(profile?.client?.id)
-  // Filter chats based on search term
-  const filteredChats = activeChats.filter(chat => 
-    chat.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Initial data fetching
+  useEffect(() => {
+    dispatch(getAllChat());
+    dispatch(getMyProfile());
+  }, [dispatch]);
 
-  // Filter contacts based on search term
-  const filteredContacts = contacts.filter(contact => 
-    contact.name.toLowerCase().includes(searchTerm.toLowerCase())
+  // Handle new message received via Pusher
+  const handleMessageReceived = useCallback((data) => {
+    if (data.conversation_id === convarsationData?.id) {
+      dispatch(getMessage({id: convarsationData.id}));
+    }
+  }, [convarsationData?.id, dispatch]);
+
+  // Handle typing event
+  const handleTyping = useCallback((data) => {
+    if (data.user_id !== profile?.client?.id) {
+      setIsTyping(true);
+      setTimeout(() => setIsTyping(false), 3000);
+    }
+  }, [profile?.client?.id]);
+
+  // Use the custom Pusher hook
+  useChatPusher(
+    convarsationData?.id,
+    handleMessageReceived,
+    handleTyping
   );
 
   // Scroll to bottom of messages
@@ -76,101 +72,92 @@ const MessagingContent = () => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [currentChat?.messages]);
+  }, [prevChat]);
 
-  // Fetch chats from API
-  useEffect(() => {
-    fetchChats();
-  }, []);
+  // Filter chats based on search term
+  const filteredChats = allChat?.filter(chat => 
+    chat.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const fetchChats = async () => {
-    try {
-      const res = await api.get('/chat');
-      setActiveChats(res.data.data || []);
-      // Optionally select the first chat
-      if (!currentChat && res.data.data && res.data.data.length > 0) {
-        setCurrentChat(res.data.data[0]);
-      }
-    } catch (err) {
-      console.error('Failed to fetch chats', err);
-    }
-  };
+  // Filter contacts based on search term
+  const filteredContacts = userFollowers?.filter(contact => 
+    (contact.follower_client?.fname + " " + contact.follower_client?.last_name)
+    .toLowerCase()
+    .includes(searchTerm.toLowerCase())
+  );
 
   // Handle chat selection
-  const handleChatSelect = (chatId) => {
-    const selectedChat = activeChats.find(chat => chat.id === chatId);
-    
-    // Mark messages as read when selecting a chat
-    const updatedChats = activeChats.map(chat => 
-      chat.id === chatId ? { ...chat, unread: 0 } : chat
-    );
-    setActiveChats(updatedChats);
-    
-    // Set the current chat
-    if (selectedChat) {
-      setCurrentChat(selectedChat);
+  const handleChatSelect2 = async (conversation) => {
+    try {
+      setCurrentChat(conversation);
+      const response = await dispatch(getMessage({ id: conversation.id })).unwrap();
+      
+      if (response) {
+        console.log('Chat selected:', conversation);
+        console.log('Messages loaded:', response);
+      }
+    } catch (error) {
+      console.error('Error loading chat messages:', error);
     }
   };
 
   // Handle contact selection
-  const handleContactSelect = (contactId) => {
-    dispatch(getUserProfile(contactId))
-    .then((res) => {
-      const userData = res?.payload?.client;
+  const handleContactSelect = async (contactId) => {
+    try {
+      const profileResponse = await dispatch(getUserProfile(contactId)).unwrap();
+      const userData = profileResponse?.client;
+      
+      if (!userData) {
+        console.error('No user data received');
+        return;
+      }
+
       const newChat = {
         is_group: 0,
         name: userData?.fname + " " + userData?.last_name,
         avatar: process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + userData?.image,
         user_ids: userData?.id
       };
-      dispatch(startConversation(newChat))
-      .then((response) => {
-        const conversation = response?.payload?.conversation;
-        dispatch(getMessage(conversation))
-        .then((ress) => {
-          console.log('ress from get message', ress)
-        })
-      })
-    })
-  };
 
-  const handleChatSelect2 = (conversation) => {
-    dispatch(getMessage(conversation))
-    .then((ress) => {
-      console.log('ress from get message', ress)
-    })
-  };
-  
-
-
-  // Handle file selection
-  const handleFileSelect = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+      const conversationResponse = await dispatch(startConversation(newChat)).unwrap();
+      
+      if (conversationResponse?.conversation) {
+        setCurrentChat(conversationResponse.conversation);
+        await dispatch(getMessage({ id: conversationResponse.conversation.id }));
+      }
+    } catch (error) {
+      console.error('Error starting conversation:', error);
     }
   };
 
   // Get file icon based on type
   const getFileIcon = (fileName) => {
-    const extension = fileName.split('.').pop().toLowerCase();
-    
+    const extension = fileName?.split('.').pop()?.toLowerCase();
     switch(extension) {
-      case 'pdf':
-        return <FaFilePdf className="text-red-500" size={24} />;
+      case 'pdf': return <FaFilePdf className="text-red-500" size={24} />;
       case 'doc':
-      case 'docx':
-        return <FaFileWord className="text-blue-500" size={24} />;
+      case 'docx': return <FaFileWord className="text-blue-500" size={24} />;
       case 'xls':
-      case 'xlsx':
-        return <FaFileExcel className="text-green-500" size={24} />;
+      case 'xlsx': return <FaFileExcel className="text-green-500" size={24} />;
       case 'jpg':
       case 'jpeg':
       case 'png':
-      case 'gif':
-        return <FaFileImage className="text-purple-500" size={24} />;
-      default:
-        return <FaFileAlt className="text-gray-500" size={24} />;
+      case 'gif': return <FaFileImage className="text-purple-500" size={24} />;
+      default: return <FaFileAlt className="text-gray-500" size={24} />;
     }
+  };
+
+  // Check if file is an image
+  const isImageFile = (fileName) => {
+    const extension = fileName?.split('.').pop()?.toLowerCase();
+    return ['jpg', 'jpeg', 'png', 'gif'].includes(extension);
+  };
+
+  // Get image URL with proper path
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return '/common-avator.jpg';
+    if (imagePath.startsWith('http')) return imagePath;
+    return `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}/${imagePath}`;
   };
 
   // Format file size
@@ -180,63 +167,106 @@ const MessagingContent = () => {
     else return (bytes / 1048576).toFixed(1) + ' MB';
   };
 
-  // Pusher setup for real-time messaging
-  useEffect(() => {
-    if (!convarsationData?.id) return;
+  // Handle sending a message
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() && !selectedFile) return;
 
-    // Check if Pusher key is available
-    const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY;
-    console.log('Pusher Key:', pusherKey);
-    
-    if (!pusherKey) {
-      console.error('Pusher key is not defined in environment variables');
+    if (!convarsationData?.id) {
+      alert('Please select a conversation first');
       return;
     }
 
-    // Initialize Pusher
-    const pusher = new Pusher(pusherKey, {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'ap2',
-      wsHost: process.env.NEXT_PUBLIC_PUSHER_HOST || `ws-${process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'ap2'}.pusher.com`,
-      wsPort: process.env.NEXT_PUBLIC_PUSHER_PORT || 80,
-      wssPort: process.env.NEXT_PUBLIC_PUSHER_PORT || 443,
-      forceTLS: true,
-      enabledTransports: ['ws', 'wss'],
-      disableStats: true
-    });
+    try {
+      const chatData = {
+        chatId: convarsationData.id,
+        type: selectedFile ? "file" : "text",
+        content: newMessage.trim(),
+        file: selectedFile
+      };
 
-    // Subscribe to the conversation channel
-    const channel = pusher.subscribe(`private-conversation.${convarsationData.id}`);
-
-    // Listen for new messages
-    channel.bind('App\\Events\\MessageSent', (data) => {
-      // Update messages when a new message is received
-      dispatch(getMessage({id: convarsationData.id}));
-    });
-
-    return () => {
-      channel.unbind('App\\Events\\MessageSent');
-      pusher.unsubscribe(`private-conversation.${convarsationData.id}`);
-    };
-  }, [convarsationData?.id]);
-
-  // Handle sending a message
-  const handleSendMessage = () => {
-    const chatData = {
-      chatId: convarsationData?.id,
-      type: "text",
-      content: newMessage
-    }
-
-    dispatch(sendMessage(chatData))
-    .then((res) => {
+      // Clear message input immediately for better UX
       setNewMessage("");
-      // No need to manually fetch messages as Pusher will trigger the update
-    })
+      
+      const response = await dispatch(sendMessage(chatData)).unwrap();
+      
+      if (response) {
+        // Clear file if exists
+        if (selectedFile) {
+          setSelectedFile(null);
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+          }
+        }
+        
+        // Refresh messages
+        dispatch(getMessage({ id: convarsationData.id }));
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      // Show error message to user
+      alert(error.message || 'Failed to send message. Please try again.');
+      // Restore message if failed
+      if (newMessage.trim()) {
+        setNewMessage(newMessage);
+      }
+    }
+  };
+
+  // Handle file selection
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Check file size (limit to 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('File size must be less than 10MB');
+        e.target.value = ''; // Clear the file input
+        return;
+      }
+      
+      // Check file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('File type not supported. Please upload an image, PDF, or Word document.');
+        e.target.value = '';
+        return;
+      }
+
+      setSelectedFile(file);
+    }
+  };
+
+  // Download file
+  const handleFileDownload = async (fileUrl, fileName) => {
+    try {
+      const response = await fetch(fileUrl, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('old_token')}`
+        }
+      });
+      
+      if (!response.ok) throw new Error('Download failed');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      alert('Failed to download file');
+    }
   };
 
   // Remove selected file
   const removeSelectedFile = () => {
     setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   // Handle key press to send message
@@ -249,50 +279,34 @@ const MessagingContent = () => {
 
   // Tab switching
   const handleTabChange = (tab) => {
-    if(tab === "contacts"){
-        dispatch(getUserFollowers(profile?.client?.id));
-    }else{
-      dispatch(getAllChat())
+    if (tab === "contacts") {
+      dispatch(getUserFollowers(profile?.client?.id));
+    } else {
+      dispatch(getAllChat());
     }
     setActiveTab(tab);
     setSearchTerm('');
   };
 
-  // Create one-to-one chat
-  const handleCreateContactChat = async () => {
-    try {
-      const formData = new FormData();
-      formData.append('user_ids[]', newContactUserId);
-      formData.append('is_group', 0);
-      formData.append('name', '');
-      const res = await api.post('/chat', formData);
-      setShowNewContactModal(false);
-      setNewContactUserId('');
-      fetchChats();
-    } catch (err) {
-      alert('Failed to create chat');
+  // Effect to scroll to bottom when messages change
+  useEffect(() => {
+    if (prevChat?.length > 0) {
+      scrollToBottom();
     }
-  };
+  }, [prevChat]);
 
-  // Create group chat
-  const handleCreateGroupChat = async () => {
-    try {
-      const formData = new FormData();
-      newGroupUserIds.forEach(id => formData.append('user_ids[]', id));
-      formData.append('is_group', 1);
-      formData.append('name', newGroupName);
-      if (newGroupAvatar) formData.append('avatar', newGroupAvatar);
-      const res = await api.post('/chat', formData);
-      setShowNewGroupModal(false);
-      setNewGroupName('');
-      setNewGroupUserIds([]);
-      setNewGroupAvatar(null);
-      fetchChats();
-    } catch (err) {
-      alert('Failed to create group chat');
+  // Effect to set current chat when conversation data changes
+  useEffect(() => {
+    if (convarsationData) {
+      setCurrentChat(convarsationData);
     }
-  };
+  }, [convarsationData]);
 
+
+
+  // console.log('prevChat',prevChat)
+  // console.log('allChat',allChat)
+  // console.log('userFollowers',userFollowers)
   return (
     <div className="messaging-content bg-gray-100 min-h-screen">
       <div className="container mx-auto py-4">
@@ -300,7 +314,7 @@ const MessagingContent = () => {
           <div className="flex h-[calc(100vh-140px)]">
             {/* Left Sidebar */}
             <div className="flex border-r border-gray-200">
-              {/* Tabs on left side */}
+              {/* Tabs */}
               <div className="w-16 bg-gray-50 border-r border-gray-200 flex flex-col items-center pt-4">
                 <button 
                   className={`w-12 h-12 mb-2 rounded-full flex items-center justify-center ${activeTab === 'chats' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
@@ -318,7 +332,7 @@ const MessagingContent = () => {
               
               {/* Content area */}
               <div className="w-64 flex flex-col">
-                {/* Tab title and search */}
+                {/* Search */}
                 <div className="p-4 border-b border-gray-200">
                   <h2 className="text-lg font-semibold mb-2">
                     {activeTab === 'chats' ? 'Active Chats' : 'All Contacts'}
@@ -391,15 +405,29 @@ const MessagingContent = () => {
                           onClick={() => handleContactSelect(contact?.follower_client?.id)}
                         >
                           <div className="relative mr-3">
-                            <div className="w-10 h-10 rounded-full bg-orange-300 flex items-center justify-center text-white">
-                              {contact.follower_client.fname.charAt(0)}
+                            <div className="w-10 h-10 rounded-full overflow-hidden bg-orange-300 flex items-center justify-center text-white">
+                              {contact?.follower_client?.image ? (
+                                <img 
+                                  src={getImageUrl(contact.follower_client.image)}
+                                  alt={contact.follower_client.fname}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.target.src = '/common-avator.jpg';
+                                    e.target.onerror = null;
+                                  }}
+                                />
+                              ) : (
+                                <span>{contact.follower_client.fname.charAt(0)}</span>
+                              )}
                             </div>
                             {contact.isOnline && (
                               <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-sm font-medium truncate">{contact.follower_client?.fname + " " + contact.follower_client.last_name}</h3>
+                            <h3 className="text-sm font-medium truncate">
+                              {contact.follower_client?.fname + " " + contact.follower_client.last_name}
+                            </h3>
                             <p className="text-xs text-gray-500 truncate">{contact?.status}</p>
                           </div>
                         </div>
@@ -412,8 +440,6 @@ const MessagingContent = () => {
                     )}
                   </div>
                 )}
-                
-              
               </div>
             </div>
             
@@ -424,27 +450,21 @@ const MessagingContent = () => {
                 <div className="flex items-center">
                   <div className="relative mr-3">
                     <div className="w-10 h-10 rounded-full bg-orange-300 flex items-center justify-center text-white">
-                      {userProfileData?.client?.fname.charAt(0)}
+                      {userProfileData?.client?.fname?.charAt(0)}
                     </div>
                     {currentChat?.isOnline && (
                       <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
                     )}
                   </div>
                   <div>
-                    <h3 className="font-medium">{userProfileData?.client?.fname + " " + userProfileData?.client?.last_name }</h3>
+                    <h3 className="font-medium">
+                      {userProfileData?.client?.fname + " " + userProfileData?.client?.last_name}
+                    </h3>
                     <p className="text-xs text-gray-500">
                       {isTyping ? 'Typing...' : currentChat?.isOnline ? 'Online' : 'Offline'}
                     </p>
                   </div>
                 </div>
-                {/* <div className="flex">
-                  <button className="text-gray-400 hover:text-gray-600 mr-3">
-                    <FaImage />
-                  </button>
-                  <button className="text-gray-400 hover:text-gray-600">
-                    <FaSearch />
-                  </button>
-                </div> */}
               </div>
               
               {/* Chat Messages */}
@@ -454,44 +474,89 @@ const MessagingContent = () => {
                     {prevChat?.map(message => (
                       <div 
                         key={message.id} 
-                        className={`flex ${+message.user_id === profile?.client?.id ? 'justify-end' : 'justify-start'}`}
+                        className={`flex ${message.user_id === profile?.client?.id ? 'justify-end' : 'justify-start'}`}
                       >
-                        {+message.user_id !== profile?.client?.id && (
-                          <div className="w-8 h-8 rounded-full bg-orange-300 flex items-center justify-center text-white mr-2">
-                            {message?.user?.display_name?.charAt(0)}
+                        {message.user_id !== profile?.client?.id && (
+                          <div className="w-8 h-8 rounded-full overflow-hidden bg-orange-300 flex items-center justify-center text-white mr-2">
+                            {message?.user?.image ? (
+                              <img 
+                                src={getImageUrl(message.user.image)}
+                                alt={message.user.display_name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.target.src = '/common-avator.jpg';
+                                  e.target.onerror = null;
+                                }}
+                              />
+                            ) : (
+                              <span>{message?.user?.display_name?.charAt(0)}</span>
+                            )}
                           </div>
                         )}
-                        <div className={`max-w-xs ${+message.user_id === profile?.client?.id ? 'bg-blue-500 text-white' : 'bg-white border border-gray-200'} rounded-lg p-3 shadow-sm`}>
-                          {message.file && (
-                            <div className={`p-3 mb-2 border rounded-md ${+message.user_id === profile?.client?.id ? 'border-blue-400 bg-blue-400' : 'border-gray-200 bg-gray-50'}`}>
-                              <div className="flex items-center">
-                                {getFileIcon(message.file.name)}
-                                <div className="ml-3 flex-1 min-w-0">
-                                  <p className={`text-sm font-medium truncate ${+message.user_id === profile?.client?.id ? 'text-white' : 'text-gray-800'}`}>
-                                    {message.file.name}
-                                  </p>
-                                  <p className={`text-xs ${message.sent ? 'text-blue-100' : 'text-gray-500'}`}>
-                                    {formatFileSize(message.file.size)}
-                                  </p>
+                        <div className={`max-w-xs ${message.user_id === profile?.client?.id ? 'bg-blue-500 text-white' : 'bg-white border border-gray-200'} rounded-lg p-3 shadow-sm`}>
+                          {message.type === 'file' && message.file && (
+                            <div className={`mb-2 ${message.user_id === profile?.client?.id ? 'border-blue-400 bg-blue-400' : 'border-gray-200 bg-gray-50'}`}>
+                              {isImageFile(message.file.name) ? (
+                                // Image preview
+                                <div className="rounded-lg overflow-hidden mb-2">
+                                  <img 
+                                    src={getImageUrl(message.file.path)}
+                                    alt={message.file.name}
+                                    className="w-full h-auto max-h-48 object-cover"
+                                    onError={(e) => {
+                                      e.target.src = '/common-avator.jpg';
+                                      e.target.onerror = null;
+                                    }}
+                                  />
                                 </div>
-                                <a href="#" className={`ml-2 text-xs px-2 py-1 rounded ${+message.user_id === message.user.id ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>
-                                  Download
-                                </a>
-                              </div>
+                              ) : (
+                                // File attachment
+                                <div className={`p-3 border rounded-md ${message.user_id === profile?.client?.id ? 'border-blue-400 bg-blue-400' : 'border-gray-200 bg-gray-50'}`}>
+                                  <div className="flex items-center">
+                                    {getFileIcon(message.file.name)}
+                                    <div className="ml-3 flex-1 min-w-0">
+                                      <p className={`text-sm font-medium truncate ${message.user_id === profile?.client?.id ? 'text-white' : 'text-gray-800'}`}>
+                                        {message.file.name}
+                                      </p>
+                                      <p className={`text-xs ${message.user_id === profile?.client?.id ? 'text-blue-100' : 'text-gray-500'}`}>
+                                        {formatFileSize(message.file.size)}
+                                      </p>
+                                    </div>
+                                    <button 
+                                      onClick={() => handleFileDownload(getImageUrl(message.file.path), message.file.name)}
+                                      className={`ml-2 text-xs px-2 py-1 rounded ${message.user_id === profile?.client?.id ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                                    >
+                                      Download
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           )}
                           {message.content && <p>{message.content}</p>}
                           
-                          <div className={`text-xs mt-1 flex justify-end items-center ${+message.user_id === message.user.id ? 'text-blue-100' : 'text-gray-500'}`}>
-                            <span>{message.time}</span>
-                            {message.sent && message.read && (
+                          <div className={`text-xs mt-1 flex justify-end items-center ${message.user_id === profile?.client?.id ? 'text-blue-100' : 'text-gray-500'}`}>
+                            <span>{message.created_at}</span>
+                            {message.is_read && (
                               <FaCheckCircle className="ml-1 text-xs" />
                             )}
                           </div>
                         </div>
-                        {+message.user_id === profile?.client?.id && (
-                          <div className="w-8 h-8 rounded-full bg-red-400 flex items-center justify-center text-white ml-2">
-                            {message?.user?.display_name?.charAt(0) || "N/A"}
+                        {message.user_id === profile?.client?.id && (
+                          <div className="w-8 h-8 rounded-full overflow-hidden bg-red-400 flex items-center justify-center text-white ml-2">
+                            {message?.user?.image ? (
+                              <img 
+                                src={getImageUrl(message.user.image)}
+                                alt={message.user.display_name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.target.src = '/common-avator.jpg';
+                                  e.target.onerror = null;
+                                }}
+                              />
+                            ) : (
+                              <span>{message?.user?.display_name?.charAt(0) || "N/A"}</span>
+                            )}
                           </div>
                         )}
                       </div>
@@ -507,7 +572,7 @@ const MessagingContent = () => {
                 )}
               </div>
               
-              {/* File Preview (if selected) */}
+              {/* File Preview */}
               {selectedFile && (
                 <div className="px-3 bg-gray-100 border-t border-gray-200">
                   <div className="flex items-center p-2 bg-white border border-gray-200 rounded-md my-2">
@@ -569,4 +634,4 @@ const MessagingContent = () => {
   );
 };
 
-export default MessagingContent; 
+export default MessagingContent;

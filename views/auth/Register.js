@@ -7,9 +7,12 @@ import OldInput from '@/components/custom/OldInput'
 import OldSelect from '@/components/custom/OldSelect'
 import { IoMdEye, IoMdEyeOff } from "react-icons/io"
 import api from '@/helpers/axios'
+import { handleLoginFunc } from './store'
+import { useDispatch } from 'react-redux'
 
 const Register = () => {
   const router = useRouter()
+  const dispatch = useDispatch();
   const [formData, setFormData] = useState({
     fname: '',
     last_name: '',
@@ -29,8 +32,8 @@ const Register = () => {
 
   // Generate options for days (1-31)
   const dayOptions = Array.from({ length: 31 }, (_, i) => ({
-    value: String(i + 1).padStart(2, '0'),
-    label: String(i + 1).padStart(2, '0')
+    value: String(i + 1).padStart(2),
+    label: String(i + 1).padStart(2)
   }))
 
   // Generate options for months
@@ -118,12 +121,16 @@ const Register = () => {
         localStorage.setItem('token', response.data.token)
       }
 
+      console.log('response',response)
       // Redirect to login or dashboard
-      router.push('/auth/login')
+
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.')
     } finally {
       setLoading(false)
+      dispatch(handleLoginFunc({username: formData.contact_or_email, password: formData.password}));
+      router.push('/user/gathering');
+
     }
   }
 
