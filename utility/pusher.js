@@ -61,6 +61,10 @@ class PusherService {
         }
     }
 
+    handleAuthError(){
+        console.log("from handle error")
+    }
+
     subscribeToChannel(channelName, events = {}) {
         if (!this.pusher) {
             console.error('Pusher not initialized');

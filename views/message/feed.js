@@ -200,7 +200,7 @@ const MessagingContent = () => {
         }
         
         // Refresh messages
-        dispatch(getMessage({ id: convarsationData.id }));
+        dispatch(getMessage({data:{ id: convarsationData.id }}));
       }
     } catch (error) {
       console.error('Error sending message:', error);
