@@ -17,7 +17,7 @@ class PusherService {
         }
 
         // Set default API URL to match Laravel's URL
-        const apiUrl = 'http://localhost/oldmanclub/api';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
         
         this.options = {
             cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'us2',
