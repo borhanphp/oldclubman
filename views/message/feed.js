@@ -394,7 +394,7 @@ const MessagingContent = () => {
                 {activeTab === 'contacts' && (
                   <div className="overflow-y-auto flex-1">
                     {userFollowers?.length > 0 ? (
-                      userFollowers?.filter(ff => ff.follower_client.id !== profile?.client?.id)?.map(contact => (
+                      userFollowers?.filter(ff => Number(ff.follower_client.id) !== Number(profile?.client?.id))?.map(contact => (
                         <div 
                           key={contact?.id} 
                           className="flex items-center p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
@@ -470,9 +470,9 @@ const MessagingContent = () => {
                     {prevChat?.map(message => (
                       <div 
                         key={message.id} 
-                        className={`flex ${message.user_id === profile?.client?.id ? 'justify-end' : 'justify-start'}`}
+                        className={`flex ${Number(message.user_id) === Number(profile?.client?.id) ? 'justify-end' : 'justify-start'}`}
                       >
-                        {message.user_id !== profile?.client?.id && (
+                        {Number(message.user_id) !== Number(profile?.client?.id) && (
                           <div className="w-8 h-8 rounded-full overflow-hidden bg-orange-300 flex items-center justify-center text-white mr-2">
                             {message?.user?.image ? (
                               <img 
@@ -489,9 +489,9 @@ const MessagingContent = () => {
                             )}
                           </div>
                         )}
-                        <div className={`max-w-xs ${message.user_id === profile?.client?.id ? 'bg-blue-500 text-white' : 'bg-white border border-gray-200'} rounded-lg p-3 shadow-sm`}>
+                        <div className={`max-w-xs ${Number(message.user_id) === Number(profile?.client?.id) ? 'bg-blue-500 text-white' : 'bg-white border border-gray-200'} rounded-lg p-3 shadow-sm`}>
                           {message.type === 'file' && message.file && (
-                            <div className={`mb-2 ${message.user_id === profile?.client?.id ? 'border-blue-400 bg-blue-400' : 'border-gray-200 bg-gray-50'}`}>
+                            <div className={`mb-2 ${Number(message.user_id) === Number(profile?.client?.id) ? 'border-blue-400 bg-blue-400' : 'border-gray-200 bg-gray-50'}`}>
                               {isImageFile(message.file.name) ? (
                                 // Image preview
                                 <div className="rounded-lg overflow-hidden mb-2">
@@ -507,20 +507,20 @@ const MessagingContent = () => {
                                 </div>
                               ) : (
                                 // File attachment
-                                <div className={`p-3 border rounded-md ${message.user_id === profile?.client?.id ? 'border-blue-400 bg-blue-400' : 'border-gray-200 bg-gray-50'}`}>
+                                <div className={`p-3 border rounded-md ${Number(message.user_id) === Number(profile?.client?.id) ? 'border-blue-400 bg-blue-400' : 'border-gray-200 bg-gray-50'}`}>
                                   <div className="flex items-center">
                                     {getFileIcon(message.file.name)}
                                     <div className="ml-3 flex-1 min-w-0">
-                                      <p className={`text-sm font-medium truncate ${message.user_id === profile?.client?.id ? 'text-white' : 'text-gray-800'}`}>
+                                      <p className={`text-sm font-medium truncate ${Number(message.user_id) === Number(profile?.client?.id) ? 'text-white' : 'text-gray-800'}`}>
                                         {message.file.name}
                                       </p>
-                                      <p className={`text-xs ${message.user_id === profile?.client?.id ? 'text-blue-100' : 'text-gray-500'}`}>
+                                      <p className={`text-xs ${Number(message.user_id) === Number(profile?.client?.id) ? 'text-blue-100' : 'text-gray-500'}`}>
                                         {formatFileSize(message.file.size)}
                                       </p>
                                     </div>
                                     <button 
                                       onClick={() => handleFileDownload(getImageUrl(message.file.path), message.file.name)}
-                                      className={`ml-2 text-xs px-2 py-1 rounded ${message.user_id === profile?.client?.id ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                                      className={`ml-2 text-xs px-2 py-1 rounded ${Number(message.user_id) === Number(profile?.client?.id) ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
                                     >
                                       Download
                                     </button>
@@ -531,7 +531,7 @@ const MessagingContent = () => {
                           )}
                           {message.content && <p>{message.content}</p>}
                           
-                          <div className={`text-xs mt-1 flex justify-end items-center ${message.user_id === profile?.client?.id ? 'text-blue-100' : 'text-gray-500'}`}>
+                          <div className={`text-xs mt-1 flex justify-end items-center ${Number(message.user_id) === Number(profile?.client?.id) ? 'text-blue-100' : 'text-gray-500'}`}>
                           <span className="text-[10px] block mt-1 opacity-75">
                               {moment(message.created_at).format('hh:mm a')}
                             </span>
@@ -540,7 +540,7 @@ const MessagingContent = () => {
                             )}
                           </div>
                         </div>
-                        {message.user_id === profile?.client?.id && (
+                        {Number(message.user_id) === Number(profile?.client?.id) && (
                           <div className="w-8 h-8 rounded-full overflow-hidden bg-red-400 flex items-center justify-center text-white ml-2">
                             {message?.user?.image ? (
                               <img 

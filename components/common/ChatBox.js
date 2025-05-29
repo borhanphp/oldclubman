@@ -120,8 +120,6 @@ const dispatch = useDispatch()
     }
   };
 
-  console.log('prevChat',prevChat)
-
   return (
     <div className="fixed bottom-0 right-4 w-80 bg-white rounded-t-lg shadow-lg z-50">
       {/* Chat Header */}
@@ -159,11 +157,11 @@ const dispatch = useDispatch()
         {prevChat?.map((msg, index) => (
           <div
             key={index}
-            className={`flex mb-3 ${msg?.user_id === profile?.client?.id ? 'justify-end' : 'justify-start'}`}
+            className={`flex mb-3 ${Number(msg?.user_id) === Number(profile?.client?.id) ? 'justify-end' : 'justify-start'}`}
           >
             <div
               className={`max-w-[70%] rounded-lg px-2 py-1 ${
-                msg?.user_id === profile?.client?.id
+                Number(msg?.user_id) === Number(profile?.client?.id)
                   ? 'bg-blue-600 text-white rounded-br-none'
                   : 'bg-gray-200 text-gray-800 rounded-bl-none'
               }`}
