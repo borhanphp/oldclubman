@@ -13,6 +13,10 @@ export const getMyProfile = createAsyncThunk( 'settings/getMyProfile', async ( )
     const result = axios.get( "client/myprofile" )
     .then((res) => {
         const resData = res.data.data;
+        // const myProfile = {
+        //   ...resData,
+
+        // }
         return resData;
     })
     .catch((err) => {

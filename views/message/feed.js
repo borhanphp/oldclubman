@@ -13,6 +13,7 @@ import { getMyProfile, getUserFollowers, getUserProfile } from '../settings/stor
 import { useChatPusher } from '@/components/custom/useChatPusher';
 import { pusherService } from '@/utility/pusher';
 import { ClientSegmentRoot } from 'next/dist/client/components/client-segment';
+import moment from 'moment';
 
 const MessagingContent = () => {
   const { allChat, prevChat, convarsationData } = useSelector(({chat}) => chat);
@@ -302,16 +303,11 @@ const MessagingContent = () => {
     }
   }, [convarsationData]);
 
-
-
-  // console.log('prevChat',prevChat)
-  // console.log('allChat',allChat)
-  // console.log('userFollowers',userFollowers)
   return (
-    <div className="messaging-content bg-gray-100 min-h-screen">
-      <div className="container mx-auto py-4">
-        <div className="messaging-container bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="flex h-[calc(100vh-140px)]">
+   
+      <div className="h-screen">
+        <div className="bg-white h-full shadow-md overflow-hidden">
+          <div className="flex h-full">
             {/* Left Sidebar */}
             <div className="flex border-r border-gray-200">
               {/* Tabs */}
@@ -398,7 +394,7 @@ const MessagingContent = () => {
                 {activeTab === 'contacts' && (
                   <div className="overflow-y-auto flex-1">
                     {userFollowers?.length > 0 ? (
-                      userFollowers?.map(contact => (
+                      userFollowers?.filter(ff => ff.follower_client.id !== profile?.client?.id)?.map(contact => (
                         <div 
                           key={contact?.id} 
                           className="flex items-center p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
@@ -536,7 +532,9 @@ const MessagingContent = () => {
                           {message.content && <p>{message.content}</p>}
                           
                           <div className={`text-xs mt-1 flex justify-end items-center ${message.user_id === profile?.client?.id ? 'text-blue-100' : 'text-gray-500'}`}>
-                            <span>{message.created_at}</span>
+                          <span className="text-[10px] block mt-1 opacity-75">
+                              {moment(message.created_at).format('hh:mm a')}
+                            </span>
                             {message.is_read && (
                               <FaCheckCircle className="ml-1 text-xs" />
                             )}
@@ -630,7 +628,7 @@ const MessagingContent = () => {
           </div>
         </div>
       </div>
-    </div>
+    
   );
 };
 

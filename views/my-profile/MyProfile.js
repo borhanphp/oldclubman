@@ -24,7 +24,7 @@ const dispatch = useDispatch()
 
   return (
     <div className="md:max-w-5xl mx-auto">
-      <FeedHeader showEditBtn={true} friendsTab={true} showMsgBtn={true} showFriends={true}/>
+      <FeedHeader showEditBtn={true} friendsTab={true} showFriends={true}/>
       <div className="content-area py-3">
         <div className="mx-auto">
           <div className=" gap-4">

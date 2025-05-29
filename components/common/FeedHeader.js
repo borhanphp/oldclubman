@@ -20,13 +20,14 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { LuMessageCircleMore } from "react-icons/lu";
 import ChatBox from "./ChatBox";
+import { getMessage, startConversation } from "@/views/message/store";
 
 function FeedHeader({
   userProfile = false,
   friendsTab = false,
   showMsgBtn = false,
   showFriends = false,
-  showEditBtn = false
+  showEditBtn = false,
 }) {
   const { profile, userProfileData, followLoading } = useSelector(
     ({ settings }) => settings
@@ -37,10 +38,13 @@ function FeedHeader({
   const dispatch = useDispatch();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showChatBox, setShowChatBox] = useState(false);
+  const [currentChat, setCurrentChat] = useState(false);
 
   useEffect(() => {
     dispatch(getMyProfile());
   }, [dispatch]);
+
+  const isMyProfile = Number(params?.id) === Number(profile?.client?.id);
 
   const isLinkActive = (path) => {
     return pathname.startsWith(path);
@@ -58,6 +62,36 @@ function FeedHeader({
     dispatch(action).then((res) => {
       dispatch(getUserProfile(params?.id));
     });
+  };
+
+  const handleMsgButtonSelect = async (contactId) => {
+    try {
+      const profileResponse = await dispatch(getUserProfile(contactId)).unwrap();
+      const userData = profileResponse?.client;
+      
+      if (!userData) {
+        console.error('No user data received');
+        return;
+      }
+
+      const newChat = {
+        is_group: 0,
+        name: userData?.fname + " " + userData?.last_name,
+        avatar: userData?.image ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + userData?.image : "/common-avator.jpg",
+        user_ids: userData?.id
+      };
+
+      const conversationResponse = await dispatch(startConversation(newChat)).unwrap();
+      
+      if (conversationResponse?.conversation) {
+        setCurrentChat(conversationResponse.conversation);
+        await dispatch(getMessage({ id: conversationResponse.conversation.id }));
+        setShowChatBox(true);
+      }
+    } catch (error) {
+      console.error('Error starting conversation:', error);
+      alert('Failed to start conversation. Please try again.');
+    }
   };
 
   return (
@@ -169,8 +203,9 @@ function FeedHeader({
           </div>
 
           {/* More Options */}
-          {userProfile ? (
-            <div className="relative ">
+{data?.client && (
+          <div className="relative ">
+            {userProfile && !isMyProfile && (
               <button
                 className={`px-3 py-1 ${
                   userProfileData?.isfollowed === 1
@@ -190,41 +225,28 @@ function FeedHeader({
                     : "Follow"}
                 </span>
               </button>
-              {showMsgBtn && (
-                <button
-                  onClick={() => setShowChatBox(true)}
-                  className="px-3 py-1 bg-blue-600 text-white ml-1 rounded-sm hover:bg-blue-700 cursor-pointer"
-                >
-                  <span className="flex gap-2">
-                    <LuMessageCircleMore className="mt-1" /> Message
-                  </span>
-                </button>
-              )}
-            </div>
-          ) : (
+            )}
+            {showMsgBtn && !isMyProfile && (
+              <button
+                onClick={() => {handleMsgButtonSelect(data?.client?.id)} }
+                className="px-3 py-1 bg-blue-600 text-white ml-1 rounded-sm hover:bg-blue-700 cursor-pointer"
+              >
+                <span className="flex gap-2">
+                  <LuMessageCircleMore className="mt-1" /> Message
+                </span>
+              </button>
+            )}
+            {(showEditBtn || isMyProfile) && (
+              <button className="px-3 mr-2 py-1 bg-gray-300 text-black ml-1 rounded-sm hover:bg-gray-200 cursor-pointer">
+              <Link href="/user/account-settings" className="flex gap-2">
+                <FaEdit className="mt-1" /> Edit Profile
+              </Link>
+              </button>
+            )}
+           
+
+            {/* <button>
             <div className="relative ">
-              {showMsgBtn ? (
-                <button
-                onClick={() => setShowChatBox(true)}
-                className="px-3 mr-2 py-1 bg-blue-600 text-white ml-1 rounded-sm hover:bg-blue-700 cursor-pointer">
-                  <span className="flex gap-2">
-                    <LuMessageCircleMore className="mt-1" /> Message
-                  </span>
-                </button>
-              ) : (
-                ""
-              )}
-
-              {showEditBtn ? (
-                <button className="px-3 mr-2 py-1 bg-gray-300 text-black ml-1 rounded-sm hover:bg-gray-200 cursor-pointer">
-                  <Link href="/user/account-settings"  className="flex gap-2">
-                    <LuMessageCircleMore className="mt-1" /> Edit Profile
-                  </Link>
-                </button>
-              ) : (
-                ""
-              )}
-
               <button
                 className="text-gray-600 bg-gray-200 hover:bg-gray-300 p-2 rounded-md cursor-pointer"
                 onClick={toggleDropdown}
@@ -254,7 +276,9 @@ function FeedHeader({
                 </div>
               )}
             </div>
-          )}
+            </button> */}
+           
+          </div>)}
         </div>
       </div>
 
@@ -315,8 +339,15 @@ function FeedHeader({
       </div>
 
       {/* Chat Box */}
-      {showChatBox && (
-      <ChatBox user={data?.client} onClose={() => setShowChatBox(false)} />
+      {showChatBox && currentChat && (
+        <ChatBox 
+          user={data?.client}
+          currentChat={currentChat}
+          onClose={() => {
+            setShowChatBox(false);
+            setCurrentChat(null);
+          }}
+        />
       )}
     </div>
   );

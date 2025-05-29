@@ -142,6 +142,8 @@ const BasicInformation = () => {
     }
   };
 
+  console.log(profileData)
+
   // ID type options
   const idTypeOptions = [
     { value: "passport", label: "Passport" },

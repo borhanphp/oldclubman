@@ -170,6 +170,7 @@ const PostModal = () => {
 
    }
   
+   console.log('filePreviews',filePreviews)
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/30">
       <div className="bg-white backdrop-blur-md rounded-lg w-full max-w-lg mx-4 shadow-xl">
@@ -246,7 +247,7 @@ const PostModal = () => {
               </div>
           
           <div className="mb-4">
-            <p className="text-gray-500 mb-2">Upload attachments</p>
+            <p className="text-gray-500 mb-2">Upload Photos/Videos</p>
             <div 
               className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer bg-white/50 hover:bg-white/70 transition"
               onClick={() => fileInputRef.current?.click()}
@@ -256,15 +257,15 @@ const PostModal = () => {
               {filePreviews?.length > 0 ? (
                 <div>
                   <div className="grid grid-cols-2 gap-3 mb-3">
-                    {filePreviews.map(preview => (
+                    {filePreviews?.map(preview => (
                       <div key={preview.id} className="relative">
-                        {preview?.file_type === "video" ? (
+                        {preview?.file?.type.startsWith("video/") ? (
                           <video controls className="h-32 w-full object-cover rounded">
-                            <source src={preview.src} />
+                            <source src={preview?.src} />
                           </video>
                         ) : (
                           <img 
-                            src={preview.src} 
+                            src={preview?.src} 
                             alt="Upload preview" 
                             className="h-32 w-full object-cover rounded"
                           />
@@ -290,7 +291,7 @@ const PostModal = () => {
                       <FaImage className="text-gray-400 text-3xl" />
                     </div>
                   </div>
-                  <p className="text-gray-500">Drag here or click to upload photos.</p>
+                  <p className="text-gray-500">Drag here or click to upload photos/videos.</p>
                 </div>
               )}
               <input
