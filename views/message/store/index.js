@@ -73,6 +73,7 @@ export const sendMessage = createAsyncThunk('chat/sendMessage', async (data) => 
 
 export const getMessage = createAsyncThunk('chat/getMessage', async (data) => {
   try {
+    console.log("checking for getting messages work or not");
     const result = await axios.get(`chat/${data?.id}/messages`);
     return {
       messages: result.data.data,
