@@ -454,7 +454,7 @@ const MessagingContent = () => {
                   </div>
                   <div>
                     <h3 className="font-medium">
-                      {userProfileData?.client?.fname + " " + userProfileData?.client?.last_name}
+                      {userProfileData?.client ? (userProfileData?.client?.fname + " " + userProfileData?.client?.last_name) : "Oldclubman User"}
                     </h3>
                     <p className="text-xs text-gray-500">
                       {isTyping ? 'Typing...' : currentChat?.isOnline ? 'Online' : 'Offline'}
