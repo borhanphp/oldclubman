@@ -12,7 +12,7 @@ class PusherService {
 
         const token = localStorage.getItem('old_token');
         if (!token) {
-            // console.error('No authentication token found');
+            console.error('No authentication token found');
             return;
         }
 
@@ -36,18 +36,18 @@ class PusherService {
             this.pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '6536db454316e302c142', this.options);
 
             this.pusher.connection.bind('connecting', () => {
-                // console.log('Connecting to Pusher...');
+                console.log('Connecting to Pusher...');
             });
 
             this.pusher.connection.bind('connected', () => {
-                // console.log('Connected to Pusher');
-                // console.log('Connection state:', this.pusher.connection.state);
+                console.log('Connected to Pusher');
+                console.log('Connection state:', this.pusher.connection.state);
             });
 
             this.pusher.connection.bind('error', (err) => {
-                // console.error('Pusher connection error:', err);
+                console.error('Pusher connection error:', err);
                 if (err.error?.type === 'AuthError') {
-                    // console.error('Pusher authentication error. Token might be expired.');
+                    console.error('Pusher authentication error. Token might be expired.');
                     this.handleAuthError();
                 }
             });
@@ -63,7 +63,7 @@ class PusherService {
 
     subscribeToChannel(channelName, events = {}) {
         if (!this.pusher) {
-            // console.error('Pusher not initialized');
+            console.error('Pusher not initialized');
             return null;
         }
 
@@ -74,7 +74,7 @@ class PusherService {
         // Get the current token
         const token = localStorage.getItem('old_token');
         if (!token) {
-            // console.error('No authentication token found');
+            console.error('No authentication token found');
             return null;
         }
 
@@ -86,7 +86,7 @@ class PusherService {
         const channel = this.pusher.subscribe(channelName);
 
         channel.bind('pusher:subscription_succeeded', () => {
-            // console.log(`Successfully subscribed to ${channelName}`);
+            console.log(`Successfully subscribed to ${channelName}`);
         });
 
         channel.bind('pusher:subscription_error', (error) => {
@@ -97,7 +97,7 @@ class PusherService {
 
         // Bind custom events
         Object.entries(events).forEach(([event, callback]) => {
-            // console.log(`Binding event ${event} to channel ${channelName}`);
+            console.log(`Binding event ${event} to channel ${channelName}`);
             channel.bind(event, callback);
         });
 
@@ -108,7 +108,7 @@ class PusherService {
     unsubscribeFromChannel(channelName) {
         if (!this.pusher || !this.channels.has(channelName)) return;
 
-        // console.log(`Unsubscribing from channel: ${channelName}`);
+        console.log(`Unsubscribing from channel: ${channelName}`);
         this.pusher.unsubscribe(channelName);
         this.channels.delete(channelName);
     }
@@ -116,7 +116,7 @@ class PusherService {
     disconnect() {
         if (!this.pusher) return;
 
-        // console.log('Disconnecting Pusher');
+        console.log('Disconnecting Pusher');
         this.channels.clear();
         this.pusher.disconnect();
         this.pusher = null;
