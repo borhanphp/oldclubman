@@ -37,6 +37,7 @@ import CardFlat from "../nfc-cards/CardFlat";
 import { IoQrCodeOutline } from "react-icons/io5";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import FeedLayout from "@/components/common/FeedLayout";
 
 const DownloadDropdown = ({ onDownloadPDF, onDownloadQR }) => {
   const [open, setOpen] = useState(false);
@@ -191,10 +192,8 @@ const handleShareEmail = () => {
 };
   
   return (
-    <div className="">
-      <div className="mx-auto">
-        <FeedHeader />
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 pt-3">
+   <FeedLayout>
+     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 pt-3">
           {/* Left Sidebar - INTRO */}
           <div className="md:col-span-3">
             <Intro />
@@ -227,9 +226,9 @@ const handleShareEmail = () => {
                   onDownloadPDF={handleDownloadPDF}
                   onDownloadQR={handleDownloadQR}
                 />
-                <button className="cursor-pointer p-2 rounded">
+                <Link href={`/user/nfc/${params?.id}/email-signature`} className="cursor-pointer p-2 rounded">
                   <MdEmail size={25} className="text-blue-500" />
-                </button>
+                </Link>
                 <Link href="/user/nfc" className="cursor-pointer p-2 rounded" onClick={() => {handleDelete()}}>
                   <FaTrash size={20} className="text-red-500" />
                 </Link>
@@ -356,8 +355,7 @@ const handleShareEmail = () => {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+   </FeedLayout>
   );
 };
 

@@ -303,6 +303,11 @@ const MessagingContent = () => {
     }
   }, [convarsationData]);
 
+
+const filteredChatsUsers = allChat?.map(mp => mp?.user_id === mp.users?.filter(ddd => ddd?.id === Number(profile.client.id)))
+console.log('filtered',filteredChatsUsers)
+console.log('allChat',allChat)
+
   return (
    
       <div className="h-screen">
@@ -351,36 +356,43 @@ const MessagingContent = () => {
                 {activeTab === 'chats' && (
                   <div className="overflow-y-auto flex-1">
                     {allChat?.length > 0 ? (
-                      allChat?.map(chat => (
-                        <div 
-                          key={chat?.id} 
-                          className={`flex items-center p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${chat?.id === currentChat?.id ? 'bg-blue-50' : ''}`}
-                          onClick={() => handleChatSelect2(chat)}
-                        >
-                          <div className="relative mr-3">
-                            <div className="w-10 h-10 rounded-full bg-orange-300 flex items-center justify-center text-white">
-                              {chat?.name?.charAt(0)}
+                      allChat?.map(chat => {
+                        const isOwner = chat?.users?.filter(ff => ff.id !== Number(profile.client.id))[0]
+                        // console.log('isOwner',isOwner)
+                        
+                        return (
+                        
+                            <div 
+                              key={chat?.id} 
+                              className={`flex items-center p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${chat?.id === currentChat?.id ? 'bg-blue-50' : ''}`}
+                              onClick={() => handleChatSelect2(chat)}
+                            >
+                              <div className="relative mr-3">
+                                <div className="w-10 h-10 rounded-full bg-orange-300 flex items-center justify-center text-white">
+                                  {chat?.name?.charAt(0)}
+                                </div>
+                                {chat?.isOnline && (
+                                  <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex justify-between items-center">
+                                  <h3 className="text-sm font-medium truncate">{chat?.name}</h3>
+                                  <span className="text-xs text-gray-500">{chat?.time}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <p className="text-xs text-gray-500 truncate">{chat?.message}</p>
+                                  {chat?.unread > 0 && (
+                                    <span className="ml-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                      {chat?.unread}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                            {chat?.isOnline && (
-                              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex justify-between items-center">
-                              <h3 className="text-sm font-medium truncate">{chat?.name}</h3>
-                              <span className="text-xs text-gray-500">{chat?.time}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <p className="text-xs text-gray-500 truncate">{chat?.message}</p>
-                              {chat?.unread > 0 && (
-                                <span className="ml-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                  {chat?.unread}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))
+                         
+                        )
+                      })
                     ) : (
                       <div className="p-4 text-center text-gray-500">
                         <FaEnvelope className="mx-auto text-gray-300 text-4xl mb-2" />

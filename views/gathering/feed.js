@@ -10,6 +10,7 @@ import { deletePost, getGathering, getPostById, getPosts, setPostModalOpen, stor
 import FollowSuggestion from '@/components/common/FollowSuggestion';
 import CreatePostBox from "@/components/common/CreatePostBox";
 import PostList from '@/components/common/PostList';
+import FeedLayout from '@/components/common/FeedLayout';
 
 
 
@@ -142,9 +143,7 @@ const GatheringContent = () => {
 
 
   return (
-    <div className="">
-      <FeedHeader/>
-      
+    <FeedLayout>
       {/* Content Area - 3 Column Layout */}
       <div className="content-area py-3">
         <div className="mx-auto">
@@ -217,8 +216,7 @@ const GatheringContent = () => {
       {/* Post Modal */}
       {isPostModalOpen && <PostModal />}
       
-    
-    </div>
+    </FeedLayout>
   );
 };
 

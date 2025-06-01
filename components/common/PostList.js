@@ -37,14 +37,17 @@ import Link from "next/link";
 import { CiEdit, CiUnlock } from "react-icons/ci";
 import { MdOutlineDeleteOutline } from "react-icons/md";
 import { TbMessageReport } from "react-icons/tb";
+import { useParams } from "next/navigation";
+import { getMyProfile, getUserProfile } from "@/views/settings/store";
 
 const PostList = ({ postsData }) => {
   const { basicPostData } = useSelector(({ gathering }) => gathering);
   const { profile } = useSelector(({ settings }) => settings);
   const dispatch = useDispatch();
+  const params = useParams();
   useEffect(() => {
     dispatch(getGathering());
-    dispatch(getPosts());
+    dispatch(getPosts(1));
   }, [dispatch]);
 
   const [showReactionsFor, setShowReactionsFor] = useState(null);
@@ -122,6 +125,11 @@ const PostList = ({ postsData }) => {
       dispatch(getGathering());
       dispatch(getPosts());
       dispatch(getPostById(postId));
+      dispatch(getMyProfile());
+      if(params?.id){
+        dispatch(getUserProfile(params?.id));
+      }
+
     });
   };
 
@@ -318,7 +326,7 @@ const PostList = ({ postsData }) => {
     <div className="">
       {postsData?.data?.map((item, index) => {
         const totalCount = item.multiple_reaction_counts.reduce(
-          (sum, dd) => sum + dd.count,
+          (sum, dd) => Number(sum) + Number(dd.count),
           0
         );
 
@@ -355,7 +363,7 @@ const PostList = ({ postsData }) => {
                     </p>
                   </div>
                   <p className="text-gray-500 text-sm">
-                    This Account Location Not Set Yet.{" "}
+                    {item?.client?.fromcountry?.name ? item?.client?.fromcountry?.name : 'This Account Location Not Set Yet.'}{" "}
                     {item?.privacy_mode === "public" ? (
                       <FaGlobe className="inline ml-1" />
                     ) : (
@@ -517,7 +525,7 @@ const PostList = ({ postsData }) => {
                   </span>
                 </span>
                 {/* <span className="text-sm">{item?.single_reaction?.client?.fname + " " + item?.single_reaction?.client?.last_name + " and " + totalCount }</span> */}
-                <span className="text-sm">{totalCount}</span>
+                <span className="text-sm">{Number(totalCount)}</span>
                 <span className="flex items-center gap-2 ml-auto text-sm text-gray-500">
                   2 <FaRegComment className="" />
                 </span>

@@ -34,8 +34,8 @@ const dispatch = useDispatch()
 
   // Handle new message received via Pusher
   const handleMessageReceived = useCallback((data) => {
-    if (data.conversation_id === convarsationData?.id) {
-      dispatch(getMessage({id: convarsationData.id}));
+    if (Number(data.conversation_id) === Number(convarsationData?.id)) {
+      dispatch(getMessage({id: Number(convarsationData.id)}));
     }
   }, [convarsationData?.id, dispatch]);
 
@@ -49,7 +49,7 @@ const dispatch = useDispatch()
 
   // Use the custom Pusher hook
   useChatPusher(
-    convarsationData?.id,
+    Number(convarsationData?.id),
     handleMessageReceived,
     // handleTyping
   );
@@ -97,7 +97,7 @@ const dispatch = useDispatch()
           }
           
           // Refresh messages
-          dispatch(getMessage({ id: currentChat.id }));
+          dispatch(getMessage({ id: Number(currentChat.id) }));
         }
       } catch (error) {
         console.error('Error sending message:', error);

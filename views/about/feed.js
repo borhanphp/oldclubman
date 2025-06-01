@@ -11,6 +11,7 @@ import { getMyProfile } from '../settings/store';
 import moment from 'moment';
 import CreatePostBox from '@/components/common/CreatePostBox';
 import PostList from '@/components/common/PostList';
+import FeedLayout from '@/components/common/FeedLayout';
 
 const AboutContent = () => {
   const {profile} = useSelector(({settings}) => settings)
@@ -24,12 +25,9 @@ const dispatch = useDispatch()
 
 
   return (
-    <div className="about-content">
-      <FeedHeader/>
-      
-      
-      {/* Content Area - 3 Column Layout */}
-      <div className="content-area py-3">
+   <FeedLayout>
+     {/* Content Area - 3 Column Layout */}
+     <div className="content-area py-3">
         <div className="mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
             {/* Left Sidebar - INTRO */}
@@ -257,7 +255,7 @@ const dispatch = useDispatch()
 
       {/* Post Modal */}
       {isPostModalOpen && <PostModal />}
-    </div>
+   </FeedLayout>
   );
 };
 

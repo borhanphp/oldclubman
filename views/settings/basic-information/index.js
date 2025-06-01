@@ -115,6 +115,7 @@ const BasicInformation = () => {
       dispatch(
         bindProfileData({
           ...profileData,
+          from_country_id: value,
           from_state_id: "",
           from_city_id: "",
         })
@@ -142,7 +143,7 @@ const BasicInformation = () => {
     }
   };
 
-  console.log(profileData)
+  console.log('profileData',profileData)
 
   // ID type options
   const idTypeOptions = [

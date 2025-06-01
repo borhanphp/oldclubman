@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { getMyNfc, getNfcById, getVertualBackground } from "../store";
 import html2canvas from "html2canvas";
 import domtoimage from 'dom-to-image-more';
+import FeedLayout from "@/components/common/FeedLayout";
 
 const featuredBackgrounds = [
   "/path/to/bg1.jpg",
@@ -90,9 +91,7 @@ const VertualDownload = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <FeedHeader />
-
+    <FeedLayout>
       {/* Main content */}
       <div className="flex flex-row gap-8 px-8 py-4">
         <div className="grid grid-cols-10 gap-4">
@@ -320,7 +319,7 @@ const VertualDownload = () => {
             )
         })}
       </div>
-    </div>
+    </FeedLayout>
   );
 };
 
