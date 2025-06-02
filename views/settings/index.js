@@ -93,7 +93,7 @@ const Settings = () => {
             </div>
             
             <div className="p-4 text-center border-t">
-              <Link href="/profile" className="text-blue-500 hover:underline">
+              <Link href="/user/my-profile" className="text-blue-500 hover:underline">
                 View Profile
               </Link>
             </div>
