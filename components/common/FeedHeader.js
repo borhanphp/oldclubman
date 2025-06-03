@@ -121,7 +121,7 @@ function FeedHeader({
           <div className="flex items-end">
             {/* Profile Picture */}
             <div className="data-pic relative -mt-16 mr-4">
-              <div className="w-28 -mt-30 h-28 rounded-xl border-4 border-white overflow-hidden bg-white flex items-center justify-center text-white text-2xl">
+              <div className="w-28 -mt-30 h-28 rounded-full border-4 border-white overflow-hidden bg-white flex items-center justify-center text-white text-2xl">
                 <img
                   src={
                     data?.client?.image

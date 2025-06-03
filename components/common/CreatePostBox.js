@@ -32,8 +32,8 @@ const CreatePostBox = () => {
       <div className="flex-grow">
         <input 
           type="text" 
-          placeholder="Share your thoughts..." 
-          className="focus:outline-none w-full bg-white px-4 py-2 text-sm cursor-text"
+          placeholder={`What's on your mind ${profile?.client?.fname}?`} 
+          className="focus:outline-none w-full bg-gray-200 rounded-2xl hover:bg-gray-300  px-4 py-2 text-sm cursor-pointer"
           onClick={() => {openPostModal()}}
           readOnly
         />

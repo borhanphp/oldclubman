@@ -49,7 +49,7 @@ const CompanySidebar = () => {
             </div>
           </div>
           
-          <Link href="/user/my-profile" className="w-full py-2 text-blue-500 text-center font-medium hover:bg-blue-50">
+          <Link href={`/user/user-profile/${profile?.client?.id}`} className="w-full py-2 text-blue-500 text-center font-medium hover:bg-blue-50">
             View Profile
           </Link>
         </div>

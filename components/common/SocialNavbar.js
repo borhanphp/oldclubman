@@ -63,7 +63,7 @@ const SocialNavbar = () => {
           {showDropdown && (
             <div className="absolute -left-10 pt-5 mt-0 w-48 bg-white rounded-md shadow-lg py-1 z-20">
               <Link
-                href="/user/my-profile"
+                href={`/user/user-profile/${profile?.client?.id}`}
                 className="flex items-center px-4 py-2 text-[15px] font-medium text-gray-700 hover:bg-gray-100"
               >
                 <span>Profile</span>
@@ -228,7 +228,7 @@ const SocialNavbar = () => {
               </div>
 
               <Link
-                href="/user/my-profile"
+                href={`/user/user-profile/${profile?.client?.id}`}
                 className="block hover:text-white hover:bg-blue-700 bg-blue-100 py-[6px] mt-2 w-full text-blue-600 font-semibold text-sm text-center mx-auto mb-2"
               >
                 View profile
