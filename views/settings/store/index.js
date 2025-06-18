@@ -136,6 +136,19 @@ export const getUserFollowing = createAsyncThunk( 'settings/getUserFollowing', a
   return result;
 } )
 
+export const getFollowSuggestions = createAsyncThunk( 'settings/getFollowSuggestions', async (page = 1) => {
+  const result = axios.get( `/client/random_people/10?page=${page}` )
+  .then((res) => {
+      console.log('📄 API Response for FollowSuggestions', res.data.data.follow_connections);
+      const resData = res.data.data?.follow_connections?.data;
+      return resData;
+  })
+  .catch((err) => {
+      errorResponse(err);
+  })
+  return result;
+} )
+
 
 
 export const settingsSlice = createSlice({
@@ -151,7 +164,8 @@ export const settingsSlice = createSlice({
     totalFollowers: 0,
     userProfileData: {},
     userFollowers: [],
-    userFollowing: []
+    userFollowing: [],
+    followSuggestion: []
   },
   reducers: {
     bindProfileData: (state, action) => {
@@ -214,6 +228,9 @@ export const settingsSlice = createSlice({
       })
       .addCase(getUserFollowing.fulfilled, (state, action) => {
         state.userFollowing = action.payload;
+      })
+      .addCase(getFollowSuggestions.fulfilled, (state, action) => {
+        state.followSuggestion = action.payload;
       })
   },
 });

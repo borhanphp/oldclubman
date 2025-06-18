@@ -30,6 +30,7 @@ export const getPosts = createAsyncThunk( 'gathering/getPosts', async (page = 1,
   dispatch(showPreloader());
   const result = axios.get( `post/10?page=${page}` )
   .then((res) => {
+      console.log('📄 API Response for page', page, ':', res.data);
       const resData = res.data.data;
       dispatch(hidePreloader());
       return resData;
@@ -252,7 +253,7 @@ export const gatheringSlice = createSlice({
   initialState: {
     gatheringData: {},
     singlePostData: {},
-    postsData:[],
+    postsData:{},
     loading: false,
     basicPostData: initialPostData,
     isPostModalOpen: false
@@ -285,7 +286,45 @@ export const gatheringSlice = createSlice({
         state.loading = false;
       })
       .addCase(getPosts.fulfilled, (state, action) => {
-        state.postsData = action.payload;
+        const newData = action.payload;
+        console.log('🔄 Redux - Page:', newData?.current_page, '/', newData?.last_page, '| Posts:', newData?.data?.length);
+        
+        // Handle the case where API doesn't return pagination metadata
+        if (!newData) {
+          console.log('❌ Redux - No data received');
+          state.loading = false;
+          return;
+        }
+
+        // If no pagination data is present, treat as simple data array
+        if (!newData.current_page && Array.isArray(newData)) {
+          console.log('⚠️ Redux - Handling array response without pagination');
+          state.postsData = {
+            data: newData,
+            current_page: 1,
+            last_page: 1
+          };
+          state.loading = false;
+          return;
+        }
+
+        // Standard pagination handling
+        if (newData?.current_page === 1) {
+          // First page - replace all data
+          console.log('🆕 Redux - Setting first page data');
+          state.postsData = newData;
+        } else {
+          // Subsequent pages - append data
+          console.log('➕ Redux - Appending page data');
+          const existingData = state.postsData?.data || [];
+          const newPosts = newData?.data || [];
+          
+          state.postsData = {
+            ...newData,
+            data: [...existingData, ...newPosts]
+          };
+        }
+        console.log('✅ Redux - Total posts:', state.postsData?.data?.length);
         state.loading = false;
       })
       .addCase(getPostById.fulfilled, (state, action) => {

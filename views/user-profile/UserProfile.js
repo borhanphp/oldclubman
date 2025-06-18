@@ -121,15 +121,6 @@ const UserProfile = () => {
           </div>
         </div>
       </div>
-
-      {/* Floating Chat Button */}
-      <div className="fixed bottom-5 right-5">
-        <Link href="/messages">
-          <button className="bg-blue-500 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg">
-            <FaComment size={20} />
-          </button>
-        </Link>
-      </div>
     </div>
   );
 };

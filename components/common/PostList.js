@@ -632,50 +632,50 @@ const PostList = ({ postsData }) => {
                   {showReactionsFor === item.id && (
                     <div
                       ref={reactionRef}
-                      className="absolute bottom-full left-0 mb-2 bg-white p-2 rounded-full shadow-lg flex space-x-2 z-10"
+                      className="absolute bottom-full left-0 mb-2 bg-white p-1 rounded-full shadow-lg flex space-x-2 z-10"
                     >
-                      <button
-                        className="transform cursor-pointer hover:scale-125 transition-transform"
+                      <div
+                        className="transform w-6 cursor-pointer hover:scale-125 transition-transform"
                         onClick={() => handleReaction(item.id, "like")}
                       >
-                        <img src="/like.png" alt="Like" className="w-8 h-8" />
-                      </button>
+                        <img src="/like.png" alt="Like" className="" />
+                      </div>
                       <button
-                        className="transform cursor-pointer hover:scale-125 transition-transform"
+                        className="transform w-6 cursor-pointer hover:scale-125 transition-transform"
                         onClick={() => handleReaction(item.id, "love")}
                       >
-                        <img src="/love.png" alt="Love" className="w-8 h-8" />
+                        <img src="/love.png" alt="Love" className="" />
                       </button>
                       <button
-                        className="transform cursor-pointer hover:scale-125 transition-transform"
+                        className="transform w-6 cursor-pointer hover:scale-125 transition-transform"
                         onClick={() => handleReaction(item.id, "care")}
                       >
-                        <img src="/care.png" alt="Care" className="w-8 h-8" />
+                        <img src="/care.png" alt="Care" className="" />
                       </button>
                       <button
-                        className="transform cursor-pointer hover:scale-125 transition-transform"
+                        className="transform w-6 cursor-pointer hover:scale-125 transition-transform"
                         onClick={() => handleReaction(item.id, "haha")}
                       >
-                        <img src="/haha.png" alt="Haha" className="w-8 h-8" />
+                        <img src="/haha.png" alt="Haha" className="" />
                       </button>
                       <button
-                        className="transform cursor-pointer hover:scale-125 transition-transform"
+                        className="transform w-6 cursor-pointer hover:scale-125 transition-transform"
                         onClick={() => handleReaction(item.id, "wow")}
                       >
-                        <img src="/wow.png" alt="Wow" className="w-8 h-8" />
+                        <img src="/wow.png" alt="Wow" className="" />
                       </button>
 
                       <button
-                        className="transform cursor-pointer hover:scale-125 transition-transform"
+                        className="transform w-6 cursor-pointer hover:scale-125 transition-transform"
                         onClick={() => handleReaction(item.id, "sad")}
                       >
-                        <img src="/sad.png" alt="Sad" className="w-8 h-8" />
+                        <img src="/sad.png" alt="Sad" className="" />
                       </button>
                       <button
-                        className="transform cursor-pointer hover:scale-125 transition-transform"
+                        className="transform w-6 cursor-pointer hover:scale-125 transition-transform"
                         onClick={() => handleReaction(item.id, "angry")}
                       >
-                        <img src="/angry.png" alt="Angry" className="w-8 h-8" />
+                        <img src="/angry.png" alt="Angry" className="" />
                       </button>
                     </div>
                   )}

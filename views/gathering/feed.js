@@ -17,54 +17,120 @@ import FeedLayout from '@/components/common/FeedLayout';
 const GatheringContent = () => {
   const {gatheringData, postsData, loading, basicPostData, isPostModalOpen} = useSelector(({gathering}) => gathering);
   const dispatch = useDispatch();
-  const [currentPage, setCurrentPage] = useState(1);
   const [allPosts, setAllPosts] = useState([]);
   const [loadingMore, setLoadingMore] = useState(false);
   const loadMoreRef = useRef(null);
 
   useEffect(() => {
     dispatch(getGathering());
-    dispatch(getPosts(currentPage));
+    dispatch(getPosts(1));
   }, [])
   
   useEffect(() => {
-    console.log('called from gathering');
+    console.log('=== POSTS DATA EFFECT ===');
     console.log('postsData:', postsData);
-    console.log('currentPage:', currentPage);
+    console.log('postsData keys:', Object.keys(postsData || {}));
+    console.log('current_page:', postsData?.current_page);
+    console.log('last_page:', postsData?.last_page);
+    console.log('data length:', postsData?.data?.length);
+    
     if (postsData?.data) {
       // Sort posts by created_at descending (latest first)
       const sortedPosts = [...postsData.data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      console.log('sortedPosts:', sortedPosts);
-      if (currentPage === 1) {
-        setAllPosts(sortedPosts);
-      } else {
-        setAllPosts(prev => {
-          // Create a map of previous posts by ID
-          const prevMap = new Map(prev.map(post => [post.id, post]));
-          // Update or add posts from sortedPosts
-          sortedPosts.forEach(post => {
-            prevMap.set(post.id, post);
-          });
-          // Return sorted array
-          return Array.from(prevMap.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        });
-      }
+      console.log('sortedPosts length:', sortedPosts.length);
+      setAllPosts(sortedPosts);
     }
-  }, [postsData, currentPage]);
+  }, [postsData]);
+
+  // Scroll event listener as fallback
+  useEffect(() => {
+    const handleScroll = () => {
+      // Check if we're near the bottom of the page
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      const isNearBottom = scrollTop + windowHeight >= documentHeight - 200;
+      
+      if (isNearBottom) {
+        console.log('📍 Near bottom detected:', {
+          scrollTop,
+          windowHeight,
+          documentHeight,
+          distanceFromBottom: documentHeight - (scrollTop + windowHeight)
+        });
+        
+        const canLoadMore = !loadingMore && 
+                           !loading && 
+                           postsData?.current_page && 
+                           postsData?.last_page && 
+                           postsData.current_page < postsData.last_page;
+        
+        if (canLoadMore) {
+          console.log('🚀 Triggering load more from scroll...');
+          handleLoadMore();
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loadingMore, loading, postsData?.current_page, postsData?.last_page]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         const [entry] = entries;
-        if (entry.isIntersecting && !loadingMore) {
+        console.log('🔍 Intersection observed:', {
+          isIntersecting: entry.isIntersecting,
+          loadingMore,
+          loading,
+          currentPage: postsData?.current_page,
+          lastPage: postsData?.last_page,
+          hasMorePages: postsData?.current_page < postsData?.last_page,
+          elementExists: !!loadMoreRef.current,
+          boundingRect: entry.boundingClientRect,
+          intersectionRatio: entry.intersectionRatio
+        });
+        
+        // Check if we can load more
+        const canLoadMore = !loadingMore && 
+                           !loading && 
+                           postsData?.current_page && 
+                           postsData?.last_page && 
+                           postsData.current_page < postsData.last_page;
+        
+        console.log('🎯 Can load more?', canLoadMore, {
+          notLoadingMore: !loadingMore,
+          notLoading: !loading,
+          hasCurrentPage: !!postsData?.current_page,
+          hasLastPage: !!postsData?.last_page,
+          hasMorePages: postsData?.current_page < postsData?.last_page
+        });
+        
+        if (entry.isIntersecting && canLoadMore) {
+          console.log('🚀 Triggering load more from intersection...');
           handleLoadMore();
+        } else if (entry.isIntersecting) {
+          console.log('❌ Intersection triggered but cannot load more:', {
+            loadingMore,
+            loading,
+            currentPage: postsData?.current_page,
+            lastPage: postsData?.last_page
+          });
         }
       },
-      { threshold: 0.1 }
+      { 
+        threshold: 0,
+        rootMargin: '100px'
+      }
     );
     
     if (loadMoreRef.current) {
+      console.log('👀 Observing loadMoreRef element');
       observer.observe(loadMoreRef.current);
+    } else {
+      console.log('⚠️ loadMoreRef.current is null');
     }
     
     return () => {
@@ -72,17 +138,35 @@ const GatheringContent = () => {
         observer.unobserve(loadMoreRef.current);
       }
     };
-  }, [loadMoreRef, loadingMore]);
+  }, [loadMoreRef, loadingMore, loading, postsData?.current_page, postsData?.last_page]);
 
   const handleLoadMore = () => {
-    if (loadingMore) return;
+    console.log('handleLoadMore called:', {
+      loadingMore,
+      loading,
+      currentPage: postsData?.current_page,
+      lastPage: postsData?.last_page
+    });
     
+    if (loadingMore || loading) {
+      console.log('Returning early due to loading states');
+      return;
+    }
+    
+    const nextPage = (postsData?.current_page || 0) + 1;
+    console.log('Next page to load:', nextPage);
+    
+    if (nextPage > (postsData?.last_page || 1)) {
+      console.log('No more pages to load');
+      return;
+    }
+    
+    console.log('Setting loadingMore to true and dispatching getPosts');
     setLoadingMore(true);
-    const nextPage = currentPage + 1;
-    setCurrentPage(nextPage);
     
     dispatch(getPosts(nextPage))
       .finally(() => {
+        console.log('getPosts completed, setting loadingMore to false');
         setLoadingMore(false);
       });
   };
@@ -169,16 +253,24 @@ const GatheringContent = () => {
               
               {/* Post */}
               <PostList postsData={{...postsData, data: allPosts}}/>
-              <div 
+              
+
+              {allPosts?.length ? (
+                <div 
                 ref={loadMoreRef}
-                className="flex justify-center mt-4 mb-8 py-4"
-              >
-                {loadingMore ? (
-                  <div className="text-blue-700 font-medium">Loading more posts...</div>
-                ) : (
-                  <div className="text-gray-400">Scroll for more posts</div>
-                )}
-              </div>
+                className="flex flex-col items-center mt-4 mb-8 py-8 min-h-[100px] border-2 border-dashed border-gray-300"
+                >
+                                  {loadingMore ? (
+                    <div className="text-blue-700 font-medium">Loading more posts...</div>
+                  ) : postsData?.current_page < postsData?.last_page ? (
+                    <div className="text-gray-400">Scroll for more posts</div>
+                  ) : (
+                    <div className="text-gray-400">No more posts to load</div>
+                  )}
+                </div> 
+              ): 
+              <div className='text-center'>There are no posts to show</div>}
+             
              
             </div>
             
@@ -204,15 +296,6 @@ const GatheringContent = () => {
         </div>
       </div>
 
-      {/* Floating Chat Button */}
-      <div className="fixed bottom-5 right-5">
-        <Link href="/messages">
-          <button className="bg-blue-500 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg">
-            <FaComment size={20} />
-          </button>
-        </Link>
-      </div>
-      
       {/* Post Modal */}
       {isPostModalOpen && <PostModal />}
       

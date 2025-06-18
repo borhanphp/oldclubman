@@ -33,6 +33,7 @@ const SocialNavbar = () => {
     dispatch(getMyProfile());
   }, []);
   return (
+   <>
     <nav className="sticky top-0 z-10 px-10 flex justify-between items-center bg-white p-2 shadow-sm">
       <div className="flex items-center">
         <Link href="/user/gathering" className="flex items-center">
@@ -300,6 +301,14 @@ const SocialNavbar = () => {
         ></div>
       )}
     </nav>
+     <div className="fixed bottom-5 right-5">
+        <Link href="/user/messages">
+          <button className="bg-blue-500 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg">
+            <FaComment size={20} />
+          </button>
+        </Link>
+      </div>
+   </>
   );
 };
 
