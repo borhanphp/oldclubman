@@ -10,14 +10,15 @@ const PostModal = () => {
   const {profile} = useSelector(({settings}) => settings)
   const { basicPostData, loading, isPostModalOpen} = useSelector(({gathering}) => gathering)
   const dispatch = useDispatch();
+  const {id} = basicPostData;
   const [filePreviews, setFilePreviews] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPrivacyDropdown, setShowPrivacyDropdown] = useState(false);
   const fileInputRef = useRef(null);
   const [removeFiles, setRemoveFiles] = useState([]);
-  const [isShowImageSection, setIsShowImageSection] = useState(false);
+  const [isShowImageSection, setIsShowImageSection] = useState(id ? true :false);
 
-  const {id} = basicPostData;
+  
   useEffect(() => {
     dispatch(getMyProfile())
 
@@ -34,8 +35,6 @@ const PostModal = () => {
       setFilePreviews([]);
     }
   }, []);
-
-  console.log('filePreviews',filePreviews)
 
   const handleOnchange = (e) => {
     const {name, value} = e.target;
