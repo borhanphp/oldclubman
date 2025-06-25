@@ -59,9 +59,9 @@ const dispatch = useDispatch()
                 ) : (
                   <div className="empty-state text-gray-400 text-sm py-4 text-center">
                     <p>No photos to display</p>
-                    <button className="mt-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors">
+                    {/* <button className="mt-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors">
                       Add Photos
-                    </button>
+                    </button> */}
                   </div>
                 )}
               </div>
@@ -83,9 +83,9 @@ const dispatch = useDispatch()
                 <div className="bg-white rounded-lg border border-gray-100 p-4 mb-4">
                   <div className="flex justify-between items-center">
                     <h4 className="text-base font-bold text-gray-800">OVERVIEW</h4>
-                    <button className="text-gray-400">
-                      <FaEllipsisH />
-                    </button>
+                    <Link href="/user/account-settings" className="text-gray-400">
+                        <FaEllipsisH />
+                      </Link>
                   </div>
                 </div>
                 
@@ -107,9 +107,9 @@ const dispatch = useDispatch()
                           <div className="text-gray-700 font-medium">{moment(profile?.client?.dob).format("MMM-DD-YYYY")}</div>
                         </div>
                       </div>
-                      <button className="text-gray-400">
+                      <Link href="/user/account-settings" className="text-gray-400">
                         <FaEllipsisH />
-                      </button>
+                      </Link>
                     </div>
                   </div>
                   
@@ -126,9 +126,9 @@ const dispatch = useDispatch()
                           <div className="text-gray-700 font-medium">Single</div>
                         </div>
                       </div>
-                      <button className="text-gray-400">
+                      <Link href="/user/account-settings" className="text-gray-400">
                         <FaEllipsisH />
-                      </button>
+                      </Link>
                     </div>
                   </div>
                   
@@ -145,9 +145,9 @@ const dispatch = useDispatch()
                           <div className="text-gray-700 font-medium"> {profile?.client?.contact_no}</div>
                         </div>
                       </div>
-                      <button className="text-gray-400">
+                      <Link href="/user/account-settings" className="text-gray-400">
                         <FaEllipsisH />
-                      </button>
+                      </Link>
                     </div>
                   </div>
                   
@@ -165,9 +165,9 @@ const dispatch = useDispatch()
                           <div className="text-gray-700 font-medium">Chittagong</div>
                         </div>
                       </div>
-                      <button className="text-gray-400">
+                      <Link href="/user/account-settings" className="text-gray-400">
                         <FaEllipsisH />
-                      </button>
+                      </Link>
                     </div>
                   </div>
                   
@@ -185,9 +185,9 @@ const dispatch = useDispatch()
                           <div className="text-gray-700 font-medium">{moment(profile?.client?.created_at).format("DD, MMM YYYY")}</div>
                         </div>
                       </div>
-                      <button className="text-gray-400">
+                      <Link href="/user/account-settings" className="text-gray-400">
                         <FaEllipsisH />
-                      </button>
+                      </Link>
                     </div>
                   </div>
                   
@@ -205,9 +205,9 @@ const dispatch = useDispatch()
                           <div className="text-gray-700 font-medium">{profile?.client?.email}</div>
                         </div>
                       </div>
-                      <button className="text-gray-400">
+                      <Link href="/user/account-settings" className="text-gray-400">
                         <FaEllipsisH />
-                      </button>
+                      </Link>
                     </div>
                   </div>
                 </div>

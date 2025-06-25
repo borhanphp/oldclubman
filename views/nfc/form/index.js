@@ -64,6 +64,7 @@ const NfcForm = () => {
     // Display
     formData.append("design_card_id", basicNfcData.design_card_id);
     formData.append("display_nfc_color", basicNfcData.display_nfc_color);
+    formData.append("card_name", basicNfcData.card_name || "Business Card");
     if (basicNfcData.profilePhoto)
       formData.append("profile", basicNfcData.profilePhoto);
     if (basicNfcData.logo) formData.append("logo", basicNfcData.logo);
@@ -91,7 +92,6 @@ const NfcForm = () => {
     dispatch(action).then((res) => {
       if (res.error) {
         setLoading(false);
-
         return;
       } else {
         dispatch(getMyNfc());

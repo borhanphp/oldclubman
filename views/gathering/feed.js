@@ -27,13 +27,6 @@ const GatheringContent = () => {
   }, [])
   
   useEffect(() => {
-    console.log('=== POSTS DATA EFFECT ===');
-    console.log('postsData:', postsData);
-    console.log('postsData keys:', Object.keys(postsData || {}));
-    console.log('current_page:', postsData?.current_page);
-    console.log('last_page:', postsData?.last_page);
-    console.log('data length:', postsData?.data?.length);
-    
     if (postsData?.data) {
       // Sort posts by created_at descending (latest first)
       const sortedPosts = [...postsData.data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));

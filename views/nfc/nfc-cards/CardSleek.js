@@ -3,15 +3,19 @@ import { FaBullhorn, FaPhone } from 'react-icons/fa'
 
 const CardSleek = ({basicNfcData = {}}) => {
   return (
-    <div className="w-80 rounded-3xl shadow-lg overflow-hidden bg-gradient-to-br from-pink-100 via-green-100 to-purple-100 relative font-sans">
+    <div className="w-full rounded-3xl shadow-lg overflow-hidden bg-gradient-to-br from-pink-100 via-green-100 to-purple-100 relative font-sans">
       {/* Top background photo */}
       <div className="w-full h-48 bg-gray-200 relative">
         {basicNfcData?.profilePhotoUrl ? (
           <img
-            src={basicNfcData?.profilePhotoUrl}
-            alt="Profile"
-            className="w-full h-full object-cover"
-          />
+          src={basicNfcData?.profilePhotoUrl || "/common-profile.png"}
+          alt="Profile"
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = "/common-profile.png";
+          }}
+        />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-3xl text-gray-400">👤</div>
         )}

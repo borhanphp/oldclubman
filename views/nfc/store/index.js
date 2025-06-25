@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "@/helpers/axios";
 import errorResponse from "@/utility";
+import toast from "react-hot-toast";
 
 export const initialNfcData = {
   prefix: '', 
@@ -94,6 +95,7 @@ export const storeNfc = createAsyncThunk( 'nfc/storeNfc', async (data) => {
       return resData;
   })
   .catch((err) => {
+    toast.error(err?.response?.data?.data[0])
       errorResponse(err);
   })
   return result;

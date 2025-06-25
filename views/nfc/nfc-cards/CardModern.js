@@ -20,6 +20,10 @@ const CardModern = ({ basicNfcData = {} }) => {
         {/* Name, title, company */}
         <div className="absolute left-4 top-20 sm:left-6 sm:top-20 md:left-4 md:top-20">
           <div className="text-white text-lg sm:text-2xl font-bold">
+          {basicNfcData?.first_name && basicNfcData?.first_name !== "null" && <span className="font-bold">{basicNfcData.first_name} </span>}
+            {basicNfcData?.middle_name && basicNfcData?.middle_name !== "null" && <span className="font-bold">{basicNfcData.middle_name} </span>}
+        
+
             {(basicNfcData?.first_name || "") + " " + (basicNfcData?.middle_name || "") + " " + (basicNfcData?.last_name || "") || "Gina Homenick"}
           </div>
           <div className="text-white text-xs sm:text-sm font-medium">{basicNfcData?.title || "Central Web Assistant"}</div>
@@ -29,8 +33,16 @@ const CardModern = ({ basicNfcData = {} }) => {
       {/* Profile photo - overlaps header and body */}
       <div className="absolute transform -translate-x-1/2 -right-15 top-30 w-22 h-22 rounded-full border-1 border-white overflow-hidden shadow-lg bg-gray-100 z-10">
         {basicNfcData?.profilePhotoUrl ? (
-          <img src={basicNfcData?.profilePhotoUrl} alt="Profile" className="w-full h-full object-cover" />
-        ) : (
+          <img 
+            src={basicNfcData?.profilePhotoUrl || "/common-avator.jpg"} 
+            alt="Profile" 
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = "/common-avator.jpg";
+            }}
+          /> 
+       ) : (
           <div className="w-full h-full flex items-center justify-center text-3xl text-gray-400">👤</div>
         )}
       </div>
@@ -41,7 +53,7 @@ const CardModern = ({ basicNfcData = {} }) => {
           {basicNfcData?.headline || "This is a sample paragraph. Sint con sequatur ipsam. Recusandae debitis similique ratione."}
         </div>
         {/* Goes by */}
-        {(basicNfcData?.preferred_name || basicNfcData?.pronoun) && (
+        {(basicNfcData?.preferred_name || basicNfcData?.pronoun) && (basicNfcData?.preferred_name  !== "null" || basicNfcData?.pronoun  !== "null") && (
           <div className="text-xs sm:text-sm text-gray-400 flex items-center mb-2">
             <FaRocket className="mr-1 text-purple-400" />
             Goes by <span className="ml-1 font-bold text-gray-700">{basicNfcData?.preferred_name || "Gina"}</span>

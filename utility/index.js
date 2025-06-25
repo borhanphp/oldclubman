@@ -7,6 +7,7 @@ export default function errorResponse(err) {
       toast.error(err.response.statusText || "Internal Server Error");
   } else if (err.response && err.response.data) {
       const errors = err.response.data.data; // Access the nested `data` object
+
       if (errors) {
           // Extract and show all error messages
           Object.entries(errors).forEach(([key, messages]) => {

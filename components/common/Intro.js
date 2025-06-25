@@ -1,6 +1,7 @@
 "use client"
 
 import {  getMyProfile } from "@/views/settings/store";
+import Link from "next/link";
 import React, { useEffect } from "react";
 import { FaEllipsisH } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
@@ -17,9 +18,9 @@ const Intro = () => {
     <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
       <div className="flex justify-between items-center mb-3">
         <h3 className="text-lg font-semibold">INTRO</h3>
-        <button className="text-blue-500 p-1 rounded">
+        <Link href="/user/account-settings" className="text-blue-500 p-1 rounded">
           <FaEllipsisH />
-        </button>
+        </Link>
       </div>
 
       <div className="text-center">

@@ -11,9 +11,13 @@ const CardClassic = ({ basicNfcData }) => {
         <div className="w-full h-80 bg-gray-100 flex items-center justify-center overflow-hidden">
           {basicNfcData?.profilePhotoUrl ? (
             <img
-              src={basicNfcData?.profilePhotoUrl}
+              src={basicNfcData?.profilePhotoUrl || "/common-profile.png"}
               alt="Profile"
               className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "/common-profile.png";
+              }}
             />
           ) : (
             <svg
@@ -38,7 +42,15 @@ const CardClassic = ({ basicNfcData }) => {
         {/* Logo (rounded) */}
         {basicNfcData?.logoUrl && (
           <div className="absolute right-4 bottom-0 bg-white rounded-full border shadow flex items-center justify-center w-15 h-15">
-            <img src={basicNfcData?.logoUrl} alt="Logo" className="w-full rounded-full" />
+            <img 
+            src={basicNfcData?.logoUrl  || "/common-logo.png"} 
+            alt="Logo" 
+            className="w-full rounded-full"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = "/common-logo.png";
+            }}
+             />
           </div>
         )}
       </div>

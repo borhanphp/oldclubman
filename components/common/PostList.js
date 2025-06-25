@@ -39,6 +39,7 @@ import { MdOutlineDeleteOutline } from "react-icons/md";
 import { TbMessageReport } from "react-icons/tb";
 import { useParams } from "next/navigation";
 import { getMyProfile, getUserProfile } from "@/views/settings/store";
+import toast from "react-hot-toast";
 
 const PostList = ({ postsData }) => {
   const { basicPostData } = useSelector(({ gathering }) => gathering);
@@ -62,6 +63,8 @@ const PostList = ({ postsData }) => {
   const [modalReplyInputs, setModalReplyInputs] = useState({});
   const [modalReplies, setModalReplies] = useState({});
   const [loadingReplies, setLoadingReplies] = useState({});
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [postToShare, setPostToShare] = useState(null);
 
   const handleCommentSubmit = (postId) => {
     const comment = commentInputs[postId];
@@ -316,10 +319,30 @@ const PostList = ({ postsData }) => {
   };
 
   const handleShare = (post_id) => {
-    dispatch(sharePost({post_id}))
-    .then((res) => {
-      dispatch(getPosts());
-    })
+    setPostToShare(post_id);
+    setShowShareModal(true);
+  }
+
+  const confirmShare = () => {
+    if (postToShare) {
+      dispatch(sharePost({post_id: postToShare}))
+        .then((res) => {
+          dispatch(getPosts());
+          setShowShareModal(false);
+          setPostToShare(null);
+          toast.success("Shared Successfully")
+        })
+        .catch((error) => {
+          console.error('Share failed:', error);
+          setShowShareModal(false);
+          setPostToShare(null);
+        });
+    }
+  }
+
+  const cancelShare = () => {
+    setShowShareModal(false);
+    setPostToShare(null);
   }
 
   return (
@@ -1525,18 +1548,19 @@ const PostList = ({ postsData }) => {
                         </div>
                       )}
                       {/* Display "View all replies" button if there are replies */}
-
-                      <div className="mt-2">
-                        <button
-                          onClick={() => handleViewAllReplies(c.id, i)}
-                          className="text-gray-500 cursor-pointer text-md hover:underline flex items-center gap-1"
-                          disabled={loadingReplies[c.id]}
-                        >
-                          {loadingReplies[c.id]
-                            ? "Loading..."
-                            : `View all replies`}
-                        </button>
-                      </div>
+                      {(c.replies_count > 0 || c.replies?.length > 0 || modalReplies[i]?.length > 0) && (
+                        <div className="mt-2">
+                          <button
+                            onClick={() => handleViewAllReplies(c.id, i)}
+                            className="text-gray-500 cursor-pointer text-md hover:underline flex items-center gap-1"
+                            disabled={loadingReplies[c.id]}
+                          >
+                            {loadingReplies[c.id]
+                              ? "Loading..."
+                              : `View all replies ${c.replies_count ? `(${c.replies_count})` : ''}`}
+                          </button>
+                        </div>
+                      )}
 
                       {/* Display replies */}
                       {(modalReplies[i] || [])?.map((reply, ri) => (
@@ -1759,6 +1783,35 @@ const PostList = ({ postsData }) => {
                 className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-full text-sm font-semibold"
               >
                 Post
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share Confirmation Modal */}
+      {showShareModal && (
+        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 border border-gray-400">
+            <div className="flex items-center justify-center mb-4">
+              <IoIosShareAlt size={48} className="text-blue-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-center mb-2">Share Post</h3>
+            <p className="text-gray-600 text-center mb-6">
+              Are you sure you want to share this post to your timeline?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={cancelShare}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmShare}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Share Now
               </button>
             </div>
           </div>

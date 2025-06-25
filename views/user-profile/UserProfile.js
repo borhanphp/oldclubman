@@ -26,6 +26,7 @@ import { CiLocationOn } from "react-icons/ci";
 
 const UserProfile = () => {
   const { userProfileData } = useSelector(({ settings }) => settings);
+  const { isPostModalOpen} = useSelector(({gathering}) => gathering);
   const dispatch = useDispatch();
   const params = useParams();
 
@@ -115,12 +116,17 @@ const UserProfile = () => {
 
             {/* Center Content - PROFILE INFO */}
             <div className="md:col-span-7">
+            <CreatePostBox />
+
               {/* Post */}
               <PostList postsData={userProfileData?.post} />
             </div>
           </div>
         </div>
       </div>
+
+      {/* Post Modal for Edit functionality */}
+      {isPostModalOpen && <PostModal />}
     </div>
   );
 };
