@@ -4,7 +4,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { FaTimes, FaImage, FaGlobe, FaLock, FaCaretDown } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
 import { bindPostData, getGathering, getPosts, initialPostData, setPostModalOpen, storePost, updatePost } from '@/views/gathering/store';
-import { getMyProfile } from '@/views/settings/store';
+import { getMyProfile, getUserProfile } from '@/views/settings/store';
+import { useParams } from 'next/navigation';
 
 const PostModal = () => {
   const {profile} = useSelector(({settings}) => settings)
@@ -17,6 +18,8 @@ const PostModal = () => {
   const fileInputRef = useRef(null);
   const [removeFiles, setRemoveFiles] = useState([]);
   const [isShowImageSection, setIsShowImageSection] = useState(id ? true :false);
+
+  const params = useParams();
 
   
   useEffect(() => {
@@ -156,6 +159,11 @@ const PostModal = () => {
           setFilePreviews([]);
           setRemoveFiles([]);
           dispatch(setPostModalOpen(false))
+          if(params?.id){
+            dispatch(getUserProfile(params?.id));
+          }
+          dispatch(getMyProfile());
+
         });
     } catch (error) {
       console.error('Error posting:', error);
