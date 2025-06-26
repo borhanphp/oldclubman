@@ -25,7 +25,7 @@ import { useParams } from "next/navigation";
 import { CiLocationOn } from "react-icons/ci";
 
 const UserProfile = () => {
-  const { userProfileData } = useSelector(({ settings }) => settings);
+  const { userProfileData, profileData } = useSelector(({ settings }) => settings);
   const { isPostModalOpen} = useSelector(({gathering}) => gathering);
   const dispatch = useDispatch();
   const params = useParams();
@@ -116,7 +116,7 @@ const UserProfile = () => {
 
             {/* Center Content - PROFILE INFO */}
             <div className="md:col-span-7">
-            <CreatePostBox />
+            {+profileData?.id === +params?.id && ( <CreatePostBox /> )}
 
               {/* Post */}
               <PostList postsData={userProfileData?.post} />

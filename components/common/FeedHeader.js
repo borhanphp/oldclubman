@@ -183,8 +183,10 @@ function FeedHeader({
                         >
                           <img
                             src={
-                              res?.follower_client?.image ||
-                              "/common-avator.jpg"
+                              res?.follower_client?.image
+                                ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
+                                  res.follower_client.image
+                                : "/common-avator.jpg"
                             }
                             alt={`Profile ${index + 1}`}
                             className="w-full h-full object-cover"

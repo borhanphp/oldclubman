@@ -380,10 +380,25 @@ const PostList = ({ postsData }) => {
                         {item?.client?.fname + " " + item?.client?.last_name}
                       </h4>
                     </Link>
+                    {item?.shared_post && (
+                      <>
+                      <span className="text-gray-500">•</span>
+                      <p className="text-sm text-gray-500">
+                      Shared from {" "}
+                      <span className="font-semibold hover:underline cursor-pointer">
+                      <Link href={`/user/user-profile/${item?.shared_post?.client?.id}`}>
+                        {item?.shared_post?.client?.fname + " " + item?.shared_post?.client?.last_name}
+                      </Link>
+                      </span>
+                      </p>
+                      </>
+                    )}
+                    
                     <span className="text-gray-500">•</span>
                     <p className="text-sm text-gray-500">
                       {formatCompactTime(item.created_at)}
                     </p>
+                   
                   </div>
                   <p className="text-gray-500 text-sm">
                     {item?.client?.fromcountry?.name ? item?.client?.fromcountry?.name : 'This Account Location Not Set Yet.'}{" "}
