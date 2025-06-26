@@ -110,7 +110,7 @@ const handleDelete = () => {
 }
 
 const handleCopyLink = () => {
-  const url = `${window.location.origin}/user/fb_share/${basicNfcData?.id}`;
+  const url = `${window.location.origin}/card/fb_share/${basicNfcData?.id}`;
   navigator.clipboard.writeText(url)
     .then(() => {
       toast.success("Link copied to clipboard!"); // Optional feedback
@@ -169,7 +169,7 @@ const handleDownloadQR = () => {
   img.src = url;
 };
 
-const cardUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/user/fb_share/${basicNfcData?.id}`;
+const cardUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/card/fb_share/${basicNfcData?.id}`;
 
 const handleShareFacebook = () => {
   window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(cardUrl)}`, '_blank');
@@ -261,7 +261,7 @@ const handleShareEmail = () => {
                     <>
                       <div ref={qrRef} className="bg-gray-100 rounded-lg p-4 mb-2 w-full flex justify-center">
                         <QRCodeSVG
-                          value={`${typeof window !== 'undefined' ? window.location.origin : ''}/user/fb_share/${basicNfcData?.id}`}
+                          value={`${typeof window !== 'undefined' ? window.location.origin : ''}/card/fb_share/${basicNfcData?.id}`}
                           size={180}
                           bgColor="#f3f4f6"
                           fgColor="#222"

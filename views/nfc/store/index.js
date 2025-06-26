@@ -95,7 +95,7 @@ export const storeNfc = createAsyncThunk( 'nfc/storeNfc', async (data) => {
       return resData;
   })
   .catch((err) => {
-    toast.error(err?.response?.data?.data[0])
+      toast.error(err?.response?.data?.data[0])
       errorResponse(err);
   })
   return result;
@@ -108,6 +108,7 @@ export const updateNfc = createAsyncThunk( 'nfc/updateNfc', async (data) => {
       return resData;
   })
   .catch((err) => {
+      toast.error(err?.response?.data?.data[0])
       errorResponse(err);
   })
   return result;
