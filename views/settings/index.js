@@ -1,15 +1,23 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { FaUser, FaShieldAlt, FaIdCard, FaKey } from 'react-icons/fa';
 import BasicInformation from './basic-information';
 import ProfileSettings from './profile-settings';
 import PasswordChange from './change-password';
+import { useDispatch, useSelector } from 'react-redux';
+import { getMyProfile } from './store';
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('basic-information');
+  const {profile} = useSelector(({settings}) => settings)
+  const dispatch = useDispatch();
 
+  useEffect(() => {
+    dispatch(getMyProfile());
+  }, [dispatch])
+  
   const handleTabChange = (tab) => {
     setActiveTab(tab);
   };
@@ -93,7 +101,7 @@ const Settings = () => {
             </div>
             
             <div className="p-4 text-center border-t">
-              <Link href="/user/my-profile" className="text-blue-500 hover:underline">
+              <Link href={`/user/user-profile/${profile?.client?.id}`} className="text-blue-500 hover:underline">
                 View Profile
               </Link>
             </div>

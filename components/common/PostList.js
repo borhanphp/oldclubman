@@ -65,6 +65,10 @@ const PostList = ({ postsData }) => {
   const [loadingReplies, setLoadingReplies] = useState({});
   const [showShareModal, setShowShareModal] = useState(false);
   const [postToShare, setPostToShare] = useState(null);
+  const [showImagePreview, setShowImagePreview] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
+  const [previewImages, setPreviewImages] = useState([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const handleCommentSubmit = (postId) => {
     const comment = commentInputs[postId];
@@ -345,6 +349,60 @@ const PostList = ({ postsData }) => {
     setPostToShare(null);
   }
 
+  const handleImagePreview = (imageSrc, allImages, index) => {
+    setPreviewImage(imageSrc);
+    setPreviewImages(allImages);
+    setCurrentImageIndex(index);
+    setShowImagePreview(true);
+  };
+
+  const closeImagePreview = () => {
+    setShowImagePreview(false);
+    setPreviewImage(null);
+    setPreviewImages([]);
+    setCurrentImageIndex(0);
+  };
+
+  const goToPreviousImage = () => {
+    if (currentImageIndex > 0) {
+      const newIndex = currentImageIndex - 1;
+      setCurrentImageIndex(newIndex);
+      setPreviewImage(previewImages[newIndex]);
+    }
+  };
+
+  const goToNextImage = () => {
+    if (currentImageIndex < previewImages.length - 1) {
+      const newIndex = currentImageIndex + 1;
+      setCurrentImageIndex(newIndex);
+      setPreviewImage(previewImages[newIndex]);
+    }
+  };
+
+  // Keyboard navigation for image preview
+  useEffect(() => {
+    if (!showImagePreview) return;
+    
+    const handleKeyDown = (event) => {
+      switch (event.key) {
+        case 'Escape':
+          closeImagePreview();
+          break;
+        case 'ArrowLeft':
+          goToPreviousImage();
+          break;
+        case 'ArrowRight':
+          goToNextImage();
+          break;
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showImagePreview, currentImageIndex, previewImages.length]);
+
   return (
     <div className="">
       {postsData?.data?.map((item, index) => {
@@ -481,6 +539,20 @@ const PostList = ({ postsData }) => {
                     const isVideo = /\.(mp4|webm|ogg|mov|avi)$/i.test(filePath);
                     const src =
                       (process.env.NEXT_PUBLIC_FILE_PATH ? process.env.NEXT_PUBLIC_FILE_PATH + "/" : "/uploads/") + filePath;
+                    
+                    // Prepare all images for preview
+                    const allImages = item.files
+                      .filter(f => {
+                        const fPath = f.file_path || f.path || f.url || f.file_url || '';
+                        return !/\.(mp4|webm|ogg|mov|avi)$/i.test(fPath);
+                      })
+                      .map(f => {
+                        const fPath = f.file_path || f.path || f.url || f.file_url || '';
+                        return (process.env.NEXT_PUBLIC_FILE_PATH ? process.env.NEXT_PUBLIC_FILE_PATH + "/" : "/uploads/") + fPath;
+                      });
+                    
+                    const imageIndex = allImages.indexOf(src);
+                    
                     return (
                       <div
                         key={fileIndex}
@@ -497,7 +569,8 @@ const PostList = ({ postsData }) => {
                           <img
                             src={src}
                             alt={`Post media ${fileIndex + 1}`}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => handleImagePreview(src, allImages, imageIndex)}
                           />
                         )}
                       </div>
@@ -1089,6 +1162,19 @@ const PostList = ({ postsData }) => {
                     const isVideo = /\.(mp4|webm|ogg|mov|avi)$/i.test(filePath);
                     const src = process.env.NEXT_PUBLIC_FILE_PATH + "/" + filePath;
                     
+                    // Prepare all images for preview
+                    const allImages = basicPostData.files
+                      .filter(f => {
+                        const fPath = f.file_path || f.path || f.url || f.file_url || '';
+                        return !/\.(mp4|webm|ogg|mov|avi)$/i.test(fPath);
+                      })
+                      .map(f => {
+                        const fPath = f.file_path || f.path || f.url || f.file_url || '';
+                        return process.env.NEXT_PUBLIC_FILE_PATH + "/" + fPath;
+                      });
+                    
+                    const imageIndex = allImages.indexOf(src);
+                    
                     return (
                       <div
                         key={fileIndex}
@@ -1105,7 +1191,8 @@ const PostList = ({ postsData }) => {
                           <img
                             src={src}
                             alt={`Post media ${fileIndex + 1}`}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => handleImagePreview(src, allImages, imageIndex)}
                           />
                         )}
                       </div>
@@ -1810,6 +1897,55 @@ const PostList = ({ postsData }) => {
                 Post
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Preview Modal */}
+      {showImagePreview && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
+          <div className="relative max-w-screen-lg max-h-screen-lg w-full h-full flex items-center justify-center p-4">
+            {/* Close button */}
+            <button
+              onClick={closeImagePreview}
+              className="absolute top-4 right-4 text-white text-4xl hover:text-gray-300 z-10"
+            >
+              ×
+            </button>
+            
+            {/* Previous button */}
+            {previewImages.length > 1 && currentImageIndex > 0 && (
+              <button
+                onClick={goToPreviousImage}
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white text-4xl hover:text-gray-300 z-10"
+              >
+                ‹
+              </button>
+            )}
+            
+            {/* Next button */}
+            {previewImages.length > 1 && currentImageIndex < previewImages.length - 1 && (
+              <button
+                onClick={goToNextImage}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white text-4xl hover:text-gray-300 z-10"
+              >
+                ›
+              </button>
+            )}
+            
+            {/* Image */}
+            <img
+              src={previewImage}
+              alt="Preview"
+              className="max-w-full max-h-full object-contain"
+            />
+            
+            {/* Image counter */}
+            {previewImages.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white bg-black bg-opacity-50 px-3 py-1 rounded">
+                {currentImageIndex + 1} / {previewImages.length}
+              </div>
+            )}
           </div>
         </div>
       )}

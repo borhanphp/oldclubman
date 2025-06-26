@@ -253,7 +253,7 @@ const ProfileSettings = () => {
 
           <div className="text-right mt-1">
             <span className="text-sm text-gray-500">
-              Character limit: {300 - profile_overview?.length}
+              Character limit: {Number(300) - Number(profile_overview?.length)}
             </span>
           </div>
         </div>
@@ -284,7 +284,7 @@ const ProfileSettings = () => {
 
           <div className="text-right mt-1">
             <span className="text-sm text-gray-500">
-              Character limit: {14 - tagline?.length}
+              Character limit: {Number(14) - Number(tagline?.length)}
             </span>
           </div>
         </div>
