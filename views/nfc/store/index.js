@@ -75,6 +75,43 @@ const data = res.data.data.nfc_card;
   }
 });
 
+export const getNfcByIdPublic = createAsyncThunk('nfc/getNfcByIdPublic', async (id, { rejectWithValue }) => {
+  try {
+    const res = await axios.get(`public/nfc/card/${id}`);
+const data = res.data.data.nfc_card;
+    const allData = {
+      ...data,
+      nfc_fields: data?.nfc_fields?.map((item) => ({
+        ...item,
+        nfc_id: item.id,
+        display_name: item.pivot.display_text,
+        nfc_user_name: item.pivot.field_value,
+        nfc_label: item.pivot.label,
+        label: item.pivot.label,
+        uid: `${item.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+      }))
+    };
+    const displayData = allData?.card_design;
+    const infoData = allData?.nfc_info;
+    // Merge as you did
+    const resData = { 
+      ...displayData, 
+      ...infoData,  
+      ...allData, 
+      profilePhotoUrl: process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + infoData?.image,
+      logoUrl: process.env.NEXT_PUBLIC_CARD_FILE_PATH + displayData?.logo,
+      display_nfc_color: displayData?.color,
+
+    };
+    console.log('merged resData',resData)
+    return resData;
+  } catch (err) {
+    errorResponse(err);
+    // Pass error to rejected action
+    return rejectWithValue(err.response?.data || err.message);
+  }
+});
+
 export const getNfcField = createAsyncThunk( 'nfc/getNfcField', async () => {
   const result = axios.get( `nfc/field` )
   .then((res) => {
@@ -158,6 +195,7 @@ export const nfcSlice = createSlice({
     nfcData: {},
     loading: false,
     basicNfcData: initialNfcData,
+    basicNfcDataPublic: initialNfcData,
     fields: [],
     nfcFieldsResponse: []
   },
@@ -201,9 +239,14 @@ export const nfcSlice = createSlice({
         state.basicNfcData = action.payload;
         state.fields = action.payload.nfc_fields;
       })
+      .addCase(getNfcByIdPublic.fulfilled, (state, action) => {
+        state.basicNfcDataPublic = action.payload;
+        state.fields = action.payload.nfc_fields;
+      })
       .addCase(getNfcField.fulfilled, (state, action) => {
         state.nfcFieldsResponse = action.payload;
       })
+      
   },
 });
 
