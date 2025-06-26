@@ -1083,24 +1083,34 @@ const PostList = ({ postsData }) => {
                       : ""
                   } gap-2 mb-4`}
                 >
-                  {basicPostData.files.map((file, fileIndex) => (
-                    <div
-                      key={fileIndex}
-                      className={`overflow-hidden rounded-lg ${
-                        basicPostData.files.length === 1 ? "max-h-96" : "h-48"
-                      } bg-gray-100`}
-                    >
-                      <img
-                        src={
-                          process.env.NEXT_PUBLIC_FILE_PATH +
-                          "/" +
-                          file.file_path
-                        }
-                        alt={`Post image ${fileIndex + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ))}
+                  {basicPostData.files.map((file, fileIndex) => {
+                    // Determine if file is a video by extension
+                    const filePath = file.file_path || file.path || file.url || file.file_url || '';
+                    const isVideo = /\.(mp4|webm|ogg|mov|avi)$/i.test(filePath);
+                    const src = process.env.NEXT_PUBLIC_FILE_PATH + "/" + filePath;
+                    
+                    return (
+                      <div
+                        key={fileIndex}
+                        className={`overflow-hidden rounded-lg ${
+                          basicPostData.files.length === 1 ? "max-h-96" : "h-48"
+                        } bg-gray-100`}
+                      >
+                        {isVideo ? (
+                          <video controls className="w-full h-full object-cover">
+                            <source src={src} />
+                            Your browser does not support the video tag.
+                          </video>
+                        ) : (
+                          <img
+                            src={src}
+                            alt={`Post media ${fileIndex + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
