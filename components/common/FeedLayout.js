@@ -5,7 +5,7 @@ import FeedHeader from "./FeedHeader";
 const FeedLayout = ({ children }) => {
   return (
     <div className="">
-      <div className="mx-auto">
+      <div className="md:max-w-5xl mx-auto">
         <FeedHeader />
         {children}
       </div>

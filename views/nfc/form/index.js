@@ -22,6 +22,7 @@ import CardClassic from "../nfc-cards/CardClassic";
 import CardModern from "../nfc-cards/CardModern";
 import CardFlat from "../nfc-cards/CardFlat";
 import CardSleek from "../nfc-cards/CardSleek";
+import FeedLayout from "@/components/common/FeedLayout";
 
 const NfcForm = () => {
   const { basicNfcData, fields } = useSelector(({ nfc }) => nfc);
@@ -105,12 +106,11 @@ const NfcForm = () => {
   };
 
   return (
-    <div className="content-area">
+  <FeedLayout>
+      <div className="content-area">
       <div className="mx-auto">
-        {/* Navigation Tabs */}
-        <FeedHeader />
-        <div className="mx-auto rounded-lg shadow-sm overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4">
+        <div className="mx-auto rounded-lg shadow-sm overflow-hidden pt-3">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
             {/* Left Sidebar - INTRO */}
             <div className="md:col-span-3">
               <Intro />
@@ -235,6 +235,7 @@ const NfcForm = () => {
         </div>
       </div>
     </div>
+  </FeedLayout>
   );
 };
 

@@ -333,7 +333,7 @@ function FeedHeader({
                     : "text-gray-600"
                 }`}
               >
-                FRIENDS
+                FOLLOWERS
               </Link>
             )}
           </div>

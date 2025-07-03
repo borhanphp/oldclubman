@@ -14,6 +14,7 @@ import CardClassic from './nfc-cards/CardClassic';
 import CardModern from './nfc-cards/CardModern';
 import CardSleek from './nfc-cards/CardSleek';
 import CardFlat from './nfc-cards/CardFlat';
+import FeedLayout from '@/components/common/FeedLayout';
 
 const NfcContent = () => {
   const {nfcData, loading} = useSelector(({nfc}) => nfc);
@@ -29,8 +30,9 @@ const NfcContent = () => {
 
 
   return (
+    <FeedLayout>
     <div className="gathering-content">
-     <FeedHeader/>
+   
       
       {/* Content Area - 3 Column Layout */}
       <div className="content-area  py-3">
@@ -53,7 +55,7 @@ const NfcContent = () => {
                 </div>
                 
                 {/* NFC Card */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-4">
                   {nfcData?.nfc_cards?.data?.map((card, index) => {
                     const fullCard = {
                       ...card, 
@@ -115,6 +117,7 @@ const NfcContent = () => {
       {/* Post Modal */}
       {isPostModalOpen && <PostModal/>}
     </div>
+    </FeedLayout>
   );
 };
 
