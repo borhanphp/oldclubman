@@ -35,17 +35,17 @@ const NfcContent = () => {
    
       
       {/* Content Area - 3 Column Layout */}
-      <div className="content-area  py-3">
+      <div className="content-area py-3">
         <div className="mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
             {/* Left Sidebar - INTRO */}
-            <div className="md:col-span-3">
+            <div className="md:col-span-4">
              <Intro/>
              <FollowSuggestion/>
             </div>
             
             {/* Center Content - LIST OF GATHERINGS */}
-            <div className="md:col-span-6">
+            <div className="md:col-span-8">
               <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-lg font-semibold">LIST OF NFC CARD</h3>
@@ -89,17 +89,6 @@ const NfcContent = () => {
               </div>
               
              
-            </div>
-            
-            {/* Right Sidebar */}
-            <div className="md:col-span-3">
-              {/* Online Active Now Widget */}
-              <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
-                <h3 className="text-lg font-semibold mb-3">Online Active Now</h3>
-                <div className="empty-state text-gray-400 text-sm py-4">
-                  {/* Empty state */}
-                </div>
-              </div>
             </div>
           </div>
         </div>

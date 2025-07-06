@@ -222,11 +222,11 @@ const GatheringContent = () => {
   return (
     <FeedLayout>
       {/* Content Area - Responsive 3 Column Layout */}
-      <div className="about-content md:max-w-5xl mx-auto">
-        <div className="mx-auto py-3 px-2 sm:px-4">
+      <div className="about-content">
+        <div className="mx-auto pt-3">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
             {/* Left Sidebar - Hidden on mobile, visible on large screens */}
-            <div className="hidden lg:block lg:col-span-3">
+            <div className="hidden lg:block lg:col-span-4">
               {/* Who to Follow Widget */}
               <FollowSuggestion/>
               
@@ -240,7 +240,7 @@ const GatheringContent = () => {
             </div>
             
             {/* Center Content / Feed - Full width on mobile, 6 cols on large screens */}
-            <div className="col-span-1 lg:col-span-6">
+            <div className="col-span-1 lg:col-span-8">
               {/* Mobile-only Who to Follow Widget */}
               <div className="lg:hidden mb-4">
                 <FollowSuggestion/>
@@ -272,34 +272,7 @@ const GatheringContent = () => {
              
             </div>
             
-            {/* Right Sidebar - Hidden on mobile, visible on large screens */}
-            <div className="hidden lg:block lg:col-span-3">
-              {/* Online Active Now Widget */}
-              <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
-                <h3 className="text-lg font-semibold mb-3">Online Active Now</h3>
-                <div className="empty-state text-gray-400 text-sm py-4 text-center">
-                  <div className="mb-2">
-                    <svg className="w-8 h-8 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                    </svg>
-                  </div>
-                  No active followers online
-                </div>
-              </div>
-              
-              {/* Trending Posts Widget */}
-              <div className="bg-white rounded-lg shadow-sm p-4">
-                <h3 className="text-lg font-semibold mb-3">Today's Trending posts</h3>
-                <div className="empty-state text-gray-400 text-sm py-4 text-center">
-                  <div className="mb-2">
-                    <svg className="w-8 h-8 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                    </svg>
-                  </div>
-                  No trending posts today
-                </div>
-              </div>
-            </div>
+            
           </div>
         </div>
       </div>

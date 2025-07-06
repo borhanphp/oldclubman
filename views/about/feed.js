@@ -27,11 +27,11 @@ const dispatch = useDispatch()
   return (
    <FeedLayout>
      {/* Content Area - Responsive 3 Column Layout */}
-     <div className="content-area py-3 px-2 sm:px-4">
+     <div className="content-area pt-3">
         <div className="mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
             {/* Left Sidebar - INTRO - Hidden on mobile, visible on large screens */}
-            <div className="hidden lg:block lg:col-span-3">
+            <div className="hidden lg:block lg:col-span-4">
              <Intro/>
               
               {/* Photos Section */}
@@ -81,7 +81,7 @@ const dispatch = useDispatch()
             </div>
             
             {/* Center Content - PROFILE INFO - Full width on mobile, 6 cols on large screens */}
-            <div className="col-span-1 lg:col-span-6">
+            <div className="col-span-1 lg:col-span-8">
               <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
                 <h3 className="text-xl font-bold mb-6">PROFILE INFO</h3>
                 
@@ -227,29 +227,6 @@ const dispatch = useDispatch()
               <PostList postsData={profile?.post}/>
             </div>
             
-            {/* Right Sidebar - Hidden on mobile, visible on large screens */}
-            <div className="hidden lg:block lg:col-span-3">
-              {/* Online Active Now Widget */}
-              <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
-                <h3 className="text-lg font-semibold mb-3">Online Active Now</h3>
-                <div className="empty-state text-gray-400 text-sm py-4 text-center">
-                  <div className="mb-2">
-                    <svg className="w-8 h-8 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                    </svg>
-                  </div>
-                  No active friends online
-                </div>
-              </div>
-              
-              {/* Upcoming Birthday Widget */}
-              <div className="bg-white rounded-lg shadow-sm p-4">
-                <h3 className="text-lg font-semibold mb-3">Upcoming Birthday</h3>
-                <p className="text-gray-500 text-sm text-center">
-                  No online friends have a birthday today.
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </div>

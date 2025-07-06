@@ -23,6 +23,7 @@ import CreatePostBox from "@/components/common/CreatePostBox";
 import PostList from "@/components/common/PostList";
 import { useParams } from "next/navigation";
 import { CiLocationOn } from "react-icons/ci";
+import FeedLayout from "@/components/common/FeedLayout";
 
 const UserProfile = () => {
   const { userProfileData, profileData } = useSelector(({ settings }) => settings);
@@ -36,8 +37,8 @@ const UserProfile = () => {
   }, []);
 
   return (
-    <div className="about-content md:max-w-5xl mx-auto">
-      <FeedHeader showMsgBtn={true} showFriends={true} userProfile={true} />
+    <FeedLayout showMsgBtn={true} showFriends={true} userProfile={true}>
+      <div className="about-content md:max-w-5xl mx-auto">
 
       {/* Content Area - 3 Column Layout */}
       <div className="content-area py-3">
@@ -128,6 +129,7 @@ const UserProfile = () => {
       {/* Post Modal for Edit functionality */}
       {isPostModalOpen && <PostModal />}
     </div>
+    </FeedLayout>
   );
 };
 
