@@ -57,24 +57,24 @@ const DownloadDropdown = ({ onDownloadPDF, onDownloadQR }) => {
   return (
     <div className="relative inline-block" ref={dropdownRef}>
       <button
-        className="cursor-pointer p-2 rounded"
+        className="cursor-pointer p-2 sm:p-3 rounded-lg hover:bg-blue-50 transition-colors"
         onClick={() => setOpen((prev) => !prev)}
       >
-        <FaDownload size={25} className="text-blue-500" />
+        <FaDownload size={18} className="sm:w-6 sm:h-6 text-blue-500" />
       </button>
       {open && (
-        <div className="absolute left-0 mt-2 w-55 bg-white border border-gray-200 rounded shadow-lg z-50">
+        <div className="absolute left-0 mt-2 w-48 sm:w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
           {/* <button
-            className="flex items-center cursor-pointer text-[15px] gap-2 w-full px-4 py-2 text-gray-700 hover:bg-gray-100"
+            className="flex items-center cursor-pointer text-sm gap-2 w-full px-4 py-2 text-gray-700 hover:bg-gray-100"
             onClick={() => { setOpen(false); onDownloadPDF(); }}
           >
             <FaRegFilePdf size={13} />  Download PDF of Card
           </button> */}
           <button
-            className="flex items-center cursor-pointer w-full text-nowrap text-[15px] gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100"
+            className="flex items-center cursor-pointer w-full text-nowrap text-sm gap-2 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg"
             onClick={() => { setOpen(false); onDownloadQR(); }}
           >
-           <IoQrCodeOutline size={13} /> Download QR Code
+           <IoQrCodeOutline size={14} /> Download QR Code
           </button>
         </div>
       )}
@@ -199,38 +199,39 @@ const handleShareEmail = () => {
             <Intro />
           </div>
           <div className="md:col-span-9 bg-white">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">PREVIEW NFC CARD</h2>
-                <Link href="/user/nfc" className="flex items-center gap-2 px-4 py-2 cursor-pointer bg-blue-50 hover:text-white text-blue-600 rounded hover:bg-blue-600">
-                  <span className="text-lg hover:text-white">
-                    {" "}
-                    <IoIosList />{" "}
+            <div className="p-3 sm:p-4 md:p-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+                <h2 className="text-lg sm:text-xl font-bold">PREVIEW NFC CARD</h2>
+                <Link href="/user/nfc" className="flex items-center gap-2 px-3 sm:px-4 py-2 cursor-pointer bg-blue-50 hover:text-white text-blue-600 rounded hover:bg-blue-600 transition-colors text-sm">
+                  <span className="text-base sm:text-lg hover:text-white">
+                    <IoIosList />
                   </span>
-                  <span className="font-medium text-sm ">All NFC CARD</span>
+                  <span className="font-medium">All NFC CARD</span>
                 </Link>
               </div>
-              <div className="flex flex-wrap items-center gap-4 sm:gap-8 md:gap-12 lg:gap-20 mb-2 w-full">
-                <Link href="/user/nfc/create" className="cursor-pointer p-2 rounded" onClick={() => {handleNfcEdit()}}>
-                  <FaEdit size={25} className="text-blue-500" />
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-4 md:gap-6 lg:gap-8 mb-4 w-full">
+                <Link href="/user/nfc/create" className="cursor-pointer p-2 sm:p-3 rounded-lg hover:bg-blue-50 transition-colors" onClick={() => {handleNfcEdit()}}>
+                  <FaEdit size={18} className="sm:w-6 sm:h-6 text-blue-500" />
                 </Link>
-                <Link href="/user/nfc" className="cursor-pointer p-2 rounded" onClick={() => {handleDuplicate()}}>
-                  <FaCopy size={25} className="text-blue-500" />
+                <Link href="/user/nfc" className="cursor-pointer p-2 sm:p-3 rounded-lg hover:bg-blue-50 transition-colors" onClick={() => {handleDuplicate()}}>
+                  <FaCopy size={18} className="sm:w-6 sm:h-6 text-blue-500" />
                 </Link>
                 <Link href={`/user/nfc/${params?.id}/virtual-background`}>
-                <button className="cursor-pointer p-2 rounded">
-                  <FaImage size={25} className="text-blue-500" />
+                <button className="cursor-pointer p-2 sm:p-3 rounded-lg hover:bg-blue-50 transition-colors">
+                  <FaImage size={18} className="sm:w-6 sm:h-6 text-blue-500" />
                 </button>
                 </Link>
-                <DownloadDropdown
-                  onDownloadPDF={handleDownloadPDF}
-                  onDownloadQR={handleDownloadQR}
-                />
-                <Link href={`/user/nfc/${params?.id}/email-signature`} className="cursor-pointer p-2 rounded">
-                  <MdEmail size={25} className="text-blue-500" />
+                <div className="relative">
+                  <DownloadDropdown
+                    onDownloadPDF={handleDownloadPDF}
+                    onDownloadQR={handleDownloadQR}
+                  />
+                </div>
+                <Link href={`/user/nfc/${params?.id}/email-signature`} className="cursor-pointer p-2 sm:p-3 rounded-lg hover:bg-blue-50 transition-colors">
+                  <MdEmail size={18} className="sm:w-6 sm:h-6 text-blue-500" />
                 </Link>
-                <Link href="/user/nfc" className="cursor-pointer p-2 rounded" onClick={() => {handleDelete()}}>
-                  <FaTrash size={20} className="text-red-500" />
+                <Link href="/user/nfc" className="cursor-pointer p-2 sm:p-3 rounded-lg hover:bg-red-50 transition-colors" onClick={() => {handleDelete()}}>
+                  <FaTrash size={16} className="sm:w-5 sm:h-5 text-red-500" />
                 </Link>
               </div>
               <div className="flex gap-6 flex-col lg:flex-row items-stretch">
