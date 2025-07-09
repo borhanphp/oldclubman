@@ -12,6 +12,7 @@ import FeedHeader from "@/components/common/FeedHeader";
 import { useDispatch, useSelector } from "react-redux";
 import { followTo, getMyProfile, getUserFollowers, getUserFollowing, getUserProfile, unFollowTo } from "../settings/store";
 import { useParams } from "next/navigation";
+import FeedLayout from "@/components/common/FeedLayout";
 
 const FriendsList = () => {
   const { userProfileData, userFollowers, userFollowing, followLoading } = useSelector(({ settings }) => settings);
@@ -86,8 +87,9 @@ const FriendsList = () => {
   const friendsToDisplay = activeTab === 'followers' ? (userFollowers || []) : (userFollowing || []);
 
   return (
-    <div className="about-content md:max-w-5xl mx-auto">
-      <FeedHeader showMsgBtn={true} showFriends={true} userProfile={true} />
+ <FeedLayout showMsgBtn={true} showFriends={true} userProfile={true}>
+     <div className="about-content">
+     
 
       <div className="bg-white rounded-lg shadow-sm mt-4 p-6">
         <div className="flex justify-between items-center mb-6">
@@ -143,6 +145,7 @@ const FriendsList = () => {
           )}
       </div>
     </div>
+ </FeedLayout>
   );
 };
 
