@@ -7,6 +7,7 @@ import {
   FaMegaphone,
   FaUserTie,
 } from "react-icons/fa";
+import toast from "react-hot-toast";
 import { useParams, usePathname } from "next/navigation";
 import {
   followTo,
@@ -16,6 +17,8 @@ import {
   getUserFollowing,
   getUserProfile,
   unFollowTo,
+  bindProfileSettingData,
+  storeProfileSetting,
 } from "@/views/settings/store";
 import { useDispatch, useSelector } from "react-redux";
 import { LuMessageCircleMore } from "react-icons/lu";
@@ -29,7 +32,7 @@ function FeedHeader({
   showFriends = false,
   showEditBtn = false,
 }) {
-  const { profile, userProfileData, followLoading } = useSelector(
+  const { profile, userProfileData, followLoading, profileSettingData } = useSelector(
     ({ settings }) => settings
   );
   const data = userProfile ? userProfileData : profile;
@@ -39,6 +42,12 @@ function FeedHeader({
   const [showDropdown, setShowDropdown] = useState(false);
   const [showChatBox, setShowChatBox] = useState(false);
   const [currentChat, setCurrentChat] = useState(false);
+  const [showEditPhotoModal, setShowEditPhotoModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [showEditCoverModal, setShowEditCoverModal] = useState(false);
+  const [selectedCoverImage, setSelectedCoverImage] = useState(null);
+  const [coverImagePreview, setCoverImagePreview] = useState(null);
 
   useEffect(() => {
     dispatch(getMyProfile());
@@ -94,10 +103,97 @@ function FeedHeader({
     }
   };
 
+  const handleImageSelect = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setSelectedImage(file);
+      dispatch(bindProfileSettingData({ ...profileSettingData, image: file }));
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveImage = () => {
+    if (selectedImage) {
+      const formData = new FormData();
+      
+      // Add the image file to FormData
+      if (profileSettingData?.image) {
+        formData.append("image", profileSettingData.image);
+      }
+
+      // Dispatch the storeProfileSetting action
+      dispatch(storeProfileSetting(formData)).then((res) => {
+        toast.success("Profile photo updated successfully");
+        dispatch(getMyProfile());
+        // Close modal and reset local state
+        setShowEditPhotoModal(false);
+        setSelectedImage(null);
+        setImagePreview(null);
+      }).catch((error) => {
+        toast.error("Failed to update profile photo");
+        console.error("Error updating profile photo:", error);
+      });
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setShowEditPhotoModal(false);
+    setSelectedImage(null);
+    setImagePreview(null);
+  };
+
+  const handleCoverImageSelect = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setSelectedCoverImage(file);
+      dispatch(bindProfileSettingData({ ...profileSettingData, cover_photo: file }));
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setCoverImagePreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveCoverImage = () => {
+    if (selectedCoverImage) {
+      const formData = new FormData();
+      
+      // Add the cover photo file to FormData
+      if (profileSettingData?.cover_photo) {
+        formData.append("cover_photo", profileSettingData.cover_photo);
+      }
+
+      // Dispatch the storeProfileSetting action
+      dispatch(storeProfileSetting(formData)).then((res) => {
+        toast.success("Cover photo updated successfully");
+        dispatch(getMyProfile());
+        dispatch(getUserProfile())
+        // Close modal and reset local state
+        setShowEditCoverModal(false);
+        setSelectedCoverImage(null);
+        setCoverImagePreview(null);
+      }).catch((error) => {
+        toast.error("Failed to update cover photo");
+        console.error("Error updating cover photo:", error);
+      });
+    }
+  };
+
+  const handleCancelCoverEdit = () => {
+    setShowEditCoverModal(false);
+    setSelectedCoverImage(null);
+    setCoverImagePreview(null);
+  };
+
   return (
     <div className="">
       {/* Cover Photo */}
-      <div className="cover-photo rounded-t-md relative w-full h-60 overflow-hidden">
+      <div className="cover-photo rounded-t-md relative w-full h-60 overflow-hidden group">
         <div className="absolute inset-0 w-full">
           <img
             src={
@@ -113,6 +209,19 @@ function FeedHeader({
             }}
           />
         </div>
+        
+        {/* Edit Cover Photo Button */}
+        {data?.client && (isMyProfile || showEditBtn) && (
+          <div className="absolute bottom-4 right-4">
+            <button
+              onClick={() => setShowEditCoverModal(true)}
+              className="bg-white bg-opacity-90 hover:bg-opacity-100 text-gray-700 px-3 py-2 rounded-md flex items-center gap-2 shadow-md transition-all duration-200 opacity-0 group-hover:opacity-100"
+            >
+              <FaEdit className="text-sm" />
+              <span className="text-sm font-medium">Edit Cover</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Profile Section */}
@@ -120,7 +229,7 @@ function FeedHeader({
         <div className="flex justify-between ">
           <div className="flex items-end">
             {/* Profile Picture */}
-            <div className="data-pic relative -mt-16 mr-4">
+            <div className="data-pic relative -mt-16 mr-4 group">
               <div className="w-28 -mt-30 h-28 rounded-full border-4 border-white overflow-hidden bg-white flex items-center justify-center text-white text-2xl">
                 <img
                   src={
@@ -136,6 +245,19 @@ function FeedHeader({
                   }}
                 />
               </div>
+              {/* Edit Photo Overlay */}
+              {data?.client && (isMyProfile || showEditBtn) && (
+                <div 
+                className="absolute bottom-0 left-0 w-28 h-14 bg-gray-400 bg-opacity-80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-pointer rounded-b-full"
+                onClick={() => setShowEditPhotoModal(true)}
+              >
+                <div className="text-white text-sm font-medium flex flex-col items-center">
+                  <FaEdit className="mb-1" />
+                  <span>Edit Photo</span>
+                </div>
+              </div>
+              )}
+              
             </div>
 
             {/* Profile Info */}
@@ -319,6 +441,7 @@ function FeedHeader({
               GATHERING
             </Link>
             {(userProfile || friendsTab) && (
+             <>
               <Link
                 href={`/user/user-profile/${
                   userProfile ? params?.id : profile?.client?.id
@@ -335,6 +458,19 @@ function FeedHeader({
               >
                 FOLLOWERS
               </Link>
+                <Link
+                href={`/user/account-settings`}
+                className={`px-6 py-3 font-medium ${
+                  isLinkActive(
+                    `/user/account-settings`
+                  )
+                    ? "text-blue-500 border-b-2 border-blue-500"
+                    : "text-gray-600"
+                }`}
+              >
+                SETTINGS
+              </Link>
+             </>
             )}
           </div>
         </div>
@@ -350,6 +486,148 @@ function FeedHeader({
             setCurrentChat(null);
           }}
         />
+      )}
+
+      {/* Edit Photo Modal */}
+      {showEditPhotoModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Edit Profile Photo</h2>
+              <button
+                onClick={handleCancelEdit}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="mb-4">
+              <div className="flex flex-col items-center">
+                {/* Current/Preview Image */}
+                <div className="w-32 h-32 rounded-full border-4 border-gray-200 overflow-hidden mb-4">
+                  <img
+                    src={
+                      imagePreview || 
+                      (data?.client?.image
+                        ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + data.client.image
+                        : "/common-avator.jpg")
+                    }
+                    className="w-full h-full object-cover"
+                    alt="Profile Preview"
+                  />
+                </div>
+                
+                {/* File Input */}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                  id="photo-upload"
+                />
+                <label
+                  htmlFor="photo-upload"
+                  className="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-600 transition-colors"
+                >
+                  Choose Photo
+                </label>
+              </div>
+            </div>
+            
+            {/* Modal Actions */}
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={handleCancelEdit}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveImage}
+                disabled={!selectedImage}
+                className={`px-4 py-2 rounded ${
+                  selectedImage
+                    ? 'bg-blue-500 text-white hover:bg-blue-600'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                Save Photo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Cover Photo Modal */}
+      {showEditCoverModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Edit Cover Photo</h2>
+              <button
+                onClick={handleCancelCoverEdit}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="mb-4">
+              <div className="flex flex-col items-center">
+                {/* Current/Preview Cover Image */}
+                <div className="w-full h-40 rounded-lg border-4 border-gray-200 overflow-hidden mb-4">
+                  <img
+                    src={
+                      coverImagePreview || 
+                      (data?.client?.cover_photo
+                        ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + data.client.cover_photo
+                        : "/oldman-bg.jpg")
+                    }
+                    className="w-full h-full object-cover"
+                    alt="Cover Preview"
+                  />
+                </div>
+                
+                {/* File Input */}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCoverImageSelect}
+                  className="hidden"
+                  id="cover-photo-upload"
+                />
+                <label
+                  htmlFor="cover-photo-upload"
+                  className="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-600 transition-colors"
+                >
+                  Choose Cover Photo
+                </label>
+              </div>
+            </div>
+            
+            {/* Modal Actions */}
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={handleCancelCoverEdit}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveCoverImage}
+                disabled={!selectedCoverImage}
+                className={`px-4 py-2 rounded ${
+                  selectedCoverImage
+                    ? 'bg-blue-500 text-white hover:bg-blue-600'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                Save Cover Photo
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

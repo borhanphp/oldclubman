@@ -8,6 +8,7 @@ import ProfileSettings from './profile-settings';
 import PasswordChange from './change-password';
 import { useDispatch, useSelector } from 'react-redux';
 import { getMyProfile } from './store';
+import FeedLayout from '@/components/common/FeedLayout';
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('basic-information');
@@ -39,7 +40,8 @@ const Settings = () => {
   };
 
   return (
-    <div className="mx-auto">
+    <FeedLayout showMsgBtn={false} showFriends={true} userProfile={true}>
+      <div className="mx-auto pt-3">
       <div className="flex flex-col md:flex-row gap-6">
         {/* Sidebar */}
         <div className="w-full h-full md:w-80 bg-white rounded-lg shadow-sm overflow-hidden">
@@ -114,6 +116,7 @@ const Settings = () => {
         </div>
       </div>
     </div>
+    </FeedLayout>
   );
 };
 

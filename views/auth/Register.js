@@ -183,6 +183,15 @@ const Register = () => {
           <div className="mb-2">
             <label className="block text-sm mb-1">Birthday</label>
             <div className="grid grid-cols-3 gap-4">
+            <OldSelect
+                name="birthMonth"
+                value={formData.birthMonth}
+                onChange={handleChange}
+                placeholder="Month"
+                options={monthOptions}
+                required
+              />
+              
               <OldSelect
                 name="birthDay"
                 value={formData.birthDay}
@@ -191,14 +200,7 @@ const Register = () => {
                 options={dayOptions}
                 required
               />
-              <OldSelect
-                name="birthMonth"
-                value={formData.birthMonth}
-                onChange={handleChange}
-                placeholder="Month"
-                options={monthOptions}
-                required
-              />
+             
               <OldSelect
                 name="birthYear"
                 value={formData.birthYear}

@@ -42,13 +42,12 @@ const Login = () => {
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-slate-50">
+      {/* <div className='text-[50px] font-bold'>Old Club Man</div> */}
       <div className="bg-white p-8 rounded-lg shadow-sm max-w-md w-full">
-        <h1 className="text-3xl font-bold text-center mb-2">OLD CLUB MAN</h1>
+        {/* <h1 className="text-3xl font-bold text-center mb-2">OLD CLUB MAN</h1>
         <h2 className="text-2xl font-bold text-center mb-4">SIGN IN</h2>
+         */}
         
-        <p className="text-center mb-6">
-          Don't have an account? <Link href="/auth/register" className="text-blue-500 hover:underline">Sign up here</Link>
-        </p>
         
         {error && (
           <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
@@ -63,7 +62,7 @@ const Login = () => {
               value={formData.username}
               onChange={handleChange}
               placeholder="Email"
-              className="w-full bg-slate-100"
+              className="w-full bg-slate-100 h-[50px]"
               required
               disabled={loading}
             />
@@ -76,7 +75,7 @@ const Login = () => {
               value={formData.password}
               onChange={handleChange}
               placeholder="Password"
-              className="w-full bg-slate-100"
+              className="w-full bg-slate-100 h-[50px]"
               required
               disabled={loading}
             />
@@ -94,7 +93,7 @@ const Login = () => {
             </button>
           </div>
           
-          <div className="mb-6">
+          {/* <div className="mb-6">
             <label className="flex items-center">
               <input
                 type="checkbox"
@@ -106,11 +105,11 @@ const Login = () => {
               />
               <span>Remember me</span>
             </label>
-          </div>
+          </div> */}
           
           <button
             type="submit"
-            className={`w-full bg-blue-500 text-white py-[.4rem] rounded-md hover:bg-blue-600 ${
+            className={`w-full bg-blue-500 h-[50px] text-white py-[.4rem] rounded-md hover:bg-blue-600 ${
               loading ? 'opacity-70 cursor-not-allowed' : ''
             }`}
             disabled={loading}
@@ -118,11 +117,15 @@ const Login = () => {
             {loading ? 'Signing in...' : 'Sign in'}
           </button>
           
-          <div className="mt-4 text-center">
+          <div className="my-4 text-center">
             <Link href="/auth/forgot-password" className="text-blue-500 hover:underline text-sm">
-              Forgot your password?
+              Forgotten password?
             </Link>
           </div>
+
+          <p className="text-center my-6 ">
+          <Link href="/auth/register" className="text-white bg-green-500 p-3 rounded-md text-[20px] font-bold">Create New Account</Link>
+        </p>
         </form>
         
         <div className="text-center mt-6 text-sm text-gray-600">

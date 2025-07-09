@@ -38,7 +38,7 @@ const UserProfile = () => {
 
   return (
     <FeedLayout showMsgBtn={true} showFriends={true} userProfile={true}>
-      <div className="about-content md:max-w-5xl mx-auto">
+      <div className="about-content">
 
       {/* Content Area - 3 Column Layout */}
       <div className="content-area py-3">
