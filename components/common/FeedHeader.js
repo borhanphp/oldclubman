@@ -6,6 +6,7 @@ import {
   FaEdit,
   FaMegaphone,
   FaUserTie,
+  FaCamera,
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { useParams, usePathname } from "next/navigation";
@@ -53,7 +54,7 @@ function FeedHeader({
     dispatch(getMyProfile());
   }, [dispatch]);
 
-  const isMyProfile = Number(params?.id) === Number(profile?.client?.id);
+  const isMyProfile = Number(data?.client?.id) === Number(profile?.client?.id);
 
   const isLinkActive = (path) => {
     return pathname.startsWith(path);
@@ -211,13 +212,13 @@ function FeedHeader({
         </div>
         
         {/* Edit Cover Photo Button */}
-        {data?.client && (isMyProfile || showEditBtn) && (
+        {data?.client && isMyProfile && (
           <div className="absolute bottom-4 right-4">
             <button
               onClick={() => setShowEditCoverModal(true)}
               className="bg-white bg-opacity-90 hover:bg-opacity-100 text-gray-700 px-3 py-2 rounded-md flex items-center gap-2 shadow-md transition-all duration-200 opacity-0 group-hover:opacity-100"
             >
-              <FaEdit className="text-sm" />
+              <FaCamera className="text-sm" />
               <span className="text-sm font-medium">Edit Cover</span>
             </button>
           </div>
@@ -229,7 +230,7 @@ function FeedHeader({
         <div className="flex justify-between ">
           <div className="flex items-end">
             {/* Profile Picture */}
-            <div className="data-pic relative -mt-16 mr-4 group">
+            <div className="data-pic relative -mt-16 mr-4">
               <div className="w-28 -mt-30 h-28 rounded-full border-4 border-white overflow-hidden bg-white flex items-center justify-center text-white text-2xl">
                 <img
                   src={
@@ -246,14 +247,13 @@ function FeedHeader({
                 />
               </div>
               {/* Edit Photo Overlay */}
-              {data?.client && (isMyProfile || showEditBtn) && (
+              {data?.client && isMyProfile && (
                 <div 
-                className="absolute bottom-0 left-0 w-28 h-14 bg-gray-400 bg-opacity-80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-pointer rounded-b-full"
+                className="absolute cursor-pointer flex items-center justify-center bottom-3 right-2 w-7 h-7 bg-gray-400 rounded-full"
                 onClick={() => setShowEditPhotoModal(true)}
               >
-                <div className="text-white text-sm font-medium flex flex-col items-center">
-                  <FaEdit className="mb-1" />
-                  <span>Edit Photo</span>
+                <div className="text-black text-sm font-medium flex flex-col items-center">
+                  <FaCamera className="" />
                 </div>
               </div>
               )}

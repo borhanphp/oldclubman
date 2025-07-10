@@ -135,17 +135,19 @@ const Register = () => {
   }
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-slate-50">
+    <div className="flex flex-col justify-center items-center min-h-screen bg-slate-50">
+      <div className="text-center mb-8">
+        <h1 className="text-[50px] font-bold mb-2">OLD CLUB MAN</h1>
+    
+      </div>
       <div className="bg-white p-8 rounded-lg shadow-sm max-w-md w-full">
-        <h1 className="text-3xl font-bold text-center mb-2">OLD CLUB MAN</h1>
-        <h2 className="text-2xl font-bold text-center mb-4">SIGN UP</h2>
         
         {error && (
           <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
             {error}
           </div>
         )}
-
+    <h2 className="text-center text-2xl font-bold">Create a new account</h2>
         <p className="text-center mb-6">
           Already have an account? <Link href="/auth/login" className="text-blue-500 hover:underline">Sign in here</Link>
         </p>
@@ -282,16 +284,18 @@ const Register = () => {
             </label>
           </div>
           
-          <button
-            type="submit"
-            disabled={loading}
-            className={`w-full bg-blue-500 text-white py-[.4rem] font-semibold rounded-md hover:bg-blue-600 ${
-              loading ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
-          >
-            {loading ? 'Signing up...' : 'Sign me up'}
-          </button>
-        </form>
+          <div className="flex justify-center">
+            <button
+              type="submit"
+              disabled={loading}
+              className={`px-10 bg-green-600 text-white py-[.4rem] font-semibold rounded-md hover:bg-blue-600 ${
+                loading ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+                        >
+              {loading ? 'Signing up...' : 'Sign Up'}
+            </button>
+          </div>
+          </form>
         
         <div className="text-center mt-6 text-sm text-gray-600">
           ©2025 <span className="text-blue-500">OLD CLUB MAN</span>. All rights reserved
