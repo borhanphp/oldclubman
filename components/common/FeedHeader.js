@@ -46,9 +46,11 @@ function FeedHeader({
   const [showEditPhotoModal, setShowEditPhotoModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [profileImageLoading, setProfileImageLoading] = useState(false);
   const [showEditCoverModal, setShowEditCoverModal] = useState(false);
   const [selectedCoverImage, setSelectedCoverImage] = useState(null);
   const [coverImagePreview, setCoverImagePreview] = useState(null);
+  const [coverImageLoading, setCoverImageLoading] = useState(false);
 
   useEffect(() => {
     dispatch(getMyProfile());
@@ -119,6 +121,7 @@ function FeedHeader({
 
   const handleSaveImage = () => {
     if (selectedImage) {
+      setProfileImageLoading(true);
       const formData = new FormData();
       
       // Add the image file to FormData
@@ -130,13 +133,16 @@ function FeedHeader({
       dispatch(storeProfileSetting(formData)).then((res) => {
         toast.success("Profile photo updated successfully");
         dispatch(getMyProfile());
+        dispatch(getUserProfile(data?.client?.id));
         // Close modal and reset local state
         setShowEditPhotoModal(false);
         setSelectedImage(null);
         setImagePreview(null);
+        setProfileImageLoading(false);
       }).catch((error) => {
         toast.error("Failed to update profile photo");
         console.error("Error updating profile photo:", error);
+        setProfileImageLoading(false);
       });
     }
   };
@@ -162,6 +168,7 @@ function FeedHeader({
 
   const handleSaveCoverImage = () => {
     if (selectedCoverImage) {
+      setCoverImageLoading(true);
       const formData = new FormData();
       
       // Add the cover photo file to FormData
@@ -173,14 +180,16 @@ function FeedHeader({
       dispatch(storeProfileSetting(formData)).then((res) => {
         toast.success("Cover photo updated successfully");
         dispatch(getMyProfile());
-        dispatch(getUserProfile())
+        dispatch(getUserProfile(data?.client?.id));
         // Close modal and reset local state
         setShowEditCoverModal(false);
         setSelectedCoverImage(null);
         setCoverImagePreview(null);
+        setCoverImageLoading(false);
       }).catch((error) => {
         toast.error("Failed to update cover photo");
         console.error("Error updating cover photo:", error);
+        setCoverImageLoading(false);
       });
     }
   };
@@ -545,14 +554,14 @@ function FeedHeader({
               </button>
               <button
                 onClick={handleSaveImage}
-                disabled={!selectedImage}
+                disabled={!selectedImage || profileImageLoading}
                 className={`px-4 py-2 rounded ${
-                  selectedImage
+                  selectedImage && !profileImageLoading
                     ? 'bg-blue-500 text-white hover:bg-blue-600'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                Save Photo
+                {profileImageLoading ? 'Saving...' : 'Save Photo'}
               </button>
             </div>
           </div>
@@ -616,14 +625,14 @@ function FeedHeader({
               </button>
               <button
                 onClick={handleSaveCoverImage}
-                disabled={!selectedCoverImage}
+                disabled={!selectedCoverImage || coverImageLoading}
                 className={`px-4 py-2 rounded ${
-                  selectedCoverImage
+                  selectedCoverImage && !coverImageLoading
                     ? 'bg-blue-500 text-white hover:bg-blue-600'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                Save Cover Photo
+                {coverImageLoading ? 'Saving...' : 'Save Cover Photo'}
               </button>
             </div>
           </div>

@@ -44,7 +44,9 @@ const Login = () => {
     <>
   
     <div className="flex flex-col justify-center items-center min-h-screen bg-slate-50">
-      <div className='text-[50px] font-bold mb-8'>Old Club Man</div>
+    <div className="w-30 h-30 rounded-full overflow-hidden flex items-center justify-center mr-2">
+            <img src="/logo.jpg" className='w-full'/>
+          </div>
       <div className="bg-white p-8 rounded-lg shadow-sm max-w-md w-full">
         {/* <h1 className="text-3xl font-bold text-center mb-2">OLD CLUB MAN</h1>
         <h2 className="text-2xl font-bold text-center mb-4">SIGN IN</h2>
