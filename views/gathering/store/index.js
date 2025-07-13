@@ -178,6 +178,21 @@ export const deletePost = createAsyncThunk( 'gathering/deletePost', async (id, {
   return result;
 } )
 
+export const deletePostReaction = createAsyncThunk( 'gathering/deletePostReaction', async (postId, { dispatch }) => {
+  dispatch(showPreloader());
+  const result = axios.post( `/post_reaction_delete`, { post_id: postId } )
+  .then((res) => {
+      const resData = res.data.data;
+      dispatch(hidePreloader());
+      return resData;
+  })
+  .catch((err) => {
+      dispatch(hidePreloader());
+      errorResponse(err);
+  })
+  return result;
+} )
+
 export const likeComment = createAsyncThunk(
   "gathering/likeComment",
   async (data, { dispatch }) => {

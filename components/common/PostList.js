@@ -16,6 +16,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   bindPostData,
   deletePost,
+  deletePostReaction,
   getGathering,
   getPostById,
   getPosts,
@@ -40,6 +41,7 @@ import { TbMessageReport } from "react-icons/tb";
 import { useParams } from "next/navigation";
 import { getMyProfile, getUserProfile } from "@/views/settings/store";
 import toast from "react-hot-toast";
+import Image from "next/image";
 
 const PostList = ({ postsData }) => {
   const { basicPostData } = useSelector(({ gathering }) => gathering);
@@ -137,6 +139,19 @@ const PostList = ({ postsData }) => {
         dispatch(getUserProfile(params?.id));
       }
 
+    });
+  };
+
+  const handleDeleteReaction = (postId) => {
+    dispatch(deletePostReaction(postId)).then(() => {
+      setShowReactionsFor(null);
+      dispatch(getGathering());
+      dispatch(getPosts());
+      dispatch(getPostById(postId));
+      dispatch(getMyProfile());
+      if(params?.id){
+        dispatch(getUserProfile(params?.id));
+      }
     });
   };
 
@@ -403,6 +418,206 @@ const PostList = ({ postsData }) => {
     };
   }, [showImagePreview, currentImageIndex, previewImages.length]);
 
+  // reactions image component
+  const ReactImage = (props) => {
+    const {reactLink, reactType, reaction, className, showText, textclass=""} = props;
+    return(
+      <>
+         {reaction?.type === reactType && (
+           <>
+            <Image
+              src={reactLink}
+              className={className}
+              width={100}
+              height={100}
+              alt="old club man"
+            />
+            {showText && <div className={textclass}>{showText}</div>}
+           </>
+          )}
+      </>
+    )
+  }
+
+  // show reactions counts and reactions
+  const showingReactionsIcon = (item, index) => {
+    return(
+      <span role="img" aria-label="surprised" className="text-xl">
+            <span key={index} className="inline-block">
+              <ReactImage
+                reactLink="/like.png"
+                reactType="like"
+                reaction={item}
+                className="w-4 h-4 mb-[4px] inline-block"
+              />
+              <ReactImage
+                reactLink="/love.png"
+                reactType="love"
+                reaction={item}
+                className="w-4 h-4 mb-[4px] inline-block"
+              />
+              <ReactImage
+                reactLink="/care.png"
+                reactType="care"
+                reaction={item}
+                className="w-4 h-4 mb-[4px] inline-block"
+              />
+              <ReactImage
+                reactLink="/haha.png"
+                reactType="haha"
+                reaction={item}
+                className="w-4 h-4 mb-[4px] inline-block"
+              />
+              <ReactImage
+                reactLink="/wow.png"
+                reactType="wow"
+                reaction={item}
+                className="w-4 h-4 mb-[4px] inline-block"
+              />
+              <ReactImage
+                reactLink="/sad.png"
+                reactType="sad"
+                reaction={item}
+                className="w-4 h-4 mb-[4px] inline-block"
+              />
+              <ReactImage
+                reactLink="/angry.png"
+                reactType="angry"
+                reaction={item}
+                className="w-4 h-4 mb-[4px] inline-block"
+              />
+            </span>
+    </span>
+    )
+  }
+
+
+  // liking sections for post
+const likingReactions = (item) => {
+  return(
+    <span className="font-semibold flex gap-1">
+      <ReactImage
+        reactLink="/like.png"
+        reactType="like"
+        reaction={item}
+        className="w-5 h-5 mb-[4px] inline-block"
+        textclass="text-[14px]"
+        showText="Like"
+      />
+      <ReactImage
+         reactLink="/love.png"
+        reactType="love"
+        reaction={item}
+        className="w-5 h-5 mb-[4px] inline-block"
+        textclass="text-red-700 text-[14px]"
+        showText="Love"
+      />
+      <ReactImage
+         reactLink="/care.png"
+        reactType="care"
+        reaction={item}
+        className="w-5 h-5 mb-[4px] inline-block"
+        textclass="text-yellow-700 text-[14px]"
+        showText="Care"
+      />
+      <ReactImage
+         reactLink="/haha.png"
+        reactType="haha"
+        reaction={item}
+        className="w-5 h-5 mb-[4px] inline-block"
+        textclass="text-yellow-700 text-[14px]"
+        showText="Haha"
+      />
+       <ReactImage
+        reactLink="/wow.png"
+        reactType="wow"
+        reaction={item}
+        className="w-5 h-5 mb-[4px] inline-block"
+        textclass="text-yellow-700 text-[14px]"
+        showText="Wow"
+      />
+      <ReactImage
+        reactLink="/sad.png"
+        reactType="sad"
+        reaction={item}
+        className="w-5 h-5 mb-[4px] inline-block"
+        textclass="text-yellow-700 text-[14px]"
+        showText="Sad"
+      />
+      <ReactImage
+        reactLink="/angry.png"
+        reactType="angry"
+        reaction={item}
+        className="w-5 h-5 mb-[4px] inline-block"
+        textclass="text-red-500 text-[14px]"
+        showText="Angry"
+      />
+    </span>
+  )
+}
+
+const reactionsImages = (item) => {
+
+  const CommonDesign = (props) => {
+    const {onClick, reactLink, className} = props;
+    return(
+      <button
+        className="transform w-6 cursor-pointer hover:scale-125 transition-transform"
+        onClick={() => onClick()}
+      >
+         <ReactImage
+            reactLink={reactLink}
+            className={className}
+          />
+      </button>
+    )
+  }
+  return(
+    <div
+        className="absolute bottom-full left-0 mb-0 bg-white p-1 rounded-full shadow-lg flex space-x-2 z-10"
+      >
+        <CommonDesign
+          reactLink="/like.png"
+          className=""
+          onClick={() => handleReaction(item.id, "like")}
+        />
+
+        <CommonDesign
+          reactLink="/love.png"
+          className=""
+          onClick={() => handleReaction(item.id, "love")}
+        />
+
+        <CommonDesign
+          reactLink="/care.png"
+          className=""
+          onClick={() => handleReaction(item.id, "care")}
+        />
+
+        <CommonDesign
+          reactLink="/haha.png"
+          className=""
+          onClick={() => handleReaction(item.id, "haha")}
+        />
+        <CommonDesign
+          reactLink="/wow.png"
+          className=""
+          onClick={() => handleReaction(item.id, "wow")}
+        />
+        <CommonDesign
+          reactLink="/sad.png"
+          className=""
+          onClick={() => handleReaction(item.id, "sad")}
+        />
+        <CommonDesign
+          reactLink="/angry.png"
+          className=""
+          onClick={() => handleReaction(item.id, "angry")}
+        />
+      </div>
+  )
+}
+
   return (
     <div className="">
       {postsData?.data?.map((item, index) => {
@@ -419,7 +634,7 @@ const PostList = ({ postsData }) => {
             <div className="flex items-start justify-between mb-3">
               <div className="flex">
                 <div className="w-10 h-10 border border-blue-600 rounded-full overflow-hidden mr-3">
-                  <img
+                  <Image
                     src={ item?.client?.image ?
                       process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
                       item?.client?.image : "/common-avator.jpg"
@@ -429,6 +644,8 @@ const PostList = ({ postsData }) => {
                       e.target.onerror = null;
                       e.target.src = "/common-avator.jpg";
                     }}
+                    width={100}
+                    height={100}
                   />
                 </div>
                 <div>
@@ -566,11 +783,13 @@ const PostList = ({ postsData }) => {
                             Your browser does not support the video tag.
                           </video>
                         ) : (
-                          <img
+                          <Image
                             src={src}
                             alt={`Post media ${fileIndex + 1}`}
                             className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
                             onClick={() => handleImagePreview(src, allImages, imageIndex)}
+                            width={100}
+                            height={100}
                           />
                         )}
                       </div>
@@ -583,62 +802,18 @@ const PostList = ({ postsData }) => {
             <div className="border-gray-200 border-t border-b py-2 mt-2">
               <div className="flex items-center">
                 <span className="mr-2">
-                  <span role="img" aria-label="surprised" className="text-xl">
-                    {item?.multiple_reaction_counts?.length > 0 &&
-                      item?.multiple_reaction_counts
-                        ?.slice(0, 2)
-                        .map((reaction, index) => (
-                          <span key={index} className="inline-block">
-                            {reaction?.type === "like" && (
-                              <img
-                                src="/like.png"
-                                className="w-4 h-4 mb-[4px] inline-block"
-                              />
-                            )}
-                            {reaction?.type === "love" && (
-                              <img
-                                src="/love.png"
-                                className="w-4 h-4 mb-[4px] inline-block"
-                              />
-                            )}
-                            {reaction?.type === "care" && (
-                              <img
-                                src="/care.png"
-                                className="w-4 h-4 mb-[4px] inline-block"
-                              />
-                            )}
-                            {reaction?.type === "haha" && (
-                              <img
-                                src="/haha.png"
-                                className="w-4 h-4 mb-[4px] inline-block"
-                              />
-                            )}
-                            {reaction?.type === "wow" && (
-                              <img
-                                src="/wow.png"
-                                className="w-4 h-4 mb-[4px] inline-block"
-                              />
-                            )}
-                            {reaction?.type === "sad" && (
-                              <img
-                                src="/sad.png"
-                                className="w-4 h-4 mb-[4px] inline-block"
-                              />
-                            )}
-                            {reaction?.type === "angry" && (
-                              <img
-                                src="/angry.png"
-                                className="w-4 h-4 mb-[4px] inline-block"
-                              />
-                            )}
-                          </span>
-                        ))}
-                  </span>
+                  {/* showing reactions and counts immidiate after post */}
+                  {item?.multiple_reaction_counts?.length > 0 &&
+                    item?.multiple_reaction_counts
+                      ?.slice(0, 2)
+                      .map((reaction, index) => (
+                        showingReactionsIcon(reaction, index)
+                    ))}
                 </span>
                 {/* <span className="text-sm">{item?.single_reaction?.client?.fname + " " + item?.single_reaction?.client?.last_name + " and " + totalCount }</span> */}
                 <span className="text-sm">{Number(totalCount)}</span>
                 <span className="flex items-center gap-2 ml-auto text-sm text-gray-500">
-                  2 <FaRegComment className="" />
+                  {item?.length} <FaRegComment className="" />
                 </span>
               </div>
             </div>
@@ -648,11 +823,24 @@ const PostList = ({ postsData }) => {
                 <div className="relative">
                   <button
                     className="w-full py-1 cursor-pointer text-center text-blue-500 bg-gray-100 rounded-md"
-                    onClick={() =>
+                    onMouseEnter={() =>
                       setShowReactionsFor(
                         showReactionsFor === item.id ? null : item.id
                       )
                     }
+                    onMouseLeave={(e) => {
+                      // Check if the mouse is moving to the reactions area
+                      const relatedTarget = e.relatedTarget;
+                      if (relatedTarget && relatedTarget.closest('.reactions-container')) {
+                        return; // Don't hide if moving to reactions
+                      }
+                      setShowReactionsFor(null);
+                    }}
+                    onClick={() => {
+                      if (item.single_reaction) {
+                        handleDeleteReaction(item.id);
+                      }
+                    }}
                   >
                     <div className="flex items-center justify-center gap-2">
                       {!item.single_reaction ? (
@@ -661,133 +849,19 @@ const PostList = ({ postsData }) => {
                         </>
                       ) : (
                         <span className="inline-block">
-                          {item?.single_reaction?.type === "like" && (
-                            <span className="font-semibold">
-                              <img
-                                src="/like.png"
-                                className="w-5 h-5 mb-[4px] inline-block"
-                              />{" "}
-                              <span>Like</span>
-                            </span>
-                          )}
-                          {item?.single_reaction?.type === "love" && (
-                            <span className="font-semibold">
-                              <img
-                                src="/love.png"
-                                className="w-5 h-5 inline-block mb-[4px]"
-                              />{" "}
-                              <span className="text-red-700 text-[14px]">
-                                Love
-                              </span>
-                            </span>
-                          )}
-                          {item?.single_reaction?.type === "care" && (
-                            <span className="font-semibold">
-                              <img
-                                src="/care.png"
-                                className="w-5 h-5 inline-block mb-[4px]"
-                              />{" "}
-                              <span className="text-yellow-700 text-[14px]">
-                                Care
-                              </span>
-                            </span>
-                          )}
-                          {item?.single_reaction?.type === "haha" && (
-                            <span className="font-semibold">
-                              <img
-                                src="/haha.png"
-                                className="w-5 h-5 inline-block mb-[4px]"
-                              />{" "}
-                              <span className="text-yellow-700 text-[14px]">
-                                Haha
-                              </span>
-                            </span>
-                          )}
-                          {item?.single_reaction?.type === "wow" && (
-                            <span className="font-semibold">
-                              <img
-                                src="/wow.png"
-                                className="w-5 h-5 inline-block mb-[4px]"
-                              />{" "}
-                              <span className="text-yellow-700 text-[14px]">
-                                Wow
-                              </span>
-                            </span>
-                          )}
-                          {item?.single_reaction?.type === "sad" && (
-                            <span className="font-semibold">
-                              <img
-                                src="/sad.png"
-                                className="w-5 h-5 inline-block mb-[4px]"
-                              />{" "}
-                              <span className="text-yellow-700 text-[14px]">
-                                Sad
-                              </span>
-                            </span>
-                          )}
-                          {item?.single_reaction?.type === "angry" && (
-                            <span className="font-semibold">
-                              <img
-                                src="/angry.png"
-                                className="w-5 h-5 inline-block mb-[4px]"
-                              />{" "}
-                              <span className="text-red-500 text-[14px]">
-                                Angry
-                              </span>
-                            </span>
-                          )}
+                          {/* post liking section */}
+                          {likingReactions(item?.single_reaction)}
                         </span>
                       )}
                     </div>
                   </button>
                   {showReactionsFor === item.id && (
-                    <div
-                      ref={reactionRef}
-                      className="absolute bottom-full left-0 mb-2 bg-white p-1 rounded-full shadow-lg flex space-x-2 z-10"
+                    <div 
+                      className="reactions-container"
+                      onMouseEnter={() => setShowReactionsFor(item.id)}
+                      onMouseLeave={() => setShowReactionsFor(null)}
                     >
-                      <div
-                        className="transform w-6 cursor-pointer hover:scale-125 transition-transform"
-                        onClick={() => handleReaction(item.id, "like")}
-                      >
-                        <img src="/like.png" alt="Like" className="" />
-                      </div>
-                      <button
-                        className="transform w-6 cursor-pointer hover:scale-125 transition-transform"
-                        onClick={() => handleReaction(item.id, "love")}
-                      >
-                        <img src="/love.png" alt="Love" className="" />
-                      </button>
-                      <button
-                        className="transform w-6 cursor-pointer hover:scale-125 transition-transform"
-                        onClick={() => handleReaction(item.id, "care")}
-                      >
-                        <img src="/care.png" alt="Care" className="" />
-                      </button>
-                      <button
-                        className="transform w-6 cursor-pointer hover:scale-125 transition-transform"
-                        onClick={() => handleReaction(item.id, "haha")}
-                      >
-                        <img src="/haha.png" alt="Haha" className="" />
-                      </button>
-                      <button
-                        className="transform w-6 cursor-pointer hover:scale-125 transition-transform"
-                        onClick={() => handleReaction(item.id, "wow")}
-                      >
-                        <img src="/wow.png" alt="Wow" className="" />
-                      </button>
-
-                      <button
-                        className="transform w-6 cursor-pointer hover:scale-125 transition-transform"
-                        onClick={() => handleReaction(item.id, "sad")}
-                      >
-                        <img src="/sad.png" alt="Sad" className="" />
-                      </button>
-                      <button
-                        className="transform w-6 cursor-pointer hover:scale-125 transition-transform"
-                        onClick={() => handleReaction(item.id, "angry")}
-                      >
-                        <img src="/angry.png" alt="Angry" className="" />
-                      </button>
+                      {reactionsImages(item)}
                     </div>
                   )}
                 </div>
@@ -1210,50 +1284,7 @@ const PostList = ({ postsData }) => {
                         basicPostData?.reactions
                           ?.slice(0, 2)
                           .map((reaction, index) => (
-                            <span key={index} className="inline-block">
-                              {reaction?.type === "like" && (
-                                <img
-                                  src="/like.png"
-                                  className="w-4 h-4 mb-[4px] inline-block"
-                                />
-                              )}
-                              {reaction?.type === "love" && (
-                                <img
-                                  src="/love.png"
-                                  className="w-4 h-4 mb-[4px] inline-block"
-                                />
-                              )}
-                              {reaction?.type === "care" && (
-                                <img
-                                  src="/care.png"
-                                  className="w-4 h-4 mb-[4px] inline-block"
-                                />
-                              )}
-                              {reaction?.type === "haha" && (
-                                <img
-                                  src="/haha.png"
-                                  className="w-4 h-4 mb-[4px] inline-block"
-                                />
-                              )}
-                              {reaction?.type === "wow" && (
-                                <img
-                                  src="/wow.png"
-                                  className="w-4 h-4 mb-[4px] inline-block"
-                                />
-                              )}
-                              {reaction?.type === "sad" && (
-                                <img
-                                  src="/sad.png"
-                                  className="w-4 h-4 mb-[4px] inline-block"
-                                />
-                              )}
-                              {reaction?.type === "angry" && (
-                                <img
-                                  src="/angry.png"
-                                  className="w-4 h-4 mb-[4px] inline-block"
-                                />
-                              )}
-                            </span>
+                            showingReactionsIcon(reaction, index)
                           ))}
                     </span>
                   </span>
@@ -1272,13 +1303,24 @@ const PostList = ({ postsData }) => {
                   <div className="relative">
                     <button
                       className="w-full py-1 cursor-pointer text-center text-blue-500 bg-gray-100 rounded-md"
-                      onClick={() =>
+                      onMouseEnter={() =>
                         setShowReactionsFor(
-                          showReactionsFor === basicPostData.id
-                            ? null
-                            : basicPostData.id
+                          showReactionsFor === basicPostData.id ? null : basicPostData.id
                         )
                       }
+                      onMouseLeave={(e) => {
+                        // Check if the mouse is moving to the reactions area
+                        const relatedTarget = e.relatedTarget;
+                        if (relatedTarget && relatedTarget.closest('.reactions-container')) {
+                          return; // Don't hide if moving to reactions
+                        }
+                        setShowReactionsFor(null);
+                      }}
+                      onClick={() => {
+                        if (basicPostData.single_reaction) {
+                          handleDeleteReaction(basicPostData.id);
+                        }
+                      }}
                     >
                       <div className="flex items-center justify-center gap-2">
                         {!basicPostData.single_reaction ? (
@@ -1287,162 +1329,27 @@ const PostList = ({ postsData }) => {
                           </>
                         ) : (
                           <span className="inline-block">
-                            {basicPostData?.single_reaction?.type ===
-                              "like" && (
-                              <span className="font-semibold">
-                                <img
-                                  src="/like.png"
-                                  className="w-5 h-5 mb-[4px] inline-block"
-                                />{" "}
-                                <span>Like</span>
-                              </span>
-                            )}
-                            {basicPostData?.single_reaction?.type ===
-                              "love" && (
-                              <span className="font-semibold">
-                                <img
-                                  src="/love.png"
-                                  className="w-5 h-5 inline-block mb-[4px]"
-                                />{" "}
-                                <span className="text-red-700 text-[14px]">
-                                  Love
-                                </span>
-                              </span>
-                            )}
-                            {basicPostData?.single_reaction?.type ===
-                              "care" && (
-                              <span className="font-semibold">
-                                <img
-                                  src="/care.png"
-                                  className="w-5 h-5 inline-block mb-[4px]"
-                                />{" "}
-                                <span className="text-yellow-700 text-[14px]">
-                                  Care
-                                </span>
-                              </span>
-                            )}
-                            {basicPostData?.single_reaction?.type ===
-                              "haha" && (
-                              <span className="font-semibold">
-                                <img
-                                  src="/haha.png"
-                                  className="w-5 h-5 inline-block mb-[4px]"
-                                />{" "}
-                                <span className="text-yellow-700 text-[14px]">
-                                  Haha
-                                </span>
-                              </span>
-                            )}
-                            {basicPostData?.single_reaction?.type === "wow" && (
-                              <span className="font-semibold">
-                                <img
-                                  src="/wow.png"
-                                  className="w-5 h-5 inline-block mb-[4px]"
-                                />{" "}
-                                <span className="text-yellow-700 text-[14px]">
-                                  Wow
-                                </span>
-                              </span>
-                            )}
-                            {basicPostData?.single_reaction?.type === "sad" && (
-                              <span className="font-semibold">
-                                <img
-                                  src="/sad.png"
-                                  className="w-5 h-5 inline-block mb-[4px]"
-                                />{" "}
-                                <span className="text-yellow-700 text-[14px]">
-                                  Sad
-                                </span>
-                              </span>
-                            )}
-                            {basicPostData?.single_reaction?.type ===
-                              "angry" && (
-                              <span className="font-semibold">
-                                <img
-                                  src="/angry.png"
-                                  className="w-5 h-5 inline-block mb-[4px]"
-                                />{" "}
-                                <span className="text-red-500 text-[14px]">
-                                  Angry
-                                </span>
-                              </span>
-                            )}
+                            {likingReactions(basicPostData?.single_reaction)}
                           </span>
                         )}
                       </div>
                     </button>
                     {showReactionsFor === basicPostData.id && (
-                      <div
-                        ref={reactionRef}
-                        className="absolute bottom-full left-0 mb-2 bg-white p-2 rounded-full shadow-lg flex space-x-2 z-10"
-                      >
-                        <button
-                          className="transform hover:scale-125 transition-transform cursor-pointer"
-                          onClick={() =>
-                            handleReaction(basicPostData.id, "like")
-                          }
-                        >
-                          <img src="/like.png" alt="Like" className="w-8 h-8" />
-                        </button>
-                        <button
-                          className="transform hover:scale-125 transition-transform cursor-pointer"
-                          onClick={() =>
-                            handleReaction(basicPostData.id, "love")
-                          }
-                        >
-                          <img src="/love.png" alt="Love" className="w-8 h-8" />
-                        </button>
-                        <button
-                          className="transform hover:scale-125 transition-transform cursor-pointer"
-                          onClick={() =>
-                            handleReaction(basicPostData.id, "care")
-                          }
-                        >
-                          <img src="/care.png" alt="Care" className="w-8 h-8" />
-                        </button>
-                        <button
-                          className="transform hover:scale-125 transition-transform cursor-pointer"
-                          onClick={() =>
-                            handleReaction(basicPostData.id, "haha")
-                          }
-                        >
-                          <img src="/haha.png" alt="Haha" className="w-8 h-8" />
-                        </button>
-                        <button
-                          className="transform hover:scale-125 transition-transform cursor-pointer"
-                          onClick={() =>
-                            handleReaction(basicPostData.id, "wow")
-                          }
-                        >
-                          <img src="/wow.png" alt="Wow" className="w-8 h-8" />
-                        </button>
-                        <button
-                          className="transform hover:scale-125 transition-transform cursor-pointer"
-                          onClick={() =>
-                            handleReaction(basicPostData.id, "sad")
-                          }
-                        >
-                          <img src="/sad.png" alt="Sad" className="w-8 h-8" />
-                        </button>
-                        <button
-                          className="transform hover:scale-125 transition-transform cursor-pointer"
-                          onClick={() =>
-                            handleReaction(basicPostData.id, "angry")
-                          }
-                        >
-                          <img
-                            src="/angry.png"
-                            alt="Angry"
-                            className="w-8 h-8"
-                          />
-                        </button>
-                      </div>
+                       <div 
+                       className="reactions-container"
+                       onMouseEnter={() => setShowReactionsFor(basicPostData.id)}
+                       onMouseLeave={() => setShowReactionsFor(null)}
+                     >
+                       {reactionsImages(basicPostData)}
+                     </div>
                     )}
                   </div>
                 </div>
-                <button className="flex-1 py-1 cursor-pointer text-center text-gray-500 hover:bg-gray-100 rounded-md">
+                <button 
+                 onClick={() => {handleShare(basicPostData?.id)}}
+                className="flex-1 py-1 cursor-pointer text-center text-gray-500 hover:bg-gray-100 rounded-md">
                   <div className="flex items-center justify-center gap-2">
-                    <IoMdShareAlt /> <span>Share (1)</span>
+                    <IoMdShareAlt /> <span>Share</span>
                   </div>
                 </button>
               </div>

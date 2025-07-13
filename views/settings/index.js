@@ -7,7 +7,7 @@ import BasicInformation from './basic-information';
 import ProfileSettings from './profile-settings';
 import PasswordChange from './change-password';
 import { useDispatch, useSelector } from 'react-redux';
-import { getMyProfile } from './store';
+import { getMyProfile, getUserProfile } from './store';
 import FeedLayout from '@/components/common/FeedLayout';
 
 const Settings = () => {
@@ -17,6 +17,7 @@ const Settings = () => {
 
   useEffect(() => {
     dispatch(getMyProfile());
+    dispatch(getUserProfile(profile?.client?.id));
   }, [dispatch])
   
   const handleTabChange = (tab) => {

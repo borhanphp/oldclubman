@@ -25,6 +25,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { LuMessageCircleMore } from "react-icons/lu";
 import ChatBox from "./ChatBox";
 import { getMessage, startConversation } from "@/views/message/store";
+import Image from "next/image";
 
 function FeedHeader({
   userProfile = false,
@@ -57,7 +58,6 @@ function FeedHeader({
   }, [dispatch]);
 
   const isMyProfile = Number(data?.client?.id) === Number(profile?.client?.id);
-
   const isLinkActive = (path) => {
     return pathname.startsWith(path);
   };
@@ -205,7 +205,9 @@ function FeedHeader({
       {/* Cover Photo */}
       <div className="cover-photo rounded-t-md relative w-full h-60 overflow-hidden group">
         <div className="absolute inset-0 w-full">
-          <img
+          <Image
+          width={100}
+          height={100}
             src={
               data?.client?.cover_photo
                 ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
@@ -241,7 +243,9 @@ function FeedHeader({
             {/* Profile Picture */}
             <div className="data-pic relative -mt-16 mr-4">
               <div className="w-28 -mt-30 h-28 rounded-full border-4 border-white overflow-hidden bg-white flex items-center justify-center text-white text-2xl">
-                <img
+                <Image
+                  width={100}
+                  height={100}
                   src={
                     data?.client?.image
                       ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
