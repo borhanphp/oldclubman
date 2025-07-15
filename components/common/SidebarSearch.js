@@ -193,7 +193,7 @@ const SidebarSearch = () => {
       {query && !loading && results.length === 0 && (
         <div className="absolute left-0 right-0 mt-2 z-50  rounded-md">
           <div className="p-4 text-center text-gray-500 text-sm">
-            No results found for "{query}"
+            No results found for {query}
           </div>
         </div>
       )}
