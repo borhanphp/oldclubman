@@ -7,7 +7,7 @@ import Link from 'next/link';
 
 const searchApi = async (query) => {
   const response = await api.get(`/client/search_by_people?search=${query}`);
-  console.log('response of search',response)
+  console.log('response of search', response);
   return response.data.data.follow_connections;
 };
 
@@ -20,15 +20,15 @@ const SearchDropdown = () => {
   useEffect(() => {
     return () => (
       dispatch(removeQuery())
-    )
-  }, [])
+    );
+  }, []);
 
-   // Function to handle following a user
-   const handleFollow = async (userId) => {
+  // Function to handle following a user
+  const handleFollow = async (userId) => {
     try {
       setLoadingStates(prev => ({ ...prev, [userId]: true }));
-      await dispatch(followTo({following_id: userId}));
-      
+      await dispatch(followTo({ following_id: userId }));
+
       // Reload search results after successful follow
       dispatch(setSearchLoading(true));
       const newResults = await searchApi(query);
@@ -45,8 +45,8 @@ const SearchDropdown = () => {
   const handleUnFollow = async (userId) => {
     try {
       setLoadingStates(prev => ({ ...prev, [userId]: true }));
-      await dispatch(unFollowTo({following_id: userId}));
-      
+      await dispatch(unFollowTo({ following_id: userId }));
+
       // Reload search results after successful unfollow
       dispatch(setSearchLoading(true));
       const newResults = await searchApi(query);
@@ -91,7 +91,7 @@ const SearchDropdown = () => {
     <div className="relative w-full" ref={dropdownRef}>
       <input
         type="text"
-        placeholder="Search..."
+        placeholder="Search people..."
         className="bg-gray-100 border-none outline-none w-full px-4 py-2 rounded-md"
         value={query}
         onChange={e => dispatch(setSearchQuery(e.target.value))}
@@ -103,7 +103,7 @@ const SearchDropdown = () => {
           style={{ maxHeight: '60vh', overflowY: 'auto' }}
         >
           <div className="py-4">
-            <h2 className="text-lg font-semibold mb-4 px-4">Connections</h2>
+            <h2 className="text-lg font-semibold mb-4 px-4">People</h2>
             {loading ? (
               <div className="p-4 text-center text-gray-500">Loading...</div>
             ) : (
@@ -124,10 +124,10 @@ const SearchDropdown = () => {
                       )}
                     </div>
                     <div>
-                    <Link href={`/user/user-profile/${result?.id}`}>
-                      <div onClick={() => dispatch(removeQuery())} className="flex items-center hover:underline font-semibold text-gray-900">
-                        {result.fname + " " + result.last_name}
-                      </div>
+                      <Link href={`/user/user-profile/${result?.id}`}>
+                        <div onClick={() => dispatch(removeQuery())} className="flex items-center hover:underline font-semibold text-gray-900">
+                          {result.fname + " " + result.last_name}
+                        </div>
                       </Link>
                       {result?.followers?.length > 0 && (
                         <div className="text-sm text-gray-500">
@@ -138,23 +138,22 @@ const SearchDropdown = () => {
                   </div>
 
                   {result.followed === "followed" ? 
-                   <button 
-                   className={`px-4 py-2 rounded font-semibold transition cursor-pointer bg-blue-100 text-red-400 hover:bg-red-200`}
-                   onClick={() => handleUnFollow(result.id)}
-                   disabled={loadingStates[result.id]}
-                 >
-                   {loadingStates[result.id] ? "UnFollowing..." : "UnFollow"}
-                 </button>
-                  : 
-                   <button 
-                   className={`px-4 py-2 rounded font-semibold transition cursor-pointer bg-blue-100 text-blue-600 hover:bg-blue-200`}
-                   onClick={() => handleFollow(result.id)}
-                   disabled={loadingStates[result.id]}
-                 >
-                   {loadingStates[result.id] ? "Following..." : "Follow"}
-                 </button>
+                    <button 
+                      className={`px-4 py-2 rounded font-semibold transition cursor-pointer bg-blue-100 text-red-400 hover:bg-red-200`}
+                      onClick={() => handleUnFollow(result.id)}
+                      disabled={loadingStates[result.id]}
+                    >
+                      {loadingStates[result.id] ? "UnFollowing..." : "UnFollow"}
+                    </button>
+                    : 
+                    <button 
+                      className={`px-4 py-2 rounded font-semibold transition cursor-pointer bg-blue-100 text-blue-600 hover:bg-blue-200`}
+                      onClick={() => handleFollow(result.id)}
+                      disabled={loadingStates[result.id]}
+                    >
+                      {loadingStates[result.id] ? "Following..." : "Follow"}
+                    </button>
                   }
-                 
                 </div>
               ))
             )}

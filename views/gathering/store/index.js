@@ -26,17 +26,14 @@ export const getGathering = createAsyncThunk( 'gathering/getGathering', async (_
     return result;
 } )
 
-export const getPosts = createAsyncThunk( 'gathering/getPosts', async (page = 1, { dispatch }) => {
-  dispatch(showPreloader());
-  const result = axios.get( `post/10?page=${page}` )
+export const getPosts = createAsyncThunk( 'gathering/getPosts', async ({ page = 1, search = "" } = {}) => {
+  const result = axios.get( `post/10?page=${page}&search=${search}` )
   .then((res) => {
       console.log('📄 API Response for page', page, ':', res.data);
       const resData = res.data.data;
-      dispatch(hidePreloader());
       return resData;
   })
   .catch((err) => {
-      dispatch(hidePreloader());
       errorResponse(err);
   })
   return result;
@@ -181,6 +178,21 @@ export const deletePost = createAsyncThunk( 'gathering/deletePost', async (id, {
 export const deletePostReaction = createAsyncThunk( 'gathering/deletePostReaction', async (postId, { dispatch }) => {
   dispatch(showPreloader());
   const result = axios.post( `/post_reaction_delete`, { post_id: postId } )
+  .then((res) => {
+      const resData = res.data.data;
+      dispatch(hidePreloader());
+      return resData;
+  })
+  .catch((err) => {
+      dispatch(hidePreloader());
+      errorResponse(err);
+  })
+  return result;
+} )
+
+export const searchPosts = createAsyncThunk( 'gathering/searchPosts', async (searchQuery, { dispatch }) => {
+  dispatch(showPreloader());
+  const result = axios.get( `post/search?search=${searchQuery}` )
   .then((res) => {
       const resData = res.data.data;
       dispatch(hidePreloader());
@@ -364,6 +376,37 @@ export const gatheringSlice = createSlice({
         state.loading = false;
       })
       .addCase(updatePost.rejected, (state, action) => {
+        state.loading = false;
+      })
+      .addCase(searchPosts.pending, (state, action) => {
+        state.loading = true;
+      })
+      .addCase(searchPosts.fulfilled, (state, action) => {
+        const searchData = action.payload;
+        console.log('🔍 Search Results:', searchData?.data?.length);
+        
+        if (!searchData) {
+          console.log('❌ Search - No data received');
+          state.loading = false;
+          return;
+        }
+
+        // Handle search results similar to regular posts
+        if (!searchData.current_page && Array.isArray(searchData)) {
+          console.log('⚠️ Search - Handling array response without pagination');
+          state.postsData = {
+            data: searchData,
+            current_page: 1,
+            last_page: 1
+          };
+        } else {
+          // Standard pagination handling for search results
+          state.postsData = searchData;
+        }
+        console.log('✅ Search - Total posts:', state.postsData?.data?.length);
+        state.loading = false;
+      })
+      .addCase(searchPosts.rejected, (state, action) => {
         state.loading = false;
       })
   },

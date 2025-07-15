@@ -644,8 +644,9 @@ const reactionsImages = (item) => {
                       e.target.onerror = null;
                       e.target.src = "/common-avator.jpg";
                     }}
-                    width={100}
-                    height={100}
+                     alt="oldclubman"
+                    width={1280}
+                    height={720}
                   />
                 </div>
                 <div>
@@ -785,11 +786,11 @@ const reactionsImages = (item) => {
                         ) : (
                           <Image
                             src={src}
-                            alt={`Post media ${fileIndex + 1}`}
+                            alt="oldclubman"
                             className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
                             onClick={() => handleImagePreview(src, allImages, imageIndex)}
-                            width={100}
-                            height={100}
+                            width={1920}
+                            height={1080}
                           />
                         )}
                       </div>

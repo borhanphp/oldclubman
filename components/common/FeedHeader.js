@@ -206,8 +206,8 @@ function FeedHeader({
       <div className="cover-photo rounded-t-md relative w-full h-60 overflow-hidden group">
         <div className="absolute inset-0 w-full">
           <Image
-          width={100}
-          height={100}
+            width={1920}
+            height={1080}
             src={
               data?.client?.cover_photo
                 ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
@@ -505,11 +505,11 @@ function FeedHeader({
       {showEditPhotoModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Edit Profile Photo</h2>
+            <div className="flex justify-center items-center mb-4 relative">
+              <h2 className="text-xl font-bold text-center">Change Profile Photo</h2>
               <button
                 onClick={handleCancelEdit}
-                className="text-gray-500 hover:text-gray-700"
+                className="absolute right-0 text-gray-500 hover:text-gray-700"
               >
                 ✕
               </button>
@@ -518,6 +518,7 @@ function FeedHeader({
             <div className="mb-4">
               <div className="flex flex-col items-center">
                 {/* Current/Preview Image */}
+                {selectedImage && 
                 <div className="w-32 h-32 rounded-full border-4 border-gray-200 overflow-hidden mb-4">
                   <img
                     src={
@@ -529,7 +530,7 @@ function FeedHeader({
                     className="w-full h-full object-cover"
                     alt="Profile Preview"
                   />
-                </div>
+                </div>}
                 
                 {/* File Input */}
                 <input
@@ -541,31 +542,31 @@ function FeedHeader({
                 />
                 <label
                   htmlFor="photo-upload"
-                  className="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-600 transition-colors"
+                  className="border border-gray-200 text-black px-4 py-1 hover:bg-gray-200  rounded cursor-pointer transition-colors"
                 >
-                  Choose Photo
+                  + Upload Photo
                 </label>
               </div>
             </div>
             
             {/* Modal Actions */}
-            <div className="flex justify-end space-x-3">
+            <div className="flex justify-center space-x-3">
               <button
                 onClick={handleCancelEdit}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
+                className="px-4 py-1 text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveImage}
                 disabled={!selectedImage || profileImageLoading}
-                className={`px-4 py-2 rounded ${
+                className={`px-4 py-1 rounded ${
                   selectedImage && !profileImageLoading
                     ? 'bg-blue-500 text-white hover:bg-blue-600'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                {profileImageLoading ? 'Saving...' : 'Save Photo'}
+                {profileImageLoading ? 'Saving...' : 'Save'}
               </button>
             </div>
           </div>

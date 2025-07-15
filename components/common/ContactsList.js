@@ -13,13 +13,13 @@ const ContactsList = () => {
   const [currentChat, setCurrentChat] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const dispatch = useDispatch();
-  const { myFollowers, loading } = useSelector(({ settings }) => settings);
+  const { myFollowers, loading, profile } = useSelector(({ settings }) => settings);
 
   useEffect(() => {
     dispatch(getAllFollowers());
   }, [dispatch]);
 
-  // Transform followers data to match the expected format
+  // Transform followers data to match the expected format and filter out current user
   const contacts = myFollowers?.map(follower => ({
     id: follower.id,
     name: `${follower.follower_client?.fname || ''} ${follower.follower_client?.last_name || ''}`.trim(),
@@ -30,7 +30,7 @@ const ContactsList = () => {
     lastSeen: follower.follower_client?.last_seen || "Unknown",
     email: follower.follower_client?.email,
     userId: follower.follower_client?.id
-     })) || [];
+  })).filter(contact => contact.userId !== profile?.client?.id) || [];
 
   const filteredContacts = contacts.filter(contact =>
     contact.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -73,14 +73,9 @@ const ContactsList = () => {
       {/* Header */}
       <div className="p-3 border-b border-gray-200">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-gray-800">Followers</h2>
+          <h2 className="text-lg font-semibold text-gray-800">Chattings</h2>
           <div className="flex items-center space-x-2">
-            <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-              <FaSearch className="w-4 h-4 text-gray-600" />
-            </button>
-            <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-              <FaEllipsisV className="w-4 h-4 text-gray-600" />
-            </button>
+           
           </div>
         </div>
         
@@ -94,7 +89,7 @@ const ContactsList = () => {
             placeholder="Search contacts..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-700 placeholder-gray-500"
           />
         </div>
       </div>

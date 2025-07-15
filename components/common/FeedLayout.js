@@ -2,6 +2,7 @@
 import React from "react";
 import FeedHeader from "./FeedHeader";
 import ContactsList from "./ContactsList";
+import SidebarSearch from "./SidebarSearch";
 
 const FeedLayout = ({ 
   children,
@@ -10,8 +11,8 @@ const FeedLayout = ({
   return (
     <div className="grid grid-cols-7 min-h-screen">
       <div className="col-span-1 sticky top-0 h-screen overflow-y-auto">
-        {/* Left sidebar - can be used for navigation or other widgets */}
-        
+        {/* Left sidebar - Search box */}
+        <SidebarSearch />
       </div>
       <div className="col-span-5 overflow-y-auto">
         <FeedHeader showMsgBtn={showMsgBtn} showFriends={showFriends} userProfile={userProfile}/>

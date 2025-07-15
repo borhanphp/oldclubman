@@ -19,7 +19,7 @@ import {
 import { logout } from "@/utility";
 import { useDispatch, useSelector } from "react-redux";
 import { getMyProfile } from "@/views/settings/store";
-import SearchDropdown from "@/views/search/SearchDropdown";
+import PostsSearch from "./PostsSearch";
 
 const SocialNavbar = () => {
   const { profile } = useSelector(({ settings }) => settings);
@@ -42,7 +42,7 @@ const SocialNavbar = () => {
           </div>
         </Link>
         <div className="flex-1 flex items-center justify-center">
-          <SearchDropdown />
+          <PostsSearch />
         </div>
       </div>
 
