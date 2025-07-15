@@ -206,6 +206,7 @@ function FeedHeader({
       <div className="cover-photo rounded-t-md relative w-full h-60 overflow-hidden group">
         <div className="absolute inset-0 w-full">
           <Image
+          alt="oldclubman"
             width={1920}
             height={1080}
             src={
@@ -244,6 +245,7 @@ function FeedHeader({
             <div className="data-pic relative -mt-16 mr-4">
               <div className="w-28 -mt-30 h-28 rounded-full border-4 border-white overflow-hidden bg-white flex items-center justify-center text-white text-2xl">
                 <Image
+                alt="oldclubman"
                   width={100}
                   height={100}
                   src={
