@@ -9,12 +9,12 @@ const FeedLayout = ({
   showMsgBtn, showFriends, userProfile,
  }) => {
   return (
-    <div className="grid grid-cols-9 min-h-screen">
+    <div className="grid grid-cols-11 min-h-screen">
       <div className="col-span-2 sticky top-0 h-screen overflow-y-auto">
         {/* Left sidebar - Search box */}
         <SidebarSearch />
       </div>
-      <div className="col-span-5 overflow-y-auto">
+      <div className="col-span-7 overflow-y-auto">
         <FeedHeader showMsgBtn={showMsgBtn} showFriends={showFriends} userProfile={userProfile}/>
         {children}
       </div>

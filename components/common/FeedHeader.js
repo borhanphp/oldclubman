@@ -25,6 +25,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { LuMessageCircleMore } from "react-icons/lu";
 import ChatBox from "./ChatBox";
 import { getMessage, startConversation } from "@/views/message/store";
+import { getGathering, getPosts, storePost } from "@/views/gathering/store";
 import Image from "next/image";
 
 function FeedHeader({
@@ -134,6 +135,27 @@ function FeedHeader({
         toast.success("Profile photo updated successfully");
         dispatch(getMyProfile());
         dispatch(getUserProfile(data?.client?.id));
+        
+        // Create a post about the profile photo change
+        const postFormData = new FormData();
+        postFormData.append("message", "changed profile photo");
+        postFormData.append("privacy_mode", "public");
+        
+        // Add the profile image to the post
+        if (profileSettingData?.image) {
+          postFormData.append("files[0]", profileSettingData.image);
+        }
+        
+        dispatch(storePost(postFormData))
+        .then(() => {
+          dispatch(getGathering())
+          dispatch(getPosts());
+          if(params?.id){
+            dispatch(getUserProfile(params?.id));
+          }
+          dispatch(getMyProfile());
+        })
+        
         // Close modal and reset local state
         setShowEditPhotoModal(false);
         setSelectedImage(null);
@@ -181,6 +203,19 @@ function FeedHeader({
         toast.success("Cover photo updated successfully");
         dispatch(getMyProfile());
         dispatch(getUserProfile(data?.client?.id));
+        
+        // Create a post about the cover photo change
+        const postFormData = new FormData();
+        postFormData.append("message", "changed cover photo");
+        postFormData.append("privacy_mode", "public");
+        
+        // Add the cover image to the post
+        if (profileSettingData?.cover_photo) {
+          postFormData.append("files[0]", profileSettingData.cover_photo);
+        }
+        
+        dispatch(storePost(postFormData));
+        
         // Close modal and reset local state
         setShowEditCoverModal(false);
         setSelectedCoverImage(null);
