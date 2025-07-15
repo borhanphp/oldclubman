@@ -214,7 +214,15 @@ function FeedHeader({
           postFormData.append("files[0]", profileSettingData.cover_photo);
         }
         
-        dispatch(storePost(postFormData));
+        dispatch(storePost(postFormData))
+        .then(() => {
+          dispatch(getGathering())
+          dispatch(getPosts());
+          if(params?.id){
+            dispatch(getUserProfile(params?.id));
+          }
+          dispatch(getMyProfile());
+        })
         
         // Close modal and reset local state
         setShowEditCoverModal(false);
