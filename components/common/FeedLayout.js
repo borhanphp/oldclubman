@@ -9,8 +9,8 @@ const FeedLayout = ({
   showMsgBtn, showFriends, userProfile,
  }) => {
   return (
-    <div className="grid grid-cols-7 min-h-screen">
-      <div className="col-span-1 sticky top-0 h-screen overflow-y-auto">
+    <div className="grid grid-cols-9 min-h-screen">
+      <div className="col-span-2 sticky top-0 h-screen overflow-y-auto">
         {/* Left sidebar - Search box */}
         <SidebarSearch />
       </div>
@@ -18,7 +18,7 @@ const FeedLayout = ({
         <FeedHeader showMsgBtn={showMsgBtn} showFriends={showFriends} userProfile={userProfile}/>
         {children}
       </div>
-      <div className="col-span-1 sticky top-0 h-screen">
+      <div className="col-span-2 sticky top-0 h-screen">
         <ContactsList />
       </div>
     </div>
