@@ -12,6 +12,14 @@ import {
   FaBirthdayCake,
   FaCalendarAlt,
   FaRegCalendarPlus,
+  FaPlus,
+  FaInfoCircle,
+  FaBriefcase,
+  FaGraduationCap,
+  FaHome,
+  FaInstagram,
+  FaEdit,
+  FaHeart
 } from "react-icons/fa";
 import PostModal from "@/components/custom/PostModal";
 import FeedHeader from "@/components/common/FeedHeader";
@@ -22,7 +30,7 @@ import moment from "moment";
 import CreatePostBox from "@/components/common/CreatePostBox";
 import PostList from "@/components/common/PostList";
 import { useParams } from "next/navigation";
-import { CiLocationOn } from "react-icons/ci";
+import { CiHeart, CiLocationOn } from "react-icons/ci";
 import FeedLayout from "@/components/common/FeedLayout";
 
 const UserProfile = () => {
@@ -36,6 +44,8 @@ const UserProfile = () => {
     dispatch(getUserProfile(params?.id));
   }, []);
 
+  console.log('userProfileData from intro',userProfileData)
+
   return (
     <FeedLayout showMsgBtn={true} showFriends={true} userProfile={true}>
       <div className="about-content">
@@ -47,29 +57,75 @@ const UserProfile = () => {
             {/* Left Sidebar - INTRO */}
             <div className="md:col-span-5">
               <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-lg font-semibold">INTRO</h3>
-                  <button className="text-blue-500 p-1 rounded">
-                    <FaEllipsisH />
-                  </button>
+                <h3 className="text-2xl font-semibold mb-1">Intro</h3>
+                <div className="text-gray-700 text-center mb-2">
+                  {userProfileData?.client?.profile_overview || ""}
                 </div>
-
-                <div className="text-center">
-                  <div>{userProfileData?.client?.profile_overview}</div>
-                  <div>{userProfileData?.client?.tagline}</div>
+                <div className="text-gray-700 text-center mb-2">
+                  {userProfileData?.client?.tagline || userProfileData?.client?.profile_overview || ""}
                 </div>
-                <div className="mt-2 py-4 border-t text-gray-500">
-                  <div className="flex items-center gap-3">
-                    <FaRegCalendarPlus /> Joined on{" "}
-                    {moment(userProfileData?.client?.created_at).format(
-                      "DD MMM, YYYY"
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <CiLocationOn /> Lives in:{" "}
-                    {userProfileData?.client?.current_country}
-                  </div>
-                </div>
+               
+                <div className="border mb-2"></div>
+                <ul className="space-y-2 text-md">
+                  <li className="flex items-center gap-2">
+                    <FaInfoCircle className="text-gray-500" />
+                    <span>
+                      <span className="font-semibold">Profile</span>
+                      {userProfileData?.client?.profile_overview ? ` · ${userProfileData.client.profile_overview}` : ""}
+                    </span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <FaBriefcase className="text-gray-500" />
+                    <span>
+                     {userProfileData?.client?.designation}
+                    </span>
+                  </li>
+                  {/* <li className="flex items-center gap-2">
+                    <FaBriefcase className="text-gray-500" />
+                    <span>
+                      Former Frontend Software Developer at <span className="font-bold">Quadron Technologies</span>
+                    </span>
+                  </li> */}
+                  {/* <li className="flex items-center gap-2">
+                    <FaGraduationCap className="text-gray-500" />
+                    <span>
+                      Studied at <span className="font-bold">University of Chittagong</span>
+                    </span>
+                  </li> */}
+                  {userProfileData?.client?.profile_visibility?.city === "public" && (
+                    <li className="flex items-center gap-2">
+                    <FaHome className="text-gray-500" />
+                    <span>
+                      Lives in <span className="font-bold">{userProfileData?.client?.currentstate?.name}</span>
+                    </span>
+                  </li>
+                  )}
+                  {userProfileData?.client?.profile_visibility?.location === "public" && (
+                  <li className="flex items-center gap-2">
+                    <FaMapMarkerAlt className="text-gray-500" />
+                    <span>
+                      From <span className="font-bold">{userProfileData?.client?.fromcity?.name}</span>
+                    </span>
+                  </li>)}
+                  {userProfileData?.client?.profile_visibility?.dob === "public" && (
+                  <li className="flex items-center gap-2">
+                    <FaMapMarkerAlt className="text-gray-500" />
+                    <span>
+                      Born <span className="font-bold">{userProfileData?.client?.dob}</span>
+                    </span>
+                  </li>)}
+                  {userProfileData?.client?.profile_visibility?.marital_status === "public" && (
+                  <li className="flex items-center gap-2">
+                    <FaHeart className="text-gray-500" />
+                    <span>
+                      Relationship <span className="font-bold">{userProfileData?.client?.marital_status_name}</span>
+                    </span>
+                  </li>)}
+                 
+                </ul>
+                {/* <button className="w-full bg-gray-100 text-gray-700 py-1 rounded mt-3 font-medium hover:bg-gray-200 flex items-center justify-center gap-2">
+                  <FaEdit /> Edit details
+                </button> */}
               </div>
 
               {/* Photos Section */}

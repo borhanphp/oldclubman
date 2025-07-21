@@ -113,7 +113,13 @@ const ProfileSettings = () => {
         formData.append("cover_photo", cover_photo);
       }
 
-      dispatch(storeProfileSetting(formData)).then((res) => {
+      const submittedData = {
+        ...profileSettingData, // or ...profileData, or your full profile object
+        profile_visibility: profileSettingData?.profile_visibility
+      }
+
+
+      dispatch(storeProfileSetting(submittedData)).then((res) => {
         toast.success("Successfully Updated");
         dispatch(getMyProfile());
       });

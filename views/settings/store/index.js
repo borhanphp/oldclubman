@@ -13,11 +13,18 @@ export const getMyProfile = createAsyncThunk( 'settings/getMyProfile', async ( )
     const result = axios.get( "client/myprofile" )
     .then((res) => {
         const resData = res.data.data;
-        // const myProfile = {
-        //   ...resData,
 
-        // }
-        return resData;
+        const myProfile = {
+          ...resData,
+          client: {
+            ...resData.client,
+            marital_status_name: resData?.client?.marital_status === 1 ? "Single" : resData?.client?.marital_status === 2 ? "Married" : resData?.client?.marital_status === 3 ? "Divorced" : "Widowed",
+            profile_visibility: JSON.parse(resData?.client?.profile_visibility)
+          }
+
+        }
+
+        return myProfile;
     })
     .catch((err) => {
         errorResponse(err);
@@ -29,7 +36,16 @@ export const getUserProfile = createAsyncThunk( 'settings/getUserProfile', async
   const result = axios.get( `client/user_profile/${id}/10` )
   .then((res) => {
       const resData = res.data.data;
-      return resData;
+      const userProfile = {
+        ...resData,
+        client: {
+          ...resData.client,
+          marital_status_name: resData?.client?.marital_status === 1 ? "Single" : resData?.client?.marital_status === 2 ? "Married" : resData?.client?.marital_status === 3 ? "Divorced" : "Widowed",
+          profile_visibility: JSON.parse(resData?.client?.profile_visibility)
+        }
+
+      }
+      return userProfile;
   })
   .catch((err) => {
       errorResponse(err);

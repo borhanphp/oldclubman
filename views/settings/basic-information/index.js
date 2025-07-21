@@ -22,6 +22,7 @@ const BasicInformation = () => {
     username,
     email,
     dob,
+    gender,
     nationality,
     phone_code,
     contact_no,
@@ -38,6 +39,8 @@ const BasicInformation = () => {
     marital_status,
     designation,
   } = profileData;
+
+  console.log('profileData from basick form',profileData)
 
   const [countries, setCountries] = useState([]);
   const [states, setStates] = useState([]);
@@ -133,8 +136,14 @@ const BasicInformation = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const submittedData = {
+      ...profileData,
+      profile_visibility: profileData?.profile_visibility
+    }
+
+    console.log('submittedData', JSON.stringify(submittedData, null, 2))
     try {
-      dispatch(storeBsicInformation(profileData)).then((res) => {
+      dispatch(storeBsicInformation(submittedData)).then((res) => {
         toast.success("Profile updated successfully");
         dispatch(getMyProfile());
       });
@@ -142,8 +151,6 @@ const BasicInformation = () => {
       errorResponse(error);
     }
   };
-
-  console.log('profileData',profileData)
 
   // ID type options
   const idTypeOptions = [
@@ -154,10 +161,10 @@ const BasicInformation = () => {
 
   // Marital status options
   const maritalStatusOptions = [
-    { value: "single", label: "Single" },
-    { value: "married", label: "Married" },
-    { value: "divorced", label: "Divorced" },
-    { value: "widowed", label: "Widowed" },
+    { value: 1, label: "Single" },
+    { value: 2, label: "Married" },
+    { value: 3, label: "Divorced" },
+    { value: 4, label: "Widowed" },
   ];
 
   return (
@@ -252,6 +259,22 @@ const BasicInformation = () => {
                 className="w-full"
               />
             </div>
+          </div>
+
+          <div>
+            <OldSelect
+              label="Gender"
+              name="gender"
+              value={gender}
+              onChange={handleInputChange}
+              options={[
+                { value: "male", label: "Male" },
+                { value: "female", label: "Female" },
+                { value: "other", label: "Other" },
+              ]}
+              placeholder="Select Gender"
+              className="w-full"
+            />
           </div>
         </div>
 
