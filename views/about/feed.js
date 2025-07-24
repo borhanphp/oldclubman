@@ -128,9 +128,7 @@ const AboutContent = () => {
 
   // Work Section Component
   const WorkSection = () => {
-    const [workEntries, setWorkEntries] = useState([
-      { id: 1, title: "Software Developer at Clutchlt", isPublic: true },
-    ]);
+    const [workEntries, setWorkEntries] = useState([]);
     const [isAddingWork, setIsAddingWork] = useState(false);
     const [editingWorkId, setEditingWorkId] = useState(null);
     const [workFormData, setWorkFormData] = useState({
@@ -393,14 +391,7 @@ const AboutContent = () => {
   };
 
   const EducationSection = () => {
-    const [educationEntries, setEducationEntries] = useState([
-      { id: 1, title: "Graduate from Chittagong University", isPublic: true },
-      {
-        id: 2,
-        title: "High School Diploma from Chittagong College",
-        isPublic: true,
-      },
-    ]);
+    const [educationEntries, setEducationEntries] = useState([]);
     const [isAddingEducation, setIsAddingEducation] = useState(false);
     const [editingEducationId, setEditingEducationId] = useState(null);
     const [educationFormData, setEducationFormData] = useState({
