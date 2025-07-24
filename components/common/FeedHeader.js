@@ -320,11 +320,14 @@ function FeedHeader({
 
             {/* Profile Info */}
             <div className="data-info mb-2">
-              <h2 className="text-xl font-bold">
+              <Link href={`/user/user-profile/${data?.client?.id}`}>
+              <h2 className="text-xl font-bold hover:underline">
                 {data?.client
                   ? data?.client?.fname + " " + data?.client?.last_name
                   : "Loading..."}
               </h2>
+              </Link>
+             
               <p className="text-gray-600 text-sm">
                 <Link
                   href={`/user/user-profile/${
