@@ -482,7 +482,7 @@ function FeedHeader({
               NFC
             </Link>
             <Link
-              href="/user/about"
+              href={params.id ? `/user/user-profile/${params.id}/about` : `/user/about`}
               className={`px-6 py-3 font-medium ${
                 isLinkActive("/user/about")
                   ? "text-blue-500 border-b-2 border-blue-500"

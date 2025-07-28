@@ -23,7 +23,7 @@ import PostModal from "@/components/custom/PostModal";
 import FeedHeader from "@/components/common/FeedHeader";
 import Intro from "@/components/common/Intro";
 import { useDispatch, useSelector } from "react-redux";
-import { getMyProfile, storeBsicInformation } from "../settings/store";
+import { getMyProfile, getUserProfile, storeBsicInformation } from "../settings/store";
 import moment from "moment";
 import CreatePostBox from "@/components/common/CreatePostBox";
 import PostList from "@/components/common/PostList";
@@ -39,11 +39,39 @@ import {
   CiUser,
 } from "react-icons/ci";
 import { LuPhone } from "react-icons/lu";
+import { useParams } from "next/navigation";
 
 const AboutContent = () => {
-  const { profile, profileData } = useSelector(({ settings }) => settings);
+  const { profile, profileData, userProfileData } = useSelector(({ settings }) => settings);
+  const params = useParams();
+
+  const userData = params?.id ? userProfileData?.client : profile?.client;
   const { isPostModalOpen } = useSelector(({ gathering }) => gathering);
   const dispatch = useDispatch();
+
+  const workData = userData?.metas?.filter(dd => dd.meta_key === "WORK")[0]?.meta_value;
+  let workDataForShow = [];
+  try {
+    workDataForShow = workData ? JSON.parse(workData) : [];
+  } catch (error) {
+    console.error('Error parsing work data:', error);
+    workDataForShow = [];
+  }
+
+
+  const educationData = userData?.metas?.filter(dd => dd.meta_key === "EDUCATION")[0]?.meta_value;
+  let educationDataShow = [];
+  try {
+    educationDataShow = educationData ? JSON.parse(educationData) : [];
+  } catch (error) {
+    console.error('Error parsing educationDataShow data:', error);
+    educationDataShow = [];
+  }
+
+
+  console.log('workDataForShow from about', workDataForShow)
+console.log('educationDataShow from about',educationDataShow)
+
 
   // State for active section
   const [activeSection, setActiveSection] = useState('overview');
@@ -52,9 +80,10 @@ const AboutContent = () => {
 
   useEffect(() => {
     dispatch(getMyProfile());
+    dispatch(getUserProfile(params?.id));
   }, []);
 
-console.log('profile',profile.client)
+console.log('userData',userData)
  
   return (
     <FeedLayout>
@@ -109,7 +138,7 @@ console.log('profile',profile.client)
                   >
                     Contact and basic info
                   </button>
-                  <button 
+                  {/* <button 
                     onClick={() => setActiveSection('privacy-legal')}
                     className={`block w-full text-left px-3 py-2 rounded-md transition-colors ${
                       activeSection === 'privacy-legal' 
@@ -120,9 +149,9 @@ console.log('profile',profile.client)
                     Privacy and legal info
                   </button>
                   <button 
-                    onClick={() => setActiveSection('profile-transparency')}
+                    onClick={() => setActiveSection('userData-transparency')}
                     className={`block w-full text-left px-3 py-2 rounded-md transition-colors ${
-                      activeSection === 'profile-transparency' 
+                      activeSection === 'userData-transparency' 
                         ? 'text-blue-600 font-medium bg-blue-50' 
                         : 'text-gray-700 hover:bg-gray-50'
                     }`}
@@ -158,7 +187,7 @@ console.log('profile',profile.client)
                     }`}
                   >
                     Life events
-                  </button>
+                  </button> */}
                 </nav>
               </div>
             </div>
@@ -172,13 +201,17 @@ console.log('profile',profile.client)
                   <div className="space-y-6">
                     {/* Work Section */}
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <FaBriefcase className="text-gray-500 mr-3" />
-                        <div>
-                          <div className="text-gray-700 font-medium">Software Developer at Clutchit.com.au</div>
-                          <div className="text-gray-500 text-sm">Past: Quadrion Technologies</div>
-                        </div>
-                      </div>
+                      {workDataForShow?.slice(0, 1)?.map((item, index) => {
+                        return(
+                          <div className="flex items-center">
+                            <FaBriefcase className="text-gray-500 mr-3" />
+                            <div>
+                              <div className="text-gray-700 font-medium">{item?.position} at {item?.company}</div>
+                            </div>
+                          </div>
+                       )
+                      })} 
+                      
                       <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaGlobe className="text-gray-600 text-sm" />
@@ -190,26 +223,31 @@ console.log('profile',profile.client)
                     </div>
 
                     {/* Education Section */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <FaGraduationCap className="text-gray-500 mr-3" />
-                        <div className="text-gray-700 font-medium">Studied at University of Chittagong</div>
+                    {educationDataShow?.slice(0, 1)?.map((item, index) => {
+                      return(
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <FaGraduationCap className="text-gray-500 mr-3" />
+                          <div className="text-gray-700 font-medium">Studied at {item?.institution}</div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
+                            <FaGlobe className="text-gray-600 text-sm" />
+                          </button>
+                          <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
+                            <FaEllipsisH className="text-gray-600 text-sm" />
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
-                          <FaGlobe className="text-gray-600 text-sm" />
-                        </button>
-                        <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
-                          <FaEllipsisH className="text-gray-600 text-sm" />
-                        </button>
-                      </div>
-                    </div>
+                      )
+                    })}
+                    
 
                     {/* Current City */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
                         <FaHome className="text-gray-500 mr-3" />
-                        <div className="text-gray-700 font-medium">Lives in {profile?.client?.currentstate?.name}</div>
+                        <div className="text-gray-700 font-medium">Lives in {userData?.currentstate?.name}</div>
                       </div>
                       <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
@@ -225,7 +263,7 @@ console.log('profile',profile.client)
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
                         <FaMapMarkerAlt className="text-gray-500 mr-3" />
-                        <div className="text-gray-700 font-medium">From Chittagong</div>
+                        <div className="text-gray-700 font-medium">From {userData?.fromcity?.name}</div>
                       </div>
                       <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
@@ -241,7 +279,7 @@ console.log('profile',profile.client)
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
                         <FaHeart className="text-gray-500 mr-3" />
-                        <div className="text-gray-700 font-medium">{profile?.client?.marital_status_name}</div>
+                        <div className="text-gray-700 font-medium">{userData?.marital_status_name}</div>
                       </div>
                       <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
@@ -258,7 +296,7 @@ console.log('profile',profile.client)
                       <div className="flex items-center">
                         <LuPhone className="text-gray-500 mr-3" />
                         <div>
-                          <div className="text-gray-700 font-medium">{profile?.client?.contact_no}</div>
+                          <div className="text-gray-700 font-medium">{userData?.contact_no}</div>
                           <div className="text-gray-500 text-sm">Mobile</div>
                         </div>
                       </div>
@@ -280,66 +318,73 @@ console.log('profile',profile.client)
                     <div>
                       <h4 className="text-lg font-semibold mb-4">Work</h4>
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <FaBriefcase className="text-gray-500 mr-3" />
-                            <div>
-                              <div className="text-gray-700 font-medium">Software Developer</div>
-                              <div className="text-gray-500 text-sm">Clutchit.com.au</div>
-                              <div className="text-gray-400 text-xs">2023 - Present</div>
+                        {workDataForShow && workDataForShow.length > 0 ? (
+                          workDataForShow.map((item, index) => (
+                            <div key={index} className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <FaBriefcase className="text-gray-500 mr-3" />
+                                <div>
+                                  <div className="text-gray-700 font-medium">{item.title || item.job_title || 'Job Title'}</div>
+                                  <div className="text-gray-500 text-sm">{item.company || item.employer || 'Company'}</div>
+                                  <div className="text-gray-400 text-xs">
+                                    {item.start_date && item.end_date ? `${item.start_date} - ${item.end_date}` : 
+                                     item.start_date ? `${item.start_date} - Present` : 'Date not specified'}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
+                                  <FaGlobe className="text-gray-600 text-sm" />
+                                </button>
+                                <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
+                                  <FaEdit className="text-gray-600 text-sm" />
+                                </button>
+                              </div>
                             </div>
+                          ))
+                        ) : (
+                          <div className="text-gray-500 text-center py-4">
+                            No work experience added yet
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
-                              <FaGlobe className="text-gray-600 text-sm" />
-                            </button>
-                            <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
-                              <FaEdit className="text-gray-600 text-sm" />
-                            </button>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <FaBriefcase className="text-gray-500 mr-3" />
-                            <div>
-                              <div className="text-gray-700 font-medium">Frontend Developer</div>
-                              <div className="text-gray-500 text-sm">Quadrion Technologies</div>
-                              <div className="text-gray-400 text-xs">2021 - 2023</div>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
-                              <FaGlobe className="text-gray-600 text-sm" />
-                            </button>
-                            <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
-                              <FaEdit className="text-gray-600 text-sm" />
-                            </button>
-                          </div>
-                        </div>
+                        )}
                       </div>
                     </div>
 
                     <div>
                       <h4 className="text-lg font-semibold mb-4">Education</h4>
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <FaGraduationCap className="text-gray-500 mr-3" />
-                            <div>
-                              <div className="text-gray-700 font-medium">Bachelor of Computer Science</div>
-                              <div className="text-gray-500 text-sm">University of Chittagong</div>
-                              <div className="text-gray-400 text-xs">2017 - 2021</div>
-                            </div>
+                        {educationDataShow && educationDataShow.length > 0 ? (
+                          educationDataShow?.map((item, index) => {
+                            
+                            return (
+                              <div key={index} className="flex items-center justify-between">
+                                <div className="flex items-center">
+                                  <FaGraduationCap className="text-gray-500 mr-3" />
+                                  <div>
+                                    <div className="text-gray-700 font-medium">{item.degree || item.title || 'Degree'}</div>
+                                    <div className="text-gray-500 text-sm">{item.school || item.institution || 'Institution'}</div>
+                                    <div className="text-gray-400 text-xs">
+                                      {item.start_date && item.end_date ? `${item.start_date} - ${item.end_date}` : 
+                                       item.start_date ? `${item.start_date} - Present` : 'Date not specified'}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
+                                    <FaGlobe className="text-gray-600 text-sm" />
+                                  </button>
+                                  <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
+                                    <FaEdit className="text-gray-600 text-sm" />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div className="text-gray-500 text-center py-4">
+                            No education information added yet
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
-                              <FaGlobe className="text-gray-600 text-sm" />
-                            </button>
-                            <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
-                              <FaEdit className="text-gray-600 text-sm" />
-                            </button>
-                          </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -353,8 +398,7 @@ console.log('profile',profile.client)
                         <FaHome className="text-gray-500 mr-3" />
                         <div>
                           <div className="text-gray-700 font-medium">Current City</div>
-                          <div className="text-gray-500 text-sm">Chittagong, Bangladesh</div>
-                          <div className="text-gray-400 text-xs">2020 - Present</div>
+                          <div className="text-gray-500 text-sm">{userData?.currentstate?.name + ", " + userData?.currentcountry?.name }</div>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -372,7 +416,7 @@ console.log('profile',profile.client)
                         <FaMapMarkerAlt className="text-gray-500 mr-3" />
                         <div>
                           <div className="text-gray-700 font-medium">Hometown</div>
-                          <div className="text-gray-500 text-sm">Chittagong, Bangladesh</div>
+                          <div className="text-gray-500 text-sm">{userData?.fromcity?.name + ", " + userData?.fromcountry?.name}</div>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -395,7 +439,7 @@ console.log('profile',profile.client)
                         <LuPhone className="text-gray-500 mr-3" />
                         <div>
                           <div className="text-gray-700 font-medium">Mobile</div>
-                          <div className="text-gray-500 text-sm">01829-521200</div>
+                          <div className="text-gray-500 text-sm">{userData?.contact_no}</div>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -413,7 +457,7 @@ console.log('profile',profile.client)
                         <FaEnvelope className="text-gray-500 mr-3" />
                         <div>
                           <div className="text-gray-700 font-medium">Email</div>
-                          <div className="text-gray-500 text-sm">borhanidb@gmail.com</div>
+                          <div className="text-gray-500 text-sm">{userData?.email}</div>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -431,7 +475,7 @@ console.log('profile',profile.client)
                         <FaBirthdayCake className="text-gray-500 mr-3" />
                         <div>
                           <div className="text-gray-700 font-medium">Date of Birth</div>
-                          <div className="text-gray-500 text-sm">September 20, 1996</div>
+                          <div className="text-gray-500 text-sm">{userData?.dob}</div>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -451,7 +495,7 @@ console.log('profile',profile.client)
                   <div className="space-y-6">
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <h4 className="font-semibold mb-2">Privacy Settings</h4>
-                      <p className="text-gray-600 text-sm">Manage who can see your profile information and posts.</p>
+                      <p className="text-gray-600 text-sm">Manage who can see your userData information and posts.</p>
                     </div>
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <h4 className="font-semibold mb-2">Legal Information</h4>
@@ -461,11 +505,11 @@ console.log('profile',profile.client)
                 )}
 
                 {/* Profile Transparency Section */}
-                {activeSection === 'profile-transparency' && (
+                {activeSection === 'userData-transparency' && (
                   <div className="space-y-6">
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <h4 className="font-semibold mb-2">Profile Transparency</h4>
-                      <p className="text-gray-600 text-sm">Information about how your profile data is used and shared.</p>
+                      <p className="text-gray-600 text-sm">Information about how your userData data is used and shared.</p>
                     </div>
                   </div>
                 )}
@@ -478,7 +522,7 @@ console.log('profile',profile.client)
                         <FaHeart className="text-gray-500 mr-3" />
                         <div>
                           <div className="text-gray-700 font-medium">Relationship Status</div>
-                          <div className="text-gray-500 text-sm">Married since January 16, 2025</div>
+                          <div className="text-gray-500 text-sm">{userData?.marital_status_name}</div>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
