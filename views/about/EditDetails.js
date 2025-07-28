@@ -1,26 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
-import {
-  FaEllipsisH,
-  FaVideo,
-  FaGlobe,
-  FaComment,
-  FaMapMarkerAlt,
-  FaEnvelope,
-  FaBirthdayCake,
-  FaCalendarAlt,
-} from "react-icons/fa";
-import PostModal from "@/components/custom/PostModal";
-import FeedHeader from "@/components/common/FeedHeader";
-import Intro from "@/components/common/Intro";
 import { useDispatch, useSelector } from "react-redux";
 import { getMyProfile, storeBsicInformation } from "../settings/store";
 import moment from "moment";
-import CreatePostBox from "@/components/common/CreatePostBox";
-import PostList from "@/components/common/PostList";
-import FeedLayout from "@/components/common/FeedLayout";
 import {
   CiCalendar,
   CiCalendarDate,
@@ -31,14 +14,21 @@ import {
   CiStopwatch,
   CiUser,
 } from "react-icons/ci";
-import { LuPhone } from "react-icons/lu";
+import toast from "react-hot-toast";
 
 const EditDetails = () => {
   const { profile, profileData } = useSelector(({ settings }) => settings);
   const { isPostModalOpen } = useSelector(({ gathering }) => gathering);
   const dispatch = useDispatch();
+const workDataForShow = profile.client?.metas?.filter(dd => dd.meta_key === "WORK")
+const educationDataShow = profile.client?.metas?.filter(dd => dd.meta_key === "EDUCATION")
 
-  // State for privacy settings
+const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value);
+console.log('workDataForShow',workDataForShow)
+console.log('educationDataShow',educationDataShow)
+console.log('previousWord',previousWork)
+  
+// State for privacy settings
   const [privacySettings, setPrivacySettings] = useState({
     marital_status: true,
     dob: true,
@@ -111,7 +101,11 @@ const EditDetails = () => {
     dispatch(storeBsicInformation({
       ...profileData,
       profile_visibility: JSON.stringify(newVisibility)
-    }));
+    }))
+    .then(() => {
+    dispatch(getMyProfile());
+    toast.success("Updated")
+    })
   };
 
   const OverViewBlock = (props) => {
@@ -122,7 +116,7 @@ const EditDetails = () => {
       ? localVisibility[field] === 'public' 
       : (visibility !== undefined ? visibility === 'public' : privacySettings[field]);
     
-    console.log('value for profile visibility', visibility, 'field:', field, 'isPublic:', isPublic, 'localVisibility:', localVisibility[field]);
+    // console.log('value for profile visibility', visibility, 'field:', field, 'isPublic:', isPublic, 'localVisibility:', localVisibility[field]);
 
     return (
       <>
@@ -175,6 +169,7 @@ const EditDetails = () => {
     const [isAddingWork, setIsAddingWork] = useState(false);
     const [editingWorkId, setEditingWorkId] = useState(null);
     const [workFormData, setWorkFormData] = useState({
+      id: "",
       title: "",
       company: "",
       position: "",
@@ -205,8 +200,11 @@ const EditDetails = () => {
     };
 
     const handleAddWork = () => {
+      const workId = `work_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
       setIsAddingWork(true);
       setWorkFormData({
+        id: workId,
         title: "",
         company: "",
         position: "",
@@ -217,8 +215,11 @@ const EditDetails = () => {
     };
 
     const handleEditWork = (work) => {
+      const workId = editingWorkId || `work_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
       setEditingWorkId(work.id);
       setWorkFormData({
+        id: workId,
         title: work.title || "",
         company: work.company || "",
         position: work.position || "",
@@ -229,8 +230,11 @@ const EditDetails = () => {
     };
 
     const handleSaveWork = () => {
+      // Generate unique ID for new work or use existing ID for editing
+      const workId = editingWorkId || `work_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
       const newWork = {
-        id: editingWorkId || Date.now(),
+        id: workId,
         ...workFormData,
         isPublic: true
       };
@@ -251,7 +255,10 @@ const EditDetails = () => {
       const metas = [
         {
           meta_key: 'WORK',
-          meta_value: "Working on mukthodhara",
+          meta_value: [
+            ...(typeof previousWork === 'string' ? JSON.parse(previousWork) : (previousWork || [])),
+            newWork
+          ],
           meta_status: '1'
         }
       ];
@@ -259,16 +266,21 @@ const EditDetails = () => {
       // Include profile_visibility with the metas data
       const saveData = {
         ...profileData,
-        metas,
+        metas: JSON.stringify(metas),
         profile_visibility: profileData?.profile_visibility
       };
 
-      dispatch(storeBsicInformation(saveData));
+      dispatch(storeBsicInformation(saveData))
+      .then(() => {
+        dispatch(getMyProfile());
+        toast.success("Updated")
+        })
 
       // Reset form
       setIsAddingWork(false);
       setEditingWorkId(null);
       setWorkFormData({
+        id: "",
         title: "",
         company: "",
         position: "",
@@ -282,6 +294,7 @@ const EditDetails = () => {
       setIsAddingWork(false);
       setEditingWorkId(null);
       setWorkFormData({
+        id: "",
         title: "",
         company: "",
         position: "",
@@ -299,42 +312,105 @@ const EditDetails = () => {
       }));
     };
 
+    const handleDeleteWork = (data, id) => {
+      // Remove the work entry with the specified ID
+      const updatedWorkEntries = data?.filter(work => work.id !== id);
+      setWorkEntries(updatedWorkEntries);
+      
+      // Save updated data to backend
+      const metas = [
+        {
+          meta_key: 'WORK',
+          meta_value: updatedWorkEntries,
+          meta_status: '1'
+        }
+      ];
+
+      const saveData = {
+        ...profileData,
+        metas: JSON.stringify(metas),
+        profile_visibility: profileData?.profile_visibility
+      };
+
+      dispatch(storeBsicInformation(saveData))
+        .then(() => {
+          dispatch(getMyProfile());
+          toast.success("Work entry deleted");
+        });
+    };
+
     return (
       <div className="bg-white rounded-lg border border-gray-100 p-4 mb-4 ">
         <h4 className="text-base font-bold text-gray-800 mb-4">WORK</h4>
 
-        {workEntries.map((work) => (
-          <div key={work.id} className="flex items-center mb-3 last:mb-0">
-            {/* Privacy Toggle */}
-            <div className="flex items-center mr-4">
-              <button
-                onClick={() => handleWorkPrivacyToggle(work.id)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                  work.isPublic ? "bg-blue-600" : "bg-gray-200"
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    work.isPublic ? "translate-x-6" : "translate-x-1"
-                  }`}
-                />
-              </button>
-            </div>
+        {/* Display work entries in clean design */}
+        {console.log('workDataForShow:', workDataForShow)}
+        {workDataForShow && workDataForShow.length > 0 && workDataForShow.map((workData, index) => {
+          const workEntries = typeof workData.meta_value === 'string' 
+            ? JSON.parse(workData.meta_value) 
+            : workData.meta_value || [];
+          {console.log('workEntries:', workEntries)}
+          
+          return Array.isArray(workEntries) ? workEntries.map((entry, entryIndex) => {
+            // Generate unique ID for each entry
+            const uniqueId = entry.id || `work_${index}_${entryIndex}_${Date.now()}`;
+            
+            return (
+              <div key={uniqueId} className="flex items-center mb-3 last:mb-0">
+                {/* Privacy Toggle */}
+                <div className="flex items-center mr-4">
+                  <button
+                    onClick={() => handleWorkPrivacyToggle(uniqueId)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                      entry.isPublic !== false ? "bg-blue-600" : "bg-gray-200"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        entry.isPublic !== false ? "translate-x-6" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
 
-            {/* Work Title */}
-            <div className="flex-1 text-sm text-gray-700">{work.title}</div>
+                {/* Work Title and Company */}
+                <div className="flex-1 text-sm text-gray-700">
+                  {entry.position && entry.company 
+                    ? `${entry.position} at ${entry.company}`
+                    : entry.title || entry.position || 'Work Entry'
+                  }
+                </div>
 
-            {/* Edit Icon */}
-            <button 
-              className="text-gray-400 ml-2"
-              onClick={() => handleEditWork(work)}
-            >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-              </svg>
-            </button>
-          </div>
-        ))}
+                {/* Edit Icon */}
+                <button 
+                  className="text-gray-400 ml-2 hover:text-gray-600"
+                  onClick={() => handleEditWork({...entry, id: uniqueId})}
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                  </svg>
+                </button>
+
+                {/* Delete Icon */}
+                <button 
+                  className="text-red-400 ml-2 hover:text-red-600"
+                  onClick={() => handleDeleteWork(workEntries, uniqueId)}
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            );
+          }) : null;
+        })}
+
+        {/* Show message when no work data */}
+        {(!workDataForShow || workDataForShow.length === 0) && (
+          <div className="text-gray-500 text-sm py-2">No work data found</div>
+        )}
+
+      
 
         {/* Add/Edit Work Form */}
         {(isAddingWork || editingWorkId) && (
@@ -438,6 +514,7 @@ const EditDetails = () => {
     const [isAddingEducation, setIsAddingEducation] = useState(false);
     const [editingEducationId, setEditingEducationId] = useState(null);
     const [educationFormData, setEducationFormData] = useState({
+      id: "",
       title: "",
       institution: "",
       degree: "",
@@ -469,8 +546,11 @@ const EditDetails = () => {
     };
 
     const handleAddEducation = () => {
+      const educationId = `education_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
       setIsAddingEducation(true);
       setEducationFormData({
+        id: educationId,
         title: "",
         institution: "",
         degree: "",
@@ -482,8 +562,11 @@ const EditDetails = () => {
     };
 
     const handleEditEducation = (education) => {
+      const educationId = editingEducationId || `education_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
       setEditingEducationId(education.id);
       setEducationFormData({
+        id: educationId,
         title: education.title || "",
         institution: education.institution || "",
         degree: education.degree || "",
@@ -495,8 +578,11 @@ const EditDetails = () => {
     };
 
     const handleSaveEducation = () => {
+      // Generate unique ID for new education or use existing ID for editing
+      const educationId = editingEducationId || `education_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
       const newEducation = {
-        id: editingEducationId || Date.now(),
+        id: educationId,
         ...educationFormData,
         isPublic: true
       };
@@ -513,11 +599,31 @@ const EditDetails = () => {
         setEducationEntries(prev => [...prev, newEducation]);
       }
 
-      // Save to backend using metas structure
+      // Save to backend using metas structure - include all previous education entries plus new one
       const metas = [
         {
           meta_key: 'EDUCATION',
-          meta_value: JSON.stringify(educationEntries),
+          meta_value: [
+            // Include all previous education entries from database
+            ...(educationDataShow && educationDataShow.length > 0 ? educationDataShow.map(educationData => {
+              let entries = [];
+              try {
+                if (typeof educationData.meta_value === 'string') {
+                  entries = JSON.parse(educationData.meta_value);
+                } else if (Array.isArray(educationData.meta_value)) {
+                  entries = educationData.meta_value;
+                } else if (educationData.meta_value) {
+                  entries = [educationData.meta_value];
+                }
+              } catch (error) {
+                console.error('Error parsing education data for save:', error);
+                entries = [];
+              }
+              return entries;
+            }).flat() : []),
+            // Add the new education entry
+            newEducation
+          ],
           meta_status: '1'
         }
       ];
@@ -525,16 +631,21 @@ const EditDetails = () => {
       // Include profile_visibility with the metas data
       const saveData = {
         ...profileData,
-        metas,
+        metas: JSON.stringify(metas),
         profile_visibility: profileData?.profile_visibility
       };
 
-      dispatch(storeBsicInformation(saveData));
+      dispatch(storeBsicInformation(saveData))
+      .then(() => {
+        dispatch(getMyProfile());
+        toast.success("Updated")
+        })
 
       // Reset form
       setIsAddingEducation(false);
       setEditingEducationId(null);
       setEducationFormData({
+        id: "",
         title: "",
         institution: "",
         degree: "",
@@ -549,6 +660,7 @@ const EditDetails = () => {
       setIsAddingEducation(false);
       setEditingEducationId(null);
       setEducationFormData({
+      id: "",
         title: "",
         institution: "",
         degree: "",
@@ -567,44 +679,122 @@ const EditDetails = () => {
       }));
     };
 
+    const handleDeleteEducation = (data, id) => {
+      console.log(data, id)
+      // Remove the education entry with the specified ID
+      const updatedEducationEntries = data?.filter(education => education.id !== id);
+      setEducationEntries(updatedEducationEntries);
+      
+      // Save updated data to backend
+      const metas = [
+        {
+          meta_key: 'EDUCATION',
+          meta_value: updatedEducationEntries,
+          meta_status: '1'
+        }
+      ];
+
+
+      const saveData = {
+        ...profileData,
+        metas: JSON.stringify(metas),
+        profile_visibility: profileData?.profile_visibility
+      };
+
+      dispatch(storeBsicInformation(saveData))
+        .then(() => {
+          dispatch(getMyProfile());
+          toast.success("Education entry deleted");
+        });
+    };
+
     return (
       <div className="bg-white rounded-lg border border-gray-100 p-4 mb-4">
         <h4 className="text-base font-bold text-gray-800 mb-4">EDUCATION</h4>
 
-        {educationEntries.map((education) => (
-          <div key={education.id} className="flex items-center mb-3 last:mb-0">
-            {/* Privacy Toggle */}
-            <div className="flex items-center mr-4">
-              <button
-                onClick={() => handleEducationPrivacyToggle(education.id)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                  education.isPublic ? "bg-blue-600" : "bg-gray-200"
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    education.isPublic ? "translate-x-6" : "translate-x-1"
-                  }`}
-                />
-              </button>
-            </div>
+        {/* Display education entries in clean design */}
+        {console.log('educationDataShow:', educationDataShow)}
+        {educationDataShow && educationDataShow.length > 0 && educationDataShow.map((educationData, index) => {
+          console.log('Processing educationData:', educationData);
+          let educationEntries = [];
+          
+          try {
+            if (typeof educationData.meta_value === 'string') {
+              educationEntries = JSON.parse(educationData.meta_value);
+            } else if (Array.isArray(educationData.meta_value)) {
+              educationEntries = educationData.meta_value;
+            } else if (educationData.meta_value) {
+              educationEntries = [educationData.meta_value];
+            }
+          } catch (error) {
+            console.error('Error parsing education data:', error);
+            educationEntries = [];
+          }
+          
+          console.log('Parsed educationEntries:', educationEntries);
+          
+          return Array.isArray(educationEntries) ? educationEntries.map((entry, entryIndex) => {
+            // Generate unique ID for each entry
+            const uniqueId = entry.id || `education_${index}_${entryIndex}_${Date.now()}`;
+            
+            return (
+              <div key={uniqueId} className="flex items-center mb-3 last:mb-0">
+                {/* Privacy Toggle */}
+                <div className="flex items-center mr-4">
+                  <button
+                    onClick={() => handleEducationPrivacyToggle(uniqueId)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                      entry.isPublic !== false ? "bg-blue-600" : "bg-gray-200"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        entry.isPublic !== false ? "translate-x-6" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
 
-            {/* Education Title */}
-            <div className="flex-1 text-sm text-gray-700">
-              {education.title}
-            </div>
+                {/* Education Title and Institution */}
+                <div className="flex-1 text-sm text-gray-700">
+                  {entry.degree && entry.institution 
+                    ? `${entry.degree} at ${entry.institution}`
+                    : entry.title || entry.degree || entry.institution || 'Education Entry'
+                  }
+                </div>
 
-            {/* Edit Icon */}
-            <button 
-              className="text-gray-400 ml-2"
-              onClick={() => handleEditEducation(education)}
-            >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-              </svg>
-            </button>
-          </div>
-        ))}
+                {/* Edit Icon */}
+                <button 
+                  className="text-gray-400 ml-2 hover:text-gray-600"
+                  onClick={() => handleEditEducation({...entry, id: uniqueId})}
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                  </svg>
+                </button>
+
+                {/* Delete Icon */}
+                <button 
+                  className="text-red-400 ml-2 hover:text-red-600"
+                  onClick={() => handleDeleteEducation(educationEntries, uniqueId)}
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            );
+          }) : null;
+        })}
+
+        {/* Show message when no education data */}
+        {(!educationDataShow || educationDataShow.length === 0) && (
+          <div className="text-gray-500 text-sm py-2">No education data found</div>
+        )}
+
+       
+
+       
 
         {/* Add/Edit Education Form */}
         {(isAddingEducation || editingEducationId) && (
@@ -714,7 +904,7 @@ const EditDetails = () => {
   return (
     <>
       {/* Content Area - Responsive 3 Column Layout */}
-      <div className="content-area pt-3 ">
+      <div className="content-area pt-3">
   <div className="mx-auto h-[calc(90vh-100px)] overflow-y-auto">
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
       {/* Center Content - PROFILE INFO - Full width on mobile, 12 cols on large screens */}

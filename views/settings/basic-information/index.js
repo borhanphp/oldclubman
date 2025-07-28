@@ -138,6 +138,7 @@ const BasicInformation = () => {
     e.preventDefault();
     const submittedData = {
       ...profileData,
+      metas: JSON.stringify(profileData?.metas),
       profile_visibility: profileData?.profile_visibility
     }
 

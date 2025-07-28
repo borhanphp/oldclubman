@@ -294,7 +294,45 @@ const UserProfile = () => {
                 
               </div>
 
-              
+              {/* Photos Section */}
+              <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
+                <h3 className="text-lg font-semibold mb-3">Photos</h3>
+                {userProfileData?.photos &&
+                userProfileData?.photos?.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    {userProfileData?.photos?.map((photo, index) => (
+                      <div
+                        key={index}
+                        className="aspect-square overflow-hidden rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+                      >
+                        <img
+                          src={
+                            (process.env.NEXT_PUBLIC_CLIENT_FILE_PATH ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + photo : "/uploads/" + photo)
+                          }
+                          alt={`Photo ${index + 1}`}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Try alternative paths
+                            const currentSrc = e.target.src;
+                            if (!currentSrc.includes('/uploads/') && !photo.startsWith('http')) {
+                              e.target.src = `/uploads/${photo}`;
+                            } else if (!currentSrc.includes('/public/') && !photo.startsWith('http')) {
+                              e.target.src = `/public/uploads/client/${photo}`;
+                            } else {
+                              e.target.onerror = null;
+                              e.target.src = "/profile-avatar.png";
+                            }
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-state text-gray-400 text-sm py-4 text-center">
+                    <p>No photos to display</p>
+                  </div>
+                )}
+              </div>
 
               {/* Who to follow Widget */}
               <div className="bg-white rounded-lg shadow-sm p-4">
@@ -321,10 +359,10 @@ const UserProfile = () => {
       
       {/* Edit Details Modal */}
       {isEditDetailsOpen && (
-        <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] ">
+        <div className="fixed shadow inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4">          
+        <div className="bg-white  rounded-lg w-full max-w-2xl max-h-[90vh] ">
             {/* Header */}
-            <div className="relative flex items-center justify-center px-4 py-2 border-b border-gray-200 ">
+            <div className="relative shadow flex items-center justify-center px-4 py-2 border-b border-gray-200 ">
             <h3 className="absolute left-1/2 transform -translate-x-1/2 text-xl font-bold">
               Edit details
             </h3>
