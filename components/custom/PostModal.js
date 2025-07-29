@@ -260,7 +260,7 @@ const PostModal = () => {
           
           <div className="mb-4">
             <p 
-              className={`text-gray-500 mb-2 cursor-pointer ${!isShowImageSection ? "border py-2 pl-2 rounded-md" : ""}`}
+              className={`text-gray-500 mb-2 text-center cursor-pointer ${!isShowImageSection ? "border py-2 pl-2 rounded-md" : ""}`}
               onClick={() => {setIsShowImageSection(!isShowImageSection)}}
             >Upload Photos/Videos</p>
             {isShowImageSection && (

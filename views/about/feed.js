@@ -45,6 +45,8 @@ const AboutContent = () => {
   const { profile, profileData, userProfileData } = useSelector(({ settings }) => settings);
   const params = useParams();
 
+  const isMyProfile = profile?.client?.id === userProfileData?.client?.id;
+
   const userData = params?.id ? userProfileData?.client : profile?.client;
   const { isPostModalOpen } = useSelector(({ gathering }) => gathering);
   const dispatch = useDispatch();
@@ -58,7 +60,6 @@ const AboutContent = () => {
     workDataForShow = [];
   }
 
-
   const educationData = userData?.metas?.filter(dd => dd.meta_key === "EDUCATION")[0]?.meta_value;
   let educationDataShow = [];
   try {
@@ -69,8 +70,8 @@ const AboutContent = () => {
   }
 
 
-  console.log('workDataForShow from about', workDataForShow)
-console.log('educationDataShow from about',educationDataShow)
+//   console.log('workDataForShow from about', workDataForShow)
+// console.log('educationDataShow from about',educationDataShow)
 
 
   // State for active section
@@ -83,16 +84,16 @@ console.log('educationDataShow from about',educationDataShow)
     dispatch(getUserProfile(params?.id));
   }, []);
 
-console.log('userData',userData)
+// console.log('userData',userData)
  
   return (
-    <FeedLayout>
+    <FeedLayout showMsgBtn={true} showFriends={true} userProfile={true}>
       {/* Content Area - Two Column Layout */}
       <div className="content-area pt-3">
         <div className="mx-auto max-w-6xl">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             {/* Left Sidebar - Navigation */}
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-2">
               <div className="bg-white rounded-lg shadow-sm p-4 sticky top-4">
                 <h3 className="text-xl font-bold mb-4">About</h3>
                 
@@ -247,9 +248,10 @@ console.log('userData',userData)
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
                         <FaHome className="text-gray-500 mr-3" />
-                        <div className="text-gray-700 font-medium">Lives in {userData?.currentstate?.name}</div>
+                        <div className="text-gray-700 font-medium">{`Lives in ${userData?.currentstate?.name}`}</div>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      {isMyProfile && (
+                        <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaGlobe className="text-gray-600 text-sm" />
                         </button>
@@ -257,6 +259,8 @@ console.log('userData',userData)
                           <FaEllipsisH className="text-gray-600 text-sm" />
                         </button>
                       </div>
+                      ) }
+                      
                     </div>
 
                     {/* Hometown */}
@@ -265,14 +269,17 @@ console.log('userData',userData)
                         <FaMapMarkerAlt className="text-gray-500 mr-3" />
                         <div className="text-gray-700 font-medium">From {userData?.fromcity?.name}</div>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      {isMyProfile && (
+                        <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaGlobe className="text-gray-600 text-sm" />
                         </button>
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaEllipsisH className="text-gray-600 text-sm" />
                         </button>
-                      </div>
+                        </div>
+                      )}
+                     
                     </div>
 
                     {/* Relationship Status */}
@@ -281,14 +288,17 @@ console.log('userData',userData)
                         <FaHeart className="text-gray-500 mr-3" />
                         <div className="text-gray-700 font-medium">{userData?.marital_status_name}</div>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      {isMyProfile && (
+                        <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaUsers className="text-gray-600 text-sm" />
                         </button>
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaEdit className="text-gray-600 text-sm" />
                         </button>
-                      </div>
+                        </div>
+                      )}
+                     
                     </div>
 
                     {/* Contact Info */}
@@ -300,7 +310,8 @@ console.log('userData',userData)
                           <div className="text-gray-500 text-sm">Mobile</div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      {isMyProfile && (
+                        <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaLock className="text-gray-600 text-sm" />
                         </button>
@@ -308,6 +319,8 @@ console.log('userData',userData)
                           <FaEdit className="text-gray-600 text-sm" />
                         </button>
                       </div>
+                      )}
+                      
                     </div>
                   </div>
                 )}
@@ -332,7 +345,8 @@ console.log('userData',userData)
                                   </div>
                                 </div>
                               </div>
-                              <div className="flex items-center space-x-2">
+                              {isMyProfile && (
+                                <div className="flex items-center space-x-2">
                                 <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                                   <FaGlobe className="text-gray-600 text-sm" />
                                 </button>
@@ -340,6 +354,8 @@ console.log('userData',userData)
                                   <FaEdit className="text-gray-600 text-sm" />
                                 </button>
                               </div>
+                              )}
+                              
                             </div>
                           ))
                         ) : (
@@ -369,7 +385,8 @@ console.log('userData',userData)
                                     </div>
                                   </div>
                                 </div>
-                                <div className="flex items-center space-x-2">
+                                {isMyProfile && (
+                                  <div className="flex items-center space-x-2">
                                   <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                                     <FaGlobe className="text-gray-600 text-sm" />
                                   </button>
@@ -377,6 +394,9 @@ console.log('userData',userData)
                                     <FaEdit className="text-gray-600 text-sm" />
                                   </button>
                                 </div>
+
+                                )}
+                                
                               </div>
                             );
                           })
@@ -401,7 +421,8 @@ console.log('userData',userData)
                           <div className="text-gray-500 text-sm">{userData?.currentstate?.name + ", " + userData?.currentcountry?.name }</div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      {isMyProfile && (
+                        <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaGlobe className="text-gray-600 text-sm" />
                         </button>
@@ -409,6 +430,8 @@ console.log('userData',userData)
                           <FaEdit className="text-gray-600 text-sm" />
                         </button>
                       </div>
+                      )}
+                      
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -419,7 +442,8 @@ console.log('userData',userData)
                           <div className="text-gray-500 text-sm">{userData?.fromcity?.name + ", " + userData?.fromcountry?.name}</div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      {isMyProfile && (
+                        <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaGlobe className="text-gray-600 text-sm" />
                         </button>
@@ -427,6 +451,8 @@ console.log('userData',userData)
                           <FaEdit className="text-gray-600 text-sm" />
                         </button>
                       </div>
+                      )}
+                      
                     </div>
                   </div>
                 )}
@@ -442,7 +468,8 @@ console.log('userData',userData)
                           <div className="text-gray-500 text-sm">{userData?.contact_no}</div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      {isMyProfile && (
+                        <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaLock className="text-gray-600 text-sm" />
                         </button>
@@ -450,6 +477,8 @@ console.log('userData',userData)
                           <FaEdit className="text-gray-600 text-sm" />
                         </button>
                       </div>
+                      )}
+                      
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -460,7 +489,8 @@ console.log('userData',userData)
                           <div className="text-gray-500 text-sm">{userData?.email}</div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      {isMyProfile && (
+                        <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaLock className="text-gray-600 text-sm" />
                         </button>
@@ -468,6 +498,8 @@ console.log('userData',userData)
                           <FaEdit className="text-gray-600 text-sm" />
                         </button>
                       </div>
+                      )}
+                      
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -478,7 +510,8 @@ console.log('userData',userData)
                           <div className="text-gray-500 text-sm">{userData?.dob}</div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      {isMyProfile && (
+                        <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaGlobe className="text-gray-600 text-sm" />
                         </button>
@@ -486,6 +519,8 @@ console.log('userData',userData)
                           <FaEdit className="text-gray-600 text-sm" />
                         </button>
                       </div>
+                      )}
+                      
                     </div>
                   </div>
                 )}
@@ -525,7 +560,8 @@ console.log('userData',userData)
                           <div className="text-gray-500 text-sm">{userData?.marital_status_name}</div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      {isMyProfile && (
+                        <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaUsers className="text-gray-600 text-sm" />
                         </button>
@@ -533,6 +569,8 @@ console.log('userData',userData)
                           <FaEdit className="text-gray-600 text-sm" />
                         </button>
                       </div>
+                      )}
+                      
                     </div>
                   </div>
                 )}
@@ -548,7 +586,8 @@ console.log('userData',userData)
                           <div className="text-gray-500 text-sm">A+</div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      {isMyProfile && (
+                        <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaLock className="text-gray-600 text-sm" />
                         </button>
@@ -556,6 +595,8 @@ console.log('userData',userData)
                           <FaEdit className="text-gray-600 text-sm" />
                         </button>
                       </div>
+                      )}
+                      
                     </div>
                   </div>
                 )}

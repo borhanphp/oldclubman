@@ -22,10 +22,16 @@ const EditDetails = () => {
   const dispatch = useDispatch();
 const workDataForShow = profile.client?.metas?.filter(dd => dd.meta_key === "WORK")
 const educationDataShow = profile.client?.metas?.filter(dd => dd.meta_key === "EDUCATION")
+const profileDataForShow = profile.client?.metas?.filter(dd => dd.meta_key === "PROFILE")
 
 const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value);
 console.log('workDataForShow',workDataForShow)
 console.log('educationDataShow',educationDataShow)
+console.log('profileDataForShow',profileDataForShow)
+console.log('profileDataForShow type:', typeof profileDataForShow)
+console.log('profileDataForShow length:', profileDataForShow?.length)
+console.log('All meta keys:', profile.client?.metas?.map(meta => meta.meta_key))
+console.log('Full metas structure:', profile.client?.metas)
 console.log('previousWord',previousWork)
   
 // State for privacy settings
@@ -179,24 +185,59 @@ console.log('previousWord',previousWork)
     });
 
     const handleWorkPrivacyToggle = (id) => {
-      setWorkEntries((prev) =>
-        prev.map((work) => {
-          if (work.id === id) {
-            const newValue = !work.isPublic;
-            
-            // Call API to update work visibility
-            const visibilityData = {
-              profile_visibility: {
-                work: newValue ? 'public' : 'private'
-              }
-            };
-            dispatch(storeBsicInformation(visibilityData));
-            
-            return { ...work, isPublic: newValue };
-          }
-          return work;
-        })
-      );
+      // Get current work data from profile
+      const currentWorkData = workDataForShow && workDataForShow.length > 0 ? workDataForShow[0] : null;
+      if (!currentWorkData) return;
+
+      let workEntries = [];
+      try {
+        workEntries = typeof currentWorkData.meta_value === 'string' 
+          ? JSON.parse(currentWorkData.meta_value) 
+          : currentWorkData.meta_value || [];
+      } catch (error) {
+        console.error('Error parsing work data:', error);
+        return;
+      }
+
+      console.log('Current work entries:', workEntries);
+      console.log('Looking for ID:', id);
+
+      // Update the specific work entry's status
+      const updatedWorkEntries = workEntries.map(work => {
+        console.log('Checking work ID:', work.id, 'against:', id);
+        if (work.id === id) {
+          const currentStatus = work.status || 'public';
+          console.log('Found matching work, updating status from:', currentStatus);
+          return {
+            ...work,
+            status: currentStatus === 'public' ? 'private' : 'public'
+          };
+        }
+        return work;
+      });
+
+      console.log('Updated work entries:', updatedWorkEntries);
+
+      // Save updated data to backend
+      const metas = [
+        {
+          meta_key: 'WORK',
+          meta_value: updatedWorkEntries,
+          meta_status: '1'
+        }
+      ];
+
+      const saveData = {
+        ...profileData,
+        metas: JSON.stringify(metas),
+        profile_visibility: profileData?.profile_visibility
+      };
+
+      dispatch(storeBsicInformation(saveData))
+        .then(() => {
+          dispatch(getMyProfile());
+          toast.success("Work privacy updated");
+        });
     };
 
     const handleAddWork = () => {
@@ -236,29 +277,38 @@ console.log('previousWord',previousWork)
       const newWork = {
         id: workId,
         ...workFormData,
-        isPublic: true
+        status: 'public' // Add status property with default 'public'
       };
 
+      // Get current work entries from profile
+      let currentWorkEntries = [];
+      if (workDataForShow && workDataForShow.length > 0) {
+        try {
+          currentWorkEntries = typeof workDataForShow[0].meta_value === 'string' 
+            ? JSON.parse(workDataForShow[0].meta_value) 
+            : workDataForShow[0].meta_value || [];
+        } catch (error) {
+          console.error('Error parsing current work data:', error);
+          currentWorkEntries = [];
+        }
+      }
+
+      let updatedWorkEntries;
       if (editingWorkId) {
         // Update existing work
-        setWorkEntries(prev => 
-          prev.map(work => 
-            work.id === editingWorkId ? newWork : work
-          )
+        updatedWorkEntries = currentWorkEntries.map(work => 
+          work.id === editingWorkId ? newWork : work
         );
       } else {
         // Add new work
-        setWorkEntries(prev => [...prev, newWork]);
+        updatedWorkEntries = [...currentWorkEntries, newWork];
       }
 
       // Save to backend using metas structure
       const metas = [
         {
           meta_key: 'WORK',
-          meta_value: [
-            ...(typeof previousWork === 'string' ? JSON.parse(previousWork) : (previousWork || [])),
-            newWork
-          ],
+          meta_value: updatedWorkEntries,
           meta_status: '1'
         }
       ];
@@ -352,22 +402,24 @@ console.log('previousWord',previousWork)
           {console.log('workEntries:', workEntries)}
           
           return Array.isArray(workEntries) ? workEntries.map((entry, entryIndex) => {
-            // Generate unique ID for each entry
+            // Use the actual entry ID, or generate one if it doesn't exist
             const uniqueId = entry.id || `work_${index}_${entryIndex}_${Date.now()}`;
+            
+            console.log('Rendering work entry with ID:', uniqueId, 'entry:', entry);
             
             return (
               <div key={uniqueId} className="flex items-center mb-3 last:mb-0">
                 {/* Privacy Toggle */}
                 <div className="flex items-center mr-4">
                   <button
-                    onClick={() => handleWorkPrivacyToggle(uniqueId)}
+                    onClick={() => handleWorkPrivacyToggle(entry.id || uniqueId)}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                      entry.isPublic !== false ? "bg-blue-600" : "bg-gray-200"
+                      (entry.status || 'public') === 'public' ? "bg-blue-600" : "bg-gray-200"
                     }`}
                   >
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        entry.isPublic !== false ? "translate-x-6" : "translate-x-1"
+                        (entry.status || 'public') === 'public' ? "translate-x-6" : "translate-x-1"
                       }`}
                     />
                   </button>
@@ -384,7 +436,7 @@ console.log('previousWord',previousWork)
                 {/* Edit Icon */}
                 <button 
                   className="text-gray-400 ml-2 hover:text-gray-600"
-                  onClick={() => handleEditWork({...entry, id: uniqueId})}
+                  onClick={() => handleEditWork({...entry, id: entry.id || uniqueId})}
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
@@ -394,7 +446,7 @@ console.log('previousWord',previousWork)
                 {/* Delete Icon */}
                 <button 
                   className="text-red-400 ml-2 hover:text-red-600"
-                  onClick={() => handleDeleteWork(workEntries, uniqueId)}
+                  onClick={() => handleDeleteWork(workEntries, entry.id || uniqueId)}
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
@@ -525,24 +577,53 @@ console.log('previousWord',previousWork)
     });
 
     const handleEducationPrivacyToggle = (id) => {
-      setEducationEntries((prev) =>
-        prev.map((education) => {
-          if (education.id === id) {
-            const newValue = !education.isPublic;
-            
-            // Call API to update education visibility
-            const visibilityData = {
-              profile_visibility: {
-                education: newValue ? 'public' : 'private'
-              }
-            };
-            dispatch(storeBsicInformation(visibilityData));
-            
-            return { ...education, isPublic: newValue };
-          }
-          return education;
-        })
-      );
+      // Get current education data from profile
+      const currentEducationData = educationDataShow && educationDataShow.length > 0 ? educationDataShow[0] : null;
+      if (!currentEducationData) return;
+
+      let educationEntries = [];
+      try {
+        educationEntries = typeof currentEducationData.meta_value === 'string' 
+          ? JSON.parse(currentEducationData.meta_value) 
+          : currentEducationData.meta_value || [];
+      } catch (error) {
+        console.error('Error parsing education data:', error);
+        return;
+      }
+
+      // Update the specific education entry's status
+      const updatedEducationEntries = educationEntries.map(education => {
+        if (education.id === id) {
+          const currentStatus = education.status || 'public';
+          console.log('Found matching education, updating status from:', currentStatus);
+          return {
+            ...education,
+            status: currentStatus === 'public' ? 'private' : 'public'
+          };
+        }
+        return education;
+      });
+
+      // Save updated data to backend
+      const metas = [
+        {
+          meta_key: 'EDUCATION',
+          meta_value: updatedEducationEntries,
+          meta_status: '1'
+        }
+      ];
+
+      const saveData = {
+        ...profileData,
+        metas: JSON.stringify(metas),
+        profile_visibility: profileData?.profile_visibility
+      };
+
+      dispatch(storeBsicInformation(saveData))
+        .then(() => {
+          dispatch(getMyProfile());
+          toast.success("Education privacy updated");
+        });
     };
 
     const handleAddEducation = () => {
@@ -584,46 +665,38 @@ console.log('previousWord',previousWork)
       const newEducation = {
         id: educationId,
         ...educationFormData,
-        isPublic: true
+        status: 'public' // Add status property with default 'public'
       };
 
+      // Get current education entries from profile
+      let currentEducationEntries = [];
+      if (educationDataShow && educationDataShow.length > 0) {
+        try {
+          currentEducationEntries = typeof educationDataShow[0].meta_value === 'string' 
+            ? JSON.parse(educationDataShow[0].meta_value) 
+            : educationDataShow[0].meta_value || [];
+        } catch (error) {
+          console.error('Error parsing current education data:', error);
+          currentEducationEntries = [];
+        }
+      }
+
+      let updatedEducationEntries;
       if (editingEducationId) {
         // Update existing education
-        setEducationEntries(prev => 
-          prev.map(education => 
-            education.id === editingEducationId ? newEducation : education
-          )
+        updatedEducationEntries = currentEducationEntries.map(education => 
+          education.id === editingEducationId ? newEducation : education
         );
       } else {
         // Add new education
-        setEducationEntries(prev => [...prev, newEducation]);
+        updatedEducationEntries = [...currentEducationEntries, newEducation];
       }
 
-      // Save to backend using metas structure - include all previous education entries plus new one
+      // Save to backend using metas structure
       const metas = [
         {
           meta_key: 'EDUCATION',
-          meta_value: [
-            // Include all previous education entries from database
-            ...(educationDataShow && educationDataShow.length > 0 ? educationDataShow.map(educationData => {
-              let entries = [];
-              try {
-                if (typeof educationData.meta_value === 'string') {
-                  entries = JSON.parse(educationData.meta_value);
-                } else if (Array.isArray(educationData.meta_value)) {
-                  entries = educationData.meta_value;
-                } else if (educationData.meta_value) {
-                  entries = [educationData.meta_value];
-                }
-              } catch (error) {
-                console.error('Error parsing education data for save:', error);
-                entries = [];
-              }
-              return entries;
-            }).flat() : []),
-            // Add the new education entry
-            newEducation
-          ],
+          meta_value: updatedEducationEntries,
           meta_status: '1'
         }
       ];
@@ -734,22 +807,24 @@ console.log('previousWord',previousWork)
           console.log('Parsed educationEntries:', educationEntries);
           
           return Array.isArray(educationEntries) ? educationEntries.map((entry, entryIndex) => {
-            // Generate unique ID for each entry
+            // Use the actual entry ID, or generate one if it doesn't exist
             const uniqueId = entry.id || `education_${index}_${entryIndex}_${Date.now()}`;
+            
+            console.log('Rendering education entry with ID:', uniqueId, 'entry:', entry);
             
             return (
               <div key={uniqueId} className="flex items-center mb-3 last:mb-0">
                 {/* Privacy Toggle */}
                 <div className="flex items-center mr-4">
                   <button
-                    onClick={() => handleEducationPrivacyToggle(uniqueId)}
+                    onClick={() => handleEducationPrivacyToggle(entry.id || uniqueId)}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                      entry.isPublic !== false ? "bg-blue-600" : "bg-gray-200"
+                      (entry.status || 'public') === 'public' ? "bg-blue-600" : "bg-gray-200"
                     }`}
                   >
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        entry.isPublic !== false ? "translate-x-6" : "translate-x-1"
+                        (entry.status || 'public') === 'public' ? "translate-x-6" : "translate-x-1"
                       }`}
                     />
                   </button>
@@ -766,7 +841,7 @@ console.log('previousWord',previousWork)
                 {/* Edit Icon */}
                 <button 
                   className="text-gray-400 ml-2 hover:text-gray-600"
-                  onClick={() => handleEditEducation({...entry, id: uniqueId})}
+                  onClick={() => handleEditEducation({...entry, id: entry.id || uniqueId})}
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
@@ -776,7 +851,7 @@ console.log('previousWord',previousWork)
                 {/* Delete Icon */}
                 <button 
                   className="text-red-400 ml-2 hover:text-red-600"
-                  onClick={() => handleDeleteEducation(educationEntries, uniqueId)}
+                  onClick={() => handleDeleteEducation(educationEntries, entry.id || uniqueId)}
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
@@ -901,6 +976,458 @@ console.log('previousWord',previousWork)
     );
   };
 
+  const ProfileSection = () => {
+    const [profileEntries, setProfileEntries] = useState([]);
+    const [isAddingProfile, setIsAddingProfile] = useState(false);
+    const [editingProfileId, setEditingProfileId] = useState(null);
+    const [profileFormData, setProfileFormData] = useState({
+      id: "",
+      category: ""
+    });
+    const [categoryInput, setCategoryInput] = useState("");
+    const [isFormVisible, setIsFormVisible] = useState(false);
+
+    // Use profileDataForShow from parent component
+    // const profileDataForShow = profile.client?.metas?.filter(dd => dd.meta_key === "PROFILE");
+
+    const handleProfilePrivacyToggle = (id) => {
+      // Get current profile data from profile
+      const currentProfileData = profileDataForShow && profileDataForShow.length > 0 ? profileDataForShow[0] : null;
+      if (!currentProfileData) return;
+
+      let profileEntries = [];
+      try {
+        profileEntries = typeof currentProfileData.meta_value === 'string' 
+          ? JSON.parse(currentProfileData.meta_value) 
+          : currentProfileData.meta_value || [];
+      } catch (error) {
+        console.error('Error parsing profile data:', error);
+        return;
+      }
+
+      console.log('Current profile entries:', profileEntries);
+      console.log('Looking for ID:', id);
+
+      // Update the specific profile entry's status
+      const updatedProfileEntries = profileEntries.map(profile => {
+        console.log('Checking profile ID:', profile.id, 'against:', id);
+        if (profile.id === id) {
+          const currentStatus = profile.status || 'public';
+          console.log('Found matching profile, updating status from:', currentStatus);
+          return {
+            ...profile,
+            status: currentStatus === 'public' ? 'private' : 'public'
+          };
+        }
+        return profile;
+      });
+
+      console.log('Updated profile entries:', updatedProfileEntries);
+
+      // Save updated data to backend - preserve existing metas
+      const existingMetas = profile.client?.metas || [];
+      const otherMetas = existingMetas.filter(meta => meta.meta_key !== 'PROFILE');
+      
+      const newMetas = [
+        ...otherMetas,
+        {
+          meta_key: 'PROFILE',
+          meta_value: JSON.stringify(updatedProfileEntries),
+          meta_status: '1'
+        }
+      ];
+
+      const saveData = {
+        ...profileData,
+        metas: JSON.stringify(newMetas),
+        profile_visibility: profileData?.profile_visibility
+      };
+
+      dispatch(storeBsicInformation(saveData))
+        .then(() => {
+          dispatch(getMyProfile());
+          toast.success("Profile privacy updated");
+        });
+    };
+
+    const handleAddProfile = () => {
+      setIsFormVisible(true);
+      setCategoryInput("");
+      setProfileFormData({
+        id: "",
+        category: ""
+      });
+    };
+
+    const handleAddCategory = () => {
+      if (categoryInput.trim()) {
+        const profileId = `profile_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        setProfileFormData({
+          id: profileId,
+          category: categoryInput.trim()
+        });
+        setCategoryInput("");
+      }
+    };
+
+    const handleRemoveCategory = () => {
+      setProfileFormData({
+        id: "",
+        category: ""
+      });
+    };
+
+    const handleEditProfile = (profile) => {
+      const profileId = editingProfileId || `profile_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      setEditingProfileId(profile.id);
+      setProfileFormData({
+        id: profileId,
+        category: profile.category || ""
+      });
+    };
+
+    const handleSaveProfile = () => {
+      // Generate unique ID for new profile or use existing ID for editing
+      const profileId = editingProfileId || `profile_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const newProfile = {
+        id: profileId,
+        ...profileFormData,
+        status: 'public' // Add status property with default 'public'
+      };
+
+      // Get current profile entries from profile
+      let currentProfileEntries = [];
+      if (profileDataForShow && profileDataForShow.length > 0) {
+        try {
+          currentProfileEntries = typeof profileDataForShow[0].meta_value === 'string' 
+            ? JSON.parse(profileDataForShow[0].meta_value) 
+            : profileDataForShow[0].meta_value || [];
+        } catch (error) {
+          console.error('Error parsing current profile data:', error);
+          currentProfileEntries = [];
+        }
+      }
+
+      let updatedProfileEntries;
+      if (editingProfileId) {
+        // Update existing profile
+        updatedProfileEntries = currentProfileEntries.map(profile => 
+          profile.id === editingProfileId ? newProfile : profile
+        );
+      } else {
+        // Add new profile
+        updatedProfileEntries = [...currentProfileEntries, newProfile];
+      }
+
+      // Save to backend using metas structure - preserve existing metas
+      const existingMetas = profile.client?.metas || [];
+      const otherMetas = existingMetas.filter(meta => meta.meta_key !== 'PROFILE');
+      
+      const newMetas = [
+        ...otherMetas,
+        {
+          meta_key: 'PROFILE',
+          meta_value: JSON.stringify(updatedProfileEntries),
+          meta_status: '1'
+        }
+      ];
+
+      console.log('Saving profile with metas:', newMetas);
+
+      // Include profile_visibility with the metas data
+      const saveData = {
+        ...profileData,
+        metas: JSON.stringify(newMetas),
+        profile_visibility: profileData?.profile_visibility
+      };
+
+      dispatch(storeBsicInformation(saveData))
+      .then(() => {
+        dispatch(getMyProfile());
+        toast.success("Updated")
+        })
+
+      // Reset form
+      setIsAddingProfile(false);
+      setEditingProfileId(null);
+      setProfileFormData({
+        id: "",
+        category: ""
+      });
+    };
+
+    const handleCancelProfile = () => {
+      setIsFormVisible(false);
+      setIsAddingProfile(false);
+      setEditingProfileId(null);
+      setProfileFormData({
+        id: "",
+        category: ""
+      });
+      setCategoryInput("");
+    };
+
+    const handleProfileFormChange = (e) => {
+      const { name, value } = e.target;
+      setProfileFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    };
+
+    const handleCategoryInputChange = (e) => {
+      setCategoryInput(e.target.value);
+    };
+
+    const handleCategoryInputKeyPress = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleAddCategory();
+      }
+    };
+
+    const handleDeleteProfile = (data, id) => {
+      // Remove the profile entry with the specified ID
+      const updatedProfileEntries = data?.filter(profile => profile.id !== id);
+      setProfileEntries(updatedProfileEntries);
+      
+      // Save updated data to backend - preserve existing metas
+      const existingMetas = profile.client?.metas || [];
+      const otherMetas = existingMetas.filter(meta => meta.meta_key !== 'PROFILE');
+      
+      const newMetas = [
+        ...otherMetas,
+        {
+          meta_key: 'PROFILE',
+          meta_value: JSON.stringify(updatedProfileEntries),
+          meta_status: '1'
+        }
+      ];
+
+      const saveData = {
+        ...profileData,
+        metas: JSON.stringify(newMetas),
+        profile_visibility: profileData?.profile_visibility
+      };
+
+      dispatch(storeBsicInformation(saveData))
+        .then(() => {
+          dispatch(getMyProfile());
+          toast.success("Profile entry deleted");
+        });
+    };
+
+    return (
+      <div className="bg-white rounded-lg border border-gray-100 p-4 mb-4">
+        <h4 className="text-base font-bold text-gray-800 mb-4">Categories</h4>
+
+        {/* Display existing profile entries */}
+        {profileDataForShow && profileDataForShow.length > 0 && profileDataForShow.map((profileData, index) => {
+          const profileEntries = typeof profileData.meta_value === 'string' 
+            ? JSON.parse(profileData.meta_value) 
+            : profileData.meta_value || [];
+          
+          return Array.isArray(profileEntries) ? profileEntries.map((entry, entryIndex) => {
+            const uniqueId = entry.id || `profile_${index}_${entryIndex}_${Date.now()}`;
+            
+            return (
+              <div key={uniqueId} className="mb-3">
+                {/* Category Entry */}
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      {/* Folder Icon */}
+                      <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                      </svg>
+                      
+                      {/* Category Text */}
+                      <span className="text-gray-900 font-medium">
+                        {entry.category || 'Category'}
+                      </span>
+                    </div>
+                    
+                    {/* Action Icons */}
+                    <div className="flex items-center space-x-2">
+                      {/* Privacy Toggle (Globe Icon) */}
+                      <button
+                        onClick={() => handleProfilePrivacyToggle(entry.id || uniqueId)}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                          (entry.status || 'public') === 'public' 
+                            ? "bg-gray-200 text-gray-600 hover:bg-gray-300" 
+                            : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+                        }`}
+                        title={(entry.status || 'public') === 'public' ? 'Public' : 'Private'}
+                      >
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                      
+                      {/* Edit Icon */}
+                      <button 
+                        className="w-8 h-8 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 flex items-center justify-center transition-colors"
+                        onClick={() => handleEditProfile({...entry, id: entry.id || uniqueId})}
+                        title="Edit category"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          }) : null;
+        })}
+
+        {/* Add New Category Form */}
+        {isFormVisible && (
+          <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm text-gray-500">Categories</span>
+            </div>
+            
+            {/* Category Input Field */}
+            <div className="border border-gray-200 rounded-lg p-3 min-h-[60px] bg-white">
+              <div className="flex flex-wrap gap-2 items-center">
+                {profileFormData.category && (
+                  <div className="inline-flex items-center bg-blue-500 text-white px-3 py-1 rounded-full text-sm">
+                    <span>{profileFormData.category}</span>
+                    <button 
+                      onClick={handleRemoveCategory}
+                      className="ml-2 text-white hover:text-gray-200"
+                    >
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+                <input
+                  type="text"
+                  placeholder="Type category and press Enter"
+                  value={categoryInput}
+                  onChange={handleCategoryInputChange}
+                  onKeyPress={handleCategoryInputKeyPress}
+                  className="flex-1 outline-none text-sm"
+                />
+              </div>
+            </div>
+            
+            {/* Required Label */}
+            <div className="mt-3 text-sm text-gray-500">Required</div>
+            <hr className="my-3 border-gray-200" />
+            
+            {/* Privacy Toggle and Action Buttons */}
+            <div className="flex items-center justify-between">
+              <button className="flex items-center px-3 py-1 rounded-full text-sm bg-gray-200 text-gray-700 hover:bg-gray-300">
+                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                </svg>
+                Public
+              </button>
+              
+              <div className="flex space-x-2">
+                <button
+                  onClick={handleCancelProfile}
+                  className="px-3 py-1 rounded-full text-sm bg-gray-200 text-gray-700 hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveProfile}
+                  className={`px-3 py-1 rounded-full text-sm ${
+                    profileFormData.category 
+                      ? "bg-blue-500 text-white hover:bg-blue-600" 
+                      : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                  }`}
+                  disabled={!profileFormData.category}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Show message when no profile data */}
+        {(!profileDataForShow || profileDataForShow.length === 0 || !profileDataForShow) && !isFormVisible && (
+          <div className="text-gray-500 text-sm py-2">
+            No categories found
+            <br />
+            <button 
+              onClick={() => {
+                // Create initial profile data for testing
+                const testProfile = {
+                  id: `profile_${Date.now()}`,
+                  category: "Digital creator",
+                  status: 'public'
+                };
+                
+                // Get existing metas and add new profile meta
+                const existingMetas = profile.client?.metas || [];
+                const newMetas = [
+                  ...existingMetas,
+                  {
+                    meta_key: 'PROFILE',
+                    meta_value: JSON.stringify([testProfile]),
+                    meta_status: '1'
+                  }
+                ];
+
+                const saveData = {
+                  ...profileData,
+                  metas: JSON.stringify(newMetas),
+                  profile_visibility: profileData?.profile_visibility
+                };
+
+                dispatch(storeBsicInformation(saveData))
+                  .then(() => {
+                    dispatch(getMyProfile());
+                    toast.success("Test category created");
+                  });
+              }}
+              className="mt-2 bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600"
+            >
+              Create Test Category
+            </button>
+          </div>
+        )}
+
+        {/* Add Category Button */}
+        {!isFormVisible && (
+          <div className="flex items-center mt-4">
+            <button 
+              className="flex items-center text-blue-600 hover:text-blue-700 transition-colors"
+              onClick={handleAddProfile}
+            >
+              <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center mr-3">
+                <svg
+                  className="w-4 h-4 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
+                </svg>
+              </div>
+              <span className="text-sm font-medium">Add category</span>
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <>
       {/* Content Area - Responsive 3 Column Layout */}
@@ -961,6 +1488,9 @@ console.log('previousWord',previousWork)
 
             {/* Education Section */}
             <EducationSection />
+
+            {/* Profile Section */}
+            <ProfileSection />
 
             <OverViewBlock
               icon={<CiPhone size={20} />}

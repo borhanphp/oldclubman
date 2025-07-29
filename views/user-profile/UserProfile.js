@@ -25,7 +25,7 @@ import PostModal from "@/components/custom/PostModal";
 import FeedHeader from "@/components/common/FeedHeader";
 import Intro from "@/components/common/Intro";
 import { useDispatch, useSelector } from "react-redux";
-import { getMyProfile, getUserProfile } from "../settings/store";
+import { bindProfileSettingData, getMyProfile, getUserProfile, storeProfileSetting } from "../settings/store";
 import moment from "moment";
 import CreatePostBox from "@/components/common/CreatePostBox";
 import PostList from "@/components/common/PostList";
@@ -33,9 +33,10 @@ import { useParams } from "next/navigation";
 import { CiHeart, CiLocationOn } from "react-icons/ci";
 import FeedLayout from "@/components/common/FeedLayout";
 import EditDetails from "../about/EditDetails";
+import toast from "react-hot-toast";
 
 const UserProfile = () => {
-  const { userProfileData, profileData } = useSelector(({ settings }) => settings);
+  const { userProfileData, profileData, profileSettingData } = useSelector(({ settings }) => settings);
   const { isPostModalOpen} = useSelector(({gathering}) => gathering);
   const dispatch = useDispatch();
   const params = useParams();
@@ -101,10 +102,26 @@ const UserProfile = () => {
 
   // Set bio text when userProfileData changes
   useEffect(() => {
-    if (userProfileData?.client?.tagline || userProfileData?.client?.profile_overview) {
-      setBioText(userProfileData?.client?.tagline || userProfileData?.client?.profile_overview || "");
+    if ( userProfileData?.client?.profile_overview) {
+      setBioText( userProfileData?.client?.profile_overview || "");
     }
   }, [userProfileData]);
+
+  const handleBioSave = async (e) => {
+      e.preventDefault();
+        dispatch(bindProfileSettingData({...profileSettingData, profile_overview: bioText}))
+  
+        const submittedData = {
+          ...profileSettingData, // or ...profileData, or your full profile object
+          profile_visibility: profileSettingData?.profile_visibility
+        }
+
+        dispatch(storeProfileSetting(submittedData)).then((res) => {
+          toast.success("Successfully Updated");
+          dispatch(getUserProfile(params?.id));
+        });
+     
+  }
 
   return (
     <FeedLayout showMsgBtn={true} showFriends={true} userProfile={true}>
@@ -123,7 +140,9 @@ const UserProfile = () => {
                 {!isEditBioOpen ? (
                   <>
                     <div className="text-gray-700 text-center mb-3">
-                      {userProfileData?.client?.tagline || userProfileData?.client?.profile_overview || "Software Developer | Entrepreneur | Digital Marketer"}
+                    <p>
+                      {userProfileData?.client?.profile_overview}
+                      </p>
                     </div>
                      
                      {/* Edit Bio Button */}
@@ -147,12 +166,12 @@ const UserProfile = () => {
                       <textarea
                         value={bioText}
                         onChange={(e) => setBioText(e.target.value)}
-                        placeholder="Software Developer | Entrepreneur | Digital Marketer"
-                        className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        placeholder=""
+                        className="w-full h-[50px] bg-gray-100 p-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                         rows={3}
                         maxLength={150}
                       />
-                      <div className="text-right mt-1">
+                      <div className="text-left mt-1">
                         <span className="text-sm text-gray-500">
                           {150 - bioText.length} characters remaining
                         </span>
@@ -160,13 +179,13 @@ const UserProfile = () => {
                     </div>
                     
                     {/* Privacy Setting */}
-                    <div className="flex items-center gap-2 mb-4">
+                    {/* <div className="flex items-center gap-2 mb-4">
                       <FaGlobe className="text-gray-500 text-sm" />
                       <span className="text-sm text-gray-700">Public</span>
-                    </div>
+                    </div> */}
                     
                     {/* Action Buttons */}
-                    <div className="flex gap-3 justify-end">
+                    <div className="flex gap-3 -mt-10 justify-end">
                       <button
                         onClick={() => setIsEditBioOpen(false)}
                         className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors"
@@ -174,9 +193,9 @@ const UserProfile = () => {
                         Cancel
                       </button>
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
                           // Here you would typically save the bio to your backend
-                          console.log('Saving bio:', bioText);
+                          handleBioSave(e)
                           setIsEditBioOpen(false);
                         }}
                         disabled={!bioText.trim()}
