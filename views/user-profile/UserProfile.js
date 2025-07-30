@@ -314,7 +314,7 @@ const UserProfile = () => {
               </div>
 
               {/* Photos Section */}
-              <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
+              {/* <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
                 <h3 className="text-lg font-semibold mb-3">Photos</h3>
                 {userProfileData?.photos &&
                 userProfileData?.photos?.length > 0 ? (
@@ -351,7 +351,7 @@ const UserProfile = () => {
                     <p>No photos to display</p>
                   </div>
                 )}
-              </div>
+              </div> */}
 
               {/* Who to follow Widget */}
               <div className="bg-white rounded-lg shadow-sm p-4">
@@ -379,7 +379,7 @@ const UserProfile = () => {
       {/* Edit Details Modal */}
       {isEditDetailsOpen && (
         <div className="fixed shadow inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4">          
-        <div className="bg-white  rounded-lg w-full max-w-2xl max-h-[90vh] ">
+        <div className="bg-white border rounded-none w-full max-w-2xl max-h-[90vh] ">
             {/* Header */}
             <div className="relative shadow flex items-center justify-center px-4 py-2 border-b border-gray-200 ">
             <h3 className="absolute left-1/2 transform -translate-x-1/2 text-xl font-bold">
