@@ -165,6 +165,19 @@ export const getFollowSuggestions = createAsyncThunk( 'settings/getFollowSuggest
   return result;
 } )
 
+export const getPostBackgrounds = createAsyncThunk( 'settings/getPostBackgrounds', async () => {
+  const result = axios.get( `/post_background` )
+  .then((res) => {
+      console.log('posts backgorund',  res.data.data)
+      const resData = res.data.data;
+      return resData;
+  })
+  .catch((err) => {
+      errorResponse(err);
+  })
+  return result;
+} )
+
 
 
 export const settingsSlice = createSlice({
@@ -181,7 +194,8 @@ export const settingsSlice = createSlice({
     userProfileData: {},
     userFollowers: [],
     userFollowing: [],
-    followSuggestion: []
+    followSuggestion: [],
+    backgroundOptions: []
   },
   reducers: {
     bindProfileData: (state, action) => {
@@ -248,6 +262,10 @@ export const settingsSlice = createSlice({
       .addCase(getFollowSuggestions.fulfilled, (state, action) => {
         state.followSuggestion = action.payload;
       })
+      .addCase(getPostBackgrounds.fulfilled, (state, action) => {
+        state.backgroundOptions = action.payload;
+      })
+      
   },
 });
 

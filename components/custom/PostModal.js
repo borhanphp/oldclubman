@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { FaTimes, FaImage, FaGlobe, FaLock, FaCaretDown } from 'react-icons/fa';
+import { FaTimes, FaImage, FaGlobe, FaLock, FaCaretDown, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
 import { bindPostData, getGathering, getPosts, initialPostData, setPostModalOpen, storePost, updatePost } from '@/views/gathering/store';
-import { getMyProfile, getUserProfile } from '@/views/settings/store';
+import { getMyProfile, getPostBackgrounds, getUserProfile } from '@/views/settings/store';
 import { useParams } from 'next/navigation';
 
 const PostModal = () => {
-  const {profile} = useSelector(({settings}) => settings)
+  const {profile, backgroundOptions} = useSelector(({settings}) => settings)
   const { basicPostData, loading, isPostModalOpen} = useSelector(({gathering}) => gathering)
   const dispatch = useDispatch();
   const {id} = basicPostData;
@@ -18,12 +18,30 @@ const PostModal = () => {
   const fileInputRef = useRef(null);
   const [removeFiles, setRemoveFiles] = useState([]);
   const [isShowImageSection, setIsShowImageSection] = useState(id ? true :false);
+  const [selectedBackground, setSelectedBackground] = useState(basicPostData?.background_url || null);
+  const [backgroundScrollIndex, setBackgroundScrollIndex] = useState(0);
 
   const params = useParams();
 
+  const visibleBackgrounds = backgroundOptions.slice(backgroundScrollIndex, backgroundScrollIndex + 8);
+
+  const handleBackgroundSelect = (background) => {
+    setSelectedBackground(background);
+  };
+
+  const scrollBackgrounds = (direction) => {
+    if (direction === 'left' && backgroundScrollIndex > 0) {
+      setBackgroundScrollIndex(backgroundScrollIndex - 1);
+    } else if (direction === 'right' && backgroundScrollIndex < backgroundOptions.length - 8) {
+      setBackgroundScrollIndex(backgroundScrollIndex + 1);
+    }
+  };
+
+  console.log('visibleBackgrounds',selectedBackground?.image?.path)
   
   useEffect(() => {
     dispatch(getMyProfile())
+    dispatch(getPostBackgrounds())
 
     if (isPostModalOpen && id && basicPostData?.files?.length > 0) {
       const previews = basicPostData?.files?.map(file => ({
@@ -126,6 +144,8 @@ const PostModal = () => {
     dispatch(bindPostData({...basicPostData, privacy_mode: mode}))
     setShowPrivacyDropdown(false);
   };
+
+
   
   const handlePost = async () => {    
     try {
@@ -135,6 +155,9 @@ const PostModal = () => {
       const formData = new FormData();
       formData.append('message', basicPostData.message);
       formData.append('privacy_mode', basicPostData.privacy_mode);
+      if (selectedBackground) {
+        formData.append('background_url', selectedBackground?.image?.path);
+      }
       
       // Add files if present
       if (basicPostData.files?.length > 0) {
@@ -158,6 +181,8 @@ const PostModal = () => {
           dispatch(bindPostData(initialPostData));
           setFilePreviews([]);
           setRemoveFiles([]);
+          setSelectedBackground(null);
+          setBackgroundScrollIndex(0);
           dispatch(setPostModalOpen(false))
           if(params?.id){
             dispatch(getUserProfile(params?.id));
@@ -174,59 +199,60 @@ const PostModal = () => {
   
    const close = () => {
     dispatch(setPostModalOpen(false));
-      dispatch(bindPostData(initialPostData));
-
+    dispatch(bindPostData(initialPostData));
+    setSelectedBackground(null);
+    setBackgroundScrollIndex(0);
    }
   
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/30">
       <div className="bg-white backdrop-blur-md rounded-lg w-full max-w-lg mx-4 shadow-xl">
-        <div className="flex justify-center border-b border-b-gray-300 p-4">
-          <h2 className="relative text-xl font-semibold">{id ? 'Edit Post' : 'Create post'}</h2>
+        <div className="flex justify-center border-b border-b-gray-300 p-4 relative">
+          <h2 className="text-xl font-semibold">{id ? 'Edit Post' : 'Create post'}</h2>
           <button 
             onClick={() => {close()}}
-            className="text-gray-500 absolute right-3 top-3 bg-gray-200 p-2 rounded-full cursor-pointer hover:text-gray-700"
+            className="absolute right-4 top-4 text-gray-500 bg-gray-200 p-2 rounded-full cursor-pointer hover:text-gray-700"
           >
             <FaTimes size={20} />
           </button>
         </div>
         
         <div className="p-4">
-          <div className="flex">
-            <div className="w-10 h-10 rounded-full overflow-hidden bg-blue-400 flex items-center justify-center text-white mr-3">
-            <img 
-            src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + profile?.client?.image || "/common-avator.jpg"}
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = "/common-avator.jpg";
-            }}
-            />
-            
+          <div className="flex items-start mb-4">
+            <div className="w-10 h-10 rounded-full overflow-hidden bg-blue-400 flex items-center justify-center text-white mr-3 flex-shrink-0">
+              <img 
+                src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + profile?.client?.image || "/common-avator.jpg"}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "/common-avator.jpg";
+                }}
+                className="w-full h-full object-cover"
+              />
             </div>
             <div className="flex-1">
-              <div className='font-semibold'>{profile?.client?.fname + " " + profile?.client?.last_name}</div>
-              <div className="flex items-center">
+              <div className='font-semibold text-gray-900'>{profile?.client?.fname + " " + profile?.client?.last_name}</div>
+              <div className="flex items-center mt-1">
                 <div className="relative">
                   <button 
                     onClick={() => setShowPrivacyDropdown(!showPrivacyDropdown)}
-                    className="flex items-center font-[500] text-[13px] bg-gray-200 px-2 py-1 rounded-md cursor-pointer"
+                    className="flex items-center font-[500] text-[13px] bg-gray-200 px-2 py-1 rounded-md cursor-pointer hover:bg-gray-300 transition-colors"
                   >
                     {basicPostData?.privacy_mode === 'public' ? (
                       <>
                         <FaGlobe size={12} className="mr-1" /> 
-                        <span className='-mt-[2px]'>Public</span>
+                        <span>Public</span>
                       </>
                     ) : (
                       <>
                         <FaLock size={12} className="mr-1" /> 
-                        <span className='-mt-[2px]'>Private</span>
+                        <span>Private</span>
                       </>
                     )}
                     <FaCaretDown className='ml-1' />
                   </button>
                   
                   {showPrivacyDropdown && (
-                    <div className="absolute left-0 mt-1 bg-white shadow-md rounded-md z-10 w-36 overflow-hidden">
+                    <div className="absolute left-0 mt-1 bg-white shadow-md rounded-md z-10 w-36 overflow-hidden border">
                       <button 
                         onClick={() => handlePrivacyChange('public')}
                         className="flex items-center w-full px-3 py-2 text-sm hover:bg-gray-100"
@@ -247,19 +273,99 @@ const PostModal = () => {
               </div>
             </div>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 mb-4">
+            {selectedBackground && selectedBackground.id !== 'white' ? (
+              <div 
+                className="relative w-full min-h-[300px] rounded-lg flex items-center justify-center bg-cover bg-center bg-no-repeat"
+                style={{
+                  backgroundImage: selectedBackground?.image?.url ? `url(${selectedBackground.image.url})` : `url(${basicPostData?.background_url})`,
+                }}
+              >
+                <textarea
+                  name="message"
+                  value={basicPostData?.message}
+                  onChange={(e) => {handleOnchange(e)}}
+                  placeholder={`What's on your mind, ${profile?.client?.fname}?`} 
+                  className="w-full max-w-md border-0 resize-none outline-none p-4 text-white text-center bg-transparent"
+                  style={{
+                    minHeight: '120px',
+                    maxHeight: '200px',
+                    fontSize: '24px',
+                    fontWeight: '500'
+                  }}
+                  rows={4}
+                />
+
+               
+              </div>
+            ) : (
               <textarea
                 name="message"
                 value={basicPostData?.message}
                 onChange={(e) => {handleOnchange(e)}}
-                placeholder={`What's on your mind ${profile?.client?.fname}?`} 
-                className="w-full border-0 resize-none outline-none text-gray-700 p-2 bg-transparent"
-                rows={3}
+                placeholder={`What's on your mind, ${profile?.client?.fname}?`} 
+                className="w-full border-0 resize-none outline-none p-4 transition-all duration-200 text-lg text-gray-700 bg-transparent"
+                
+                rows={4}
               />
+            )}
+          </div>
+
+             {/* Background Selection Row */}
+             <div className="mb-1">
+              <div className="flex items-center space-x-2 overflow-x-auto py-2">
+                {/* Left Arrow */}
+                {backgroundScrollIndex > 0 && (
+                  <button
+                    onClick={() => scrollBackgrounds('left')}
+                    className="flex-shrink-0 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                  >
+                    <FaChevronLeft size={12} className="text-gray-600" />
+                  </button>
+                )}
+
+                                {/* White Background Option */}
+                <div
+                  onClick={() => handleBackgroundSelect({ id: 'white', name: 'White' })}
+                  className={`flex-shrink-0 w-8 h-8 rounded-md border-2 transition-all duration-200 hover:scale-110 bg-white cursor-pointer ${
+                    selectedBackground?.id === 'white' 
+                      ? 'border-white scale-110 shadow-lg' 
+                      : 'border-gray-300'
+                  }`}
+                  title="White"
+                />
+
+                {/* Background Swatches */}
+                {visibleBackgrounds?.map((bg) => (
+                  <img
+                    key={bg.id}
+                    src={bg?.image?.url}
+                    onClick={() => handleBackgroundSelect(bg)}
+                    className={`flex-shrink-0 w-8 h-8 rounded-md border-2 transition-all duration-200 hover:scale-110 ${
+                      selectedBackground?.id === bg.id 
+                        ? 'border-white scale-110 shadow-lg' 
+                        : 'border-gray-300'
+                    }`}
+                    title={bg.name}
+                  />
+                ))}
+
+                {/* Right Arrow */}
+                {backgroundScrollIndex < backgroundOptions.length - 8 && (
+                  <button
+                    onClick={() => scrollBackgrounds('right')}
+                    className="flex-shrink-0 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                  >
+                    <FaChevronRight size={12} className="text-gray-600" />
+                  </button>
+                )}
+              </div>
             </div>
+
+
          
           
-          <div className="mb-4">
+          <div className="">
             <p 
               className={`text-gray-500 mb-2 text-center cursor-pointer ${!isShowImageSection ? "border py-2 pl-2 rounded-md" : ""}`}
               onClick={() => {setIsShowImageSection(!isShowImageSection)}}
@@ -325,17 +431,14 @@ const PostModal = () => {
           </div>
         </div>
         
-        <div className=" gap-2 p-4">
-          {/* <button
-            onClick={() => {close()}}    
-            className="px-4 py-2 cursor-pointer rounded-md bg-red-50 text-red-500 hover:bg-red-100 transition"
-            disabled={loading}
-          >
-            Cancel
-          </button> */}
+        <div className="px-4 pb-4">
           <button
             onClick={handlePost}
-            className={`px-4 py-2 w-full rounded-md transition ${(loading || (!basicPostData?.message && !basicPostData?.files?.length)) ? "bg-gray-200 text-gray-500" : "bg-blue-500 text-white hover:bg-blue-600 cursor-pointer"}`}
+            className={`px-4 py-2 w-full rounded-md transition font-medium ${
+              (loading || (!basicPostData?.message && !basicPostData?.files?.length)) 
+                ? "bg-gray-200 text-gray-500 cursor-not-allowed" 
+                : "bg-blue-500 text-white hover:bg-blue-600 cursor-pointer"
+            }`}
             disabled={loading || (!basicPostData?.message && !basicPostData?.files?.length)}
           >
             {loading ? 'Posting...' : 'Post'}

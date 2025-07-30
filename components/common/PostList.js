@@ -72,6 +72,8 @@ const PostList = ({ postsData }) => {
   const [previewImages, setPreviewImages] = useState([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
+  
+
   const handleCommentSubmit = (postId) => {
     const comment = commentInputs[postId];
     if (!comment) return;
@@ -618,6 +620,8 @@ const reactionsImages = (item) => {
   )
 }
 
+
+
   return (
     <div className="">
       {postsData?.data?.map((item, index) => {
@@ -625,6 +629,10 @@ const reactionsImages = (item) => {
           (sum, dd) => Number(sum) + Number(dd.count),
           0
         );
+
+        const itemUrl = item?.background_url;
+
+        const hasPath = /\/post_background\/.+/.test(itemUrl);
 
         return (
           <div
@@ -639,15 +647,12 @@ const reactionsImages = (item) => {
                     //   process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
                     //   item?.client?.image : "/common-avator.jpg"
                     // }
-                    src={ !item?.client?.image ?
+                    src={ item?.client?.image ?
                       process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
                       item?.client?.image : "/common-avator.jpg"
                     }
                     className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = "/common-avator.jpg";
-                    }}
+
                      alt="oldclubman"
                     width={1280}
                     height={720}
@@ -740,7 +745,21 @@ const reactionsImages = (item) => {
             </div>
 
             <div className="post-content">
-              <p className="text-gray-700 py-2">{item?.message}</p>
+              {hasPath ? 
+              <>
+                <div 
+                className="relative text-white fo-bold text-[40px] w-full min-h-[300px] rounded-lg flex items-center justify-center bg-cover bg-center bg-no-repeat"
+                style={{
+                  backgroundImage: `url(${itemUrl})`,
+                }}
+              >
+                {item?.message}
+               
+              </div>
+              </>
+              : <p className="text-gray-700 py-2">{item?.message}</p>
+              
+              }
 
               {/* Display Post Images */}
               {item?.files && item?.files?.length > 0 && (
@@ -1221,9 +1240,25 @@ const reactionsImages = (item) => {
                 </div>
               </div>
               {/* Post message */}
+              {/\/post_background\/.+/.test(basicPostData?.background_url) ? 
+              <>
+                <div 
+                className="relative text-white fo-bold text-[40px] w-full min-h-[300px] rounded-lg flex items-center justify-center bg-cover bg-center bg-no-repeat"
+                style={{
+                  backgroundImage: `url(${basicPostData?.background_url})`,
+                }}
+              >
+                {basicPostData?.message}
+               
+              </div>
+              </>
+              :  
               <div className="text-gray-800 mb-4 break-words">
                 {basicPostData.message}
               </div>
+              
+              }
+             
               {/* Post images if any */}
               {basicPostData.files && basicPostData.files.length > 0 && (
                 <div
