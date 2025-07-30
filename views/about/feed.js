@@ -40,6 +40,7 @@ import {
 } from "react-icons/ci";
 import { LuPhone } from "react-icons/lu";
 import { useParams } from "next/navigation";
+import EditDetails from "./EditDetails";
 
 const AboutContent = () => {
   const { profile, profileData, userProfileData, privacyDetailsModalOpen } = useSelector(({ settings }) => settings);
@@ -631,6 +632,30 @@ const AboutContent = () => {
 
       {/* Post Modal */}
       {isPostModalOpen && <PostModal />}
+
+       {/* Edit Details Modal */}
+       {privacyDetailsModalOpen && (
+        <div className="fixed shadow inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4">          
+        <div className="bg-white border border-gray-300 rounded-md shadow w-full max-w-2xl max-h-[90vh] ">
+            {/* Header */}
+            <div className="relative shadow flex items-center justify-center px-4 py-2 border-b border-gray-200 ">
+            <h3 className="absolute left-1/2 transform -translate-x-1/2 text-xl font-bold">
+              Edit details
+            </h3>
+            <button 
+              onClick={() => dispatch(setPrivacyDetailsModal(false))}
+              className="ml-auto cursor-pointer text-xl px-3 bg-gray-100 text-gray-500 hover:text-gray-700 rounded-full p-2 hover:bg-gray-100"
+            >
+              ✕
+            </button>
+          </div>
+
+            
+            {/* Content */}
+            <EditDetails/>
+          </div>
+        </div>
+      )}
     </FeedLayout>
   );
 };
