@@ -201,6 +201,7 @@ const PostModal = () => {
               e.target.src = "/common-avator.jpg";
             }}
             />
+            
             </div>
             <div className="flex-1">
               <div className='font-semibold'>{profile?.client?.fname + " " + profile?.client?.last_name}</div>

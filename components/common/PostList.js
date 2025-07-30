@@ -635,7 +635,11 @@ const reactionsImages = (item) => {
               <div className="flex">
                 <div className="w-10 h-10 border border-blue-600 rounded-full overflow-hidden mr-3">
                   <Image
-                    src={ item?.client?.image ?
+                    // src={ item?.client?.image ?
+                    //   process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
+                    //   item?.client?.image : "/common-avator.jpg"
+                    // }
+                    src={ !item?.client?.image ?
                       process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
                       item?.client?.image : "/common-avator.jpg"
                     }

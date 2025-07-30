@@ -16,6 +16,48 @@ import {
 } from "react-icons/ci";
 import toast from "react-hot-toast";
 
+// Utility function to handle image loading with fallbacks
+const getImageSrc = (imagePath, fallback = "/common-avator.jpg") => {
+  if (!imagePath) return fallback;
+  
+  // Try different path combinations
+  const paths = [
+    process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + imagePath,
+    `/uploads/client/${imagePath}`,
+    `/public/uploads/client/${imagePath}`,
+    imagePath.startsWith('http') ? imagePath : null
+  ].filter(Boolean);
+  
+  return paths[0] || fallback;
+};
+
+// Image component with error handling
+const SafeImage = ({ src, alt, className, fallback = "/common-avator.jpg" }) => {
+  const [imgSrc, setImgSrc] = useState(src);
+  const [hasError, setHasError] = useState(false);
+
+  const handleError = () => {
+    if (!hasError) {
+      setHasError(true);
+      setImgSrc(fallback);
+    }
+  };
+
+  useEffect(() => {
+    setImgSrc(src);
+    setHasError(false);
+  }, [src]);
+
+  return (
+    <img
+      src={imgSrc}
+      alt={alt}
+      className={className}
+      onError={handleError}
+    />
+  );
+};
+
 const EditDetails = () => {
   const { profile, profileData } = useSelector(({ settings }) => settings);
   const { isPostModalOpen } = useSelector(({ gathering }) => gathering);
@@ -33,6 +75,9 @@ console.log('profileDataForShow length:', profileDataForShow?.length)
 console.log('All meta keys:', profile.client?.metas?.map(meta => meta.meta_key))
 console.log('Full metas structure:', profile.client?.metas)
 console.log('previousWord',previousWork)
+console.log('NEXT_PUBLIC_CLIENT_FILE_PATH:', process.env.NEXT_PUBLIC_CLIENT_FILE_PATH)
+console.log('Profile image path:', profile?.client?.image)
+console.log('Full image URL:', getImageSrc(profile?.client?.image))
   
 // State for privacy settings
   const [privacySettings, setPrivacySettings] = useState({
