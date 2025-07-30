@@ -109,19 +109,24 @@ const UserProfile = () => {
 
   const handleBioSave = async (e) => {
       e.preventDefault();
-        dispatch(bindProfileSettingData({...profileSettingData, profile_overview: bioText}))
-  
-        const submittedData = {
-          ...profileSettingData, // or ...profileData, or your full profile object
-          profile_visibility: profileSettingData?.profile_visibility
-        }
+      
+      // Create the updated data with bioText
+      const updatedProfileData = {
+        ...profileSettingData,
+        profile_overview: bioText,
+        profile_visibility: profileSettingData?.profile_visibility
+      };
 
-        dispatch(storeProfileSetting(submittedData)).then((res) => {
-          toast.success("Successfully Updated");
-          dispatch(getUserProfile(params?.id));
-        });
-     
+      // Update the Redux store
+      dispatch(bindProfileSettingData(updatedProfileData));
+
+      // Save to backend
+      dispatch(storeProfileSetting(updatedProfileData)).then((res) => {
+        toast.success("Successfully Updated");
+        dispatch(getUserProfile(params?.id));
+      });
   }
+
 
   return (
     <FeedLayout showMsgBtn={true} showFriends={true} userProfile={true}>

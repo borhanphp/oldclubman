@@ -67,17 +67,7 @@ const educationDataShow = profile.client?.metas?.filter(dd => dd.meta_key === "E
 const profileDataForShow = profile.client?.metas?.filter(dd => dd.meta_key === "PROFILE")
 
 const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value);
-console.log('workDataForShow',workDataForShow)
-console.log('educationDataShow',educationDataShow)
-console.log('profileDataForShow',profileDataForShow)
-console.log('profileDataForShow type:', typeof profileDataForShow)
-console.log('profileDataForShow length:', profileDataForShow?.length)
-console.log('All meta keys:', profile.client?.metas?.map(meta => meta.meta_key))
-console.log('Full metas structure:', profile.client?.metas)
-console.log('previousWord',previousWork)
-console.log('NEXT_PUBLIC_CLIENT_FILE_PATH:', process.env.NEXT_PUBLIC_CLIENT_FILE_PATH)
-console.log('Profile image path:', profile?.client?.image)
-console.log('Full image URL:', getImageSrc(profile?.client?.image))
+
   
 // State for privacy settings
   const [privacySettings, setPrivacySettings] = useState({
@@ -167,7 +157,6 @@ console.log('Full image URL:', getImageSrc(profile?.client?.image))
       ? localVisibility[field] === 'public' 
       : (visibility !== undefined ? visibility === 'public' : privacySettings[field]);
     
-    // console.log('value for profile visibility', visibility, 'field:', field, 'isPublic:', isPublic, 'localVisibility:', localVisibility[field]);
 
     return (
       <>
@@ -243,16 +232,12 @@ console.log('Full image URL:', getImageSrc(profile?.client?.image))
         console.error('Error parsing work data:', error);
         return;
       }
-
-      console.log('Current work entries:', workEntries);
-      console.log('Looking for ID:', id);
+      
 
       // Update the specific work entry's status
       const updatedWorkEntries = workEntries.map(work => {
-        console.log('Checking work ID:', work.id, 'against:', id);
         if (work.id === id) {
           const currentStatus = work.status || 'public';
-          console.log('Found matching work, updating status from:', currentStatus);
           return {
             ...work,
             status: currentStatus === 'public' ? 'private' : 'public'
@@ -261,22 +246,24 @@ console.log('Full image URL:', getImageSrc(profile?.client?.image))
         return work;
       });
 
-      console.log('Updated work entries:', updatedWorkEntries);
 
       // Save updated data to backend
       const metas = [
         {
           meta_key: 'WORK',
-          meta_value: updatedWorkEntries,
+          meta_value: JSON.stringify(updatedWorkEntries),
+
           meta_status: '1'
         }
       ];
 
       const saveData = {
         ...profileData,
-        metas: JSON.stringify(metas),
+        metas: JSON.stringify(metas).replace(/"/g, "'"),
         profile_visibility: profileData?.profile_visibility
       };
+
+
 
       dispatch(storeBsicInformation(saveData))
         .then(() => {
@@ -353,7 +340,7 @@ console.log('Full image URL:', getImageSrc(profile?.client?.image))
       const metas = [
         {
           meta_key: 'WORK',
-          meta_value: updatedWorkEntries,
+          meta_value: JSON.stringify(updatedWorkEntries),
           meta_status: '1'
         }
       ];
@@ -361,9 +348,10 @@ console.log('Full image URL:', getImageSrc(profile?.client?.image))
       // Include profile_visibility with the metas data
       const saveData = {
         ...profileData,
-        metas: JSON.stringify(metas),
+        metas: JSON.stringify(metas).replace(/"/g, "'"),
         profile_visibility: profileData?.profile_visibility
       };
+      console.log('saveData', JSON.stringify(saveData, null, 2))
 
       dispatch(storeBsicInformation(saveData))
       .then(() => {
@@ -417,15 +405,18 @@ console.log('Full image URL:', getImageSrc(profile?.client?.image))
         {
           meta_key: 'WORK',
           meta_value: updatedWorkEntries,
+          meta_value: JSON.stringify(updatedWorkEntries),
+
           meta_status: '1'
         }
       ];
 
       const saveData = {
         ...profileData,
-        metas: JSON.stringify(metas),
+        metas: JSON.stringify(metas).replace(/"/g, "'"),
         profile_visibility: profileData?.profile_visibility
       };
+
 
       dispatch(storeBsicInformation(saveData))
         .then(() => {
@@ -439,18 +430,15 @@ console.log('Full image URL:', getImageSrc(profile?.client?.image))
         <h4 className="text-base font-bold text-gray-800 mb-4">WORK</h4>
 
         {/* Display work entries in clean design */}
-        {console.log('workDataForShow:', workDataForShow)}
         {workDataForShow && workDataForShow.length > 0 && workDataForShow.map((workData, index) => {
           const workEntries = typeof workData.meta_value === 'string' 
             ? JSON.parse(workData.meta_value) 
             : workData.meta_value || [];
-          {console.log('workEntries:', workEntries)}
           
           return Array.isArray(workEntries) ? workEntries.map((entry, entryIndex) => {
             // Use the actual entry ID, or generate one if it doesn't exist
             const uniqueId = entry.id || `work_${index}_${entryIndex}_${Date.now()}`;
             
-            console.log('Rendering work entry with ID:', uniqueId, 'entry:', entry);
             
             return (
               <div key={uniqueId} className="flex items-center mb-3 last:mb-0">
@@ -640,7 +628,6 @@ console.log('Full image URL:', getImageSrc(profile?.client?.image))
       const updatedEducationEntries = educationEntries.map(education => {
         if (education.id === id) {
           const currentStatus = education.status || 'public';
-          console.log('Found matching education, updating status from:', currentStatus);
           return {
             ...education,
             status: currentStatus === 'public' ? 'private' : 'public'
@@ -653,14 +640,15 @@ console.log('Full image URL:', getImageSrc(profile?.client?.image))
       const metas = [
         {
           meta_key: 'EDUCATION',
-          meta_value: updatedEducationEntries,
+          meta_value: JSON.stringify(updatedEducationEntries),
+
           meta_status: '1'
         }
       ];
 
       const saveData = {
         ...profileData,
-        metas: JSON.stringify(metas),
+        metas: JSON.stringify(metas).replace(/"/g, "'"),
         profile_visibility: profileData?.profile_visibility
       };
 
@@ -741,7 +729,8 @@ console.log('Full image URL:', getImageSrc(profile?.client?.image))
       const metas = [
         {
           meta_key: 'EDUCATION',
-          meta_value: updatedEducationEntries,
+          meta_value: JSON.stringify(updatedEducationEntries),
+
           meta_status: '1'
         }
       ];
@@ -749,7 +738,7 @@ console.log('Full image URL:', getImageSrc(profile?.client?.image))
       // Include profile_visibility with the metas data
       const saveData = {
         ...profileData,
-        metas: JSON.stringify(metas),
+        metas: JSON.stringify(metas).replace(/"/g, "'"),
         profile_visibility: profileData?.profile_visibility
       };
 
@@ -798,7 +787,6 @@ console.log('Full image URL:', getImageSrc(profile?.client?.image))
     };
 
     const handleDeleteEducation = (data, id) => {
-      console.log(data, id)
       // Remove the education entry with the specified ID
       const updatedEducationEntries = data?.filter(education => education.id !== id);
       setEducationEntries(updatedEducationEntries);
@@ -807,7 +795,8 @@ console.log('Full image URL:', getImageSrc(profile?.client?.image))
       const metas = [
         {
           meta_key: 'EDUCATION',
-          meta_value: updatedEducationEntries,
+          meta_value: JSON.stringify(updatedEducationEntries),
+
           meta_status: '1'
         }
       ];
@@ -815,7 +804,7 @@ console.log('Full image URL:', getImageSrc(profile?.client?.image))
 
       const saveData = {
         ...profileData,
-        metas: JSON.stringify(metas),
+        metas: JSON.stringify(metas).replace(/"/g, "'"),
         profile_visibility: profileData?.profile_visibility
       };
 
@@ -831,9 +820,7 @@ console.log('Full image URL:', getImageSrc(profile?.client?.image))
         <h4 className="text-base font-bold text-gray-800 mb-4">EDUCATION</h4>
 
         {/* Display education entries in clean design */}
-        {console.log('educationDataShow:', educationDataShow)}
         {educationDataShow && educationDataShow.length > 0 && educationDataShow.map((educationData, index) => {
-          console.log('Processing educationData:', educationData);
           let educationEntries = [];
           
           try {
@@ -849,13 +836,11 @@ console.log('Full image URL:', getImageSrc(profile?.client?.image))
             educationEntries = [];
           }
           
-          console.log('Parsed educationEntries:', educationEntries);
           
           return Array.isArray(educationEntries) ? educationEntries.map((entry, entryIndex) => {
             // Use the actual entry ID, or generate one if it doesn't exist
             const uniqueId = entry.id || `education_${index}_${entryIndex}_${Date.now()}`;
             
-            console.log('Rendering education entry with ID:', uniqueId, 'entry:', entry);
             
             return (
               <div key={uniqueId} className="flex items-center mb-3 last:mb-0">
@@ -1050,15 +1035,12 @@ console.log('Full image URL:', getImageSrc(profile?.client?.image))
         return;
       }
 
-      console.log('Current profile entries:', profileEntries);
-      console.log('Looking for ID:', id);
+      
 
       // Update the specific profile entry's status
       const updatedProfileEntries = profileEntries.map(profile => {
-        console.log('Checking profile ID:', profile.id, 'against:', id);
         if (profile.id === id) {
           const currentStatus = profile.status || 'public';
-          console.log('Found matching profile, updating status from:', currentStatus);
           return {
             ...profile,
             status: currentStatus === 'public' ? 'private' : 'public'
@@ -1067,7 +1049,6 @@ console.log('Full image URL:', getImageSrc(profile?.client?.image))
         return profile;
       });
 
-      console.log('Updated profile entries:', updatedProfileEntries);
 
       // Save updated data to backend - preserve existing metas
       const existingMetas = profile.client?.metas || [];
@@ -1084,7 +1065,7 @@ console.log('Full image URL:', getImageSrc(profile?.client?.image))
 
       const saveData = {
         ...profileData,
-        metas: JSON.stringify(newMetas),
+        metas: JSON.stringify(newMetas).replace(/"/g, "'"),
         profile_visibility: profileData?.profile_visibility
       };
 
@@ -1179,12 +1160,11 @@ console.log('Full image URL:', getImageSrc(profile?.client?.image))
         }
       ];
 
-      console.log('Saving profile with metas:', newMetas);
 
       // Include profile_visibility with the metas data
       const saveData = {
         ...profileData,
-        metas: JSON.stringify(newMetas),
+        metas: JSON.stringify(newMetas).replace(/"/g, "'"),
         profile_visibility: profileData?.profile_visibility
       };
 
@@ -1253,7 +1233,7 @@ console.log('Full image URL:', getImageSrc(profile?.client?.image))
 
       const saveData = {
         ...profileData,
-        metas: JSON.stringify(newMetas),
+        metas: JSON.stringify(newMetas).replace(/"/g, "'"),
         profile_visibility: profileData?.profile_visibility
       };
 
@@ -1481,7 +1461,7 @@ console.log('Full image URL:', getImageSrc(profile?.client?.image))
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
       {/* Center Content - PROFILE INFO - Full width on mobile, 12 cols on large screens */}
       <div className="col-span-1 lg:col-span-12">
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
+        <div className="bg-white  p-4 mb-4">
           
 
           {/* Profile Information */}

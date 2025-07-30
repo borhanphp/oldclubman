@@ -423,7 +423,7 @@ function FeedHeader({
             )}
             {(showEditBtn || isMyProfile) && (
               <button className="px-3 mr-2 py-1 bg-gray-300 text-black ml-1 rounded-sm hover:bg-gray-200 cursor-pointer">
-              <Link href="/user/account-settings" className="flex gap-2">
+              <Link href={`/user/user-profile/${profile?.client?.id}`} className="flex gap-2">
                 <FaEdit className="mt-1" /> Edit Profile
               </Link>
               </button>
