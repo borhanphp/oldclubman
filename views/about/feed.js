@@ -139,6 +139,13 @@ const AboutContent = () => {
                   >
                     Contact and basic info
                   </button>
+                  {isMyProfile && (
+                      <button className="px-3 mr-2 py-1 bg-gray-300 text-black ml-1 rounded-sm hover:bg-gray-200 cursor-pointer">
+                      <Link href={`/user/user-profile/${profile?.client?.id}`} className="flex gap-2">
+                        <FaEdit className="mt-1" /> Edit Profile
+                      </Link>
+                      </button>
+                    )}
                   {/* <button 
                     onClick={() => setActiveSection('privacy-legal')}
                     className={`block w-full text-left px-3 py-2 rounded-md transition-colors ${
@@ -191,7 +198,10 @@ const AboutContent = () => {
                   </button> */}
                 </nav>
               </div>
+             
             </div>
+
+
 
             {/* Right Content - Main Content Area */}
             <div className="lg:col-span-3">
@@ -324,6 +334,8 @@ const AboutContent = () => {
                     </div>
                   </div>
                 )}
+
+
 
                 {/* Work and Education Section */}
                 {activeSection === 'work-education' && (
