@@ -195,7 +195,8 @@ export const settingsSlice = createSlice({
     userFollowers: [],
     userFollowing: [],
     followSuggestion: [],
-    backgroundOptions: []
+    backgroundOptions: [],
+    privacyDetailsModalOpen: false
   },
   reducers: {
     bindProfileData: (state, action) => {
@@ -203,6 +204,9 @@ export const settingsSlice = createSlice({
     },
     bindProfileSettingData: (state, action) => {
       state.profileSettingData = action.payload || initialProfileSettingsData
+    },
+    setPrivacyDetailsModal: (state, action) => {
+      state.privacyDetailsModalOpen = action.payload;
     }
   },
   extraReducers: (builder) => {
@@ -269,6 +273,6 @@ export const settingsSlice = createSlice({
   },
 });
 
-export const {bindProfileData, bindProfileSettingData} = settingsSlice.actions;
+export const {bindProfileData, bindProfileSettingData, setPrivacyDetailsModal} = settingsSlice.actions;
 
 export default settingsSlice.reducer;

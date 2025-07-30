@@ -324,9 +324,9 @@ const PostModal = () => {
                   </button>
                 )}
 
-                                {/* White Background Option */}
+                {/* White Background Option */}
                 <div
-                  onClick={() => handleBackgroundSelect({ id: 'white', name: 'White' })}
+                  onClick={() => setSelectedBackground(null)}
                   className={`flex-shrink-0 w-8 h-8 rounded-md border-2 transition-all duration-200 hover:scale-110 bg-white cursor-pointer ${
                     selectedBackground?.id === 'white' 
                       ? 'border-white scale-110 shadow-lg' 

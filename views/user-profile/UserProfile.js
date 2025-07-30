@@ -36,11 +36,11 @@ import EditDetails from "../about/EditDetails";
 import toast from "react-hot-toast";
 
 const UserProfile = () => {
-  const { userProfileData, profileData, profileSettingData } = useSelector(({ settings }) => settings);
+  const { userProfileData, profileData, profileSettingData, privacyDetailsModalOpen } = useSelector(({ settings }) => settings);
   const { isPostModalOpen} = useSelector(({gathering}) => gathering);
   const dispatch = useDispatch();
   const params = useParams();
-
+console.log('privacyDetailsModalOpen',privacyDetailsModalOpen)
   const isMyProfile = Number(params?.id) === Number(profileData?.id);
   
   // State for edit bio modal
@@ -382,9 +382,9 @@ const UserProfile = () => {
       {isPostModalOpen && <PostModal />}
       
       {/* Edit Details Modal */}
-      {isEditDetailsOpen && (
+      {(isEditDetailsOpen || privacyDetailsModalOpen) && (
         <div className="fixed shadow inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4">          
-        <div className="bg-white border rounded-none w-full max-w-2xl max-h-[90vh] ">
+        <div className="bg-white border border-gray-300 rounded-md shadow w-full max-w-2xl max-h-[90vh] ">
             {/* Header */}
             <div className="relative shadow flex items-center justify-center px-4 py-2 border-b border-gray-200 ">
             <h3 className="absolute left-1/2 transform -translate-x-1/2 text-xl font-bold">

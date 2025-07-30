@@ -23,7 +23,7 @@ import PostModal from "@/components/custom/PostModal";
 import FeedHeader from "@/components/common/FeedHeader";
 import Intro from "@/components/common/Intro";
 import { useDispatch, useSelector } from "react-redux";
-import { getMyProfile, getUserProfile, storeBsicInformation } from "../settings/store";
+import { getMyProfile, getUserProfile, setPrivacyDetailsModal, storeBsicInformation } from "../settings/store";
 import moment from "moment";
 import CreatePostBox from "@/components/common/CreatePostBox";
 import PostList from "@/components/common/PostList";
@@ -42,7 +42,8 @@ import { LuPhone } from "react-icons/lu";
 import { useParams } from "next/navigation";
 
 const AboutContent = () => {
-  const { profile, profileData, userProfileData } = useSelector(({ settings }) => settings);
+  const { profile, profileData, userProfileData, privacyDetailsModalOpen } = useSelector(({ settings }) => settings);
+  console.log('privacyDetailsModalOpen about',privacyDetailsModalOpen)
   const params = useParams();
 
   const isMyProfile = profile?.client?.id === userProfileData?.client?.id;
@@ -141,9 +142,9 @@ const AboutContent = () => {
                   </button>
                   {isMyProfile && (
                       <button className="px-3 mr-2 py-1 bg-gray-300 text-black ml-1 rounded-sm hover:bg-gray-200 cursor-pointer">
-                      <Link href={`/user/user-profile/${profile?.client?.id}`} className="flex gap-2">
-                        <FaEdit className="mt-1" /> Edit Profile
-                      </Link>
+                      <span className="flex gap-2" onClick={() => {dispatch(setPrivacyDetailsModal(!privacyDetailsModalOpen))}}>
+                        <FaEdit className="mt-1" /> Edit details
+                      </span>
                       </button>
                     )}
                   {/* <button 
