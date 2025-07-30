@@ -223,14 +223,14 @@ const AboutContent = () => {
                        )
                       })} 
                       
-                      <div className="flex items-center space-x-2">
+                      {/* <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaGlobe className="text-gray-600 text-sm" />
                         </button>
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaEllipsisH className="text-gray-600 text-sm" />
                         </button>
-                      </div>
+                      </div> */}
                     </div>
 
                     {/* Education Section */}
@@ -241,14 +241,14 @@ const AboutContent = () => {
                           <FaGraduationCap className="text-gray-500 mr-3" />
                           <div className="text-gray-700 font-medium">Studied at {item?.institution}</div>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        {/* <div className="flex items-center space-x-2">
                           <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                             <FaGlobe className="text-gray-600 text-sm" />
                           </button>
                           <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                             <FaEllipsisH className="text-gray-600 text-sm" />
                           </button>
-                        </div>
+                        </div> */}
                       </div>
                       )
                     })}
@@ -260,7 +260,7 @@ const AboutContent = () => {
                         <FaHome className="text-gray-500 mr-3" />
                         <div className="text-gray-700 font-medium">{`Lives in ${userData?.currentstate?.name}`}</div>
                       </div>
-                      {isMyProfile && (
+                      {/* {isMyProfile && (
                         <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaGlobe className="text-gray-600 text-sm" />
@@ -269,7 +269,7 @@ const AboutContent = () => {
                           <FaEllipsisH className="text-gray-600 text-sm" />
                         </button>
                       </div>
-                      ) }
+                      ) } */}
                       
                     </div>
 
@@ -279,7 +279,7 @@ const AboutContent = () => {
                         <FaMapMarkerAlt className="text-gray-500 mr-3" />
                         <div className="text-gray-700 font-medium">From {userData?.fromcity?.name}</div>
                       </div>
-                      {isMyProfile && (
+                      {/* {isMyProfile && (
                         <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaGlobe className="text-gray-600 text-sm" />
@@ -288,7 +288,7 @@ const AboutContent = () => {
                           <FaEllipsisH className="text-gray-600 text-sm" />
                         </button>
                         </div>
-                      )}
+                      )} */}
                      
                     </div>
 
@@ -298,7 +298,7 @@ const AboutContent = () => {
                         <FaHeart className="text-gray-500 mr-3" />
                         <div className="text-gray-700 font-medium">{userData?.marital_status_name}</div>
                       </div>
-                      {isMyProfile && (
+                      {/* {isMyProfile && (
                         <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaUsers className="text-gray-600 text-sm" />
@@ -307,7 +307,7 @@ const AboutContent = () => {
                           <FaEdit className="text-gray-600 text-sm" />
                         </button>
                         </div>
-                      )}
+                      )} */}
                      
                     </div>
 
@@ -320,7 +320,7 @@ const AboutContent = () => {
                           <div className="text-gray-500 text-sm">Mobile</div>
                         </div>
                       </div>
-                      {isMyProfile && (
+                      {/* {isMyProfile && (
                         <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaLock className="text-gray-600 text-sm" />
@@ -329,7 +329,7 @@ const AboutContent = () => {
                           <FaEdit className="text-gray-600 text-sm" />
                         </button>
                       </div>
-                      )}
+                      )} */}
                       
                     </div>
                   </div>
@@ -357,7 +357,7 @@ const AboutContent = () => {
                                   </div>
                                 </div>
                               </div>
-                              {isMyProfile && (
+                              {/* {isMyProfile && (
                                 <div className="flex items-center space-x-2">
                                 <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                                   <FaGlobe className="text-gray-600 text-sm" />
@@ -366,7 +366,7 @@ const AboutContent = () => {
                                   <FaEdit className="text-gray-600 text-sm" />
                                 </button>
                               </div>
-                              )}
+                              )} */}
                               
                             </div>
                           ))
@@ -397,7 +397,7 @@ const AboutContent = () => {
                                     </div>
                                   </div>
                                 </div>
-                                {isMyProfile && (
+                                {/* {isMyProfile && (
                                   <div className="flex items-center space-x-2">
                                   <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                                     <FaGlobe className="text-gray-600 text-sm" />
@@ -407,7 +407,7 @@ const AboutContent = () => {
                                   </button>
                                 </div>
 
-                                )}
+                                )} */}
                                 
                               </div>
                             );
@@ -433,7 +433,7 @@ const AboutContent = () => {
                           <div className="text-gray-500 text-sm">{userData?.currentstate?.name + ", " + userData?.currentcountry?.name }</div>
                         </div>
                       </div>
-                      {isMyProfile && (
+                      {/* {isMyProfile && (
                         <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaGlobe className="text-gray-600 text-sm" />
@@ -442,7 +442,7 @@ const AboutContent = () => {
                           <FaEdit className="text-gray-600 text-sm" />
                         </button>
                       </div>
-                      )}
+                      )} */}
                       
                     </div>
 
@@ -454,7 +454,7 @@ const AboutContent = () => {
                           <div className="text-gray-500 text-sm">{userData?.fromcity?.name + ", " + userData?.fromcountry?.name}</div>
                         </div>
                       </div>
-                      {isMyProfile && (
+                      {/* {isMyProfile && (
                         <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaGlobe className="text-gray-600 text-sm" />
@@ -463,7 +463,7 @@ const AboutContent = () => {
                           <FaEdit className="text-gray-600 text-sm" />
                         </button>
                       </div>
-                      )}
+                      )} */}
                       
                     </div>
                   </div>
@@ -480,7 +480,7 @@ const AboutContent = () => {
                           <div className="text-gray-500 text-sm">{userData?.contact_no}</div>
                         </div>
                       </div>
-                      {isMyProfile && (
+                      {/* {isMyProfile && (
                         <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaLock className="text-gray-600 text-sm" />
@@ -489,7 +489,7 @@ const AboutContent = () => {
                           <FaEdit className="text-gray-600 text-sm" />
                         </button>
                       </div>
-                      )}
+                      )} */}
                       
                     </div>
 
@@ -501,7 +501,7 @@ const AboutContent = () => {
                           <div className="text-gray-500 text-sm">{userData?.email}</div>
                         </div>
                       </div>
-                      {isMyProfile && (
+                      {/* {isMyProfile && (
                         <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaLock className="text-gray-600 text-sm" />
@@ -510,7 +510,7 @@ const AboutContent = () => {
                           <FaEdit className="text-gray-600 text-sm" />
                         </button>
                       </div>
-                      )}
+                      )} */}
                       
                     </div>
 
@@ -522,7 +522,7 @@ const AboutContent = () => {
                           <div className="text-gray-500 text-sm">{userData?.dob}</div>
                         </div>
                       </div>
-                      {isMyProfile && (
+                      {/* {isMyProfile && (
                         <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaGlobe className="text-gray-600 text-sm" />
@@ -531,7 +531,7 @@ const AboutContent = () => {
                           <FaEdit className="text-gray-600 text-sm" />
                         </button>
                       </div>
-                      )}
+                      )} */}
                       
                     </div>
                   </div>
@@ -572,7 +572,7 @@ const AboutContent = () => {
                           <div className="text-gray-500 text-sm">{userData?.marital_status_name}</div>
                         </div>
                       </div>
-                      {isMyProfile && (
+                      {/* {isMyProfile && (
                         <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaUsers className="text-gray-600 text-sm" />
@@ -581,7 +581,7 @@ const AboutContent = () => {
                           <FaEdit className="text-gray-600 text-sm" />
                         </button>
                       </div>
-                      )}
+                      )} */}
                       
                     </div>
                   </div>
@@ -598,7 +598,7 @@ const AboutContent = () => {
                           <div className="text-gray-500 text-sm">A+</div>
                         </div>
                       </div>
-                      {isMyProfile && (
+                      {/* {isMyProfile && (
                         <div className="flex items-center space-x-2">
                         <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                           <FaLock className="text-gray-600 text-sm" />
@@ -607,7 +607,7 @@ const AboutContent = () => {
                           <FaEdit className="text-gray-600 text-sm" />
                         </button>
                       </div>
-                      )}
+                      )} */}
                       
                     </div>
                   </div>
