@@ -18,7 +18,7 @@ const PostModal = () => {
   const fileInputRef = useRef(null);
   const [removeFiles, setRemoveFiles] = useState([]);
   const [isShowImageSection, setIsShowImageSection] = useState(id ? true :false);
-  const [selectedBackground, setSelectedBackground] = useState(basicPostData?.background_url || null);
+  const [selectedBackground, setSelectedBackground] = useState(/\/post_background\/.+/.test(basicPostData?.background_url) ? basicPostData?.background_url : null);
   const [backgroundScrollIndex, setBackgroundScrollIndex] = useState(0);
 
   const params = useParams();
