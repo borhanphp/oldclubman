@@ -1472,7 +1472,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
               icon={<CiUser size={20} />}
               title="Sex"
               value={profile?.client?.gender}
-              field="marital_status"
+              field="gender"
               visibility={profile?.client?.profile_visibility?.gender}
             />
 

@@ -137,7 +137,7 @@ const UserProfile = () => {
     profileDataShow = [];
   }
 
-
+console.log(userData)
 
   return (
     <FeedLayout showMsgBtn={true} showFriends={true} userProfile={true}>
@@ -275,11 +275,11 @@ const UserProfile = () => {
                     </span>
                   </li> */}
 
-                {userProfileData?.client?.profile_visibility?.gender === "public" && userProfileData?.client?.gender && (
+                {userData?.profile_visibility?.gender === "public" && (
                     <li className="flex items-center gap-3">
                       <FaHome className="text-gray-500 text-base" />
                       <span className="text-gray-700">
-                        Lives in <span className="font-bold">{userProfileData?.client?.gender}</span>
+                        Gender <span className="font-bold">{userData?.gender === 0 ? "Male" : userData?.gender === 1 ? "Female" : "Others"}</span>
                       </span>
                     </li>
                   )}
