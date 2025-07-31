@@ -748,7 +748,7 @@ const reactionsImages = (item) => {
               {hasPath ? 
               <>
                 <div 
-                className="relative text-white fo-bold text-[40px] w-full min-h-[300px] rounded-lg flex items-center justify-center bg-cover bg-center bg-no-repeat"
+                className="relative text-white text-center p-4 text-[40px] w-full min-h-[300px] rounded-lg flex items-center justify-center bg-cover bg-center bg-no-repeat"
                 style={{
                   backgroundImage: `url(${itemUrl})`,
                 }}
@@ -1243,12 +1243,14 @@ const reactionsImages = (item) => {
               {/\/post_background\/.+/.test(basicPostData?.background_url) ? 
               <>
                 <div 
-                className="relative text-white fo-bold text-[40px] w-full min-h-[300px] rounded-lg flex items-center justify-center bg-cover bg-center bg-no-repeat"
+                className="relative text-white p-4 text-center text-[40px] w-full min-h-[300px] rounded-lg flex items-center justify-center bg-cover bg-center bg-no-repeat"
                 style={{
                   backgroundImage: `url(${basicPostData?.background_url})`,
                 }}
               >
+              
                 {basicPostData?.message}
+                
                
               </div>
               </>

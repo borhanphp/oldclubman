@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { bindPostData, getGathering, getPosts, initialPostData, setPostModalOpen, storePost, updatePost } from '@/views/gathering/store';
 import { getMyProfile, getPostBackgrounds, getUserProfile } from '@/views/settings/store';
 import { useParams } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 const PostModal = () => {
   const {profile, backgroundOptions} = useSelector(({settings}) => settings)
@@ -59,8 +60,17 @@ const PostModal = () => {
 
   const handleOnchange = (e) => {
     const {name, value} = e.target;
-    dispatch(bindPostData({...basicPostData, [name]: value}))
-  }
+    if(name === "message"){
+      if(selectedBackground !== null){
+        if(value?.length > 150){
+          toast.error("Can not write more then 150 charencter")
+        }else{
+        dispatch(bindPostData({...basicPostData, [name]: value}))
+        }
+      }else{
+        dispatch(bindPostData({...basicPostData, [name]: value}))}
+      }
+    }
 
   const handleFilesChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
