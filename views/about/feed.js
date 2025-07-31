@@ -84,7 +84,7 @@ const AboutContent = () => {
     dispatch(getUserProfile(params?.id));
   }, []);
 
-const categoryData = userData?.metas?.filter(dd => dd.meta_key === "PROFILE")[0].meta_value;
+const categoryData = userData?.metas?.filter(dd => dd.meta_key === "PROFILE")[0]?.meta_value;
 let profileDataShow = [];
 try {
   profileDataShow = categoryData ? JSON.parse(categoryData) : [];
