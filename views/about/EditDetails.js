@@ -215,7 +215,8 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
       position: "",
       start_date: "",
       end_date: "",
-      description: ""
+      description: "",
+      gender: ""
     });
 
     const handleWorkPrivacyToggle = (id) => {

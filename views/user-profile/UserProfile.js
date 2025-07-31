@@ -40,7 +40,7 @@ const UserProfile = () => {
   const { isPostModalOpen} = useSelector(({gathering}) => gathering);
   const dispatch = useDispatch();
   const params = useParams();
-console.log('privacyDetailsModalOpen',privacyDetailsModalOpen)
+
   const isMyProfile = Number(params?.id) === Number(profileData?.id);
   
   // State for edit bio modal
@@ -128,7 +128,7 @@ console.log('privacyDetailsModalOpen',privacyDetailsModalOpen)
   }
 
   const userData = params?.id ? userProfileData?.client : profile?.client;
-  const categoryData = userData?.metas?.filter(dd => dd.meta_key === "PROFILE")[0].meta_value;
+  const categoryData = userData?.metas?.filter(dd => dd.meta_key === "PROFILE")[0]?.meta_value;
   let profileDataShow = [];
   try {
     profileDataShow = categoryData ? JSON.parse(categoryData) : [];
@@ -136,6 +136,7 @@ console.log('privacyDetailsModalOpen',privacyDetailsModalOpen)
     console.error('Error parsing educationDataShow data:', error);
     profileDataShow = [];
   }
+
 
 
   return (
@@ -273,6 +274,16 @@ console.log('privacyDetailsModalOpen',privacyDetailsModalOpen)
                       Studied at <span className="font-bold">University of Chittagong</span>
                     </span>
                   </li> */}
+
+                {userProfileData?.client?.profile_visibility?.gender === "public" && userProfileData?.client?.gender && (
+                    <li className="flex items-center gap-3">
+                      <FaHome className="text-gray-500 text-base" />
+                      <span className="text-gray-700">
+                        Lives in <span className="font-bold">{userProfileData?.client?.gender}</span>
+                      </span>
+                    </li>
+                  )}
+                  
                   
                   {/* Location - Lives in */}
                   {userProfileData?.client?.profile_visibility?.city === "public" && userProfileData?.client?.currentstate?.name && (
