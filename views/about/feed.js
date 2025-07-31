@@ -44,11 +44,9 @@ import EditDetails from "./EditDetails";
 
 const AboutContent = () => {
   const { profile, profileData, userProfileData, privacyDetailsModalOpen } = useSelector(({ settings }) => settings);
-  console.log('privacyDetailsModalOpen about',privacyDetailsModalOpen)
   const params = useParams();
 
   const isMyProfile = profile?.client?.id === userProfileData?.client?.id;
-
   const userData = params?.id ? userProfileData?.client : profile?.client;
   const { isPostModalOpen } = useSelector(({ gathering }) => gathering);
   const dispatch = useDispatch();
@@ -86,7 +84,16 @@ const AboutContent = () => {
     dispatch(getUserProfile(params?.id));
   }, []);
 
-// console.log('userData',userData)
+const categoryData = userData?.metas?.filter(dd => dd.meta_key === "PROFILE")[0].meta_value;
+let profileDataShow = [];
+try {
+  profileDataShow = categoryData ? JSON.parse(categoryData) : [];
+} catch (error) {
+  console.error('Error parsing educationDataShow data:', error);
+  profileDataShow = [];
+}
+console.log('userData',userData)
+
  
   return (
     <FeedLayout showMsgBtn={true} showFriends={true} userProfile={true}>
@@ -212,6 +219,77 @@ const AboutContent = () => {
                 {/* Overview Section */}
                 {activeSection === 'overview' && (
                   <div className="space-y-6">
+                     <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <FaBriefcase className="text-gray-500 mr-3" />
+                            <div>
+                              <div className="text-gray-700 font-medium flex">Profile: 
+                              <div className="flex flex-wrap gap-2 ml-2">
+                                {profileDataShow?.map((item, index) => {
+                                  return(
+                                    <span key={index} className="inline-flex items-center px-2 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200 transition-colors">
+                                      {item?.category}
+                                    </span>
+                                  )
+                                })} 
+                              </div>
+                              </div>
+                            </div>
+                          </div>
+                      
+                      
+                      {/* <div className="flex items-center space-x-2">
+                        <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
+                          <FaGlobe className="text-gray-600 text-sm" />
+                        </button>
+                        <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
+                          <FaEllipsisH className="text-gray-600 text-sm" />
+                        </button>
+                      </div> */}
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <FaBriefcase className="text-gray-500 mr-3" />
+                            <div>
+                              <div className="text-gray-700 font-medium flex">Sex: {userData?.gender === 0 ? "Male" : userData?.gender === 1 ? "Female" : "Others"} 
+                              
+                              </div>
+                            </div>
+                          </div>
+                      
+                      
+                      {/* <div className="flex items-center space-x-2">
+                        <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
+                          <FaGlobe className="text-gray-600 text-sm" />
+                        </button>
+                        <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
+                          <FaEllipsisH className="text-gray-600 text-sm" />
+                        </button>
+                      </div> */}
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <FaBriefcase className="text-gray-500 mr-3" />
+                            <div>
+                              <div className="text-gray-700 font-medium flex">Place of Birth: {userData?.fromcity?.name} 
+                              
+                              </div>
+                            </div>
+                          </div>
+                      
+                      
+                      {/* <div className="flex items-center space-x-2">
+                        <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
+                          <FaGlobe className="text-gray-600 text-sm" />
+                        </button>
+                        <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
+                          <FaEllipsisH className="text-gray-600 text-sm" />
+                        </button>
+                      </div> */}
+                    </div>
+
                     {/* Work Section */}
                     <div className="flex items-center justify-between">
                       {workDataForShow?.slice(0, 1)?.map((item, index) => {

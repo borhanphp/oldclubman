@@ -216,8 +216,8 @@ const PostModal = () => {
   
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/30">
-      <div className="bg-white backdrop-blur-md rounded-lg w-full max-w-lg mx-4 shadow-xl">
-        <div className="flex justify-center border-b border-b-gray-300 p-4 relative">
+      <div className="bg-white backdrop-blur-md rounded-lg w-full max-w-lg mx-4 shadow-xl max-h-[90vh] flex flex-col">
+        <div className="flex justify-center border-b border-b-gray-300 p-4 relative flex-shrink-0">
           <h2 className="text-xl font-semibold">{id ? 'Edit Post' : 'Create post'}</h2>
           <button 
             onClick={() => {close()}}
@@ -227,7 +227,7 @@ const PostModal = () => {
           </button>
         </div>
         
-        <div className="p-4">
+        <div className="p-4 overflow-y-auto flex-1">
           <div className="flex items-start mb-4">
             <div className="w-10 h-10 rounded-full overflow-hidden bg-blue-400 flex items-center justify-center text-white mr-3 flex-shrink-0">
               <img 
@@ -323,7 +323,7 @@ const PostModal = () => {
 
              {/* Background Selection Row */}
              <div className="mb-1">
-              <div className="flex items-center space-x-2 overflow-x-auto py-2">
+              <div className="flex items-center space-x-2 overflow-x-auto py-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                 {/* Left Arrow */}
                 {backgroundScrollIndex > 0 && (
                   <button
@@ -441,7 +441,7 @@ const PostModal = () => {
           </div>
         </div>
         
-        <div className="px-4 pb-4">
+        <div className="px-4 pb-4 flex-shrink-0">
           <button
             onClick={handlePost}
             className={`px-4 py-2 w-full rounded-md transition font-medium ${

@@ -269,9 +269,9 @@ const BasicInformation = () => {
               value={gender}
               onChange={handleInputChange}
               options={[
-                { value: "male", label: "Male" },
-                { value: "female", label: "Female" },
-                { value: "other", label: "Other" },
+                { value: 0, label: "Male" },
+                { value: 1, label: "Female" },
+                { value: 2, label: "Other" },
               ]}
               placeholder="Select Gender"
               className="w-full"

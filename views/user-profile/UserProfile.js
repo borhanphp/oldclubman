@@ -36,7 +36,7 @@ import EditDetails from "../about/EditDetails";
 import toast from "react-hot-toast";
 
 const UserProfile = () => {
-  const { userProfileData, profileData, profileSettingData, privacyDetailsModalOpen } = useSelector(({ settings }) => settings);
+  const { userProfileData, profile, profileData, profileSettingData, privacyDetailsModalOpen } = useSelector(({ settings }) => settings);
   const { isPostModalOpen} = useSelector(({gathering}) => gathering);
   const dispatch = useDispatch();
   const params = useParams();
@@ -125,6 +125,16 @@ console.log('privacyDetailsModalOpen',privacyDetailsModalOpen)
         toast.success("Successfully Updated");
         dispatch(getUserProfile(params?.id));
       });
+  }
+
+  const userData = params?.id ? userProfileData?.client : profile?.client;
+  const categoryData = userData?.metas?.filter(dd => dd.meta_key === "PROFILE")[0].meta_value;
+  let profileDataShow = [];
+  try {
+    profileDataShow = categoryData ? JSON.parse(categoryData) : [];
+  } catch (error) {
+    console.error('Error parsing educationDataShow data:', error);
+    profileDataShow = [];
   }
 
 
@@ -222,8 +232,18 @@ console.log('privacyDetailsModalOpen',privacyDetailsModalOpen)
                   <li className="flex items-center gap-3">
                     <FaInfoCircle className="text-gray-500 text-base" />
                     <span className="text-gray-700">
-                      <span className="font-semibold">Profile</span>
-                      {userProfileData?.client?.profile_overview ? ` · ${userProfileData.client.profile_overview}` : " · Digital creator"}
+                      <span className="font-semibold">Profile: </span>
+                        {profileDataShow?.map((item, index) => {
+                            return(
+                              <span key={index} className="">
+                                {item?.category}
+                              </span>
+                            )
+                          }).reduce((prev, curr, index) => [
+                            ...prev,
+                            curr,
+                            index < profileDataShow.length - 1 && <span key={`comma-${index}`} className="text-gray-400">, </span>
+                          ].filter(Boolean), [])} 
                     </span>
                   </li>
                   
