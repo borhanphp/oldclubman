@@ -141,6 +141,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
     // Send to backend
     dispatch(storeBsicInformation({
       ...profileData,
+      metas: JSON.stringify(profileData?.metas),
       profile_visibility: JSON.stringify(newVisibility)
     }))
     .then(() => {
