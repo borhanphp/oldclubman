@@ -152,12 +152,173 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
 
   const OverViewBlock = (props) => {
     const { icon, title, value, field, visibility } = props;
-    
+
     // Use local visibility for immediate updates, then props, then fallback to privacySettings
-    const isPublic = localVisibility[field] !== undefined 
-      ? localVisibility[field] === 'public' 
+    const isPublic = localVisibility[field] !== undefined
+      ? localVisibility[field] === 'public'
       : (visibility !== undefined ? visibility === 'public' : privacySettings[field]);
-    
+
+    // Inline edit state
+    const [isEditing, setIsEditing] = useState(false);
+    const [editValue, setEditValue] = useState("");
+    const [saving, setSaving] = useState(false);
+
+    const fieldToProfileKey = (f) => {
+      switch (f) {
+        case 'gender': return 'gender';
+        case 'dob': return 'dob';
+        case 'status': return 'marital_status';
+        case 'contact_no': return 'contact_no';
+        case 'email': return 'email';
+        case 'blood': return 'blood_group';
+        default: return null;
+      }
+    };
+
+    const isEditable = fieldToProfileKey(field) !== null;
+
+    const startEdit = () => {
+      if (!isEditable) return;
+      // Initialize editValue from current value; map names to codes if needed
+      if (field === 'status') {
+        // value shown is name; derive code if possible
+        const map = { 'Single': 1, 'Married': 2, 'Divorced': 3, 'Widowed': 4 };
+        setEditValue(map[value] || 1);
+      } else if (field === 'gender') {
+        // Assume 0 Male, 1 Female, 2 Other; if string, map
+        const gmap = { 'Male': 0, 'Female': 1, 'Other': 2, 'Others': 2 };
+        const numeric = (typeof value === 'number') ? value : (gmap[value] ?? 0);
+        setEditValue(numeric);
+      } else if (field === 'dob') {
+        try {
+          const dt = value ? moment(value).format('YYYY-MM-DD') : '';
+          setEditValue(dt);
+        } catch {
+          setEditValue('');
+        }
+      } else if (field === 'blood') {
+        setEditValue(value || 'A+');
+      } else {
+        setEditValue(value || '');
+      }
+      setIsEditing(true);
+    };
+
+    const cancelEdit = () => {
+      setIsEditing(false);
+      setEditValue("");
+    };
+
+    const saveEdit = async () => {
+      const key = fieldToProfileKey(field);
+      if (!key) return;
+      setSaving(true);
+      try {
+        const updated = { ...profileData };
+        updated[key] = editValue;
+        // Ensure types
+        if (field === 'status' || field === 'gender') {
+          updated[key] = Number(editValue);
+        }
+        if (field === 'dob' && editValue) {
+          updated[key] = moment(editValue).format('YYYY-MM-DD');
+        }
+
+        const payload = {
+          ...updated,
+          metas: JSON.stringify(updated?.metas),
+          profile_visibility: updated?.profile_visibility,
+        };
+        await dispatch(storeBsicInformation(payload));
+        await dispatch(getMyProfile());
+        toast.success('Updated');
+        setIsEditing(false);
+      } catch (e) {
+        // error handled globally
+      } finally {
+        setSaving(false);
+      }
+    };
+
+    const renderEditor = () => {
+      if (field === 'gender') {
+        return (
+          <select
+            className="border border-gray-300 rounded px-2 py-1 text-sm"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+          >
+            <option value={0}>Male</option>
+            <option value={1}>Female</option>
+            <option value={2}>Other</option>
+          </select>
+        );
+      }
+      if (field === 'status') {
+        return (
+          <select
+            className="border border-gray-300 rounded px-2 py-1 text-sm"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+          >
+            <option value={1}>Single</option>
+            <option value={2}>Married</option>
+            <option value={3}>Divorced</option>
+            <option value={4}>Widowed</option>
+          </select>
+        );
+      }
+      if (field === 'dob') {
+        return (
+          <input
+            type="date"
+            className="border border-gray-300 rounded px-2 py-1 text-sm"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+          />
+        );
+      }
+      if (field === 'email') {
+        return (
+          <input
+            type="email"
+            className="border border-gray-300 rounded px-2 py-1 text-sm"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+          />
+        );
+      }
+      if (field === 'blood') {
+        const groups = ['A+','A-','B+','B-','AB+','AB-','O+','O-'];
+        return (
+          <select
+            className="border border-gray-300 rounded px-2 py-1 text-sm"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+          >
+            {groups.map(g => <option key={g} value={g}>{g}</option>)}
+          </select>
+        );
+      }
+      // default text input
+      return (
+        <input
+          type="text"
+          className="border border-gray-300 rounded px-2 py-1 text-sm"
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+        />
+      );
+    };
+
+    // Format display value
+    const getDisplayValue = () => {
+      if (field === 'gender') {
+        const map = { 0: 'Male', 1: 'Female', 2: 'Others', '0': 'Male', '1': 'Female', '2': 'Others', Male: 'Male', Female: 'Female', Other: 'Others', Others: 'Others' };
+        return map[value] || 'N/A';
+      }
+      return value ?? 'N/A';
+    };
 
     return (
       <>
@@ -187,17 +348,42 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
                   {title}:
                 </div>
                 <div className="text-sm text-gray-700 font-medium truncate">
-                  {value}
+                  {isEditing ? (
+                    <div className="flex items-center gap-2">
+                      {renderEditor()}
+                      <button
+                        onClick={saveEdit}
+                        disabled={saving}
+                        className={`px-2 py-1 rounded text-xs ${saving ? 'bg-gray-200 text-gray-500' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                      >
+                        {saving ? 'Saving...' : 'Save'}
+                      </button>
+                      <button
+                        onClick={cancelEdit}
+                        disabled={saving}
+                        className="px-2 py-1 rounded text-xs bg-gray-200 text-gray-700 hover:bg-gray-300"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    getDisplayValue()
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Edit Icon - Pencil icon like in work section */}
-            {/* <button className="text-gray-400 ml-2">
+            {/* Edit Icon */}
+            <button
+              className={`text-gray-400 ml-2 ${!isEditable ? 'opacity-40 cursor-not-allowed' : 'hover:text-gray-600'}`}
+              onClick={startEdit}
+              disabled={!isEditable}
+              title={isEditable ? 'Edit' : 'Edit from Basic Information'}
+            >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
               </svg>
-            </button> */}
+            </button>
           </div>
         </div>
       </>
@@ -1018,6 +1204,45 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
     });
     const [categoryInput, setCategoryInput] = useState("");
     const [isFormVisible, setIsFormVisible] = useState(false);
+    const [selectedCategories, setSelectedCategories] = useState([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+
+    const defaultCategories = [
+      "Actor / Director",
+      "Artist",
+      "Athlete",
+      "Author",
+      "Band",
+      "Blogger",
+      "Chef",
+      "Comedian",
+      "Dancer",
+      "Designer",
+      "Digital Creator",
+      "Editor",
+      "Entrepreneur / Business Person",
+      "Fashion Designer / Model",
+      "Film Director",
+      "Fitness Model",
+      "Gamer / Gaming Video Creator",
+      "Journalist",
+      "Motivational Speaker",
+      "Musician / Band",
+      "News Personality",
+      "Orchestra",
+      "Pet",
+      "Photographer",
+      "Producer",
+      "Scientist / Spiritual Leader",
+      "Sports Promoter / Sportsperson / Coach",
+      "Teacher",
+      "Video Creator",
+      "Writer / Author",
+      "Politician / Government Official / Political Candidate",
+      "Entertainer",
+      "Public Figure"
+    ]
+    
 
     // Use profileDataForShow from parent component
     // const profileDataForShow = profile.client?.metas?.filter(dd => dd.meta_key === "PROFILE");
@@ -1085,24 +1310,37 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
         id: "",
         category: ""
       });
+      setSelectedCategories([]);
+      setEditingProfileId(null);
+    };
+
+    const handleSelectSuggestion = (category) => {
+      if (!category) return;
+      if (editingProfileId) {
+        setSelectedCategories([category]);
+      } else {
+        setSelectedCategories((prev) => prev.includes(category) ? prev : [...prev, category]);
+      }
+      setCategoryInput("");
+      setShowSuggestions(false);
     };
 
     const handleAddCategory = () => {
-      if (categoryInput.trim()) {
-        const profileId = `profile_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        setProfileFormData({
-          id: profileId,
-          category: categoryInput.trim()
-        });
-        setCategoryInput("");
+      const trimmed = categoryInput.trim();
+      if (!trimmed) return;
+      const exactDefault = defaultCategories.find((c) => c.toLowerCase() === trimmed.toLowerCase());
+      const toAdd = exactDefault || trimmed;
+      if (editingProfileId) {
+        setSelectedCategories([toAdd]);
+      } else {
+        setSelectedCategories((prev) => prev.includes(toAdd) ? prev : [...prev, toAdd]);
       }
+      setCategoryInput("");
+      setShowSuggestions(false);
     };
 
-    const handleRemoveCategory = () => {
-      setProfileFormData({
-        id: "",
-        category: ""
-      });
+    const handleRemoveSelectedCategory = (category) => {
+      setSelectedCategories((prev) => prev.filter((c) => c !== category));
     };
 
     const handleEditProfile = (profile) => {
@@ -1113,6 +1351,9 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
         id: profileId,
         category: profile.category || ""
       });
+      setIsFormVisible(true);
+      setCategoryInput("");
+      setSelectedCategories([profile.category || ""]);
     };
 
     const handleSaveProfile = () => {
@@ -1121,8 +1362,8 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
       
       const newProfile = {
         id: profileId,
-        ...profileFormData,
-        status: 'public' // Add status property with default 'public'
+        category: (editingProfileId ? (selectedCategories[0] || profileFormData.category) : profileFormData.category),
+        status: 'public'
       };
 
       // Get current profile entries from profile
@@ -1145,8 +1386,18 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
           profile.id === editingProfileId ? newProfile : profile
         );
       } else {
-        // Add new profile
-        updatedProfileEntries = [...currentProfileEntries, newProfile];
+        // Add multiple categories as separate entries if provided
+        const categoriesToAdd = selectedCategories.length
+          ? selectedCategories
+          : (profileFormData.category ? [profileFormData.category] : []);
+
+        const entriesToAdd = categoriesToAdd.map((cat) => ({
+          id: `profile_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          category: cat,
+          status: 'public'
+        }));
+
+        updatedProfileEntries = [...currentProfileEntries, ...entriesToAdd];
       }
 
       // Save to backend using metas structure - preserve existing metas
@@ -1183,6 +1434,8 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
         id: "",
         category: ""
       });
+      setSelectedCategories([]);
+      setCategoryInput("");
     };
 
     const handleCancelProfile = () => {
@@ -1206,12 +1459,21 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
 
     const handleCategoryInputChange = (e) => {
       setCategoryInput(e.target.value);
+      setShowSuggestions(true);
     };
 
     const handleCategoryInputKeyPress = (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        handleAddCategory();
+        const trimmed = categoryInput.trim();
+        if (!trimmed) return;
+        const firstMatch = defaultCategories.find((c) => c.toLowerCase() === trimmed.toLowerCase())
+          || defaultCategories.find((c) => c.toLowerCase().includes(trimmed.toLowerCase()));
+        if (firstMatch) {
+          handleSelectSuggestion(firstMatch);
+        } else {
+          handleAddCategory();
+        }
       }
     };
 
@@ -1303,6 +1565,17 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                       </button>
+
+                      {/* Delete Icon */}
+                      <button
+                        className="w-8 h-8 rounded-full bg-red-50 text-red-600 hover:bg-red-100 flex items-center justify-center transition-colors"
+                        onClick={() => handleDeleteProfile(profileEntries, entry.id || uniqueId)}
+                        title="Delete category"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1318,30 +1591,55 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
               <span className="text-sm text-gray-500">Categories</span>
             </div>
             
-            {/* Category Input Field */}
-            <div className="border border-gray-200 rounded-lg p-3 min-h-[60px] bg-white">
+            {/* Category Input Field with Multi-select and Suggestions */}
+            <div className="border border-gray-200 rounded-lg p-3 bg-white">
               <div className="flex flex-wrap gap-2 items-center">
-                {profileFormData.category && (
-                  <div className="inline-flex items-center bg-blue-500 text-white px-3 py-1 rounded-full text-sm">
-                    <span>{profileFormData.category}</span>
-                    <button 
-                      onClick={handleRemoveCategory}
+                {selectedCategories.map((cat) => (
+                  <div key={cat} className="inline-flex items-center bg-blue-500 text-white px-3 py-1 rounded-full text-sm">
+                    <span>{cat}</span>
+                    <button
+                      onClick={() => handleRemoveSelectedCategory(cat)}
                       className="ml-2 text-white hover:text-gray-200"
+                      type="button"
                     >
                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                       </svg>
                     </button>
                   </div>
-                )}
-                <input
-                  type="text"
-                  placeholder="Type category and press Enter"
-                  value={categoryInput}
-                  onChange={handleCategoryInputChange}
-                  onKeyPress={handleCategoryInputKeyPress}
-                  className="flex-1 outline-none text-sm"
-                />
+                ))}
+                <div className="relative flex-1 min-w-[180px]">
+                  <input
+                    type="text"
+                    placeholder={editingProfileId ? "Choose a category" : "Type to search categories"}
+                    value={categoryInput}
+                    onChange={handleCategoryInputChange}
+                    onKeyPress={handleCategoryInputKeyPress}
+                    onFocus={() => setShowSuggestions(true)}
+                    className="w-full outline-none text-sm"
+                  />
+                  {showSuggestions && categoryInput.trim().length > 0 && (
+                    <div className="absolute z-10 mt-2 w-full max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-md shadow-sm">
+                      {defaultCategories
+                        .filter((c) => c.toLowerCase().includes(categoryInput.toLowerCase()))
+                        .filter((c) => !selectedCategories.includes(c))
+                        .slice(0, 20)
+                        .map((c) => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => handleSelectSuggestion(c)}
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+                          >
+                            {c}
+                          </button>
+                        ))}
+                      {defaultCategories.filter((c) => c.toLowerCase().includes(categoryInput.toLowerCase())).length === 0 && (
+                        <div className="px-3 py-2 text-sm text-gray-400">No matches</div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             
@@ -1368,11 +1666,11 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
                 <button
                   onClick={handleSaveProfile}
                   className={`px-3 py-1 rounded-full text-sm ${
-                    profileFormData.category 
+                    (editingProfileId ? selectedCategories.length === 1 : selectedCategories.length > 0 || profileFormData.category)
                       ? "bg-blue-500 text-white hover:bg-blue-600" 
                       : "bg-gray-200 text-gray-500 cursor-not-allowed"
                   }`}
-                  disabled={!profileFormData.category}
+                  disabled={!(editingProfileId ? selectedCategories.length === 1 : (selectedCategories.length > 0 || profileFormData.category))}
                 >
                   Save
                 </button>

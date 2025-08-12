@@ -23,7 +23,7 @@ const GatheringContent = () => {
 
   useEffect(() => {
     dispatch(getGathering());
-    dispatch(getPosts(1));
+    dispatch(getPosts({ page: 1 }));
   }, [])
   
   useEffect(() => {
@@ -157,7 +157,7 @@ const GatheringContent = () => {
     console.log('Setting loadingMore to true and dispatching getPosts');
     setLoadingMore(true);
     
-    dispatch(getPosts(nextPage))
+    dispatch(getPosts({ page: nextPage }))
       .finally(() => {
         console.log('getPosts completed, setting loadingMore to false');
         setLoadingMore(false);
