@@ -430,7 +430,7 @@ const PostList = ({ postsData }) => {
   };
 
   // Render reply tree recursively under a comment
-  const renderReplies = (replies, commentIndex, level = 1) => {
+  const renderReplies = (replies, commentIndex, level = 1, parentFirstReplyId = null) => {
     if (!Array.isArray(replies) || replies.length === 0) return null;
     return replies.map((reply, ri) => (
       <div className="flex mt-2" style={{ marginLeft: `${level * 16}px` }} key={`${reply?.id || ri}-${level}`}>
@@ -523,9 +523,11 @@ const PostList = ({ postsData }) => {
               )}
             </button>
 
-            <button className="hover:underline cursor-pointer" onClick={() => handleReplyToReply(commentIndex, reply)} type="button">
-              Reply
-            </button>
+            {level < 2 && (
+              <button className="hover:underline cursor-pointer" onClick={() => handleReplyToReply(commentIndex, reply, parentFirstReplyId || reply?.id)} type="button">
+                Reply
+              </button>
+            )}
           </div>
 
           {/* input for replying to this reply */}
@@ -554,8 +556,13 @@ const PostList = ({ postsData }) => {
             </div>
           )}
 
-          {/* children (only show one more layer: reply of reply) */}
-          {level < 2 && renderReplies(reply?.children || [], commentIndex, level + 1)}
+          {/* children (only show one more layer: reply of reply); API may name it `children` or `chidren` */}
+          {level < 2 && renderReplies(
+            reply?.children || reply?.chidren || [],
+            commentIndex,
+            level + 1,
+            parentFirstReplyId || reply?.id
+          )}
         </div>
       </div>
     ));
@@ -577,7 +584,7 @@ const PostList = ({ postsData }) => {
     return `${seconds}s`;
   };
 
-  const handleReplyToReply = (commentIndex, replyOrId) => {
+  const handleReplyToReply = (commentIndex, replyOrId, firstLevelReplyId = null) => {
     const replyId = typeof replyOrId === 'object' ? replyOrId?.id : replyOrId;
     const inputKey = `reply-${commentIndex}-${replyId}`;
     // Pre-fill with @ mention token and focus
@@ -595,6 +602,10 @@ const PostList = ({ postsData }) => {
       ...prev, 
       [inputKey]: prev[inputKey] === undefined ? defaultValue : prev[inputKey]
     }));
+    // remember the first-level reply id for this thread
+    if (firstLevelReplyId) {
+      setModalReplyInputs(prev => ({ ...prev, [`first-parent-${commentIndex}`]: firstLevelReplyId }));
+    }
     setTimeout(() => {
       const el = inputRefs.current[inputKey];
       if (el) {
@@ -610,7 +621,9 @@ const PostList = ({ postsData }) => {
     const reply = modalReplyInputs[inputKey];
     if (!reply) return;
     const comment = basicPostData?.comments?.[commentIndex];
-    const parentId = replyId === comment.id ? null : replyId;
+    // If replying within a second-level thread, keep it as first-level reply-of-a-reply
+    const firstParent = modalReplyInputs[`first-parent-${commentIndex}`];
+    const parentId = firstParent || (replyId === comment.id ? null : replyId);
     dispatch(
       replyToComment({ 
         comment_id: comment.id, 
@@ -1933,8 +1946,14 @@ const reactionsImages = (item) => {
                         </div>
                       )}
 
-                      {/* Display replies */}
-                      {(modalReplies[i] || [])?.map((reply, ri) => (
+                      {/* Display replies (filter out replies that are children to avoid duplication) */}
+                      {(() => {
+                        const repliesForComment = modalReplies[i] || [];
+                        const childIds = new Set();
+                        repliesForComment.forEach(r => (r?.children || []).forEach(ch => ch?.id && childIds.add(ch.id)));
+                        const topLevelReplies = repliesForComment.filter(r => !childIds.has(r?.id));
+                        return topLevelReplies;
+                      })()?.map((reply, ri) => (
                         <div className="flex mt-2 ml-8" key={ri}>
                           <div className="w-6 h-6 rounded-full overflow-hidden mr-2 mt-1">
                             <img
@@ -2164,7 +2183,7 @@ const reactionsImages = (item) => {
                               </div>
                             )}
                             {/* children replies */}
-                            {renderReplies(reply?.children || [], i, 2)}
+                            {renderReplies(reply?.children || reply?.chidren || [], i, 2)}
                           </div>
                         </div>
                       ))}
