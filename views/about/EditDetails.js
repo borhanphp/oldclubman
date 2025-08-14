@@ -1679,49 +1679,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
           </div>
         )}
 
-        {/* Show message when no profile data */}
-        {(!profileDataForShow || profileDataForShow.length === 0 || !profileDataForShow) && !isFormVisible && (
-          <div className="text-gray-500 text-sm py-2">
-            No categories found
-            <br />
-            <button 
-              onClick={() => {
-                // Create initial profile data for testing
-                const testProfile = {
-                  id: `profile_${Date.now()}`,
-                  category: "Digital creator",
-                  status: 'public'
-                };
-                
-                // Get existing metas and add new profile meta
-                const existingMetas = profile.client?.metas || [];
-                const newMetas = [
-                  ...existingMetas,
-                  {
-                    meta_key: 'PROFILE',
-                    meta_value: JSON.stringify([testProfile]),
-                    meta_status: '1'
-                  }
-                ];
-
-                const saveData = {
-                  ...profileData,
-                  metas: JSON.stringify(newMetas),
-                  profile_visibility: profileData?.profile_visibility
-                };
-
-                dispatch(storeBsicInformation(saveData))
-                  .then(() => {
-                    dispatch(getMyProfile());
-                    toast.success("Test category created");
-                  });
-              }}
-              className="mt-2 bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600"
-            >
-              Create Test Category
-            </button>
-          </div>
-        )}
+        
 
         {/* Add Category Button */}
         {!isFormVisible && (
