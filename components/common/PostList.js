@@ -39,18 +39,19 @@ import { CiEdit, CiUnlock } from "react-icons/ci";
 import { MdOutlineDeleteOutline } from "react-icons/md";
 import { TbMessageReport } from "react-icons/tb";
 import { useParams } from "next/navigation";
-import { getMyProfile, getUserProfile } from "@/views/settings/store";
+import { getMyProfile, getUserProfile, getAllFollowers } from "@/views/settings/store";
 import toast from "react-hot-toast";
 import Image from "next/image";
 
 const PostList = ({ postsData }) => {
   const { basicPostData } = useSelector(({ gathering }) => gathering);
-  const { profile } = useSelector(({ settings }) => settings);
+  const { profile, myFollowers } = useSelector(({ settings }) => settings);
   const dispatch = useDispatch();
   const params = useParams();
   useEffect(() => {
     dispatch(getGathering());
     dispatch(getPosts(1));
+    dispatch(getAllFollowers());
   }, [dispatch]);
 
   const [showReactionsFor, setShowReactionsFor] = useState(null);
@@ -203,6 +204,141 @@ const PostList = ({ postsData }) => {
     };
   }, [openDropdownFor]);
 
+  // Mention system (modal only)
+  const [mentionOpenFor, setMentionOpenFor] = useState(null); // key of active input
+  const [mentionQuery, setMentionQuery] = useState("");
+  const [mentionOptions, setMentionOptions] = useState([]);
+  const [mentionActiveIndex, setMentionActiveIndex] = useState(0);
+  const inputRefs = useRef({});
+  const mentionMetaRef = useRef({}); // { [inputKey]: { anchor: number } }
+
+  const buildMentionCandidates = (query = "") => {
+    const list = (myFollowers || []).map((f) => ({
+      id: f?.follower_client?.id,
+      name: `${f?.follower_client?.fname || ""} ${f?.follower_client?.last_name || ""}`.trim(),
+      avatar: f?.follower_client?.image
+        ? `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}/${f?.follower_client?.image}`
+        : "/common-avator.jpg",
+    }));
+    const q = query.toLowerCase();
+    return list
+      .filter((u) => u.id && (!q || u.name.toLowerCase().includes(q)))
+      .slice(0, 8);
+  };
+
+  const getInputValueByKey = (inputKey) => {
+    if (inputKey.startsWith("reply-")) {
+      return modalReplyInputs[inputKey] || "";
+    }
+    const parts = inputKey.split("-");
+    const postId = parts[parts.length - 1];
+    return commentInputs[postId] || "";
+  };
+
+  const setInputValueByKey = (inputKey, value) => {
+    if (inputKey.startsWith("reply-")) {
+      setModalReplyInputs((prev) => ({ ...prev, [inputKey]: value }));
+      return;
+    }
+    const parts = inputKey.split("-");
+    const postId = parts[parts.length - 1];
+    setCommentInputs((prev) => ({ ...prev, [postId]: value }));
+  };
+
+  const handleMentionDetect = (e, inputKey) => {
+    const value = e.target.value;
+    const caret = e.target.selectionStart || value.length;
+    const before = value.slice(0, caret);
+    const match = before.match(/@([a-zA-Z0-9_.\- ]{1,30})$/);
+    if (match) {
+      const q = match[1];
+      mentionMetaRef.current[inputKey] = { anchor: caret - match[0].length };
+      setMentionOptions(buildMentionCandidates(q));
+      setMentionQuery(q);
+      setMentionActiveIndex(0);
+      setMentionOpenFor(inputKey);
+    } else if (mentionOpenFor === inputKey) {
+      setMentionOpenFor(null);
+      setMentionQuery("");
+      setMentionOptions([]);
+    }
+  };
+
+  const insertMentionToken = (user, inputKey) => {
+    const value = getInputValueByKey(inputKey);
+    const input = inputRefs.current[inputKey];
+    const caret = input?.selectionStart ?? value.length;
+    const meta = mentionMetaRef.current[inputKey] || { anchor: value.lastIndexOf("@") };
+    const before = value.slice(0, meta.anchor);
+    const after = value.slice(caret);
+    const token = `@[${user.name}](${user.id}) `;
+    const newValue = before + token + after;
+    setInputValueByKey(inputKey, newValue);
+    setMentionOpenFor(null);
+    setMentionQuery("");
+    setMentionOptions([]);
+    setMentionActiveIndex(0);
+    setTimeout(() => {
+      if (input) {
+        const newCaret = (before + token).length;
+        input.focus();
+        input.setSelectionRange(newCaret, newCaret);
+      }
+    }, 0);
+  };
+
+  const handleMentionKeyDown = (e, inputKey) => {
+    if (mentionOpenFor !== inputKey || mentionOptions.length === 0) return false;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setMentionActiveIndex((idx) => (idx + 1) % mentionOptions.length);
+      return true;
+    }
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setMentionActiveIndex((idx) => (idx - 1 + mentionOptions.length) % mentionOptions.length);
+      return true;
+    }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const chosen = mentionOptions[mentionActiveIndex];
+      if (chosen) insertMentionToken(chosen, inputKey);
+      return true;
+    }
+    if (e.key === "Escape") {
+      e.preventDefault();
+      setMentionOpenFor(null);
+      return true;
+    }
+    return false;
+  };
+
+  // Render content with @[Name](id)
+  const renderContentWithMentions = (text) => {
+    if (!text) return null;
+    const regex = /@\[(.+?)\]\((\d+)\)/g;
+    const elements = [];
+    let lastIndex = 0;
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+      const start = match.index;
+      const [full, name, id] = match;
+      if (start > lastIndex) {
+        elements.push(text.slice(lastIndex, start));
+      }
+      elements.push(
+        <Link href={`/user/user-profile/${id}`} className="text-blue-600 hover:underline" key={`m-${start}`}>
+          @{name}
+        </Link>
+      );
+      lastIndex = start + full.length;
+    }
+    if (lastIndex < text.length) {
+      elements.push(text.slice(lastIndex));
+    }
+    return elements;
+  };
+
   const handleEditPost = (postId) => {
     dispatch(getPostById(postId)).then(() => {
       dispatch(setPostModalOpen(true));
@@ -293,6 +429,138 @@ const PostList = ({ postsData }) => {
       });
   };
 
+  // Render reply tree recursively under a comment
+  const renderReplies = (replies, commentIndex, level = 1) => {
+    if (!Array.isArray(replies) || replies.length === 0) return null;
+    return replies.map((reply, ri) => (
+      <div className="flex mt-2" style={{ marginLeft: `${level * 16}px` }} key={`${reply?.id || ri}-${level}`}>
+        <div className="w-6 h-6 rounded-full overflow-hidden mr-2 mt-1">
+          <img
+            src={
+              (reply?.client_comment?.image && `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${reply?.client_comment?.image?.startsWith('/') ? '' : '/'}${reply?.client_comment?.image}`) || "/common-avator.jpg"
+            }
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.src = "/common-avator.jpg";
+            }}
+          />
+        </div>
+        <div className="flex flex-col w-full">
+          <div className="bg-gray-50 w-full p-2 rounded-md flex flex-col">
+            <span className="font-medium text-xs">
+              <Link href={`/user/user-profile/${reply?.client_id}`} className="cursor-pointer hover:underline">
+                {`${reply?.client_comment?.fname || ""} ${reply?.client_comment?.last_name || ""}`.trim() || reply?.user}
+              </Link>
+              <span className="text-gray-400 ml-1">
+                {reply?.created_at ? formatCompactTime(reply.created_at) : "0s"}
+              </span>
+            </span>
+            <span className="text-gray-700 text-xs">
+              {renderContentWithMentions(reply?.content || reply?.text)}
+            </span>
+          </div>
+
+          <div className="flex gap-3 mt-1 ml-2 text-xs text-gray-500">
+            <div>{formatCompactTime(reply?.created_at)}</div>
+            <button
+              className="hover:underline relative cursor-pointer"
+              onClick={() =>
+                setShowCommentReactionsFor(showCommentReactionsFor === reply.id ? null : reply.id)
+              }
+              type="button"
+            >
+              {!reply?.single_reaction ? (
+                <span>Like</span>
+              ) : (
+                <span className="inline-block">
+                  {reply?.single_reaction?.type === "like" && (
+                    <span className="font-semibold">
+                      <span className="text-blue-500 text-[12px]">Like</span>
+                    </span>
+                  )}
+                  {reply?.single_reaction?.type === "love" && (
+                    <span className="font-semibold">
+                      <span className="text-red-700 text-[12px]">Love</span>
+                    </span>
+                  )}
+                  {reply?.single_reaction?.type === "care" && (
+                    <span className="font-semibold">
+                      <span className="text-yellow-700 text-[12px]">Care</span>
+                    </span>
+                  )}
+                  {reply?.single_reaction?.type === "haha" && (
+                    <span className="font-semibold">
+                      <span className="text-yellow-700 text-[12px]">Haha</span>
+                    </span>
+                  )}
+                  {reply?.single_reaction?.type === "wow" && (
+                    <span className="font-semibold">
+                      <span className="text-yellow-700 text-[12px]">Wow</span>
+                    </span>
+                  )}
+                  {reply?.single_reaction?.type === "sad" && (
+                    <span className="font-semibold">
+                      <span className="text-yellow-700 text-[12px]">Sad</span>
+                    </span>
+                  )}
+                  {reply?.single_reaction?.type === "angry" && (
+                    <span className="font-semibold">
+                      <span className="text-red-500 text-[12px]">Angry</span>
+                    </span>
+                  )}
+                </span>
+              )}
+              {showCommentReactionsFor === reply.id && (
+                <div ref={commentReactionRef} className="absolute bottom-full w-50 bg-white p-2 rounded-full shadow-lg flex space-x-2 z-10">
+                  <img src="/like.png" alt="Like" className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer" onClick={(e) => { e.stopPropagation(); handleReplyReaction(reply.id, "like", reply.comment_id, commentIndex); }} />
+                  <img src="/love.png" alt="Love" className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer" onClick={(e) => { e.stopPropagation(); handleReplyReaction(reply.id, "love", reply.comment_id, commentIndex); }} />
+                  <img src="/care.png" alt="Care" className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer" onClick={(e) => { e.stopPropagation(); handleReplyReaction(reply.id, "care", reply.comment_id, commentIndex); }} />
+                  <img src="/haha.png" alt="Haha" className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer" onClick={(e) => { e.stopPropagation(); handleReplyReaction(reply.id, "haha", reply.comment_id, commentIndex); }} />
+                  <img src="/wow.png" alt="Wow" className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer" onClick={(e) => { e.stopPropagation(); handleReplyReaction(reply.id, "wow", reply.comment_id, commentIndex); }} />
+                  <img src="/sad.png" alt="Sad" className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer" onClick={(e) => { e.stopPropagation(); handleReplyReaction(reply.id, "sad", reply.comment_id, commentIndex); }} />
+                  <img src="/angry.png" alt="Angry" className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer" onClick={(e) => { e.stopPropagation(); handleReplyReaction(reply.id, "angry", reply.comment_id, commentIndex); }} />
+                </div>
+              )}
+            </button>
+
+            <button className="hover:underline cursor-pointer" onClick={() => handleReplyToReply(commentIndex, reply)} type="button">
+              Reply
+            </button>
+          </div>
+
+          {/* input for replying to this reply */}
+          {modalReplyInputs[`reply-${commentIndex}-${reply.id}`] !== undefined && (
+            <div className="flex mt-2 ml-6 relative">
+              <input
+                type="text"
+                className="w-full focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-100 rounded-full px-2 py-1 text-xs"
+                placeholder={`Reply to ${reply?.client_comment?.fname || ""}`}
+                value={modalReplyInputs[`reply-${commentIndex}-${reply.id}`] || ""}
+                ref={(el) => (inputRefs.current[`reply-${commentIndex}-${reply.id}`] = el)}
+                onChange={(e) => { setModalReplyInputs((prev) => ({ ...prev, [`reply-${commentIndex}-${reply.id}`]: e.target.value })); handleMentionDetect(e, `reply-${commentIndex}-${reply.id}`); }}
+                onKeyDown={(e) => { const handled = handleMentionKeyDown(e, `reply-${commentIndex}-${reply.id}`); if (!handled && e.key === 'Enter') { e.preventDefault(); handleReplyToReplySubmit(commentIndex, reply.id); } }}
+              />
+              <button className="ml-2 text-blue-500 text-xs cursor-pointer" onClick={() => handleReplyToReplySubmit(commentIndex, reply.id)} type="button">Send</button>
+              {mentionOpenFor === `reply-${commentIndex}-${reply.id}` && mentionOptions.length > 0 && (
+                <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-50 max-h-56 overflow-auto">
+                  {mentionOptions.map((u, idx) => (
+                    <div key={u.id} className={`flex items-center gap-2 px-2 py-1 cursor-pointer ${idx === mentionActiveIndex ? 'bg-gray-100' : ''}`} onMouseDown={(e) => { e.preventDefault(); insertMentionToken(u, `reply-${commentIndex}-${reply.id}`); }}>
+                      <img src={u.avatar} className="w-5 h-5 rounded-full object-cover" />
+                      <span className="text-xs">{u.name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* children (only show one more layer: reply of reply) */}
+          {level < 2 && renderReplies(reply?.children || [], commentIndex, level + 1)}
+        </div>
+      </div>
+    ));
+  };
+
   // Create a moment formatter that returns 4h/4d/40m/10s format
   const formatCompactTime = (timestamp) => {
     if (!timestamp) return "";
@@ -309,12 +577,32 @@ const PostList = ({ postsData }) => {
     return `${seconds}s`;
   };
 
-  const handleReplyToReply = (commentIndex, replyId) => {
+  const handleReplyToReply = (commentIndex, replyOrId) => {
+    const replyId = typeof replyOrId === 'object' ? replyOrId?.id : replyOrId;
     const inputKey = `reply-${commentIndex}-${replyId}`;
+    // Pre-fill with @ mention token and focus
+    let defaultValue = "";
+    if (typeof replyOrId === 'object') {
+      const name = `${replyOrId?.client_comment?.fname || ""} ${replyOrId?.client_comment?.last_name || ""}`.trim();
+      const id = replyOrId?.client_id;
+      if (name && id) {
+        defaultValue = `@[${name}](${id}) `;
+      } else if (name) {
+        defaultValue = `@${name} `;
+      }
+    }
     setModalReplyInputs(prev => ({ 
       ...prev, 
-      [inputKey]: prev[inputKey] === undefined ? "" : prev[inputKey]
+      [inputKey]: prev[inputKey] === undefined ? defaultValue : prev[inputKey]
     }));
+    setTimeout(() => {
+      const el = inputRefs.current[inputKey];
+      if (el) {
+        el.focus();
+        const caret = (el.value || '').length;
+        el.setSelectionRange(caret, caret);
+      }
+    }, 0);
   };
 
   const handleReplyToReplySubmit = (commentIndex, replyId) => {
@@ -322,10 +610,11 @@ const PostList = ({ postsData }) => {
     const reply = modalReplyInputs[inputKey];
     if (!reply) return;
     const comment = basicPostData?.comments?.[commentIndex];
-        dispatch(
+    const parentId = replyId === comment.id ? null : replyId;
+    dispatch(
       replyToComment({ 
         comment_id: comment.id, 
-        parent_id: "null", 
+        parent_id: parentId, 
         content: reply 
       })
     )
@@ -1256,7 +1545,7 @@ const reactionsImages = (item) => {
               </>
               :  
               <div className="text-gray-800 mb-4 break-words">
-                {basicPostData.message}
+                {renderContentWithMentions(basicPostData.message)}
               </div>
               
               }
@@ -1431,7 +1720,7 @@ const reactionsImages = (item) => {
                           </span> */}
                         </div>
                         <div className="text-gray-700 text-sm mt-1">
-                          {c.content}
+                          {renderContentWithMentions(c.content)}
                         </div>
                       </div>
                       {/* Like and Reply buttons */}
@@ -1580,20 +1869,24 @@ const reactionsImages = (item) => {
                       </div>
                       {/* Reply input */}
                       {modalReplyInputs[`reply-${i}-${c.id}`] !== undefined && (
-                        <div className="flex mt-2">
+                        <div className="flex mt-2 relative">
                           <input
                             type="text"
                             className="w-full focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-100 rounded-full px-2 py-1 text-xs"
                             placeholder="Write a reply..."
                             value={modalReplyInputs[`reply-${i}-${c.id}`] || ""}
+                            ref={(el) => (inputRefs.current[`reply-${i}-${c.id}`] = el)}
                             onChange={(e) =>
-                              setModalReplyInputs((prev) => ({
-                                ...prev,
-                                [`reply-${i}-${c.id}`]: e.target.value,
-                              }))
+                              { setModalReplyInputs((prev) => ({
+                                  ...prev,
+                                  [`reply-${i}-${c.id}`]: e.target.value,
+                                }));
+                                handleMentionDetect(e, `reply-${i}-${c.id}`);
+                              }
                             }
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
+                              const handled = handleMentionKeyDown(e, `reply-${i}-${c.id}`);
+                              if (!handled && e.key === 'Enter') {
                                 e.preventDefault();
                                 handleReplyToReplySubmit(i, c.id);
                               }
@@ -1606,6 +1899,23 @@ const reactionsImages = (item) => {
                           >
                             Send
                           </button>
+                          {mentionOpenFor === `reply-${i}-${c.id}` && mentionOptions.length > 0 && (
+                            <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-50 max-h-56 overflow-auto">
+                              {mentionOptions.map((u, idx) => (
+                                <div
+                                  key={u.id}
+                                  className={`flex items-center gap-2 px-2 py-1 cursor-pointer ${idx === mentionActiveIndex ? 'bg-gray-100' : ''}`}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    insertMentionToken(u, `reply-${i}-${c.id}`);
+                                  }}
+                                >
+                                  <img src={u.avatar} className="w-5 h-5 rounded-full object-cover" />
+                                  <span className="text-xs">{u.name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
                       {/* Display "View all replies" button if there are replies */}
@@ -1653,7 +1963,7 @@ const reactionsImages = (item) => {
                                 </span>
                               </span>
                               <span className="text-gray-700 text-xs">
-                                {reply.content || reply.text}
+                                {renderContentWithMentions(reply.content || reply.text)}
                               </span>
                             </div>
                             
@@ -1795,7 +2105,66 @@ const reactionsImages = (item) => {
                                   </div>
                                 )}
                               </button>
+                              <button
+                                className="hover:underline cursor-pointer"
+                                onClick={() => handleReplyToReply(i, reply)}
+                                type="button"
+                              >
+                                Reply
+                              </button>
                             </div>
+                            {/* Reply-to-reply input box */}
+                            {modalReplyInputs[`reply-${i}-${reply.id}`] !== undefined && (
+                              <div className="flex mt-2 ml-6 relative">
+                                <input
+                                  type="text"
+                                  className="w-full focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-100 rounded-full px-2 py-1 text-xs"
+                                  placeholder={`Reply to ${reply?.client_comment?.fname || ""}`}
+                                  value={modalReplyInputs[`reply-${i}-${reply.id}`] || ""}
+                                  ref={(el) => (inputRefs.current[`reply-${i}-${reply.id}`] = el)}
+                                  onChange={(e) => {
+                                    setModalReplyInputs((prev) => ({
+                                      ...prev,
+                                      [`reply-${i}-${reply.id}`]: e.target.value,
+                                    }));
+                                    handleMentionDetect(e, `reply-${i}-${reply.id}`);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    const handled = handleMentionKeyDown(e, `reply-${i}-${reply.id}`);
+                                    if (!handled && e.key === 'Enter') {
+                                      e.preventDefault();
+                                      handleReplyToReplySubmit(i, reply.id);
+                                    }
+                                  }}
+                                />
+                                <button
+                                  className="ml-2 text-blue-500 text-xs cursor-pointer"
+                                  onClick={() => handleReplyToReplySubmit(i, reply.id)}
+                                  type="button"
+                                >
+                                  Send
+                                </button>
+                                {mentionOpenFor === `reply-${i}-${reply.id}` && mentionOptions.length > 0 && (
+                                  <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-50 max-h-56 overflow-auto">
+                                    {mentionOptions.map((u, idx) => (
+                                      <div
+                                        key={u.id}
+                                        className={`flex items-center gap-2 px-2 py-1 cursor-pointer ${idx === mentionActiveIndex ? 'bg-gray-100' : ''}`}
+                                        onMouseDown={(e) => {
+                                          e.preventDefault();
+                                          insertMentionToken(u, `reply-${i}-${reply.id}`);
+                                        }}
+                                      >
+                                        <img src={u.avatar} className="w-5 h-5 rounded-full object-cover" />
+                                        <span className="text-xs">{u.name}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            {/* children replies */}
+                            {renderReplies(reply?.children || [], i, 2)}
                           </div>
                         </div>
                       ))}
@@ -1821,24 +2190,46 @@ const reactionsImages = (item) => {
                   }}
                 />
               </div>
-              <input
-                type="text"
-                placeholder="Write a comment..."
-                value={commentInputs[basicPostData.id] || ""}
-                onChange={(e) =>
-                  setCommentInputs({
-                    ...commentInputs,
-                    [basicPostData.id]: e.target.value,
-                  })
-                }
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleCommentSubmit(basicPostData.id);
-                  }
-                }}
-                className="flex-1 border rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-              />
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder="Write a comment..."
+                  value={commentInputs[basicPostData.id] || ""}
+                  ref={(el) => (inputRefs.current[`modal-comment-${basicPostData.id}`] = el)}
+                  onChange={(e) => {
+                    setCommentInputs({
+                      ...commentInputs,
+                      [basicPostData.id]: e.target.value,
+                    });
+                    handleMentionDetect(e, `modal-comment-${basicPostData.id}`);
+                  }}
+                  onKeyDown={(e) => {
+                    const handled = handleMentionKeyDown(e, `modal-comment-${basicPostData.id}`);
+                    if (!handled && e.key === 'Enter') {
+                      e.preventDefault();
+                      handleCommentSubmit(basicPostData.id);
+                    }
+                  }}
+                  className="w-full border rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                />
+                {mentionOpenFor === `modal-comment-${basicPostData.id}` && mentionOptions.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-50 max-h-56 overflow-auto">
+                    {mentionOptions.map((u, idx) => (
+                      <div
+                        key={u.id}
+                        className={`flex items-center gap-2 px-2 py-1 cursor-pointer ${idx === mentionActiveIndex ? 'bg-gray-100' : ''}`}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          insertMentionToken(u, `modal-comment-${basicPostData.id}`);
+                        }}
+                      >
+                        <img src={u.avatar} className="w-6 h-6 rounded-full object-cover" />
+                        <span className="text-sm">{u.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <button
                 onClick={() => handleCommentSubmit(basicPostData.id)}
                 className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-full text-sm font-semibold"
