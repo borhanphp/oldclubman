@@ -1,1 +1,43 @@
 @import "tailwindcss";
+
+
+
+/*
+  Custom CSS to create the connecting lines exactly like Facebook's.
+  We use a custom class and pseudo-elements for precision.
+*/
+.reply-line-container {
+    position: relative;
+    padding-left: 2.25rem; /* Indent the replies */
+  }
+  
+  /* Vertical line */
+  .reply-line-container::before {
+    content: '';
+    position: absolute;
+    left: 1.125rem; /* Center the line between the parent and child avatars */
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background-color: #d1d5db; /* Tailwind's gray-300 */
+  }
+  
+  /* Horizontal line for each reply */
+  .reply-line-container .comment-with-line::before {
+    content: '';
+    position: absolute;
+    left: 1.125rem;
+    top: 1.2rem; /* Position it horizontally with the top of the comment box */
+    width: 0.75rem; /* The length of the horizontal line */
+    height: 1px;
+    background-color: #d1d5db;
+  }
+  
+  /*
+    This class is used for the avatar's container to ensure the
+    vertical line has enough space and starts at the right spot.
+  */
+  .reply-avatar-wrapper {
+    position: relative;
+    z-index: 10;
+  }

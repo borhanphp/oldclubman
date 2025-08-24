@@ -42,6 +42,7 @@ import { useParams } from "next/navigation";
 import { getMyProfile, getUserProfile, getAllFollowers } from "@/views/settings/store";
 import toast from "react-hot-toast";
 import Image from "next/image";
+import CommentThread from "./CommentThread";
 
 const PostList = ({ postsData }) => {
   const { basicPostData } = useSelector(({ gathering }) => gathering);
@@ -472,7 +473,7 @@ const PostList = ({ postsData }) => {
   const renderReplies = (replies, commentIndex, level = 1, parentFirstReplyId = null) => {
     if (!Array.isArray(replies) || replies.length === 0) return null;
     return replies.map((reply, ri) => (
-      <div className="flex mt-2" style={{ marginLeft: `${level * 16}px` }} key={`${reply?.id || ri}-${level}`}>
+      <div className="relative flex mt-2" style={{ marginLeft: `${level * 16}px` }} key={`${reply?.id || ri}-${level}`}>
         <div className="w-6 h-6 rounded-full overflow-hidden mr-2 mt-1">
           <img
             src={
@@ -484,6 +485,8 @@ const PostList = ({ postsData }) => {
             }}
           />
         </div>
+        <div className="absolute border -left-13 top-[14px] w-10 h-px bg-gray-200"></div>
+
         <div className="flex flex-col w-full">
           <div className="bg-gray-50 w-full p-2 rounded-md flex flex-col">
             <span className="font-medium text-xs">
@@ -562,11 +565,11 @@ const PostList = ({ postsData }) => {
               )}
             </button>
 
-            {level < 2 && (
+           
               <button className="hover:underline cursor-pointer" onClick={() => handleReplyToReply(commentIndex, reply, parentFirstReplyId || reply?.id)} type="button">
                 Reply
               </button>
-            )}
+           
           </div>
 
           {/* input for replying to this reply */}
@@ -597,7 +600,7 @@ const PostList = ({ postsData }) => {
 
           {/* children (only show one more layer: reply of reply); API may name it `children` or `chidren` */}
           {level < 2 && renderReplies(
-            reply?.children || reply?.chidren || [],
+            reply?.children || [],
             commentIndex,
             level + 1,
             parentFirstReplyId || reply?.id
@@ -1761,6 +1764,13 @@ const reactionsImages = (item) => {
                 </button>
               </div>
 
+
+
+              {/* ****************************************************
+              comments start
+              ******************************************************** */}
+
+
               {/* Comments Section */}
               <h4 className="font-semibold mb-4 text-lg">Comments</h4>
               {basicPostData?.comments &&
@@ -1782,7 +1792,7 @@ const reactionsImages = (item) => {
                         />
                       </div>
                       {/* Thread line */}
-                      <div className="absolute left-[18px] top-[36px] bottom-0 w-px bg-gray-200"></div>
+                      <div className="absolute border h-100 left-[18px] top-[36px] bottom-0 w-px"></div>
                     </div>
                     <div className="flex-1">
                       <div className="bg-gray-100 p-3 rounded-2xl relative border border-gray-200">
@@ -2039,12 +2049,12 @@ const reactionsImages = (item) => {
                       })()?.map((reply, ri, repliesArray) => (
                         <div className="relative flex mt-2 ml-8" key={ri}>
                           {/* Horizontal line from parent comment profile to reply profile */}
-                          <div className="absolute -left-[50px] top-[14px] w-[18px] h-px bg-gray-200"></div>
+              <div className="absolute border -left-15 top-[14px] w-10 h-px bg-gray-200"></div>
                           {/* Vertical line connecting from parent profile down */}
                           {ri < repliesArray.length - 1 && (
                             <div className="absolute -left-[50px] top-[14px] bottom-0 w-px bg-gray-200"></div>
                           )}
-                          <div className="w-7 h-7 rounded-full overflow-hidden mr-2 mt-1">
+                          <div className="relative w-7 h-7 rounded-full overflow-hidden mr-2 mt-1">
                             <img
                               src={
                                 (reply?.client_comment?.image && `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${reply?.client_comment?.image?.startsWith('/') ? '' : '/'}${reply?.client_comment?.image}`) || "/common-avator.jpg"
@@ -2054,7 +2064,10 @@ const reactionsImages = (item) => {
                                 e.currentTarget.src = "/common-avator.jpg";
                               }}
                             />
+
                           </div>
+              <div className="absolute border left-[12px] top-[36px] bottom-0 w-px bg-gray-500"></div>
+
                           <div className="flex flex-col w-full">
                             <div className="bg-gray-50 w-full p-2 rounded-2xl border border-gray-200 flex flex-col">
                               <span className="font-medium text-xs">
@@ -2278,7 +2291,7 @@ const reactionsImages = (item) => {
                               </div>
                             )}
                             {/* children replies */}
-                            {renderReplies(reply?.children || reply?.chidren || [], i, 2)}
+                            {renderReplies(reply?.children || [], i, 2)}
                           </div>
                         </div>
                       ))}
@@ -2288,7 +2301,14 @@ const reactionsImages = (item) => {
               ) : (
                 <div className="text-gray-500 text-center py-8">No comments yet. Be the first to comment!</div>
               )}
+
+
+              
+              {/* **********************************************************
+            comments end
+            *************************************************************** */}
             </div>
+            
             {/* Comment input at bottom */}
             <div className="p-4 bg-gray-50 flex items-center gap-2">
               <div className="w-9 h-9 rounded-full overflow-hidden">
