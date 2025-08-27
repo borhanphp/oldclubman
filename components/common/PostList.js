@@ -126,8 +126,6 @@ const PostList = ({ postsData }) => {
 
   // Handle emoji picker toggle
   const toggleEmojiPicker = (inputKey) => {
-    console.log('Toggle emoji picker called with:', inputKey);
-    console.log('Current showEmojiPicker:', showEmojiPicker);
     setShowEmojiPicker(showEmojiPicker === inputKey ? null : inputKey);
   };
 
@@ -643,28 +641,159 @@ const PostList = ({ postsData }) => {
            
           </div>
 
-          {/* input for replying to this reply */}
+          {/* input for replying to this reply - Facebook Style */}
           {modalReplyInputs[`reply-${commentIndex}-${reply.id}`] !== undefined && (
-            <div className="flex mt-2 ml-6 relative">
-              <input
-                type="text"
-                className="w-full focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-100 rounded-full px-2 py-1 text-xs"
-                placeholder={`Reply to ${reply?.client_comment?.fname || ""}`}
-                value={modalReplyInputs[`reply-${commentIndex}-${reply.id}`] || ""}
-                ref={(el) => (inputRefs.current[`reply-${commentIndex}-${reply.id}`] = el)}
-                onChange={(e) => { setModalReplyInputs((prev) => ({ ...prev, [`reply-${commentIndex}-${reply.id}`]: e.target.value })); handleMentionDetect(e, `reply-${commentIndex}-${reply.id}`); }}
-                onKeyDown={(e) => { const handled = handleMentionKeyDown(e, `reply-${commentIndex}-${reply.id}`); if (!handled && e.key === 'Enter') { e.preventDefault(); handleReplyToReplySubmit(commentIndex, reply.id); } }}
+            <div className="flex items-start mt-3 ml-6">
+              {/* User Avatar */}
+              <img 
+                src={ profile?.client?.image ? 
+                  process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
+                  profile?.client?.image : "/common-avator.jpg"
+                }
+                className="w-8 h-8 rounded-full object-cover mr-2 flex-shrink-0"
+                alt="Your avatar"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "/common-avator.jpg";
+                }}
               />
-              <button className="ml-2 text-blue-500 text-xs cursor-pointer" onClick={() => handleReplyToReplySubmit(commentIndex, reply.id)} type="button">Send</button>
-              {mentionOpenFor === `reply-${commentIndex}-${reply.id}` && mentionOptions.length > 0 && (
-                <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-50 max-h-56 overflow-auto">
-                  {mentionOptions.map((u, idx) => (
-                    <div key={u.id} className={`flex items-center gap-2 px-2 py-1 cursor-pointer ${idx === mentionActiveIndex ? 'bg-gray-100' : ''}`} onMouseDown={(e) => { e.preventDefault(); insertMentionToken(u, `reply-${commentIndex}-${reply.id}`); }}>
-                      <img src={u.avatar} className="w-5 h-5 rounded-full object-cover" />
-                      <span className="text-xs">{u.name}</span>
+              
+              {/* Input Container */}
+              <div className="flex-1 bg-gray-100 rounded-2xl border border-gray-200 hover:bg-gray-50 focus-within:bg-white focus-within:border-blue-500 transition-all duration-200">
+                <div className="flex items-center px-3 py-2">
+                  <input
+                    type="text"
+                    className="flex-1 bg-transparent focus:outline-none text-sm placeholder-gray-500"
+                    placeholder={`Reply to ${reply?.client_comment?.fname || ""}...`}
+                    value={modalReplyInputs[`reply-${commentIndex}-${reply.id}`] || ""}
+                    ref={(el) => (inputRefs.current[`reply-${commentIndex}-${reply.id}`] = el)}
+                    onChange={(e) => { setModalReplyInputs((prev) => ({ ...prev, [`reply-${commentIndex}-${reply.id}`]: e.target.value })); handleMentionDetect(e, `reply-${commentIndex}-${reply.id}`); }}
+                    onKeyDown={(e) => { const handled = handleMentionKeyDown(e, `reply-${commentIndex}-${reply.id}`); if (!handled && e.key === 'Enter') { e.preventDefault(); handleReplyToReplySubmit(commentIndex, reply.id); } }}
+                  />
+                  
+                  {/* Facebook-style action buttons */}
+                  <div className="flex items-center gap-1 ml-2 relative">
+                    {/* Emoji button */}
+                    <div className="relative">
+                      <button
+                        type="button"
+                        className={`w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700 ${showEmojiPicker === `reply-${commentIndex}-${reply.id}` ? 'bg-blue-200' : ''}`}
+                        title="Choose an emoji"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toggleEmojiPicker(`reply-${commentIndex}-${reply.id}`);
+                        }}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                          <path d="M8 1C4.1 1 1 4.1 1 8s3.1 7 7 7 7-3.1 7-7-3.1-7-7-7zM5.5 6.5c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm5 0c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm1.5 4c-.4 1.2-1.5 2-2.8 2.1-.1 0-.1 0-.2 0-.1 0-.1 0-.2 0-1.3-.1-2.4-.9-2.8-2.1-.1-.3.1-.5.4-.5h4.8c.3 0 .5.2.4.5-.4z"/>
+                        </svg>
+                      </button>
+                      
+                      {/* Emoji Picker */}
+                      {showEmojiPicker === `reply-${commentIndex}-${reply.id}` && (
+                        <div className="emoji-picker-container absolute bottom-full right-0 mb-2 bg-white border rounded-lg shadow-xl z-50 w-80 max-h-96 overflow-hidden">
+                          {/* Category tabs */}
+                          <div className="flex border-b bg-gray-50 p-2 gap-1">
+                            {Object.keys(emojiCategories).map((category) => (
+                              <button
+                                key={category}
+                                className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                                  activeEmojiCategory === category 
+                                    ? 'bg-blue-500 text-white' 
+                                    : 'bg-white text-gray-600 hover:bg-gray-100'
+                                }`}
+                                onClick={() => setActiveEmojiCategory(category)}
+                              >
+                                {emojiCategories[category].name.split(' ')[0]}
+                              </button>
+                            ))}
+                          </div>
+                          
+                          {/* Emoji grid */}
+                          <div className="p-3 max-h-64 overflow-y-auto">
+                            <div className="grid grid-cols-8 gap-1">
+                              {emojiCategories[activeEmojiCategory].emojis.map((emoji, idx) => (
+                                <button
+                                  key={idx}
+                                  className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-lg"
+                                  onClick={() => handleEmojiSelect(emoji, `reply-${commentIndex}-${reply.id}`)}
+                                  title={emoji}
+                                >
+                                  {emoji}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  ))}
+                    
+                    {/* Camera/Photo button */}
+                    <button
+                      type="button"
+                      className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
+                      title="Attach a photo or video"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M14.5 2h-13C.7 2 0 2.7 0 3.5v9c0 .8.7 1.5 1.5 1.5h13c.8 0 1.5-.7 1.5-1.5v-9c0-.8-.7-1.5-1.5-1.5zM5 4.5c.8 0 1.5.7 1.5 1.5S5.8 7.5 5 7.5 3.5 6.8 3.5 6 4.2 4.5 5 4.5zM13 12H3l2.5-3 1.5 2 3-4 3 5z"/>
+                      </svg>
+                    </button>
+                    
+                    {/* GIF button */}
+                    <button
+                      type="button"
+                      className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
+                      title="Choose a GIF"
+                    >
+                      <span className="text-xs font-bold">GIF</span>
+                    </button>
+                    
+                    {/* Sticker button */}
+                    <button
+                      type="button"
+                      className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
+                      title="Choose a sticker"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M8 1.5c-3.6 0-6.5 2.9-6.5 6.5 0 1.4.4 2.7 1.2 3.8l-.9 2.6c-.1.2 0 .4.2.5.1 0 .2.1.3.1.1 0 .2 0 .2-.1l2.6-.9c1.1.8 2.4 1.2 3.9 1.2 3.6 0 6.5-2.9 6.5-6.5S11.6 1.5 8 1.5zm-2 5.5c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1zm4 0c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1zm1 3c-.3.8-1 1.4-1.8 1.7-.2.1-.4 0-.5-.2-.1-.2 0-.4.2-.5.6-.2 1.1-.6 1.3-1.2.1-.2.3-.3.5-.2s.3.3.3.4z"/>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
+                
+                {/* Mention dropdown */}
+                {mentionOpenFor === `reply-${commentIndex}-${reply.id}` && mentionOptions.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-50 max-h-56 overflow-auto">
+                    {mentionOptions.map((u, idx) => (
+                      <div
+                        key={u.id}
+                        className={`flex items-center gap-2 px-2 py-1 cursor-pointer ${idx === mentionActiveIndex ? 'bg-gray-100' : ''}`}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          insertMentionToken(u, `reply-${commentIndex}-${reply.id}`);
+                        }}
+                      >
+                        <img src={u.avatar} className="w-5 h-5 rounded-full object-cover" />
+                        <span className="text-xs">{u.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              {/* Send button - only show when there's text */}
+              {modalReplyInputs[`reply-${commentIndex}-${reply.id}`]?.trim() && (
+                <button
+                  className="ml-2 w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors flex-shrink-0"
+                  onClick={() => handleReplyToReplySubmit(commentIndex, reply.id)}
+                  type="button"
+                  title="Send"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                  </svg>
+                </button>
               )}
             </div>
           )}
@@ -2095,12 +2224,11 @@ const reactionsImages = (item) => {
                                     type="button"
                                     className={`w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700 ${showEmojiPicker === `reply-${i}-${c.id}` ? 'bg-blue-200' : ''}`}
                                     title="Choose an emoji"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      console.log('Emoji button clicked!');
-                                      toggleEmojiPicker(`reply-${i}-${c.id}`);
-                                    }}
+                                                                            onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          toggleEmojiPicker(`reply-${i}-${c.id}`);
+                                        }}
                                   >
                                     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                                       <path d="M8 1C4.1 1 1 4.1 1 8s3.1 7 7 7 7-3.1 7-7-3.1-7-7-7zM5.5 6.5c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm5 0c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm1.5 4c-.4 1.2-1.5 2-2.8 2.1-.1 0-.1 0-.2 0-.1 0-.1 0-.2 0-1.3-.1-2.4-.9-2.8-2.1-.1-.3.1-.5.4-.5h4.8c.3 0 .5.2.4.5-.4z"/>
@@ -2432,53 +2560,171 @@ const reactionsImages = (item) => {
                                 See translation
                               </button>
                             </div>
-                            {/* Reply-to-reply input box */}
+                            {/* Reply-to-reply input box - Facebook Style */}
                             {modalReplyInputs[`reply-${i}-${reply.id}`] !== undefined && (
-                              <div className="flex mt-2 ml-6 relative">
-                                <input
-                                  type="text"
-                                  className="w-full focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-100 rounded-full px-3 py-2 text-sm"
-                                  placeholder={`Reply to ${reply?.client_comment?.fname || ""}`}
-                                  value={modalReplyInputs[`reply-${i}-${reply.id}`] || ""}
-                                  ref={(el) => (inputRefs.current[`reply-${i}-${reply.id}`] = el)}
-                                  onChange={(e) => {
-                                    setModalReplyInputs((prev) => ({
-                                      ...prev,
-                                      [`reply-${i}-${reply.id}`]: e.target.value,
-                                    }));
-                                    handleMentionDetect(e, `reply-${i}-${reply.id}`);
-                                  }}
-                                  onKeyDown={(e) => {
-                                    const handled = handleMentionKeyDown(e, `reply-${i}-${reply.id}`);
-                                    if (!handled && e.key === 'Enter') {
-                                      e.preventDefault();
-                                      handleReplyToReplySubmit(i, reply.id);
-                                    }
+                              <div className="flex items-start mt-3 ml-6">
+                                {/* User Avatar */}
+                                <img 
+                                  src={ profile?.client?.image ? 
+                                    process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
+                                    profile?.client?.image : "/common-avator.jpg"
+                                  }
+                                  className="w-8 h-8 rounded-full object-cover mr-2 flex-shrink-0"
+                                  alt="Your avatar"
+                                  onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = "/common-avator.jpg";
                                   }}
                                 />
-                                <button
-                                  className="ml-2 text-blue-500 text-xs cursor-pointer"
-                                  onClick={() => handleReplyToReplySubmit(i, reply.id)}
-                                  type="button"
-                                >
-                                  Send
-                                </button>
-                                {mentionOpenFor === `reply-${i}-${reply.id}` && mentionOptions.length > 0 && (
-                                  <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-50 max-h-56 overflow-auto">
-                                    {mentionOptions.map((u, idx) => (
-                                      <div
-                                        key={u.id}
-                                        className={`flex items-center gap-2 px-2 py-1 cursor-pointer ${idx === mentionActiveIndex ? 'bg-gray-100' : ''}`}
-                                        onMouseDown={(e) => {
+                                
+                                {/* Input Container */}
+                                <div className="flex-1 bg-gray-100 rounded-2xl border border-gray-200 hover:bg-gray-50 focus-within:bg-white focus-within:border-blue-500 transition-all duration-200">
+                                  <div className="flex items-center px-3 py-2">
+                                    <input
+                                      type="text"
+                                      className="flex-1 bg-transparent focus:outline-none text-sm placeholder-gray-500"
+                                      placeholder={`Reply to ${reply?.client_comment?.fname || ""}...`}
+                                      value={modalReplyInputs[`reply-${i}-${reply.id}`] || ""}
+                                      ref={(el) => (inputRefs.current[`reply-${i}-${reply.id}`] = el)}
+                                      onChange={(e) => {
+                                        setModalReplyInputs((prev) => ({
+                                          ...prev,
+                                          [`reply-${i}-${reply.id}`]: e.target.value,
+                                        }));
+                                        handleMentionDetect(e, `reply-${i}-${reply.id}`);
+                                      }}
+                                      onKeyDown={(e) => {
+                                        const handled = handleMentionKeyDown(e, `reply-${i}-${reply.id}`);
+                                        if (!handled && e.key === 'Enter') {
                                           e.preventDefault();
-                                          insertMentionToken(u, `reply-${i}-${reply.id}`);
-                                        }}
-                                      >
-                                        <img src={u.avatar} className="w-5 h-5 rounded-full object-cover" />
-                                        <span className="text-xs">{u.name}</span>
+                                          handleReplyToReplySubmit(i, reply.id);
+                                        }
+                                      }}
+                                    />
+                                    
+                                    {/* Facebook-style action buttons */}
+                                    <div className="flex items-center gap-1 ml-2 relative">
+                                      {/* Emoji button */}
+                                      <div className="relative">
+                                        <button
+                                          type="button"
+                                          className={`w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700 ${showEmojiPicker === `reply-${i}-${reply.id}` ? 'bg-blue-200' : ''}`}
+                                          title="Choose an emoji"
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            toggleEmojiPicker(`reply-${i}-${reply.id}`);
+                                          }}
+                                        >
+                                          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                            <path d="M8 1C4.1 1 1 4.1 1 8s3.1 7 7 7 7-3.1 7-7-3.1-7-7-7zM5.5 6.5c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm5 0c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm1.5 4c-.4 1.2-1.5 2-2.8 2.1-.1 0-.1 0-.2 0-.1 0-.1 0-.2 0-1.3-.1-2.4-.9-2.8-2.1-.1-.3.1-.5.4-.5h4.8c.3 0 .5.2.4.5-.4z"/>
+                                          </svg>
+                                        </button>
+                                        
+                                        {/* Emoji Picker */}
+                                        {showEmojiPicker === `reply-${i}-${reply.id}` && (
+                                          <div className="emoji-picker-container absolute bottom-full right-0 mb-2 bg-white border rounded-lg shadow-xl z-50 w-80 max-h-96 overflow-hidden">
+                                            {/* Category tabs */}
+                                            <div className="flex border-b bg-gray-50 p-2 gap-1">
+                                              {Object.keys(emojiCategories).map((category) => (
+                                                <button
+                                                  key={category}
+                                                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                                                    activeEmojiCategory === category 
+                                                      ? 'bg-blue-500 text-white' 
+                                                      : 'bg-white text-gray-600 hover:bg-gray-100'
+                                                  }`}
+                                                  onClick={() => setActiveEmojiCategory(category)}
+                                                >
+                                                  {emojiCategories[category].name.split(' ')[0]}
+                                                </button>
+                                              ))}
+                                            </div>
+                                            
+                                            {/* Emoji grid */}
+                                            <div className="p-3 max-h-64 overflow-y-auto">
+                                              <div className="grid grid-cols-8 gap-1">
+                                                {emojiCategories[activeEmojiCategory].emojis.map((emoji, idx) => (
+                                                  <button
+                                                    key={idx}
+                                                    className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-lg"
+                                                    onClick={() => handleEmojiSelect(emoji, `reply-${i}-${reply.id}`)}
+                                                    title={emoji}
+                                                  >
+                                                    {emoji}
+                                                  </button>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        )}
                                       </div>
-                                    ))}
+                                      
+                                      {/* Camera/Photo button */}
+                                      <button
+                                        type="button"
+                                        className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
+                                        title="Attach a photo or video"
+                                      >
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                          <path d="M14.5 2h-13C.7 2 0 2.7 0 3.5v9c0 .8.7 1.5 1.5 1.5h13c.8 0 1.5-.7 1.5-1.5v-9c0-.8-.7-1.5-1.5-1.5zM5 4.5c.8 0 1.5.7 1.5 1.5S5.8 7.5 5 7.5 3.5 6.8 3.5 6 4.2 4.5 5 4.5zM13 12H3l2.5-3 1.5 2 3-4 3 5z"/>
+                                        </svg>
+                                      </button>
+                                      
+                                      {/* GIF button */}
+                                      <button
+                                        type="button"
+                                        className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
+                                        title="Choose a GIF"
+                                      >
+                                        <span className="text-xs font-bold">GIF</span>
+                                      </button>
+                                      
+                                      {/* Sticker button */}
+                                      <button
+                                        type="button"
+                                        className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
+                                        title="Choose a sticker"
+                                      >
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                          <path d="M8 1.5c-3.6 0-6.5 2.9-6.5 6.5 0 1.4.4 2.7 1.2 3.8l-.9 2.6c-.1.2 0 .4.2.5.1 0 .2.1.3.1.1 0 .2 0 .2-.1l2.6-.9c1.1.8 2.4 1.2 3.9 1.2 3.6 0 6.5-2.9 6.5-6.5S11.6 1.5 8 1.5zm-2 5.5c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1zm4 0c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1zm1 3c-.3.8-1 1.4-1.8 1.7-.2.1-.4 0-.5-.2-.1-.2 0-.4.2-.5.6-.2 1.1-.6 1.3-1.2.1-.2.3-.3.5-.2s.3.3.3.4z"/>
+                                        </svg>
+                                      </button>
+                                    </div>
                                   </div>
+                                  
+                                  {/* Mention dropdown */}
+                                  {mentionOpenFor === `reply-${i}-${reply.id}` && mentionOptions.length > 0 && (
+                                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-50 max-h-56 overflow-auto">
+                                      {mentionOptions.map((u, idx) => (
+                                        <div
+                                          key={u.id}
+                                          className={`flex items-center gap-2 px-2 py-1 cursor-pointer ${idx === mentionActiveIndex ? 'bg-gray-100' : ''}`}
+                                          onMouseDown={(e) => {
+                                            e.preventDefault();
+                                            insertMentionToken(u, `reply-${i}-${reply.id}`);
+                                          }}
+                                        >
+                                          <img src={u.avatar} className="w-5 h-5 rounded-full object-cover" />
+                                          <span className="text-xs">{u.name}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {/* Send button - only show when there's text */}
+                                {modalReplyInputs[`reply-${i}-${reply.id}`]?.trim() && (
+                                  <button
+                                    className="ml-2 w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors flex-shrink-0"
+                                    onClick={() => handleReplyToReplySubmit(i, reply.id)}
+                                    type="button"
+                                    title="Send"
+                                  >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                      <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                                    </svg>
+                                  </button>
                                 )}
                               </div>
                             )}
