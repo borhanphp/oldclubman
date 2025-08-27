@@ -73,6 +73,77 @@ const PostList = ({ postsData }) => {
   const [previewImage, setPreviewImage] = useState(null);
   const [previewImages, setPreviewImages] = useState([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(null); // stores the input key for which emoji picker is open
+  const [activeEmojiCategory, setActiveEmojiCategory] = useState('smileys');
+
+  // Emoji categories and data
+  const emojiCategories = {
+    smileys: {
+      name: 'Smileys & People',
+      emojis: ['😀', '😁', '😂', '🤣', '😃', '😄', '😅', '😆', '😉', '😊', '😋', '😎', '😍', '😘', '🥰', '😗', '😙', '😚', '☺️', '🙂', '🤗', '🤩', '🤔', '🫡', '😐', '😑', '😶', '🙄', '😏', '😣', '😥', '😮', '🤐', '😯', '😪', '😫', '🥱', '😴', '😌', '😛', '😜', '😝', '🤤', '😒', '😓', '😔', '😕', '🙃', '🫠', '🤑', '😲', '☹️', '🙁', '😖', '😞', '😟', '😤', '😢', '😭', '😦', '😧', '😨', '😩', '🤯', '😬', '😰', '😱', '🥵', '🥶', '😳', '🤪', '😵', '🥴', '😠', '😡', '🤬', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '😇', '🥳', '🥺', '🤠', '🤡', '🤥', '🤫', '🤭', '🧐', '🤓', '😈', '👿', '👹', '👺', '💀', '👻', '👽', '🤖', '💩']
+    },
+    animals: {
+      name: 'Animals & Nature',
+      emojis: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐽', '🐸', '🐵', '🙈', '🙉', '🙊', '🐒', '🐔', '🐧', '🐦', '🐤', '🐣', '🐥', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🦟', '🦗', '🕷️', '🦂', '🐢', '🐍', '🦎', '🦖', '🦕', '🐙', '🦑', '🦐', '🦞', '🦀', '🐡', '🐠', '🐟', '🐬', '🐳', '🐋', '🦈', '🐊', '🐅', '🐆', '🦓', '🦍', '🦧', '🐘', '🦛', '🦏', '🐪', '🐫', '🦒', '🦘', '🐃', '🐂', '🐄', '🐎', '🐖', '🐏', '🐑', '🦙', '🐐', '🦌', '🐕', '🐩', '🦮', '🐕‍🦺', '🐈', '🐈‍⬛', '🐓', '🦃', '🦚', '🦜', '🦢', '🦩', '🕊️', '🐇', '🦝', '🦨', '🦡', '🦫']
+    },
+    food: {
+      name: 'Food & Drink',
+      emojis: ['🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐', '🍈', '🍒', '🍑', '🥭', '🍍', '🥥', '🥝', '🍅', '🍆', '🥑', '🥦', '🥬', '🥒', '🌶️', '🫑', '🌽', '🥕', '🫒', '🧄', '🧅', '🥔', '🍠', '🥐', '🥯', '🍞', '🥖', '🥨', '🧀', '🥚', '🍳', '🧈', '🥞', '🧇', '🥓', '🥩', '🍗', '🍖', '🦴', '🌭', '🍔', '🍟', '🍕', '🥪', '🥙', '🧆', '🌮', '🌯', '🫔', '🥗', '🥘', '🫕', '🥫', '🍝', '🍜', '🍲', '🍛', '🍣', '🍱', '🥟', '🦪', '🍤', '🍙', '🍚', '🍘', '🍥', '🥠', '🥮', '🍢', '🍡', '🍧', '🍨', '🍦', '🥧', '🧁', '🍰', '🎂', '🍮', '🍭', '🍬', '🍫', '🍿', '🍩', '🍪', '🌰', '🥜', '🍯']
+    },
+    activities: {
+      name: 'Activities',
+      emojis: ['⚽', '🏀', '🏈', '⚾', '🥎', '🎾', '🏐', '🏉', '🥏', '🎱', '🪀', '🏓', '🏸', '🏒', '🏑', '🥍', '🏏', '🪃', '🥅', '⛳', '🪁', '🏹', '🎣', '🤿', '🥊', '🥋', '🎽', '🛹', '🛷', '⛸️', '🥌', '🎿', '⛷️', '🏂', '🪂', '🏋️‍♀️', '🏋️', '🏋️‍♂️', '🤼‍♀️', '🤼', '🤼‍♂️', '🤸‍♀️', '🤸', '🤸‍♂️', '⛹️‍♀️', '⛹️', '⛹️‍♂️', '🤺', '🤾‍♀️', '🤾', '🤾‍♂️', '🏌️‍♀️', '🏌️', '🏌️‍♂️', '🏇', '🧘‍♀️', '🧘', '🧘‍♂️', '🏄‍♀️', '🏄', '🏄‍♂️', '🏊‍♀️', '🏊', '🏊‍♂️', '🤽‍♀️', '🤽', '🤽‍♂️', '🚣‍♀️', '🚣', '🚣‍♂️', '🧗‍♀️', '🧗', '🧗‍♂️', '🚵‍♀️', '🚵', '🚵‍♂️', '🚴‍♀️', '🚴', '🚴‍♂️', '🏆', '🥇', '🥈', '🥉', '🏅', '🎖️', '🏵️', '🎗️']
+    },
+    objects: {
+      name: 'Objects',
+      emojis: ['⌚', '📱', '📲', '💻', '⌨️', '🖥️', '🖨️', '🖱️', '🖲️', '🕹️', '🗜️', '💽', '💾', '💿', '📀', '📼', '📷', '📸', '📹', '🎥', '📽️', '🎞️', '📞', '☎️', '📟', '📠', '📺', '📻', '🎙️', '🎚️', '🎛️', '🧭', '⏱️', '⏲️', '⏰', '🕰️', '⏳', '⌛', '📡', '🔋', '🔌', '💡', '🔦', '🕯️', '🪔', '🧯', '🛢️', '💸', '💵', '💴', '💶', '💷', '🪙', '💰', '💳', '💎', '⚖️', '🪜', '🧰', '🔧', '🔨', '⚒️', '🛠️', '⛏️', '🔩', '⚙️', '🪚', '🔫', '🪓', '🔪', '🗡️', '⚔️', '🛡️', '🚬', '⚰️', '🪦', '⚱️', '🏺', '🔮', '📿', '🧿', '💈', '⚗️', '🔭', '🔬', '🕳️', '🩹', '🩺', '💊', '💉', '🩸', '🧬', '🦠', '🧫', '🧪', '🌡️', '🧹', '🪠', '🧽', '🧴', '🧷', '🧼', '🪥', '🪒', '🧻', '🚽', '🚿', '🛁', '🪤', '🪣', '🔑', '🗝️']
+    },
+    symbols: {
+      name: 'Symbols',
+      emojis: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉️', '☸️', '✡️', '🔯', '🕎', '☯️', '☦️', '🛐', '⛎', '♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓', '🆔', '⚛️', '🉑', '☢️', '☣️', '📴', '📳', '🈶', '🈚', '🈸', '🈺', '🈷️', '✴️', '🆚', '💮', '🉐', '㊙️', '㊗️', '🈴', '🈵', '🈹', '🈲', '🅰️', '🅱️', '🆎', '🆑', '🅾️', '🆘', '❌', '⭕', '🛑', '⛔', '📛', '🚫', '💯', '💢', '♨️', '🚷', '🚯', '🚳', '🚱', '🔞', '📵', '🚭', '❗', '❕', '❓', '❔', '‼️', '⁉️', '🔅', '🔆', '〽️', '⚠️', '🚸', '🔱', '⚜️', '🔰', '♻️', '✅', '🈯', '💹', '❇️', '✳️', '❎', '🌐', '💠']
+    }
+  };
+
+  // Handle emoji selection
+  const handleEmojiSelect = (emoji, inputKey) => {
+    if (inputKey.startsWith("reply-")) {
+      const currentValue = modalReplyInputs[inputKey] || '';
+      setModalReplyInputs(prev => ({
+        ...prev,
+        [inputKey]: currentValue + emoji
+      }));
+    } else {
+      const parts = inputKey.split("-");
+      const postId = parts[parts.length - 1];
+      const currentValue = commentInputs[postId] || '';
+      setCommentInputs(prev => ({
+        ...prev,
+        [postId]: currentValue + emoji
+      }));
+    }
+    setShowEmojiPicker(null); // Close emoji picker
+  };
+
+  // Handle emoji picker toggle
+  const toggleEmojiPicker = (inputKey) => {
+    console.log('Toggle emoji picker called with:', inputKey);
+    console.log('Current showEmojiPicker:', showEmojiPicker);
+    setShowEmojiPicker(showEmojiPicker === inputKey ? null : inputKey);
+  };
+
+  // Close emoji picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showEmojiPicker && !event.target.closest('.emoji-picker-container')) {
+        setShowEmojiPicker(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showEmojiPicker]);
 
   
 
@@ -485,7 +556,7 @@ const PostList = ({ postsData }) => {
             }}
           />
         </div>
-        <div className="absolute border -left-13 top-[14px] w-10 h-px bg-gray-200"></div>
+        {/* <div className="absolute border -left-13 top-[14px] w-10 h-px bg-gray-200"></div> */}
 
         <div className="flex flex-col w-full">
           <div className="bg-gray-50 w-full p-2 rounded-md flex flex-col">
@@ -1792,7 +1863,7 @@ const reactionsImages = (item) => {
                         />
                       </div>
                       {/* Thread line */}
-                      <div className="absolute border h-100 left-[18px] top-[36px] bottom-0 w-px"></div>
+        {/* <div className="absolute border h-100 left-[18px] top-[36px] bottom-0 w-px"></div> */}
                     </div>
                     <div className="flex-1">
                       <div className="bg-gray-100 p-3 rounded-2xl relative border border-gray-200">
@@ -1973,13 +2044,30 @@ const reactionsImages = (item) => {
                           See translation
                         </button>
                       </div>
-                      {/* Reply input */}
+                      {/* Reply input - Facebook Style */}
                       {modalReplyInputs[`reply-${i}-${c.id}`] !== undefined && (
-                        <div className="flex mt-2 relative ml-2">
+                        <div className="flex items-start mt-3 ml-2">
+                          {/* User Avatar */}
+                          <img 
+                            src={ profile?.client?.image ? 
+                              process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
+                              profile?.client?.image : "/common-avator.jpg"
+                            }
+                            className="w-8 h-8 rounded-full object-cover mr-2 flex-shrink-0"
+                            alt="Your avatar"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = "/common-avator.jpg";
+                            }}
+                          />
+                          
+                          {/* Input Container */}
+                          <div className="flex-1 bg-gray-100 rounded-2xl border border-gray-200 hover:bg-gray-50 focus-within:bg-white focus-within:border-blue-500 transition-all duration-200">
+                            <div className="flex items-center px-3 py-2">
                           <input
                             type="text"
-                            className="w-full focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-100 rounded-full px-3 py-2 text-sm"
-                            placeholder={`Reply to ${c?.client_comment?.fname || ""}`}
+                                className="flex-1 bg-transparent focus:outline-none text-sm placeholder-gray-500"
+                                placeholder={`Reply to ${c?.client_comment?.fname || ""}...`}
                             value={modalReplyInputs[`reply-${i}-${c.id}`] || ""}
                             ref={(el) => (inputRefs.current[`reply-${i}-${c.id}`] = el)}
                             onChange={(e) =>
@@ -1998,13 +2086,100 @@ const reactionsImages = (item) => {
                               }
                             }}
                           />
-                          <button
-                            className="ml-2 text-blue-500 text-xs cursor-pointer"
-                            onClick={() => handleReplyToReplySubmit(i, c.id)}
-                            type="button"
-                          >
-                            Send
-                          </button>
+                              
+                                                            {/* Facebook-style action buttons */}
+                              <div className="flex items-center gap-1 ml-2 relative">
+                                {/* Emoji button */}
+                                <div className="relative">
+                                  <button
+                                    type="button"
+                                    className={`w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700 ${showEmojiPicker === `reply-${i}-${c.id}` ? 'bg-blue-200' : ''}`}
+                                    title="Choose an emoji"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      console.log('Emoji button clicked!');
+                                      toggleEmojiPicker(`reply-${i}-${c.id}`);
+                                    }}
+                                  >
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                      <path d="M8 1C4.1 1 1 4.1 1 8s3.1 7 7 7 7-3.1 7-7-3.1-7-7-7zM5.5 6.5c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm5 0c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm1.5 4c-.4 1.2-1.5 2-2.8 2.1-.1 0-.1 0-.2 0-.1 0-.1 0-.2 0-1.3-.1-2.4-.9-2.8-2.1-.1-.3.1-.5.4-.5h4.8c.3 0 .5.2.4.5-.4z"/>
+                                    </svg>
+                                  </button>
+                                  
+                                  {/* Emoji Picker - positioned relative to emoji button */}
+                                  {showEmojiPicker === `reply-${i}-${c.id}` && (
+                                    <div className="emoji-picker-container absolute bottom-full right-0 mb-2 bg-white border rounded-lg shadow-xl z-50 w-80 max-h-96 overflow-hidden">
+                                      {/* Category tabs */}
+                                      <div className="flex border-b bg-gray-50 p-2 gap-1">
+                                        {Object.keys(emojiCategories).map((category) => (
+                                          <button
+                                            key={category}
+                                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                                              activeEmojiCategory === category 
+                                                ? 'bg-blue-500 text-white' 
+                                                : 'bg-white text-gray-600 hover:bg-gray-100'
+                                            }`}
+                                            onClick={() => setActiveEmojiCategory(category)}
+                                          >
+                                            {emojiCategories[category].name.split(' ')[0]}
+                                          </button>
+                                        ))}
+                                      </div>
+                                      
+                                      {/* Emoji grid */}
+                                      <div className="p-3 max-h-64 overflow-y-auto">
+                                        <div className="grid grid-cols-8 gap-1">
+                                          {emojiCategories[activeEmojiCategory].emojis.map((emoji, idx) => (
+                                            <button
+                                              key={idx}
+                                              className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-lg"
+                                              onClick={() => handleEmojiSelect(emoji, `reply-${i}-${c.id}`)}
+                                              title={emoji}
+                                            >
+                                              {emoji}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {/* Camera/Photo button */}
+                                <button
+                                  type="button"
+                                  className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
+                                  title="Attach a photo or video"
+                                >
+                                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                    <path d="M14.5 2h-13C.7 2 0 2.7 0 3.5v9c0 .8.7 1.5 1.5 1.5h13c.8 0 1.5-.7 1.5-1.5v-9c0-.8-.7-1.5-1.5-1.5zM5 4.5c.8 0 1.5.7 1.5 1.5S5.8 7.5 5 7.5 3.5 6.8 3.5 6 4.2 4.5 5 4.5zM13 12H3l2.5-3 1.5 2 3-4 3 5z"/>
+                                  </svg>
+                                </button>
+                                
+                                {/* GIF button */}
+                                <button
+                                  type="button"
+                                  className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
+                                  title="Choose a GIF"
+                                >
+                                  <span className="text-xs font-bold">GIF</span>
+                                </button>
+                                
+                                {/* Sticker button */}
+                                <button
+                                  type="button"
+                                  className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
+                                  title="Choose a sticker"
+                                >
+                                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                    <path d="M8 1.5c-3.6 0-6.5 2.9-6.5 6.5 0 1.4.4 2.7 1.2 3.8l-.9 2.6c-.1.2 0 .4.2.5.1 0 .2.1.3.1.1 0 .2 0 .2-.1l2.6-.9c1.1.8 2.4 1.2 3.9 1.2 3.6 0 6.5-2.9 6.5-6.5S11.6 1.5 8 1.5zm-2 5.5c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1zm4 0c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1zm1 3c-.3.8-1 1.4-1.8 1.7-.2.1-.4 0-.5-.2-.1-.2 0-.4.2-.5.6-.2 1.1-.6 1.3-1.2.1-.2.3-.3.5-.2s.3.3.3.4z"/>
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                            
+                            {/* Mention dropdown */}
                           {mentionOpenFor === `reply-${i}-${c.id}` && mentionOptions.length > 0 && (
                             <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-50 max-h-56 overflow-auto">
                               {mentionOptions.map((u, idx) => (
@@ -2021,6 +2196,23 @@ const reactionsImages = (item) => {
                                 </div>
                               ))}
                             </div>
+                            )}
+                            
+
+                          </div>
+                          
+                          {/* Send button - only show when there's text */}
+                          {modalReplyInputs[`reply-${i}-${c.id}`]?.trim() && (
+                            <button
+                              className="ml-2 w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors flex-shrink-0"
+                              onClick={() => handleReplyToReplySubmit(i, c.id)}
+                              type="button"
+                              title="Send"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                              </svg>
+                            </button>
                           )}
                         </div>
                       )}
@@ -2049,11 +2241,11 @@ const reactionsImages = (item) => {
                       })()?.map((reply, ri, repliesArray) => (
                         <div className="relative flex mt-2 ml-8" key={ri}>
                           {/* Horizontal line from parent comment profile to reply profile */}
-              <div className="absolute border -left-15 top-[14px] w-10 h-px bg-gray-200"></div>
+              {/* <div className="absolute border -left-15 top-[14px] w-10 h-px bg-gray-200"></div> */}
                           {/* Vertical line connecting from parent profile down */}
-                          {ri < repliesArray.length - 1 && (
+                          {/* {ri < repliesArray.length - 1 && (
                             <div className="absolute -left-[50px] top-[14px] bottom-0 w-px bg-gray-200"></div>
-                          )}
+                          )} */}
                           <div className="relative w-7 h-7 rounded-full overflow-hidden mr-2 mt-1">
                             <img
                               src={
@@ -2066,7 +2258,7 @@ const reactionsImages = (item) => {
                             />
 
                           </div>
-              <div className="absolute border left-[12px] top-[36px] bottom-0 w-px bg-gray-500"></div>
+              {/* <div className="absolute border left-[12px] top-[36px] bottom-0 w-px bg-gray-500"></div> */}
 
                           <div className="flex flex-col w-full">
                             <div className="bg-gray-50 w-full p-2 rounded-2xl border border-gray-200 flex flex-col">
