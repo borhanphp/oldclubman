@@ -65,6 +65,8 @@ const PostList = ({ postsData }) => {
   const [showCommentsModal, setShowCommentsModal] = useState(false);
   const [modalCommentLikes, setModalCommentLikes] = useState({});
   const [modalReplyInputs, setModalReplyInputs] = useState({});
+  // Track selected images for each reply input in modal (keyed by inputKey)
+  const [modalReplyImages, setModalReplyImages] = useState({});
   const [modalReplies, setModalReplies] = useState({});
   const [loadingReplies, setLoadingReplies] = useState({});
   const [showShareModal, setShowShareModal] = useState(false);
@@ -280,6 +282,7 @@ const PostList = ({ postsData }) => {
   const [mentionOptions, setMentionOptions] = useState([]);
   const [mentionActiveIndex, setMentionActiveIndex] = useState(0);
   const inputRefs = useRef({});
+  const fileInputRefs = useRef({});
   const mentionMetaRef = useRef({}); // { [inputKey]: { anchor: number } }
 
   const buildMentionCandidates = (query = "") => {
@@ -498,21 +501,41 @@ const PostList = ({ postsData }) => {
   };
 
   const handleModalReplySubmit = (commentIndex) => {
-    
-    const reply = modalReplyInputs[commentIndex];
-    console.log('called', reply)
-    if (!reply) return;
+    const inputKey = `${commentIndex}`;
+    const reply = modalReplyInputs[inputKey];
+    const hasImage = Array.isArray(modalReplyImages[inputKey]) && modalReplyImages[inputKey].length > 0;
+    if (!reply && !hasImage) return;
 
     // Get the comment object from basicPostData
     const comment = basicPostData?.comments?.[commentIndex];
 
+    // Build payload; use FormData when image present
+    let payload;
+    if (hasImage) {
+      const fd = new FormData();
+      fd.append("comment_id", comment.id);
+      fd.append("parent_id", "null");
+      if (reply) fd.append("content", reply);
+      (modalReplyImages[inputKey] || []).forEach((img, idx) => {
+        if (img?.file) fd.append(`files[${idx}]`, img.file);
+      });
+      payload = fd;
+    } else {
+      payload = { comment_id: comment.id, parent_id: "null", content: reply };
+    }
+
     // Call API to save reply
-    dispatch(
-      replyToComment({ comment_id: comment.id, parent_id: "null", content: reply })
-    )
+    dispatch(replyToComment(payload))
       .then(() => {
         dispatch(getPostById(basicPostData.id));
-        setModalReplyInputs((prev) => ({ ...prev, [commentIndex]: "" }));
+        setModalReplyInputs((prev) => ({ ...prev, [inputKey]: "" }));
+        setModalReplyImages((prev) => {
+          const copy = { ...prev };
+          const arr = copy[inputKey] || [];
+          arr.forEach((img) => { if (img?.previewUrl) URL.revokeObjectURL(img.previewUrl); });
+          delete copy[inputKey];
+          return copy;
+        });
         handleViewAllReplies(comment?.id, commentIndex);
       })
       .catch((error) => {
@@ -749,6 +772,32 @@ const PostList = ({ postsData }) => {
                       <span className="text-xs font-bold">GIF</span>
                     </button>
                     
+                    {/* Camera/Photo button */}
+                    <>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        style={{ display: 'none' }}
+                        ref={(el) => (fileInputRefs.current[`reply-${commentIndex}-${reply.id}`] = el)}
+                        onChange={(e) => handleReplyImageChange(e, `reply-${commentIndex}-${reply.id}`)}
+                      />
+                      <button
+                        type="button"
+                        className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
+                        title="Attach a photo"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleReplyImageClick(`reply-${commentIndex}-${reply.id}`);
+                        }}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                          <path d="M14.5 2h-13C.7 2 0 2.7 0 3.5v9c0 .8.7 1.5 1.5 1.5h13c.8 0 1.5-.7 1.5-1.5v-9c0-.8-.7-1.5-1.5-1.5zM5 4.5c.8 0 1.5.7 1.5 1.5S5.8 7.5 5 7.5 3.5 6.8 3.5 6 4.2 4.5 5 4.5zM13 12H3l2.5-3 1.5 2 3-4 3 5z"/>
+                        </svg>
+                      </button>
+                    </>
+
                     {/* Sticker button */}
                     <button
                       type="button"
@@ -761,7 +810,31 @@ const PostList = ({ postsData }) => {
                     </button>
                   </div>
                 </div>
-                
+
+                {/* Selected image previews (reply to reply) under input */}
+                {Array.isArray(modalReplyImages[`reply-${commentIndex}-${reply.id}`]) && modalReplyImages[`reply-${commentIndex}-${reply.id}`].length > 0 && (
+                  <div className="px-3 pb-2">
+                    <div className="flex flex-wrap gap-2">
+                      {modalReplyImages[`reply-${commentIndex}-${reply.id}`].map((img, idx) => (
+                        <div key={img.id || idx} className="inline-flex items-center gap-2 bg-white rounded-md border p-1">
+                          <img
+                            src={img.previewUrl}
+                            className="w-12 h-12 object-cover rounded"
+                            alt="preview"
+                          />
+                          <button
+                            type="button"
+                            className="text-xs text-red-600 hover:underline"
+                            onClick={() => clearReplyImage(`reply-${commentIndex}-${reply.id}`, idx)}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Mention dropdown */}
                 {mentionOpenFor === `reply-${commentIndex}-${reply.id}` && mentionOptions.length > 0 && (
                   <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-50 max-h-56 overflow-auto">
@@ -782,8 +855,8 @@ const PostList = ({ postsData }) => {
                 )}
               </div>
               
-              {/* Send button - only show when there's text */}
-              {modalReplyInputs[`reply-${commentIndex}-${reply.id}`]?.trim() && (
+              {/* Send button - show when there's text or image */}
+              {(modalReplyInputs[`reply-${commentIndex}-${reply.id}`]?.trim() || (Array.isArray(modalReplyImages[`reply-${commentIndex}-${reply.id}`]) && modalReplyImages[`reply-${commentIndex}-${reply.id}`].length > 0)) && (
                 <button
                   className="ml-2 w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors flex-shrink-0"
                   onClick={() => handleReplyToReplySubmit(commentIndex, reply.id)}
@@ -861,26 +934,78 @@ const PostList = ({ postsData }) => {
   const handleReplyToReplySubmit = (commentIndex, replyId) => {
     const inputKey = `reply-${commentIndex}-${replyId}`;
     const reply = modalReplyInputs[inputKey];
-    if (!reply) return;
+    const hasImage = Array.isArray(modalReplyImages[inputKey]) && modalReplyImages[inputKey].length > 0;
+    if (!reply && !hasImage) return;
     const comment = basicPostData?.comments?.[commentIndex];
     // If replying within a second-level thread, keep it as first-level reply-of-a-reply
     const firstParent = modalReplyInputs[`first-parent-${commentIndex}`];
     const parentId = firstParent || (replyId === comment.id ? null : replyId);
-    dispatch(
-      replyToComment({ 
-        comment_id: comment.id, 
-        parent_id: parentId, 
-        content: reply 
-      })
-    )
+    // Build payload; use FormData when image present
+    let payload;
+    if (hasImage) {
+      const fd = new FormData();
+      fd.append("comment_id", comment.id);
+      if (parentId !== null && parentId !== undefined) fd.append("parent_id", parentId);
+      if (reply) fd.append("content", reply);
+      (modalReplyImages[inputKey] || []).forEach((img, idx) => {
+        if (img?.file) fd.append(`files[${idx}]`, img.file);
+      });
+      payload = fd;
+    } else {
+      payload = { comment_id: comment.id, parent_id: parentId, content: reply };
+    }
+    dispatch(replyToComment(payload))
       .then(() => {
         dispatch(getPostById(basicPostData.id));
         setModalReplyInputs(prev => ({ ...prev, [inputKey]: "" }));
+        setModalReplyImages((prev) => {
+          const copy = { ...prev };
+          const arr = copy[inputKey] || [];
+          arr.forEach((img) => { if (img?.previewUrl) URL.revokeObjectURL(img.previewUrl); });
+          delete copy[inputKey];
+          return copy;
+        });
         handleViewAllReplies(comment?.id, commentIndex);
       })
       .catch((error) => {
         console.error("Failed to submit reply to reply:", error);
       });
+  };
+
+  // Image attach handlers for reply inputs in modal
+  const handleReplyImageClick = (inputKey) => {
+    const ref = fileInputRefs.current[inputKey];
+    if (ref && ref.click) ref.click();
+  };
+
+  const handleReplyImageChange = (e, inputKey) => {
+    const files = Array.from(e?.target?.files || []);
+    if (!files.length) return;
+    const newItems = files.map((file) => ({ file, previewUrl: URL.createObjectURL(file), id: `${Date.now()}-${Math.random()}` }));
+    setModalReplyImages((prev) => ({
+      ...prev,
+      [inputKey]: [ ...(prev[inputKey] || []), ...newItems ],
+    }));
+    const ref = fileInputRefs.current[inputKey];
+    if (ref) ref.value = "";
+  };
+
+  const clearReplyImage = (inputKey, index = null) => {
+    setModalReplyImages((prev) => {
+      const copy = { ...prev };
+      const arr = copy[inputKey] || [];
+      if (index === null) {
+        arr.forEach((img) => { if (img?.previewUrl) URL.revokeObjectURL(img.previewUrl); });
+        delete copy[inputKey];
+      } else {
+        if (arr[index]?.previewUrl) URL.revokeObjectURL(arr[index].previewUrl);
+        copy[inputKey] = arr.filter((_, i) => i !== index);
+        if (copy[inputKey].length === 0) delete copy[inputKey];
+      }
+      return copy;
+    });
+    const ref = fileInputRefs.current[inputKey];
+    if (ref) ref.value = "";
   };
 
   const handleShare = (post_id) => {
@@ -2275,15 +2400,30 @@ const reactionsImages = (item) => {
                                 </div>
                                 
                                 {/* Camera/Photo button */}
-                                <button
-                                  type="button"
-                                  className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
-                                  title="Attach a photo or video"
-                                >
-                                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                                    <path d="M14.5 2h-13C.7 2 0 2.7 0 3.5v9c0 .8.7 1.5 1.5 1.5h13c.8 0 1.5-.7 1.5-1.5v-9c0-.8-.7-1.5-1.5-1.5zM5 4.5c.8 0 1.5.7 1.5 1.5S5.8 7.5 5 7.5 3.5 6.8 3.5 6 4.2 4.5 5 4.5zM13 12H3l2.5-3 1.5 2 3-4 3 5z"/>
-                                  </svg>
-                                </button>
+                                <>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    style={{ display: 'none' }}
+                                    ref={(el) => (fileInputRefs.current[`reply-${i}-${c.id}`] = el)}
+                                    onChange={(e) => handleReplyImageChange(e, `reply-${i}-${c.id}`)}
+                                  />
+                                  <button
+                                    type="button"
+                                    className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
+                                    title="Attach a photo"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleReplyImageClick(`reply-${i}-${c.id}`);
+                                    }}
+                                  >
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                      <path d="M14.5 2h-13C.7 2 0 2.7 0 3.5v9c0 .8.7 1.5 1.5 1.5h13c.8 0 1.5-.7 1.5-1.5v-9c0-.8-.7-1.5-1.5-1.5zM5 4.5c.8 0 1.5.7 1.5 1.5S5.8 7.5 5 7.5 3.5 6.8 3.5 6 4.2 4.5 5 4.5zM13 12H3l2.5-3 1.5 2 3-4 3 5z"/>
+                                    </svg>
+                                  </button>
+                                </>
                                 
                                 {/* GIF button */}
                                 <button
@@ -2306,6 +2446,30 @@ const reactionsImages = (item) => {
                                 </button>
                               </div>
                             </div>
+
+                            {/* Selected image previews (reply to comment) under input */}
+                            {Array.isArray(modalReplyImages[`reply-${i}-${c.id}`]) && modalReplyImages[`reply-${i}-${c.id}`].length > 0 && (
+                              <div className="px-3 pb-2">
+                                <div className="flex flex-wrap gap-2">
+                                  {modalReplyImages[`reply-${i}-${c.id}`].map((img, idx) => (
+                                    <div key={img.id || idx} className="inline-flex items-center gap-2 bg-white rounded-md border p-1">
+                                      <img
+                                        src={img.previewUrl}
+                                        className="w-12 h-12 object-cover rounded"
+                                        alt="preview"
+                                      />
+                                      <button
+                                        type="button"
+                                        className="text-xs text-red-600 hover:underline"
+                                        onClick={() => clearReplyImage(`reply-${i}-${c.id}`, idx)}
+                                      >
+                                        Remove
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                             
                             {/* Mention dropdown */}
                           {mentionOpenFor === `reply-${i}-${c.id}` && mentionOptions.length > 0 && (
@@ -2329,8 +2493,8 @@ const reactionsImages = (item) => {
 
                           </div>
                           
-                          {/* Send button - only show when there's text */}
-                          {modalReplyInputs[`reply-${i}-${c.id}`]?.trim() && (
+                          {/* Send button - show when there's text or image */}
+                          {(modalReplyInputs[`reply-${i}-${c.id}`]?.trim() || (Array.isArray(modalReplyImages[`reply-${i}-${c.id}`]) && modalReplyImages[`reply-${i}-${c.id}`].length > 0)) && (
                             <button
                               className="ml-2 w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors flex-shrink-0"
                               onClick={() => handleReplyToReplySubmit(i, c.id)}
@@ -2407,6 +2571,10 @@ const reactionsImages = (item) => {
                               </span>
                               <span className="text-gray-700 text-xs">
                                 {renderContentWithMentions(reply.content || reply.text)}
+                              {reply?.files?.length > 0 ? (
+                              <img src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + reply?.files[0]?.file_path}/>
+
+                              ) : ""}
                               </span>
                             </div>
                             
@@ -2602,7 +2770,8 @@ const reactionsImages = (item) => {
                                       }}
                                     />
                                     
-                                    {/* Facebook-style action buttons */}
+                                    {/* Facebook-style action buttons */
+                                    }
                                     <div className="flex items-center gap-1 ml-2 relative">
                                       {/* Emoji button */}
                                       <div className="relative">
@@ -2661,15 +2830,30 @@ const reactionsImages = (item) => {
                                       </div>
                                       
                                       {/* Camera/Photo button */}
-                                      <button
-                                        type="button"
-                                        className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
-                                        title="Attach a photo or video"
-                                      >
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                                          <path d="M14.5 2h-13C.7 2 0 2.7 0 3.5v9c0 .8.7 1.5 1.5 1.5h13c.8 0 1.5-.7 1.5-1.5v-9c0-.8-.7-1.5-1.5-1.5zM5 4.5c.8 0 1.5.7 1.5 1.5S5.8 7.5 5 7.5 3.5 6.8 3.5 6 4.2 4.5 5 4.5zM13 12H3l2.5-3 1.5 2 3-4 3 5z"/>
-                                        </svg>
-                                      </button>
+                                      <>
+                                        <input
+                                          type="file"
+                                          accept="image/*"
+                                          multiple
+                                          style={{ display: 'none' }}
+                                          ref={(el) => (fileInputRefs.current[`reply-${i}-${reply.id}`] = el)}
+                                          onChange={(e) => handleReplyImageChange(e, `reply-${i}-${reply.id}`)}
+                                        />
+                                        <button
+                                          type="button"
+                                          className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
+                                          title="Attach a photo"
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleReplyImageClick(`reply-${i}-${reply.id}`);
+                                          }}
+                                        >
+                                          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                            <path d="M14.5 2h-13C.7 2 0 2.7 0 3.5v9c0 .8.7 1.5 1.5 1.5h13c.8 0 1.5-.7 1.5-1.5v-9c0-.8-.7-1.5-1.5-1.5zM5 4.5c.8 0 1.5.7 1.5 1.5S5.8 7.5 5 7.5 3.5 6.8 3.5 6 4.2 4.5 5 4.5zM13 12H3l2.5-3 1.5 2 3-4 3 5z"/>
+                                          </svg>
+                                        </button>
+                                      </>
                                       
                                       {/* GIF button */}
                                       <button
@@ -2692,7 +2876,31 @@ const reactionsImages = (item) => {
                                       </button>
                                     </div>
                                   </div>
-                                  
+
+                                {/* Selected image previews (threaded reply) under input */}
+                                  {Array.isArray(modalReplyImages[`reply-${i}-${reply.id}`]) && modalReplyImages[`reply-${i}-${reply.id}`].length > 0 && (
+                                    <div className="px-3 pb-2">
+                                      <div className="flex flex-wrap gap-2">
+                                        {modalReplyImages[`reply-${i}-${reply.id}`].map((img, idx) => (
+                                          <div key={img.id || idx} className="inline-flex items-center gap-2 bg-white rounded-md border p-1">
+                                            <img
+                                              src={img.previewUrl}
+                                              className="w-12 h-12 object-cover rounded"
+                                              alt="preview"
+                                            />
+                                            <button
+                                              type="button"
+                                              className="text-xs text-red-600 hover:underline"
+                                              onClick={() => clearReplyImage(`reply-${i}-${reply.id}`, idx)}
+                                            >
+                                              Remove
+                                            </button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
                                   {/* Mention dropdown */}
                                   {mentionOpenFor === `reply-${i}-${reply.id}` && mentionOptions.length > 0 && (
                                     <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-50 max-h-56 overflow-auto">
@@ -2713,8 +2921,10 @@ const reactionsImages = (item) => {
                                   )}
                                 </div>
                                 
-                                {/* Send button - only show when there's text */}
-                                {modalReplyInputs[`reply-${i}-${reply.id}`]?.trim() && (
+                                
+
+                                {/* Send button - show when there's text or image */}
+                                {(modalReplyInputs[`reply-${i}-${reply.id}`]?.trim() || (Array.isArray(modalReplyImages[`reply-${i}-${reply.id}`]) && modalReplyImages[`reply-${i}-${reply.id}`].length > 0)) && (
                                   <button
                                     className="ml-2 w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors flex-shrink-0"
                                     onClick={() => handleReplyToReplySubmit(i, reply.id)}
