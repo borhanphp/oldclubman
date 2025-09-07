@@ -47,7 +47,7 @@ const PostModal = () => {
     if (isPostModalOpen && id && basicPostData?.files?.length > 0) {
       const previews = basicPostData?.files?.map(file => ({
         id: file.id || (Date.now() + Math.random().toString(36).substring(2, 9)),
-        src: `${process.env.NEXT_PUBLIC_FILE_PATH}/${file.file_path}`,
+        src: `${process.env.NEXT_PUBLIC_FILE_PATH}/post/${file.file_path}`,
         file_type: file?.file_type
       }));
       setFilePreviews(previews);
@@ -231,7 +231,7 @@ const PostModal = () => {
           <div className="flex items-start mb-4">
             <div className="w-10 h-10 rounded-full overflow-hidden bg-blue-400 flex items-center justify-center text-white mr-3 flex-shrink-0">
               <img 
-                src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + profile?.client?.image || "/common-avator.jpg"}
+                src={profile?.client?.image ? (process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + profile?.client?.image) : "/common-avator.jpg"}
                 onError={(e) => {
                   e.target.onerror = null;
                   e.target.src = "/common-avator.jpg";

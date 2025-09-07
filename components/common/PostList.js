@@ -148,18 +148,42 @@ const PostList = ({ postsData }) => {
   
 
   const handleCommentSubmit = (postId) => {
+    const inputKey = `modal-comment-${postId}`;
     const comment = commentInputs[postId];
-    if (!comment) return;
-    dispatch(storeComments({ post_id: postId, content: comment })).then(
-      (res) => {
-        dispatch(getGathering());
-        dispatch(getPosts());
-        dispatch(getPostById(postId));
-      }
-    );
+    const images = modalReplyImages[inputKey] || [];
+    const hasImage = Array.isArray(images) && images.length > 0;
+    if (!comment && !hasImage) return;
 
-    // Clear input
-    setCommentInputs((prev) => ({ ...prev, [postId]: "" }));
+    let payload;
+    if (hasImage) {
+      const fd = new FormData();
+      fd.append("post_id", postId);
+      if (comment) fd.append("content", comment);
+      images.forEach((img, idx) => {
+        if (img?.file) fd.append(`files[${idx}]`, img.file);
+      });
+      payload = fd;
+    } else {
+      payload = { post_id: postId, content: comment };
+    }
+
+    dispatch(storeComments(payload)).then(() => {
+      dispatch(getGathering());
+      dispatch(getPosts());
+      dispatch(getPostById(postId));
+
+      // Clear input and any attached images
+      setCommentInputs((prev) => ({ ...prev, [postId]: "" }));
+      setModalReplyImages((prev) => {
+        const copy = { ...prev };
+        const arr = copy[inputKey] || [];
+        arr.forEach((img) => { if (img?.previewUrl) URL.revokeObjectURL(img.previewUrl); });
+        delete copy[inputKey];
+        return copy;
+      });
+      const ref = fileInputRefs.current[inputKey];
+      if (ref) ref.value = "";
+    });
   };
 
   const handleCommentLike = (postId, commentIndex) => {
@@ -590,7 +614,16 @@ const PostList = ({ postsData }) => {
               </span>
             </span>
             <span className="text-gray-700 text-xs">
-              {renderContentWithMentions(reply?.content || reply?.text)}
+              {renderContentWithMentions(reply?.content)}
+              {reply?.files?.length > 0 ? (
+                <img 
+                  src={process.env.NEXT_PUBLIC_FILE_PATH + "/reply/" + reply?.files[0]?.file_path}
+                  width={100}
+                  height={100}
+                  className="mt-2"
+                  />
+
+                ) : ""}
             </span>
           </div>
 
@@ -752,16 +785,7 @@ const PostList = ({ postsData }) => {
                       )}
                     </div>
                     
-                    {/* Camera/Photo button */}
-                    <button
-                      type="button"
-                      className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
-                      title="Attach a photo or video"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                        <path d="M14.5 2h-13C.7 2 0 2.7 0 3.5v9c0 .8.7 1.5 1.5 1.5h13c.8 0 1.5-.7 1.5-1.5v-9c0-.8-.7-1.5-1.5-1.5zM5 4.5c.8 0 1.5.7 1.5 1.5S5.8 7.5 5 7.5 3.5 6.8 3.5 6 4.2 4.5 5 4.5zM13 12H3l2.5-3 1.5 2 3-4 3 5z"/>
-                      </svg>
-                    </button>
+                  
                     
                     {/* GIF button */}
                     <button
@@ -913,14 +937,19 @@ const PostList = ({ postsData }) => {
         defaultValue = `@${name} `;
       }
     }
-    setModalReplyInputs(prev => ({ 
-      ...prev, 
-      [inputKey]: prev[inputKey] === undefined ? defaultValue : prev[inputKey]
-    }));
-    // remember the first-level reply id for this thread
-    if (firstLevelReplyId) {
-      setModalReplyInputs(prev => ({ ...prev, [`first-parent-${commentIndex}`]: firstLevelReplyId }));
-    }
+    // Keep only the targeted reply box open; close others
+    setModalReplyInputs(prev => {
+      const next = {};
+      if (firstLevelReplyId) {
+        next[`first-parent-${commentIndex}`] = firstLevelReplyId;
+      } else if (prev[`first-parent-${commentIndex}`] !== undefined) {
+        next[`first-parent-${commentIndex}`] = prev[`first-parent-${commentIndex}`];
+      }
+      next[inputKey] = prev[inputKey] === undefined ? defaultValue : prev[inputKey];
+      return next;
+    });
+    // Also retain images only for the active reply input
+    setModalReplyImages(prev => (prev && prev[inputKey] ? { [inputKey]: prev[inputKey] } : {}));
     setTimeout(() => {
       const el = inputRefs.current[inputKey];
       if (el) {
@@ -1447,18 +1476,22 @@ const reactionsImages = (item) => {
                     // Determine if file is a video by extension
                     const filePath = file.file_path || file.path || file.url || file.file_url || '';
                     const isVideo = /\.(mp4|webm|ogg|mov|avi)$/i.test(filePath);
-                    const src =
-                      (process.env.NEXT_PUBLIC_FILE_PATH ? process.env.NEXT_PUBLIC_FILE_PATH + "/" : "/uploads/") + filePath;
+                    // Build robust base + prefix
+                    const base = process.env.NEXT_PUBLIC_FILE_PATH || '';
+                    const prefix = base ? `${base.replace(/\/+$/, '')}/post/` : '/uploads/post/';
+                    const cleanPath = String(filePath || '').replace(/^\/+/, '');
+                    const src = `${prefix}${cleanPath}`;
                     
                     // Prepare all images for preview
-                    const allImages = item.files
+                    const allImages = (item.files || [])
                       .filter(f => {
                         const fPath = f.file_path || f.path || f.url || f.file_url || '';
                         return !/\.(mp4|webm|ogg|mov|avi)$/i.test(fPath);
                       })
                       .map(f => {
                         const fPath = f.file_path || f.path || f.url || f.file_url || '';
-                        return (process.env.NEXT_PUBLIC_FILE_PATH ? process.env.NEXT_PUBLIC_FILE_PATH + "/" : "/uploads/") + fPath;
+                        const cPath = String(fPath || '').replace(/^\/+/, '');
+                        return `${prefix}${cPath}`;
                       });
                     
                     const imageIndex = allImages.indexOf(src);
@@ -1969,17 +2002,22 @@ const reactionsImages = (item) => {
                     // Determine if file is a video by extension
                     const filePath = file.file_path || file.path || file.url || file.file_url || '';
                     const isVideo = /\.(mp4|webm|ogg|mov|avi)$/i.test(filePath);
-                    const src = process.env.NEXT_PUBLIC_FILE_PATH + "/" + filePath;
+                    // Build robust base + prefix
+                    const base = process.env.NEXT_PUBLIC_FILE_PATH || '';
+                    const prefix = base ? `${base.replace(/\/+$/, '')}/post/` : '/uploads/post/';
+                    const cleanPath = String(filePath || '').replace(/^\/+/, '');
+                    const src = `${prefix}${cleanPath}`;
                     
                     // Prepare all images for preview
-                    const allImages = basicPostData.files
+                    const allImages = (basicPostData.files || [])
                       .filter(f => {
                         const fPath = f.file_path || f.path || f.url || f.file_url || '';
                         return !/\.(mp4|webm|ogg|mov|avi)$/i.test(fPath);
                       })
                       .map(f => {
                         const fPath = f.file_path || f.path || f.url || f.file_url || '';
-                        return process.env.NEXT_PUBLIC_FILE_PATH + "/" + fPath;
+                        const cPath = String(fPath || '').replace(/^\/+/, '');
+                        return `${prefix}${cPath}`;
                       });
                     
                     const imageIndex = allImages.indexOf(src);
@@ -2298,7 +2336,7 @@ const reactionsImages = (item) => {
                           See translation
                         </button>
                       </div>
-                      {/* Reply input - Facebook Style */}
+                      {/* Reply input of comment */}
                       {modalReplyInputs[`reply-${i}-${c.id}`] !== undefined && (
                         <div className="flex items-start mt-3 ml-2">
                           {/* User Avatar */}
@@ -2523,7 +2561,9 @@ const reactionsImages = (item) => {
                         </div>
                       )}
 
-                      {/* Display replies (filter out replies that are children to avoid duplication) */}
+                      {/************************************
+                      111111111 reply Display replies of comments (filter out replies that are children to avoid duplication) 
+                       *********************************************************************/}
                       {(() => {
                         const repliesForComment = modalReplies[i] || [];
                         const childIds = new Set();
@@ -2570,9 +2610,14 @@ const reactionsImages = (item) => {
                                 </span>
                               </span>
                               <span className="text-gray-700 text-xs">
-                                {renderContentWithMentions(reply.content || reply.text)}
+                                {renderContentWithMentions(reply.content)}
                               {reply?.files?.length > 0 ? (
-                              <img src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + reply?.files[0]?.file_path}/>
+                              <img 
+                                src={process.env.NEXT_PUBLIC_FILE_PATH + "/reply/" + reply?.files[0]?.file_path}
+                                width={100}
+                                height={100}
+                                className="mt-2"
+                                />
 
                               ) : ""}
                               </span>
@@ -2752,7 +2797,7 @@ const reactionsImages = (item) => {
                                       type="text"
                                       className="flex-1 bg-transparent focus:outline-none text-sm placeholder-gray-500"
                                       placeholder={`Reply to ${reply?.client_comment?.fname || ""}...`}
-                                      value={modalReplyInputs[`reply-${i}-${reply.id}`] || ""}
+                                      value={modalReplyInputs[`reply-${i}`] || ""}
                                       ref={(el) => (inputRefs.current[`reply-${i}-${reply.id}`] = el)}
                                       onChange={(e) => {
                                         setModalReplyInputs((prev) => ({
@@ -2973,7 +3018,28 @@ const reactionsImages = (item) => {
                 />
               </div>
               <div className="relative flex-1">
-                                  <input
+                {/* Combined input container so images appear inside */}
+                <div className="w-full border rounded-full px-2 py-1 text-sm bg-white flex items-center gap-2 focus-within:ring-2 focus-within:ring-blue-400">
+                  {/* Thumbnails inside the input */}
+                  {Array.isArray(modalReplyImages[`modal-comment-${basicPostData.id}`]) && modalReplyImages[`modal-comment-${basicPostData.id}`].length > 0 && (
+                    <div className="flex items-center gap-1 max-w-32 overflow-x-auto">
+                      {modalReplyImages[`modal-comment-${basicPostData.id}`].map((img, idx) => (
+                        <div key={img.id || idx} className="relative w-7 h-7 flex-shrink-0">
+                          <img src={img.previewUrl} className="w-7 h-7 object-cover rounded" alt="preview" />
+                          <button
+                            type="button"
+                            className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white text-[10px] leading-4 text-red-600 border"
+                            onClick={() => clearReplyImage(`modal-comment-${basicPostData.id}`, idx)}
+                            title="Remove"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <input
                     type="text"
                     placeholder="Write a comment..."
                     value={commentInputs[basicPostData.id] || ""}
@@ -2992,8 +3058,110 @@ const reactionsImages = (item) => {
                         handleCommentSubmit(basicPostData.id);
                       }
                     }}
-                    className="w-full border rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                    className="flex-1 bg-transparent outline-none border-0 px-2 py-1"
                   />
+
+                  {/* Inline action buttons (emoji, GIF, photo, sticker) */}
+                  <div className="flex items-center gap-1">
+                    {/* Emoji button */}
+                    <button
+                      type="button"
+                      className={`w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700 ${showEmojiPicker === `modal-comment-${basicPostData.id}` ? 'bg-blue-200' : ''}`}
+                      title="Choose an emoji"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleEmojiPicker(`modal-comment-${basicPostData.id}`);
+                      }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M8 1C4.1 1 1 4.1 1 8s3.1 7 7 7 7-3.1 7-7-3.1-7-7-7zM5.5 6.5c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm5 0c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm1.5 4c-.4 1.2-1.5 2-2.8 2.1-.1 0-.1 0-.2 0-.1 0-.1 0-.2 0-1.3-.1-2.4-.9-2.8-2.1-.1-.3.1-.5.4-.5h4.8c.3 0 .5.2.4.5-.4z"/>
+                      </svg>
+                    </button>
+
+                    {/* GIF button (placeholder) */}
+                    <button
+                      type="button"
+                      className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
+                      title="Choose a GIF"
+                    >
+                      <span className="text-xs font-bold">GIF</span>
+                    </button>
+
+                    {/* Photo attach */}
+                    <>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        style={{ display: 'none' }}
+                        ref={(el) => (fileInputRefs.current[`modal-comment-${basicPostData.id}`] = el)}
+                        onChange={(e) => handleReplyImageChange(e, `modal-comment-${basicPostData.id}`)}
+                      />
+                      <button
+                        type="button"
+                        className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
+                        title="Attach a photo"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleReplyImageClick(`modal-comment-${basicPostData.id}`);
+                        }}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                          <path d="M14.5 2h-13C.7 2 0 2.7 0 3.5v9c0 .8.7 1.5 1.5 1.5h13c.8 0 1.5-.7 1.5-1.5v-9c0-.8-.7-1.5-1.5-1.5zM5 4.5c.8 0 1.5.7 1.5 1.5S5.8 7.5 5 7.5 3.5 6.8 3.5 6 4.2 4.5 5 4.5zM13 12H3l2.5-3 1.5 2 3-4 3 5z"/>
+                        </svg>
+                      </button>
+                    </>
+
+                    {/* Sticker button (placeholder) */}
+                    <button
+                      type="button"
+                      className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
+                      title="Choose a sticker"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M8 1.5c-3.6 0-6.5 2.9-6.5 6.5 0 1.4.4 2.7 1.2 3.8l-.9 2.6c-.1.2 0 .4.2.5.1 0 .2.1.3.1.1 0 .2 0 .2-.1l2.6-.9c1.1.8 2.4 1.2 3.9 1.2 3.6 0 6.5-2.9 6.5-6.5S11.6 1.5 8 1.5zm-2 5.5c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1zm4 0c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1zm1 3c-.3.8-1 1.4-1.8 1.7-.2.1-.4 0-.5-.2-.1-.2 0-.4.2-.5.6-.2 1.1-.6 1.3-1.2.1-.2.3-.3.5-.2s.3.3.3.4z"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Emoji Picker for comment */}
+                  {showEmojiPicker === `modal-comment-${basicPostData.id}` && (
+                    <div className="emoji-picker-container absolute bottom-full right-0 mb-2 bg-white border rounded-lg shadow-xl z-50 w-80 max-h-96 overflow-hidden">
+                      <div className="flex border-b bg-gray-50 p-2 gap-1">
+                        {Object.keys(emojiCategories).map((category) => (
+                          <button
+                            key={category}
+                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                              activeEmojiCategory === category 
+                                ? 'bg-blue-500 text-white' 
+                                : 'bg-white text-gray-600 hover:bg-gray-100'
+                            }`}
+                            onClick={() => setActiveEmojiCategory(category)}
+                          >
+                            {emojiCategories[category].name.split(' ')[0]}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="p-3 max-h-64 overflow-y-auto">
+                        <div className="grid grid-cols-8 gap-1">
+                          {emojiCategories[activeEmojiCategory].emojis.map((emoji, idx) => (
+                            <button
+                              key={idx}
+                              className="text-xl hover:bg-gray-100 rounded p-1"
+                              onClick={() => handleEmojiSelect(emoji, `modal-comment-${basicPostData.id}`)}
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Selected image previews are now inside the input container */}
                   {mentionOpenFor === `modal-comment-${basicPostData.id}` && mentionOptions.length > 0 && (
                     <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-50 max-h-56 overflow-auto">
                       {mentionOptions.map((u, idx) => (
@@ -3014,7 +3182,8 @@ const reactionsImages = (item) => {
               </div>
               <button
                 onClick={() => handleCommentSubmit(basicPostData.id)}
-                className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-full text-sm font-semibold"
+                className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-full text-sm font-semibold disabled:opacity-50"
+                disabled={!((commentInputs[basicPostData.id] && commentInputs[basicPostData.id].trim()) || (Array.isArray(modalReplyImages[`modal-comment-${basicPostData.id}`]) && modalReplyImages[`modal-comment-${basicPostData.id}`].length > 0))}
               >
                 Post
               </button>
