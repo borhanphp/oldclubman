@@ -172,17 +172,20 @@ const PostList = ({ postsData }) => {
     const hasImage = Array.isArray(images) && images.length > 0;
     if (!comment && !hasImage) return;
 
+    // Process mentions before sending to server
+    const processedComment = processContentForServer(comment);
+
     let payload;
     if (hasImage) {
       const fd = new FormData();
       fd.append("post_id", postId);
-      if (comment) fd.append("content", comment);
+      if (processedComment) fd.append("content", processedComment);
       images.forEach((img, idx) => {
         if (img?.file) fd.append(`files[${idx}]`, img.file);
       });
       payload = fd;
     } else {
-      payload = { post_id: postId, content: comment };
+      payload = { post_id: postId, content: processedComment };
     }
 
     dispatch(storeComments(payload)).then(() => {
@@ -328,40 +331,79 @@ const PostList = ({ postsData }) => {
   const mentionMetaRef = useRef({}); // { [inputKey]: { anchor: number } }
 
   const buildMentionCandidates = useCallback((query = "") => {
-    // If myFollowers is empty, use dummy data for testing
-    const followers = myFollowers && myFollowers.length > 0 ? myFollowers : [
-      {
-        follower_client: {
-          id: 1,
-          fname: "John",
-          last_name: "Doe",
-          image: null
-        }
-      },
-      {
-        follower_client: {
-          id: 2,
-          fname: "Jane",
-          last_name: "Smith",
-          image: null
-        }
-      }
-    ];
-
-    const list = followers.map((f) => ({
-      id: f?.follower_client?.id,
-      name: `${f?.follower_client?.fname || ""} ${f?.follower_client?.last_name || ""}`.trim(),
-      avatar: f?.follower_client?.image
-        ? `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}/${f?.follower_client?.image}`
-        : "/common-avator.jpg",
-    }));
+    // Collect users from multiple sources
+    let allUsers = [];
     
+    // Add followers
+    if (myFollowers && myFollowers.length > 0) {
+      const followerUsers = myFollowers.map(f => ({
+        id: f?.follower_client?.id,
+        fname: f?.follower_client?.fname || "",
+        last_name: f?.follower_client?.last_name || "",
+        image: f?.follower_client?.image,
+        source: "follower"
+      }));
+      allUsers.push(...followerUsers);
+    }
+    
+    // Add users from current post's comments
+    if (basicPostData?.comments) {
+      const commentUsers = basicPostData.comments.map(c => ({
+        id: c.client_id,
+        fname: c?.client_comment?.fname || "",
+        last_name: c?.client_comment?.last_name || "",
+        image: c?.client_comment?.image,
+        source: "comment"
+      }));
+      allUsers.push(...commentUsers);
+      
+      // Add users from replies
+      basicPostData.comments.forEach(c => {
+        if (c.replies) {
+          const replyUsers = c.replies.map(r => ({
+            id: r.client_id,
+            fname: r?.client_comment?.fname || "",
+            last_name: r?.client_comment?.last_name || "",
+            image: r?.client_comment?.image,
+            source: "reply"
+          }));
+          allUsers.push(...replyUsers);
+        }
+      });
+    }
+    
+    // Remove duplicates by ID and create final list
+    const uniqueUsers = allUsers.reduce((acc, user) => {
+      const fullName = `${user.fname} ${user.last_name}`.trim();
+      if (fullName && !acc.find(u => u.id === user.id)) {
+        acc.push({
+          id: user.id,
+          name: fullName,
+          avatar: user.image ? 
+            `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}/${user.image}` : 
+            "/common-avator.jpg",
+          source: user.source
+        });
+      }
+      return acc;
+    }, []);
+    
+    // Filter by query
     const q = query.toLowerCase();
-    const filtered = list.filter((u) => u.id && u.name && (!q || u.name.toLowerCase().includes(q)));
-    console.log('Built candidates:', { query, list, filtered });
+    const filtered = uniqueUsers.filter((u) => u.id && u.name && (!q || u.name.toLowerCase().includes(q)));
+    
+    console.log('Built candidates:', { 
+      query, 
+      totalUsers: allUsers.length, 
+      allUsersDetails: allUsers.map(u => ({ id: u.id, name: `${u.fname} ${u.last_name}`.trim(), source: u.source })),
+      uniqueUsers: uniqueUsers.length,
+      uniqueUsersDetails: uniqueUsers.map(u => ({ id: u.id, name: u.name, source: u.source })),
+      filtered: filtered.length,
+      candidates: filtered 
+    });
     
     return filtered.slice(0, 8);
-  }, [myFollowers]);
+  }, [myFollowers, basicPostData]);
 
   const getInputValueByKey = (inputKey) => {
     if (inputKey.startsWith("reply-")) {
@@ -418,15 +460,24 @@ const PostList = ({ postsData }) => {
     }
   };
 
-  const insertMentionToken = (user, inputKey) => {
+  const insertMentionToken = useCallback((user, inputKey) => {
+    console.log('🔗 insertMentionToken called:', { user: user.name, inputKey });
+    
     const value = getInputValueByKey(inputKey);
     const input = inputRefs.current[inputKey];
     const caret = input?.selectionStart ?? value.length;
     const meta = mentionMetaRef.current[inputKey] || { anchor: value.lastIndexOf("@") };
     const before = value.slice(0, meta.anchor);
     const after = value.slice(caret);
-    const token = `@[${user.name}](${user.id}) `;
+    // Use a cleaner format that's more readable in input fields
+    const token = `@${user.name} `;
     const newValue = before + token + after;
+    
+    console.log('🔗 Inserting mention:', { before, token, after, newValue });
+    
+    // Store the user ID separately for later processing
+    const mentionData = { name: user.name, id: user.id, position: before.length };
+    
     setInputValueByKey(inputKey, newValue);
     setMentionOpenFor(null);
     setMentionQuery("");
@@ -439,7 +490,135 @@ const PostList = ({ postsData }) => {
         input.setSelectionRange(newCaret, newCaret);
       }
     }, 0);
-  };
+  }, []);
+
+  // Helper function to convert @Name format back to [Name](id) for server
+  const processContentForServer = useCallback((content, mentionData = {}) => {
+    if (!content) return content;
+    
+    console.log('🔄 processContentForServer - Original content:', content);
+    console.log('🔄 processContentForServer - myFollowers length:', myFollowers?.length);
+    console.log('🔄 processContentForServer - basicPostData:', basicPostData ? 'EXISTS' : 'MISSING');
+    console.log('🔄 processContentForServer - basicPostData.comments length:', basicPostData?.comments?.length || 0);
+    
+    let processedContent = content;
+    
+    // Find all @mentions in the content (simple format)
+    const mentionRegex = /@([a-zA-Z0-9\s]+)/g;
+    let match;
+    
+    while ((match = mentionRegex.exec(content)) !== null) {
+      const fullMentionText = match[1].trim();
+      console.log('🔄 Found @mention text:', fullMentionText);
+      
+      // Try to find the best matching user in followers list
+      let bestMatch = null;
+      let bestMatchLength = 0;
+      
+      console.log('🔄 Available followers:', myFollowers?.map(f => ({
+        id: f?.follower_client?.id,
+        fname: f?.follower_client?.fname,
+        last_name: f?.follower_client?.last_name,
+        name: `${f?.follower_client?.fname || ""} ${f?.follower_client?.last_name || ""}`.trim(),
+        rawData: f?.follower_client
+      })));
+      
+      // Get all available users (same logic as buildMentionCandidates)
+      let allUsers = [];
+      
+      // Add followers
+      if (myFollowers && myFollowers.length > 0) {
+        const followerUsers = myFollowers.map(f => ({
+          id: f?.follower_client?.id,
+          fname: f?.follower_client?.fname || "",
+          last_name: f?.follower_client?.last_name || "",
+          image: f?.follower_client?.image,
+          source: "follower",
+          originalData: f
+        }));
+        allUsers.push(...followerUsers);
+      }
+      
+      // Add users from current post's comments
+      if (basicPostData?.comments) {
+        const commentUsers = basicPostData.comments.map(c => ({
+          id: c.client_id,
+          fname: c?.client_comment?.fname || "",
+          last_name: c?.client_comment?.last_name || "",
+          image: c?.client_comment?.image,
+          source: "comment",
+          originalData: { follower_client: c.client_comment }
+        }));
+        allUsers.push(...commentUsers);
+        
+        // Add users from replies
+        basicPostData.comments.forEach(c => {
+          if (c.replies) {
+            const replyUsers = c.replies.map(r => ({
+              id: r.client_id,
+              fname: r?.client_comment?.fname || "",
+              last_name: r?.client_comment?.last_name || "",
+              image: r?.client_comment?.image,
+              source: "reply",
+              originalData: { follower_client: r.client_comment }
+            }));
+            allUsers.push(...replyUsers);
+          }
+        });
+      }
+      
+      // Remove duplicates and check each user
+      const uniqueUsers = allUsers.reduce((acc, user) => {
+        const fullName = `${user.fname} ${user.last_name}`.trim();
+        if (fullName && !acc.find(u => u.id === user.id)) {
+          acc.push(user);
+        }
+        return acc;
+      }, []);
+      
+      console.log('🔄 All users before dedup:', allUsers.map(u => ({
+        id: u.id,
+        fname: u.fname,
+        last_name: u.last_name,
+        name: `${u.fname} ${u.last_name}`.trim(),
+        source: u.source
+      })));
+      
+      console.log('🔄 Available users for processing:', uniqueUsers.map(u => ({
+        id: u.id,
+        name: `${u.fname} ${u.last_name}`.trim(),
+        source: u.source
+      })));
+      
+      uniqueUsers.forEach(user => {
+        const fullName = `${user.fname} ${user.last_name}`.trim();
+        console.log('🔄 Checking user:', fullName, 'vs mention:', fullMentionText);
+        
+        // Check if the mention starts with this user's name
+        if (fullMentionText.toLowerCase().startsWith(fullName.toLowerCase()) && fullName.length > bestMatchLength) {
+          console.log('🔄 Match found!', fullName);
+          bestMatch = user.originalData;
+          bestMatchLength = fullName.length;
+        }
+      });
+      
+      console.log('🔄 Best match found:', bestMatch ? bestMatch.follower_client : 'NOT FOUND');
+      
+      if (bestMatch) {
+        const userName = `${bestMatch.follower_client.fname || ""} ${bestMatch.follower_client.last_name || ""}`.trim();
+        const fullMention = `[${userName}](${bestMatch.follower_client.id})`;
+        console.log('🔄 Converting to:', fullMention);
+        
+        // Replace only the user name part, keep the rest
+        const originalMention = `@${fullMentionText}`;
+        const newMention = `${fullMention}${fullMentionText.substring(userName.length)}`;
+        processedContent = processedContent.replace(originalMention, newMention);
+      }
+    }
+    
+    console.log('🔄 processContentForServer - Final processed content:', processedContent);
+    return processedContent;
+  }, [myFollowers, basicPostData]);
 
   const handleMentionKeyDown = (e, inputKey) => {
     if (mentionOpenFor !== inputKey || mentionOptions.length === 0) return false;
@@ -467,31 +646,46 @@ const PostList = ({ postsData }) => {
     return false;
   };
 
-  // Render content with @[Name](id)
-  const renderContentWithMentions = (text) => {
+  // Render content with mentions - optimized with useCallback
+  const renderContentWithMentions = useCallback((text) => {
     if (!text) return null;
-    const regex = /@\[(.+?)\]\((\d+)\)/g;
+    
+    // Clean up ALL @ symbols from mention formats
+    let cleanedText = text
+      // Remove @ from @[Name](id) format
+      .replace(/@(\[.+?\]\(\d+\))/g, '$1')
+      // Remove @ from standalone @Name mentions (but keep the name)
+      .replace(/@([a-zA-Z0-9\s]+)(\s|$)/g, '$1$2');
+    
+    // Handle the clean [Name](id) format
+    const fullFormatRegex = /\[(.+?)\]\((\d+)\)/g;
+    
     const elements = [];
     let lastIndex = 0;
     let match;
-    while ((match = regex.exec(text)) !== null) {
+    
+    // Handle full format mentions [Name](id) and make them clickable
+    while ((match = fullFormatRegex.exec(cleanedText)) !== null) {
       const start = match.index;
       const [full, name, id] = match;
       if (start > lastIndex) {
-        elements.push(text.slice(lastIndex, start));
+        elements.push(cleanedText.slice(lastIndex, start));
       }
       elements.push(
-        <Link href={`/user/user-profile/${id}`} className="text-black hover:underline font-semibold" key={`m-${start}`}>
+        <Link href={`/user/user-profile/${id}`} className="text-black hover:text-gray-700 font-bold cursor-pointer bg-blue-50 hover:bg-blue-100 px-1 py-0.5 rounded transition-colors duration-200" key={`m-${start}`}>
           {name}
         </Link>
       );
       lastIndex = start + full.length;
     }
-    if (lastIndex < text.length) {
-      elements.push(text.slice(lastIndex));
+    
+    if (lastIndex < cleanedText.length) {
+      elements.push(cleanedText.slice(lastIndex));
     }
-    return elements;
-  };
+    
+    // Return processed elements if we found mentions, otherwise return cleaned text
+    return elements.length > 1 ? elements : cleanedText;
+  }, []);
 
   const handleEditPost = (postId) => {
     dispatch(getPostById(postId)).then(() => {
@@ -551,19 +745,22 @@ const PostList = ({ postsData }) => {
     // Get the comment object from basicPostData
     const comment = basicPostData?.comments?.[commentIndex];
 
+    // Process mentions before sending to server
+    const processedReply = processContentForServer(reply);
+
     // Build payload; use FormData when image present
     let payload;
     if (hasImage) {
       const fd = new FormData();
       fd.append("comment_id", comment.id);
       fd.append("parent_id", "null");
-      if (reply) fd.append("content", reply);
+      if (processedReply) fd.append("content", processedReply);
       (modalReplyImages[inputKey] || []).forEach((img, idx) => {
         if (img?.file) fd.append(`files[${idx}]`, img.file);
       });
       payload = fd;
     } else {
-      payload = { comment_id: comment.id, parent_id: "null", content: reply };
+      payload = { comment_id: comment.id, parent_id: "null", content: processedReply };
     }
 
     // Call API to save reply
@@ -733,7 +930,7 @@ const PostList = ({ postsData }) => {
               />
               
               {/* Input Container */}
-              <div className="flex-1 bg-gray-100 rounded-2xl border border-gray-200 hover:bg-gray-50 focus-within:bg-white focus-within:border-blue-500 transition-all duration-200">
+              <div className="flex-1 bg-gray-100 rounded-2xl border border-gray-200 hover:bg-gray-50 focus-within:bg-white focus-within:border-blue-500 transition-all duration-200 relative">
                 <div className="flex items-center px-3 py-2">
                   <input
                     type="text"
@@ -860,7 +1057,7 @@ const PostList = ({ postsData }) => {
 
                 {/* Mention dropdown */}
                 {mentionOpenFor === `reply-${commentIndex}-${reply.id}` && mentionOptions.length > 0 && (
-                  <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-50 max-h-56 overflow-auto">
+                  <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-xl z-[9999] max-h-56 overflow-auto">
                     {mentionOptions.map((u, idx) => (
                       <div
                         key={u.id}
@@ -925,16 +1122,21 @@ const PostList = ({ postsData }) => {
   const handleReplyToReply = (commentIndex, replyOrId, firstLevelReplyId = null) => {
     const replyId = typeof replyOrId === 'object' ? replyOrId?.id : replyOrId;
     const inputKey = `reply-${commentIndex}-${replyId}`;
+    
+    console.log('🔘 handleReplyToReply called:', { commentIndex, replyOrId, inputKey });
+    
     // Pre-fill with @ mention token and focus
     let defaultValue = "";
     if (typeof replyOrId === 'object') {
       const name = `${replyOrId?.client_comment?.fname || ""} ${replyOrId?.client_comment?.last_name || ""}`.trim();
       const id = replyOrId?.client_id;
+      console.log('🔘 Auto-tagging user:', { name, id });
       if (name && id) {
-        defaultValue = `@[${name}](${id}) `;
+        defaultValue = `@${name} `;
       } else if (name) {
         defaultValue = `@${name} `;
       }
+      console.log('🔘 Default value set to:', defaultValue);
     }
     // Keep only the targeted reply box open; close others
     setModalReplyInputs(prev => {
@@ -944,7 +1146,9 @@ const PostList = ({ postsData }) => {
       } else if (prev[`first-parent-${commentIndex}`] !== undefined) {
         next[`first-parent-${commentIndex}`] = prev[`first-parent-${commentIndex}`];
       }
-      next[inputKey] = prev[inputKey] === undefined ? defaultValue : prev[inputKey];
+      const finalValue = prev[inputKey] === undefined ? defaultValue : prev[inputKey];
+      console.log('🔘 Setting input value:', { inputKey, finalValue, wasUndefined: prev[inputKey] === undefined });
+      next[inputKey] = finalValue;
       return next;
     });
     // Also retain images only for the active reply input
@@ -968,19 +1172,23 @@ const PostList = ({ postsData }) => {
     // If replying within a second-level thread, keep it as first-level reply-of-a-reply
     const firstParent = modalReplyInputs[`first-parent-${commentIndex}`];
     const parentId = firstParent || (replyId === comment.id ? null : replyId);
+    
+    // Process mentions before sending to server
+    const processedReply = processContentForServer(reply);
+    
     // Build payload; use FormData when image present
     let payload;
     if (hasImage) {
       const fd = new FormData();
       fd.append("comment_id", comment.id);
       if (parentId !== null && parentId !== undefined) fd.append("parent_id", parentId);
-      if (reply) fd.append("content", reply);
+      if (processedReply) fd.append("content", processedReply);
       (modalReplyImages[inputKey] || []).forEach((img, idx) => {
         if (img?.file) fd.append(`files[${idx}]`, img.file);
       });
       payload = fd;
     } else {
-      payload = { comment_id: comment.id, parent_id: parentId, content: reply };
+      payload = { comment_id: comment.id, parent_id: parentId, content: processedReply };
     }
     dispatch(replyToComment(payload))
       .then(() => {
@@ -1137,7 +1345,7 @@ const PostList = ({ postsData }) => {
       </>
     )
   });
-  ReactImage.displayName = 'ReactImage';
+  ReactImage.displayName = 'PostReactImage';
 
   // show reactions counts and reactions
   const showingReactionsIcon = (item, index) => {
@@ -1458,11 +1666,11 @@ const reactionsImages = (item) => {
                   backgroundImage: `url(${item.itemUrl})`,
                 }}
               >
-                {item?.message}
+                {renderContentWithMentions(item?.message)}
                
               </div>
               </>
-              : <p className="text-gray-700 py-2">{item?.message}</p>
+              : <p className="text-gray-700 py-2">{renderContentWithMentions(item?.message)}</p>
               
               }
 
@@ -1664,7 +1872,7 @@ const reactionsImages = (item) => {
                           
                         </span>
                         <span className="text-gray-700 text-sm">
-                          {item?.latest_comment?.content}
+                          {renderContentWithMentions(item?.latest_comment?.content)}
                         </span>
                       </div>
                       <div className="text-xs text-gray-500 mt-1 flex gap-2">
@@ -1861,7 +2069,7 @@ const reactionsImages = (item) => {
                     }}
                   />
                   {mentionOpenFor === `post-comment-${item.id}` && mentionOptions.length > 0 && (
-                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-50 max-h-56 overflow-auto">
+                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-xl z-[9999] max-h-56 overflow-auto">
                       {mentionOptions.map((u, idx) => (
                         <div
                           key={u.id}
@@ -2331,13 +2539,13 @@ const reactionsImages = (item) => {
                           )}
                         </button>
                         <span>•</span>
-                        <button
-                          className="hover:underline cursor-pointer"
-                          onClick={() => handleReplyToReply(i, c.id)}
-                          type="button"
-                        >
-                          Reply
-                        </button>
+                    <button
+                      className="hover:underline cursor-pointer"
+                      onClick={() => handleReplyToReply(i, c)}
+                      type="button"
+                    >
+                      Reply
+                    </button>
                         <span>•</span>
                         <button className="hover:underline cursor-pointer" type="button">
                           See translation
@@ -2361,7 +2569,7 @@ const reactionsImages = (item) => {
                           />
                           
                           {/* Input Container */}
-                          <div className="flex-1 bg-gray-100 rounded-2xl border border-gray-200 hover:bg-gray-50 focus-within:bg-white focus-within:border-blue-500 transition-all duration-200">
+                          <div className="flex-1 bg-gray-100 rounded-2xl border border-gray-200 hover:bg-gray-50 focus-within:bg-white focus-within:border-blue-500 transition-all duration-200 relative">
                             <div className="flex items-center px-3 py-2">
                           <input
                             type="text"
@@ -2499,7 +2707,7 @@ const reactionsImages = (item) => {
                             
                             {/* Mention dropdown */}
                           {mentionOpenFor === `reply-${i}-${c.id}` && mentionOptions.length > 0 && (
-                            <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-50 max-h-56 overflow-auto">
+                            <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-xl z-[9999] max-h-56 overflow-auto">
                               {mentionOptions.map((u, idx) => (
                                 <div
                                   key={u.id}
@@ -2779,13 +2987,13 @@ const reactionsImages = (item) => {
                                 />
                                 
                                 {/* Input Container */}
-                                <div className="flex-1 bg-gray-100 rounded-2xl border border-gray-200 hover:bg-gray-50 focus-within:bg-white focus-within:border-blue-500 transition-all duration-200">
+                                <div className="flex-1 bg-gray-100 rounded-2xl border border-gray-200 hover:bg-gray-50 focus-within:bg-white focus-within:border-blue-500 transition-all duration-200 relative">
                                   <div className="flex items-center px-3 py-2">
                                     <input
                                       type="text"
                                       className="flex-1 bg-transparent focus:outline-none text-sm placeholder-gray-500"
                                       placeholder={`Reply to ${reply?.client_comment?.fname || ""}...`}
-                                      value={modalReplyInputs[`reply-${i}`] || ""}
+                                      value={modalReplyInputs[`reply-${i}-${reply.id}`] || ""}
                                       ref={(el) => (inputRefs.current[`reply-${i}-${reply.id}`] = el)}
                                       onChange={(e) => {
                                         setModalReplyInputs((prev) => ({
@@ -2917,7 +3125,7 @@ const reactionsImages = (item) => {
 
                                   {/* Mention dropdown */}
                                   {mentionOpenFor === `reply-${i}-${reply.id}` && mentionOptions.length > 0 && (
-                                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-50 max-h-56 overflow-auto">
+                                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-xl z-[9999] max-h-56 overflow-auto">
                                       {mentionOptions.map((u, idx) => (
                                         <div
                                           key={u.id}
@@ -2988,7 +3196,7 @@ const reactionsImages = (item) => {
               </div>
               <div className="relative flex-1">
                 {/* Combined input container so images appear inside */}
-                <div className="w-full border rounded-full px-2 py-1 text-sm bg-white flex items-center gap-2 focus-within:ring-2 focus-within:ring-blue-400">
+                <div className="w-full border rounded-full px-2 py-1 text-sm bg-white flex items-center gap-2 focus-within:ring-2 focus-within:ring-blue-400 relative">
                   {/* Thumbnails inside the input */}
                   {Array.isArray(modalReplyImages[`modal-comment-${basicPostData.id}`]) && modalReplyImages[`modal-comment-${basicPostData.id}`].length > 0 && (
                     <div className="flex items-center gap-1 max-w-32 overflow-x-auto">
@@ -3114,7 +3322,7 @@ const reactionsImages = (item) => {
 
                   {/* Selected image previews are now inside the input container */}
                   {mentionOpenFor === `modal-comment-${basicPostData.id}` && mentionOptions.length > 0 && (
-                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-50 max-h-56 overflow-auto">
+                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-xl z-[9999] max-h-56 overflow-auto">
                       {mentionOptions.map((u, idx) => (
                         <div
                           key={u.id}
