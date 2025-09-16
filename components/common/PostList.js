@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo, useCallback, memo } from "react";
 import {
   FaEllipsisH,
   FaVideo,
@@ -50,9 +50,27 @@ const PostList = ({ postsData }) => {
   const dispatch = useDispatch();
   const params = useParams();
   useEffect(() => {
-    dispatch(getGathering());
-    dispatch(getPosts(1));
-    dispatch(getAllFollowers());
+    let isMounted = true;
+    
+    const loadData = async () => {
+      try {
+        if (isMounted) {
+          await Promise.all([
+            dispatch(getGathering()),
+            dispatch(getPosts(1)),
+            dispatch(getAllFollowers())
+          ]);
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+      }
+    };
+    
+    loadData();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [dispatch]);
 
   const [showReactionsFor, setShowReactionsFor] = useState(null);
@@ -78,8 +96,8 @@ const PostList = ({ postsData }) => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(null); // stores the input key for which emoji picker is open
   const [activeEmojiCategory, setActiveEmojiCategory] = useState('smileys');
 
-  // Emoji categories and data
-  const emojiCategories = {
+  // Memoize emoji categories since they're static
+  const emojiCategories = useMemo(() => ({
     smileys: {
       name: 'Smileys & People',
       emojis: ['😀', '😁', '😂', '🤣', '😃', '😄', '😅', '😆', '😉', '😊', '😋', '😎', '😍', '😘', '🥰', '😗', '😙', '😚', '☺️', '🙂', '🤗', '🤩', '🤔', '🫡', '😐', '😑', '😶', '🙄', '😏', '😣', '😥', '😮', '🤐', '😯', '😪', '😫', '🥱', '😴', '😌', '😛', '😜', '😝', '🤤', '😒', '😓', '😔', '😕', '🙃', '🫠', '🤑', '😲', '☹️', '🙁', '😖', '😞', '😟', '😤', '😢', '😭', '😦', '😧', '😨', '😩', '🤯', '😬', '😰', '😱', '🥵', '🥶', '😳', '🤪', '😵', '🥴', '😠', '😡', '🤬', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '😇', '🥳', '🥺', '🤠', '🤡', '🤥', '🤫', '🤭', '🧐', '🤓', '😈', '👿', '👹', '👺', '💀', '👻', '👽', '🤖', '💩']
@@ -104,10 +122,10 @@ const PostList = ({ postsData }) => {
       name: 'Symbols',
       emojis: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉️', '☸️', '✡️', '🔯', '🕎', '☯️', '☦️', '🛐', '⛎', '♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓', '🆔', '⚛️', '🉑', '☢️', '☣️', '📴', '📳', '🈶', '🈚', '🈸', '🈺', '🈷️', '✴️', '🆚', '💮', '🉐', '㊙️', '㊗️', '🈴', '🈵', '🈹', '🈲', '🅰️', '🅱️', '🆎', '🆑', '🅾️', '🆘', '❌', '⭕', '🛑', '⛔', '📛', '🚫', '💯', '💢', '♨️', '🚷', '🚯', '🚳', '🚱', '🔞', '📵', '🚭', '❗', '❕', '❓', '❔', '‼️', '⁉️', '🔅', '🔆', '〽️', '⚠️', '🚸', '🔱', '⚜️', '🔰', '♻️', '✅', '🈯', '💹', '❇️', '✳️', '❎', '🌐', '💠']
     }
-  };
+  }), []);
 
   // Handle emoji selection
-  const handleEmojiSelect = (emoji, inputKey) => {
+  const handleEmojiSelect = useCallback((emoji, inputKey) => {
     if (inputKey.startsWith("reply-")) {
       const currentValue = modalReplyInputs[inputKey] || '';
       setModalReplyInputs(prev => ({
@@ -124,12 +142,12 @@ const PostList = ({ postsData }) => {
       }));
     }
     setShowEmojiPicker(null); // Close emoji picker
-  };
+  }, [modalReplyInputs, commentInputs]);
 
   // Handle emoji picker toggle
-  const toggleEmojiPicker = (inputKey) => {
-    setShowEmojiPicker(showEmojiPicker === inputKey ? null : inputKey);
-  };
+  const toggleEmojiPicker = useCallback((inputKey) => {
+    setShowEmojiPicker(prev => prev === inputKey ? null : inputKey);
+  }, []);
 
   // Close emoji picker when clicking outside
   useEffect(() => {
@@ -309,7 +327,7 @@ const PostList = ({ postsData }) => {
   const fileInputRefs = useRef({});
   const mentionMetaRef = useRef({}); // { [inputKey]: { anchor: number } }
 
-  const buildMentionCandidates = (query = "") => {
+  const buildMentionCandidates = useCallback((query = "") => {
     // If myFollowers is empty, use dummy data for testing
     const followers = myFollowers && myFollowers.length > 0 ? myFollowers : [
       {
@@ -343,7 +361,7 @@ const PostList = ({ postsData }) => {
     console.log('Built candidates:', { query, list, filtered });
     
     return filtered.slice(0, 8);
-  };
+  }, [myFollowers]);
 
   const getInputValueByKey = (inputKey) => {
     if (inputKey.startsWith("reply-")) {
@@ -787,15 +805,6 @@ const PostList = ({ postsData }) => {
                     
                   
                     
-                    {/* GIF button */}
-                    <button
-                      type="button"
-                      className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
-                      title="Choose a GIF"
-                    >
-                      <span className="text-xs font-bold">GIF</span>
-                    </button>
-                    
                     {/* Camera/Photo button */}
                     <>
                       <input
@@ -822,16 +831,6 @@ const PostList = ({ postsData }) => {
                       </button>
                     </>
 
-                    {/* Sticker button */}
-                    <button
-                      type="button"
-                      className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
-                      title="Choose a sticker"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                        <path d="M8 1.5c-3.6 0-6.5 2.9-6.5 6.5 0 1.4.4 2.7 1.2 3.8l-.9 2.6c-.1.2 0 .4.2.5.1 0 .2.1.3.1.1 0 .2 0 .2-.1l2.6-.9c1.1.8 2.4 1.2 3.9 1.2 3.6 0 6.5-2.9 6.5-6.5S11.6 1.5 8 1.5zm-2 5.5c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1zm4 0c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1zm1 3c-.3.8-1 1.4-1.8 1.7-.2.1-.4 0-.5-.2-.1-.2 0-.4.2-.5.6-.2 1.1-.6 1.3-1.2.1-.2.3-.3.5-.2s.3.3.3.4z"/>
-                      </svg>
-                    </button>
                   </div>
                 </div>
 
@@ -907,8 +906,8 @@ const PostList = ({ postsData }) => {
     ));
   };
 
-  // Create a moment formatter that returns 4h/4d/40m/10s format
-  const formatCompactTime = (timestamp) => {
+  // Create a memoized moment formatter that returns 4h/4d/40m/10s format
+  const formatCompactTime = useCallback((timestamp) => {
     if (!timestamp) return "";
 
     const duration = moment.duration(moment().diff(moment(timestamp)));
@@ -921,7 +920,7 @@ const PostList = ({ postsData }) => {
     if (hours > 0) return `${hours}h`;
     if (minutes > 0) return `${minutes}m`;
     return `${seconds}s`;
-  };
+  }, []);
 
   const handleReplyToReply = (commentIndex, replyOrId, firstLevelReplyId = null) => {
     const replyId = typeof replyOrId === 'object' ? replyOrId?.id : replyOrId;
@@ -1118,8 +1117,8 @@ const PostList = ({ postsData }) => {
     };
   }, [showImagePreview, currentImageIndex, previewImages.length]);
 
-  // reactions image component
-  const ReactImage = (props) => {
+  // Memoized reactions image component
+  const ReactImage = memo((props) => {
     const {reactLink, reactType, reaction, className, showText, textclass=""} = props;
     return(
       <>
@@ -1137,7 +1136,8 @@ const PostList = ({ postsData }) => {
           )}
       </>
     )
-  }
+  });
+  ReactImage.displayName = 'ReactImage';
 
   // show reactions counts and reactions
   const showingReactionsIcon = (item, index) => {
@@ -1320,17 +1320,24 @@ const reactionsImages = (item) => {
 
 
 
+  // Memoize posts processing to avoid recalculation on every render
+  const processedPosts = useMemo(() => {
+    return postsData?.data?.map((item, index) => {
+      const totalCount = item.multiple_reaction_counts.reduce(
+        (sum, dd) => Number(sum) + Number(dd.count),
+        0
+      );
+
+      const itemUrl = item?.background_url;
+      const hasPath = /\/post_background\/.+/.test(itemUrl);
+
+      return { ...item, totalCount, itemUrl, hasPath };
+    }) || [];
+  }, [postsData?.data]);
+
   return (
     <div className="">
-      {postsData?.data?.map((item, index) => {
-        const totalCount = item.multiple_reaction_counts.reduce(
-          (sum, dd) => Number(sum) + Number(dd.count),
-          0
-        );
-
-        const itemUrl = item?.background_url;
-
-        const hasPath = /\/post_background\/.+/.test(itemUrl);
+      {processedPosts.map((item, index) => {
 
         return (
           <div
@@ -1443,12 +1450,12 @@ const reactionsImages = (item) => {
             </div>
 
             <div className="post-content">
-              {hasPath ? 
+              {item.hasPath ? 
               <>
                 <div 
                 className="relative text-white text-center p-4 text-[40px] w-full min-h-[300px] rounded-lg flex items-center justify-center bg-cover bg-center bg-no-repeat"
                 style={{
-                  backgroundImage: `url(${itemUrl})`,
+                  backgroundImage: `url(${item.itemUrl})`,
                 }}
               >
                 {item?.message}
@@ -1537,7 +1544,7 @@ const reactionsImages = (item) => {
                     ))}
                 </span>
                 {/* <span className="text-sm">{item?.single_reaction?.client?.fname + " " + item?.single_reaction?.client?.last_name + " and " + totalCount }</span> */}
-                <span className="text-sm">{Number(totalCount)}</span>
+                <span className="text-sm">{Number(item.totalCount)}</span>
                 <span className="flex items-center gap-2 ml-auto text-sm text-gray-500">
                   {item?.length} <FaRegComment className="" />
                 </span>
@@ -2463,25 +2470,6 @@ const reactionsImages = (item) => {
                                   </button>
                                 </>
                                 
-                                {/* GIF button */}
-                                <button
-                                  type="button"
-                                  className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
-                                  title="Choose a GIF"
-                                >
-                                  <span className="text-xs font-bold">GIF</span>
-                                </button>
-                                
-                                {/* Sticker button */}
-                                <button
-                                  type="button"
-                                  className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
-                                  title="Choose a sticker"
-                                >
-                                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                                    <path d="M8 1.5c-3.6 0-6.5 2.9-6.5 6.5 0 1.4.4 2.7 1.2 3.8l-.9 2.6c-.1.2 0 .4.2.5.1 0 .2.1.3.1.1 0 .2 0 .2-.1l2.6-.9c1.1.8 2.4 1.2 3.9 1.2 3.6 0 6.5-2.9 6.5-6.5S11.6 1.5 8 1.5zm-2 5.5c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1zm4 0c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1zm1 3c-.3.8-1 1.4-1.8 1.7-.2.1-.4 0-.5-.2-.1-.2 0-.4.2-.5.6-.2 1.1-.6 1.3-1.2.1-.2.3-.3.5-.2s.3.3.3.4z"/>
-                                  </svg>
-                                </button>
                               </div>
                             </div>
 
@@ -2900,25 +2888,6 @@ const reactionsImages = (item) => {
                                         </button>
                                       </>
                                       
-                                      {/* GIF button */}
-                                      <button
-                                        type="button"
-                                        className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
-                                        title="Choose a GIF"
-                                      >
-                                        <span className="text-xs font-bold">GIF</span>
-                                      </button>
-                                      
-                                      {/* Sticker button */}
-                                      <button
-                                        type="button"
-                                        className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
-                                        title="Choose a sticker"
-                                      >
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                                          <path d="M8 1.5c-3.6 0-6.5 2.9-6.5 6.5 0 1.4.4 2.7 1.2 3.8l-.9 2.6c-.1.2 0 .4.2.5.1 0 .2.1.3.1.1 0 .2 0 .2-.1l2.6-.9c1.1.8 2.4 1.2 3.9 1.2 3.6 0 6.5-2.9 6.5-6.5S11.6 1.5 8 1.5zm-2 5.5c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1zm4 0c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1zm1 3c-.3.8-1 1.4-1.8 1.7-.2.1-.4 0-.5-.2-.1-.2 0-.4.2-.5.6-.2 1.1-.6 1.3-1.2.1-.2.3-.3.5-.2s.3.3.3.4z"/>
-                                        </svg>
-                                      </button>
                                     </div>
                                   </div>
 
@@ -3079,14 +3048,6 @@ const reactionsImages = (item) => {
                       </svg>
                     </button>
 
-                    {/* GIF button (placeholder) */}
-                    <button
-                      type="button"
-                      className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
-                      title="Choose a GIF"
-                    >
-                      <span className="text-xs font-bold">GIF</span>
-                    </button>
 
                     {/* Photo attach */}
                     <>
@@ -3114,16 +3075,6 @@ const reactionsImages = (item) => {
                       </button>
                     </>
 
-                    {/* Sticker button (placeholder) */}
-                    <button
-                      type="button"
-                      className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
-                      title="Choose a sticker"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                        <path d="M8 1.5c-3.6 0-6.5 2.9-6.5 6.5 0 1.4.4 2.7 1.2 3.8l-.9 2.6c-.1.2 0 .4.2.5.1 0 .2.1.3.1.1 0 .2 0 .2-.1l2.6-.9c1.1.8 2.4 1.2 3.9 1.2 3.6 0 6.5-2.9 6.5-6.5S11.6 1.5 8 1.5zm-2 5.5c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1zm4 0c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1zm1 3c-.3.8-1 1.4-1.8 1.7-.2.1-.4 0-.5-.2-.1-.2 0-.4.2-.5.6-.2 1.1-.6 1.3-1.2.1-.2.3-.3.5-.2s.3.3.3.4z"/>
-                      </svg>
-                    </button>
                   </div>
                 </div>
 
@@ -3274,4 +3225,8 @@ const reactionsImages = (item) => {
   );
 };
 
-export default PostList;
+// Add display name for debugging
+PostList.displayName = 'PostList';
+
+// Memoize the entire component to prevent unnecessary re-renders
+export default memo(PostList);
