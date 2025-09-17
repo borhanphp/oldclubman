@@ -835,7 +835,12 @@ const PostList = ({ postsData }) => {
                   src={process.env.NEXT_PUBLIC_FILE_PATH + "/reply/" + reply?.files[0]?.file_path}
                   width={100}
                   height={100}
-                  className="mt-2"
+                  className="mt-2 cursor-pointer hover:opacity-90 transition-opacity rounded-lg"
+                  onClick={() => handleImagePreview(
+                    process.env.NEXT_PUBLIC_FILE_PATH + "/reply/" + reply?.files[0]?.file_path,
+                    [process.env.NEXT_PUBLIC_FILE_PATH + "/reply/" + reply?.files[0]?.file_path],
+                    0
+                  )}
                   />
 
                 ) : ""}
@@ -1169,9 +1174,42 @@ const PostList = ({ postsData }) => {
     const hasImage = Array.isArray(modalReplyImages[inputKey]) && modalReplyImages[inputKey].length > 0;
     if (!reply && !hasImage) return;
     const comment = basicPostData?.comments?.[commentIndex];
-    // If replying within a second-level thread, keep it as first-level reply-of-a-reply
-    const firstParent = modalReplyInputs[`first-parent-${commentIndex}`];
-    const parentId = firstParent || (replyId === comment.id ? null : replyId);
+    
+    // Find the reply being replied to
+    const findReplyInTree = (replies, targetId) => {
+      for (const r of replies) {
+        if (r.id === targetId) return r;
+        if (r.children) {
+          const found = findReplyInTree(r.children, targetId);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    
+    const targetReply = findReplyInTree(comment.replies || [], replyId);
+    
+    // Determine parentId based on nesting rules:
+    // 1. If replying to main comment (replyId === comment.id), parentId = null (first level)
+    // 2. If replying to first-level reply, parentId = replyId (second level)
+    // 3. If replying to second-level reply, parentId = that reply's parent_id (keep as second level)
+    let parentId;
+    if (replyId === comment.id) {
+      // Replying to main comment
+      parentId = null;
+    } else if (targetReply) {
+      if (targetReply.parent_id === null || targetReply.parent_id === undefined) {
+        // Target is first-level reply, make this a second-level reply
+        parentId = replyId;
+      } else {
+        // Target is second-level reply, keep this as second-level by using target's parent_id
+        parentId = targetReply.parent_id;
+      }
+    } else {
+      // Fallback to original logic
+      const firstParent = modalReplyInputs[`first-parent-${commentIndex}`];
+      parentId = firstParent || (replyId === comment.id ? null : replyId);
+    }
     
     // Process mentions before sending to server
     const processedReply = processContentForServer(reply);
@@ -2023,10 +2061,6 @@ const reactionsImages = (item) => {
                         >
                           Reply
                         </button>
-                        <span>•</span>
-                        <button className="hover:underline cursor-pointer font-semibold" type="button">
-                          See translation
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -2546,10 +2580,6 @@ const reactionsImages = (item) => {
                     >
                       Reply
                     </button>
-                        <span>•</span>
-                        <button className="hover:underline cursor-pointer" type="button">
-                          See translation
-                        </button>
                       </div>
                       {/* Reply input of comment */}
                       {modalReplyInputs[`reply-${i}-${c.id}`] !== undefined && (
@@ -2812,7 +2842,12 @@ const reactionsImages = (item) => {
                                 src={process.env.NEXT_PUBLIC_FILE_PATH + "/reply/" + reply?.files[0]?.file_path}
                                 width={100}
                                 height={100}
-                                className="mt-2"
+                                className="mt-2 cursor-pointer hover:opacity-90 transition-opacity rounded-lg"
+                                onClick={() => handleImagePreview(
+                                  process.env.NEXT_PUBLIC_FILE_PATH + "/reply/" + reply?.files[0]?.file_path,
+                                  [process.env.NEXT_PUBLIC_FILE_PATH + "/reply/" + reply?.files[0]?.file_path],
+                                  0
+                                )}
                                 />
 
                               ) : ""}
@@ -2963,10 +2998,6 @@ const reactionsImages = (item) => {
                                 type="button"
                               >
                                 Reply
-                              </button>
-                              <span>•</span>
-                              <button className="hover:underline cursor-pointer font-semibold" type="button">
-                                See translation
                               </button>
                             </div>
                             {/* Reply-to-reply input box - Facebook Style */}
