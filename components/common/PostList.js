@@ -43,6 +43,7 @@ import { getMyProfile, getUserProfile, getAllFollowers, followTo, unFollowTo } f
 import toast from "react-hot-toast";
 import Image from "next/image";
 import CommentThread from "./CommentThread";
+import api from "@/helpers/axios";
 
 const PostList = ({ postsData }) => {
   const { basicPostData } = useSelector(({ gathering }) => gathering);
@@ -185,6 +186,12 @@ const PostList = ({ postsData }) => {
     
     // Process mentions before validation
     const processedComment = processContentForServer(comment);
+    console.log('💬 Comment submission:', { 
+      original: comment, 
+      processed: processedComment,
+      mappingsCount: mentionMappingsRef.current.size,
+      availableMappings: Array.from(mentionMappingsRef.current.keys())
+    });
     
     // Check if there's processed content or images
     if (!processedComment?.trim() && !hasImage) return;
@@ -340,9 +347,14 @@ const PostList = ({ postsData }) => {
   const [mentionQuery, setMentionQuery] = useState("");
   const [mentionOptions, setMentionOptions] = useState([]);
   const [mentionActiveIndex, setMentionActiveIndex] = useState(0);
+  const [mentionLoading, setMentionLoading] = useState(false);
+  const [mentionPage, setMentionPage] = useState(1);
+  const [mentionHasMore, setMentionHasMore] = useState(true);
   const inputRefs = useRef({});
   const fileInputRefs = useRef({});
   const mentionMetaRef = useRef({}); // { [inputKey]: { anchor: number } }
+  const mentionDropdownRef = useRef(null);
+  const mentionAbortControllerRef = useRef(null);
 
   const buildMentionCandidates = useCallback((query = "") => {
     // Collect users from multiple sources
@@ -419,8 +431,91 @@ const PostList = ({ postsData }) => {
     return filtered.slice(0, 8);
   }, [myFollowers, basicPostData]);
 
+  // API function to fetch mentioned people with pagination
+  const fetchMentionedPeople = useCallback(async (query = "", page = 1, append = false) => {
+    try {
+      // Cancel previous request if exists
+      if (mentionAbortControllerRef.current) {
+        mentionAbortControllerRef.current.abort();
+      }
+      
+      // Create new AbortController for this request
+      mentionAbortControllerRef.current = new AbortController();
+      
+      setMentionLoading(true);
+      
+      const itemsPerPage = 10; // Number of items to fetch per page
+      console.log('🔍 Fetching mentioned people:', { query, page, itemsPerPage, append });
+      
+      const response = await api.get(`/client/mentioned_people/${itemsPerPage}`, {
+        params: {
+          search: query,
+          page: page
+        },
+        signal: mentionAbortControllerRef.current.signal
+      });
+      
+      console.log('🔍 API Response:', response.data);
+      
+      if (response.data && response.data.data && response.data.data.follow_connections && response.data.data.follow_connections.data) {
+        const users = response.data.data.follow_connections.data.map(user => ({
+          id: user.id,
+          name: user.display_name || 
+                `${user.fname || ''} ${user.middle_name ? user.middle_name + ' ' : ''}${user.last_name || ''}`.trim() || 
+                'Unknown User',
+          avatar: user.image ? 
+            `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}/${user.image}` : 
+            "/common-avator.jpg",
+          source: "api",
+          rawData: user
+        }));
+        
+        // Update mention options based on append flag
+        if (append) {
+          setMentionOptions(prev => [...prev, ...users]);
+        } else {
+          setMentionOptions(users);
+        }
+        
+        // Update pagination state
+        const paginationData = response.data.data.follow_connections;
+        const hasMore = paginationData.current_page < paginationData.last_page;
+        setMentionHasMore(hasMore);
+        
+        console.log('🔍 Pagination info:', {
+          currentPage: paginationData.current_page,
+          lastPage: paginationData.last_page,
+          hasMore,
+          totalUsers: paginationData.total,
+          usersThisPage: users.length
+        });
+        
+        return users;
+      }
+      
+      return [];
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        console.error('Error fetching mentioned people:', error);
+        
+        // Fallback to local data on error (only for first page)
+        if (!append) {
+          console.log('🔄 Falling back to local data');
+          const fallbackUsers = buildMentionCandidates(query);
+          setMentionOptions(fallbackUsers);
+          return fallbackUsers;
+        }
+      }
+      
+      return [];
+    } finally {
+      setMentionLoading(false);
+      mentionAbortControllerRef.current = null;
+    }
+  }, [buildMentionCandidates]);
+
   const getInputValueByKey = (inputKey) => {
-    if (inputKey.startsWith("reply-")) {
+    if (inputKey.startsWith("reply-") || inputKey.startsWith("single-reply-")) {
       return modalReplyInputs[inputKey] || "";
     }
     if (inputKey.startsWith("modal-comment-") || inputKey.startsWith("post-comment-")) {
@@ -434,7 +529,7 @@ const PostList = ({ postsData }) => {
   };
 
   const setInputValueByKey = (inputKey, value) => {
-    if (inputKey.startsWith("reply-")) {
+    if (inputKey.startsWith("reply-") || inputKey.startsWith("single-reply-")) {
       setModalReplyInputs((prev) => ({ ...prev, [inputKey]: value }));
       return;
     }
@@ -449,33 +544,63 @@ const PostList = ({ postsData }) => {
     setCommentInputs((prev) => ({ ...prev, [postId]: value }));
   };
 
-  const handleMentionDetect = (e, inputKey) => {
+  const handleMentionDetect = async (e, inputKey) => {
     const value = e.target.value;
     const caret = e.target.selectionStart || value.length;
     const before = value.slice(0, caret);
-    const match = before.match(/@([a-zA-Z0-9_.\- ]*)$/);
+    const match = before.match(/@([^@]*)$/);
     
-    console.log('Mention detect:', { value, before, match, inputKey, myFollowers: myFollowers?.length });
+    console.log('🎯 Mention detect:', { value, before, match, inputKey, hasMatch: !!match });
     
     if (match) {
       const q = match[1];
-      const candidates = buildMentionCandidates(q);
-      console.log('Mention candidates:', candidates);
       
       mentionMetaRef.current[inputKey] = { anchor: caret - match[0].length };
-      setMentionOptions(candidates);
       setMentionQuery(q);
       setMentionActiveIndex(0);
       setMentionOpenFor(inputKey);
+      
+      // Reset pagination state for new search
+      setMentionPage(1);
+      setMentionHasMore(true);
+      
+      // Fetch mentioned people from API (first page)
+      await fetchMentionedPeople(q, 1, false);
+      
     } else if (mentionOpenFor === inputKey) {
       setMentionOpenFor(null);
       setMentionQuery("");
       setMentionOptions([]);
+      setMentionPage(1);
+      setMentionHasMore(true);
+      
+      // Cancel any ongoing API request
+      if (mentionAbortControllerRef.current) {
+        mentionAbortControllerRef.current.abort();
+      }
     }
   };
 
+  // Store mention mappings persistently
+  const mentionMappingsRef = useRef(new Map()); // Map of user names to IDs
+
   const insertMentionToken = useCallback((user, inputKey) => {
     console.log('🔗 insertMentionToken called:', { user: user.name, inputKey });
+    
+    // Store the mention mapping persistently (normalize spaces)
+    const normalizedName = user.name.toLowerCase().trim().replace(/\s+/g, ' ');
+    mentionMappingsRef.current.set(normalizedName, {
+      id: user.id,
+      name: user.name,
+      rawData: user.rawData
+    });
+    
+    console.log('🔗 Storing mention mapping:', { 
+      originalName: user.name, 
+      normalizedKey: normalizedName, 
+      mappingStored: mentionMappingsRef.current.has(normalizedName),
+      totalMappings: mentionMappingsRef.current.size 
+    });
     
     const value = getInputValueByKey(inputKey);
     const input = inputRefs.current[inputKey];
@@ -488,9 +613,7 @@ const PostList = ({ postsData }) => {
     const newValue = before + token + after;
     
     console.log('🔗 Inserting mention:', { before, token, after, newValue });
-    
-    // Store the user ID separately for later processing
-    const mentionData = { name: user.name, id: user.id, position: before.length };
+    console.log('🔗 Stored mention mapping:', mentionMappingsRef.current.get(normalizedName));
     
     setInputValueByKey(inputKey, newValue);
     setMentionOpenFor(null);
@@ -506,24 +629,167 @@ const PostList = ({ postsData }) => {
     }, 0);
   }, []);
 
+  // Handle infinite scrolling in mention dropdown
+  const handleMentionScroll = useCallback(async (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    const isNearBottom = scrollTop + clientHeight >= scrollHeight - 10;
+    
+    if (isNearBottom && mentionHasMore && !mentionLoading) {
+      console.log('🔄 Loading more mentions...', { 
+        currentPage: mentionPage, 
+        nextPage: mentionPage + 1, 
+        query: mentionQuery 
+      });
+      
+      const nextPage = mentionPage + 1;
+      setMentionPage(nextPage);
+      
+      // Fetch next page and append to existing results
+      await fetchMentionedPeople(mentionQuery, nextPage, true);
+    }
+  }, [mentionHasMore, mentionLoading, mentionPage, mentionQuery, fetchMentionedPeople]);
+
+  // Reusable mention dropdown component with pagination
+  const renderMentionDropdown = useCallback((inputKey) => {
+    console.log('🎭 renderMentionDropdown:', { 
+      inputKey, 
+      mentionOpenFor, 
+      optionsLength: mentionOptions.length, 
+      mentionLoading,
+      shouldShow: mentionOpenFor === inputKey && (mentionOptions.length > 0 || mentionLoading)
+    });
+    
+    if (mentionOpenFor !== inputKey || (mentionOptions.length === 0 && !mentionLoading)) {
+      return null;
+    }
+
+    // Calculate position for fixed dropdown
+    const inputElement = inputRefs.current[inputKey];
+    let dropdownStyle = {};
+    
+    if (inputElement) {
+      const rect = inputElement.getBoundingClientRect();
+      dropdownStyle = {
+        position: 'fixed',
+        left: rect.left,
+        right: window.innerWidth - rect.right,
+        bottom: window.innerHeight - rect.top + 4, // Position above the input
+        zIndex: 999999
+      };
+    }
+
+    return (
+      <div 
+        ref={mentionDropdownRef}
+        className="bg-white border rounded-md shadow-xl max-h-56 overflow-auto"
+        style={dropdownStyle}
+        onScroll={handleMentionScroll}
+      >
+        {mentionOptions.map((u, idx) => (
+          <div
+            key={u.id}
+            className={`flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100 ${idx === mentionActiveIndex ? 'bg-gray-100' : ''}`}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              insertMentionToken(u, inputKey);
+            }}
+          >
+            <img src={u.avatar} className="w-8 h-8 rounded-full object-cover" alt={u.name} />
+            <div className="flex flex-col">
+              <span className="text-sm font-medium">{u.name}</span>
+              <span className="text-xs text-gray-500">{u.source === 'api' ? 'From API' : u.source}</span>
+            </div>
+          </div>
+        ))}
+        
+        {/* Loading indicator */}
+        {mentionLoading && (
+          <div className="flex items-center justify-center py-2 border-t">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+            <span className="ml-2 text-xs text-gray-500">Loading more...</span>
+          </div>
+        )}
+        
+        {/* No more results indicator */}
+        {!mentionHasMore && mentionOptions.length > 0 && !mentionLoading && (
+          <div className="text-center py-2 text-xs text-gray-500 border-t">
+            No more results
+          </div>
+        )}
+      </div>
+    );
+  }, [mentionOpenFor, mentionOptions, mentionActiveIndex, mentionLoading, mentionHasMore, handleMentionScroll, insertMentionToken]);
+
   // Helper function to convert @Name format back to [Name](id) for server
   const processContentForServer = useCallback((content, mentionData = {}) => {
     if (!content) return content;
     
     console.log('🔄 processContentForServer - Original content:', content);
-    console.log('🔄 processContentForServer - myFollowers length:', myFollowers?.length);
-    console.log('🔄 processContentForServer - basicPostData:', basicPostData ? 'EXISTS' : 'MISSING');
-    console.log('🔄 processContentForServer - basicPostData.comments length:', basicPostData?.comments?.length || 0);
     
     let processedContent = content;
     
     // Find all @mentions in the content (simple format)
-    const mentionRegex = /@([a-zA-Z0-9\s]+)/g;
+    // Match @ followed by one or more words (handles multi-word names)
+    const mentionRegex = /@([^\s@]+(?:\s+[^\s@]+)*)/g;
     let match;
     
     while ((match = mentionRegex.exec(content)) !== null) {
       const fullMentionText = match[1].trim();
       console.log('🔄 Found @mention text:', fullMentionText);
+      
+      // First, try to find in persistent mention mappings (normalize spaces)
+      const lookupKey = fullMentionText.toLowerCase().trim().replace(/\s+/g, ' ');
+      console.log('🔄 Looking up mention:', lookupKey, 'in', Array.from(mentionMappingsRef.current.keys()));
+      console.log('🔄 Exact key match exists:', mentionMappingsRef.current.has(lookupKey));
+      
+      let persistentMapping = mentionMappingsRef.current.get(lookupKey);
+      
+      // If exact match not found, try to find partial matches (for cases like "@Name extra text")
+      if (!persistentMapping) {
+        console.log('🔄 Trying partial matches for:', lookupKey);
+        const availableKeys = Array.from(mentionMappingsRef.current.keys());
+        
+        // Try to find the longest matching key that starts the fullMentionText
+        let bestMatch = null;
+        let bestMatchLength = 0;
+        
+        for (const key of availableKeys) {
+          if (lookupKey.startsWith(key) && key.length > bestMatchLength) {
+            bestMatch = key;
+            bestMatchLength = key.length;
+          }
+        }
+        
+        if (bestMatch) {
+          persistentMapping = mentionMappingsRef.current.get(bestMatch);
+          console.log('🔄 Found partial match:', { bestMatch, mapping: persistentMapping });
+          // Update fullMentionText to only include the matched part
+          const matchedWords = bestMatch.split(' ');
+          const originalWords = fullMentionText.toLowerCase().split(' ');
+          const matchedText = originalWords.slice(0, matchedWords.length).join(' ');
+          
+          // Update the fullMentionText to only the matched portion for replacement
+          const actualMentionText = fullMentionText.split(' ').slice(0, matchedWords.length).join(' ');
+          console.log('🔄 Adjusting mention text from:', fullMentionText, 'to:', actualMentionText);
+          
+          const fullMention = `[${persistentMapping.name}](${persistentMapping.id})`;
+          const originalMention = `@${actualMentionText}`;
+          console.log('🔄 Converting partial match:', { originalMention, fullMention });
+          processedContent = processedContent.replace(originalMention, fullMention);
+          continue; // Skip to next mention
+        }
+      }
+      
+      if (persistentMapping) {
+        console.log('🔄 Found in persistent mappings:', persistentMapping);
+        const fullMention = `[${persistentMapping.name}](${persistentMapping.id})`;
+        const originalMention = `@${fullMentionText}`;
+        console.log('🔄 Converting:', { originalMention, fullMention });
+        processedContent = processedContent.replace(originalMention, fullMention);
+        continue; // Skip to next mention
+      } else {
+        console.log('🔄 NOT found in persistent mappings for key:', lookupKey);
+      }
       
       // Try to find the best matching user in followers list
       let bestMatch = null;
@@ -537,10 +803,27 @@ const PostList = ({ postsData }) => {
         rawData: f?.follower_client
       })));
       
-      // Get all available users (same logic as buildMentionCandidates)
+      // Get all available users from multiple sources (API + local fallback)
       let allUsers = [];
       
-      // Add followers
+      // First, check if we have API users from recent mention searches
+      if (mentionOptions && mentionOptions.length > 0) {
+        const apiUsers = mentionOptions.map(user => ({
+          id: user.id,
+          fname: user.rawData?.fname || user.name.split(' ')[0] || "",
+          last_name: user.rawData?.last_name || user.name.split(' ').slice(1).join(' ') || "",
+          image: user.rawData?.image,
+          source: "api",
+          originalData: { follower_client: user.rawData || { 
+            id: user.id, 
+            fname: user.name.split(' ')[0] || "", 
+            last_name: user.name.split(' ').slice(1).join(' ') || ""
+          }}
+        }));
+        allUsers.push(...apiUsers);
+      }
+      
+      // Add followers as fallback
       if (myFollowers && myFollowers.length > 0) {
         const followerUsers = myFollowers.map(f => ({
           id: f?.follower_client?.id,
@@ -633,7 +916,7 @@ const PostList = ({ postsData }) => {
     
     console.log('🔄 processContentForServer - Final processed content:', processedContent);
     return processedContent;
-  }, [myFollowers, basicPostData]);
+  }, [myFollowers, basicPostData, mentionOptions]);
 
   const handleMentionKeyDown = (e, inputKey) => {
     if (mentionOpenFor !== inputKey || mentionOptions.length === 0) return false;
@@ -670,7 +953,7 @@ const PostList = ({ postsData }) => {
       // Remove @ from @[Name](id) format
       .replace(/@(\[.+?\]\(\d+\))/g, '$1')
       // Remove @ from standalone @Name mentions (but keep the name)
-      .replace(/@([a-zA-Z0-9\s]+)(\s|$)/g, '$1$2');
+      .replace(/@([^@\s]+(?:\s[^@\s]+)*)/g, '$1');
     
     // Handle the clean [Name](id) format
     const fullFormatRegex = /\[(.+?)\]\((\d+)\)/g;
@@ -683,6 +966,7 @@ const PostList = ({ postsData }) => {
     while ((match = fullFormatRegex.exec(cleanedText)) !== null) {
       const start = match.index;
       const [full, name, id] = match;
+      
       if (start > lastIndex) {
         elements.push(cleanedText.slice(lastIndex, start));
       }
@@ -1105,23 +1389,7 @@ const PostList = ({ postsData }) => {
                 )}
 
                 {/* Mention dropdown */}
-                {mentionOpenFor === `reply-${commentIndex}-${reply.id}` && mentionOptions.length > 0 && (
-                  <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-xl z-[9999] max-h-56 overflow-auto">
-                    {mentionOptions.map((u, idx) => (
-                      <div
-                        key={u.id}
-                        className={`flex items-center gap-2 px-2 py-1 cursor-pointer ${idx === mentionActiveIndex ? 'bg-gray-100' : ''}`}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          insertMentionToken(u, `reply-${commentIndex}-${reply.id}`);
-                        }}
-                      >
-                        <img src={u.avatar} className="w-5 h-5 rounded-full object-cover" />
-                        <span className="text-xs">{u.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {renderMentionDropdown(`reply-${commentIndex}-${reply.id}`)}
               </div>
               
               {/* Send button - show when there's text or image */}
@@ -1344,9 +1612,24 @@ const PostList = ({ postsData }) => {
     console.log('🔘 handleSingleCommentReply called:', { postId, comment, inputKey });
     
     // Set default value with user mention
-    const defaultValue = comment?.client?.fname 
-      ? `@${comment.client.fname}${comment.client.last_name ? ' ' + comment.client.last_name : ''} `
-      : '';
+    const fullName = `${comment?.client?.fname || ''} ${comment?.client?.last_name || ''}`.trim();
+    const defaultValue = fullName ? `@${fullName} ` : '';
+    
+    // Store the mention mapping persistently for processContentForServer
+    if (fullName && comment?.client_id) {
+      const normalizedName = fullName.toLowerCase().trim().replace(/\s+/g, ' ');
+      mentionMappingsRef.current.set(normalizedName, {
+        id: comment.client_id,
+        name: fullName,
+        rawData: comment.client
+      });
+      console.log('🔘 Stored mention mapping for reply button:', { 
+        originalName: fullName, 
+        normalizedKey: normalizedName, 
+        userId: comment.client_id,
+        mappingStored: mentionMappingsRef.current.has(normalizedName)
+      });
+    }
     
     setModalReplyInputs(prev => {
       const next = { ...prev };
@@ -2649,23 +2932,7 @@ const reactionsImages = (item) => {
                       />
 
                       {/* Mention dropdown */}
-                      {mentionOpenFor === `single-reply-${item.id}-${item?.latest_comment?.id}` && mentionOptions.length > 0 && (
-                        <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-xl z-[9999] max-h-56 overflow-auto">
-                          {mentionOptions.map((u, idx) => (
-                            <div
-                              key={u.id}
-                              className={`flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100 ${idx === mentionActiveIndex ? 'bg-gray-100' : ''}`}
-                              onMouseDown={(e) => {
-                                e.preventDefault();
-                                insertMentionToken(u, `single-reply-${item.id}-${item?.latest_comment?.id}`);
-                              }}
-                            >
-                              <img src={u.avatar} className="w-8 h-8 rounded-full object-cover" />
-                              <span className="text-sm font-medium">{u.name}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      {renderMentionDropdown(`single-reply-${item.id}-${item?.latest_comment?.id}`)}
 
                       {/* Emoji picker */}
                       {showEmojiPicker === `single-reply-${item.id}-${item?.latest_comment?.id}` && (
@@ -2798,39 +3065,39 @@ const reactionsImages = (item) => {
                       </button>
 
                       {/* Emoji picker button */}
-                      <button
+                  {/* <button
                         type="button"
                         className="p-1 text-gray-500 hover:text-yellow-500 transition-colors"
                         onClick={() => toggleEmojiPicker(`post-comment-${item.id}`)}
                         title="Add emoji"
                       >
                         <span className="text-base">😊</span>
-                      </button>
+                      </button> */}
 
                       {/* Send button */}
                       <button
                         className="p-1 text-gray-500 hover:text-blue-500 transition-colors"
-                        onClick={() => handleCommentSubmit(item.id)}
-                        type="button"
+                    onClick={() => handleCommentSubmit(item.id)}
+                    type="button"
                         title="Send"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <line x1="22" y1="2" x2="11" y2="13"></line>
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <line x1="22" y1="2" x2="11" y2="13"></line>
                           <polygon points="22,2 15,22 11,13 2,9 22,2"></polygon>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
+                    </svg>
+                  </button>
+                </div>
+              </div>
 
                   {/* Hidden file input for photo upload */}
                   <input
@@ -2843,23 +3110,7 @@ const reactionsImages = (item) => {
                   />
 
                   {/* Mention dropdown */}
-                  {mentionOpenFor === `post-comment-${item.id}` && mentionOptions.length > 0 && (
-                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-xl z-[9999] max-h-56 overflow-auto">
-                      {mentionOptions.map((u, idx) => (
-                        <div
-                          key={u.id}
-                          className={`flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100 ${idx === mentionActiveIndex ? 'bg-gray-100' : ''}`}
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            insertMentionToken(u, `post-comment-${item.id}`);
-                          }}
-                        >
-                          <img src={u.avatar} className="w-8 h-8 rounded-full object-cover" />
-                          <span className="text-sm font-medium">{u.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  {renderMentionDropdown(`post-comment-${item.id}`)}
 
                   {/* Emoji picker */}
                   {showEmojiPicker === `post-comment-${item.id}` && (
@@ -2933,7 +3184,7 @@ const reactionsImages = (item) => {
                 </button>
               </div>
             </div>
-            <div className="overflow-y-auto flex-1 px-6 pt-4 pb-2">
+            <div className={`flex-1 px-6 pt-4 pb-2 ${mentionOpenFor ? 'overflow-visible' : 'overflow-y-auto'}`}>
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-10 h-10 rounded-full overflow-hidden">
                   <img
@@ -3494,23 +3745,7 @@ const reactionsImages = (item) => {
                             )}
                             
                             {/* Mention dropdown */}
-                          {mentionOpenFor === `reply-${i}-${c.id}` && mentionOptions.length > 0 && (
-                            <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-xl z-[9999] max-h-56 overflow-auto">
-                              {mentionOptions.map((u, idx) => (
-                                <div
-                                  key={u.id}
-                                  className={`flex items-center gap-2 px-2 py-1 cursor-pointer ${idx === mentionActiveIndex ? 'bg-gray-100' : ''}`}
-                                  onMouseDown={(e) => {
-                                    e.preventDefault();
-                                    insertMentionToken(u, `reply-${i}-${c.id}`);
-                                  }}
-                                >
-                                  <img src={u.avatar} className="w-5 h-5 rounded-full object-cover" />
-                                  <span className="text-xs">{u.name}</span>
-                                </div>
-                              ))}
-                            </div>
-                            )}
+                            {renderMentionDropdown(`reply-${i}-${c.id}`)}
                             
 
                           </div>
@@ -3926,23 +4161,7 @@ const reactionsImages = (item) => {
                                   )}
 
                                   {/* Mention dropdown */}
-                                  {mentionOpenFor === `reply-${i}-${reply.id}` && mentionOptions.length > 0 && (
-                                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-xl z-[9999] max-h-56 overflow-auto">
-                                      {mentionOptions.map((u, idx) => (
-                                        <div
-                                          key={u.id}
-                                          className={`flex items-center gap-2 px-2 py-1 cursor-pointer ${idx === mentionActiveIndex ? 'bg-gray-100' : ''}`}
-                                          onMouseDown={(e) => {
-                                            e.preventDefault();
-                                            insertMentionToken(u, `reply-${i}-${reply.id}`);
-                                          }}
-                                        >
-                                          <img src={u.avatar} className="w-5 h-5 rounded-full object-cover" />
-                                          <span className="text-xs">{u.name}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
+                                  {renderMentionDropdown(`reply-${i}-${reply.id}`)}
                                 </div>
                                 
                                 
@@ -4122,24 +4341,8 @@ const reactionsImages = (item) => {
                     </div>
                   )}
 
-                  {/* Selected image previews are now inside the input container */}
-                  {mentionOpenFor === `modal-comment-${basicPostData.id}` && mentionOptions.length > 0 && (
-                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-xl z-[9999] max-h-56 overflow-auto">
-                      {mentionOptions.map((u, idx) => (
-                        <div
-                          key={u.id}
-                          className={`flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100 ${idx === mentionActiveIndex ? 'bg-gray-100' : ''}`}
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            insertMentionToken(u, `modal-comment-${basicPostData.id}`);
-                          }}
-                        >
-                          <img src={u.avatar} className="w-8 h-8 rounded-full object-cover" />
-                          <span className="text-sm font-medium">{u.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  {/* Mention dropdown */}
+                  {renderMentionDropdown(`modal-comment-${basicPostData.id}`)}
               </div>
               <button
                 onClick={() => handleCommentSubmit(basicPostData.id)}
@@ -4271,30 +4474,7 @@ const reactionsImages = (item) => {
                 </div>
               </div>
 
-              {/* Profile stats */}
-              <div className="flex justify-between text-center mb-3 py-2 bg-gray-50 rounded-lg">
-                <div 
-                  className="flex-1 cursor-pointer hover:bg-gray-100 py-1 rounded transition-colors"
-                  onClick={() => handleStatsClick('posts', profilePopup.profileData.id)}
-                >
-                  <div className="font-bold text-gray-900">{profilePopup.profileData.postsCount}</div>
-                  <div className="text-xs text-gray-600">Posts</div>
-                </div>
-                <div 
-                  className="flex-1 border-x border-gray-200 cursor-pointer hover:bg-gray-100 py-1 rounded transition-colors"
-                  onClick={() => handleStatsClick('followers', profilePopup.profileData.id)}
-                >
-                  <div className="font-bold text-gray-900">{profilePopup.profileData.followersCount}</div>
-                  <div className="text-xs text-gray-600">Followers</div>
-                </div>
-                <div 
-                  className="flex-1 cursor-pointer hover:bg-gray-100 py-1 rounded transition-colors"
-                  onClick={() => handleStatsClick('following', profilePopup.profileData.id)}
-                >
-                  <div className="font-bold text-gray-900">{profilePopup.profileData.followingCount}</div>
-                  <div className="text-xs text-gray-600">Following</div>
-                </div>
-              </div>
+            
 
               {/* Profile details */}
               <div className="space-y-2 text-sm text-gray-600 mb-4">
@@ -4391,14 +4571,14 @@ const reactionsImages = (item) => {
               </div>
               
               {/* Message button (secondary row) */}
-              <div className="mt-2">
+              {/* <div className="mt-2">
                 <button 
                   className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 transition-colors font-medium text-sm"
                   onClick={() => handleSendMessage(profilePopup.profileData.id, profilePopup.profileData.name)}
                 >
                   Send Message
                 </button>
-              </div>
+              </div> */}
             </div>
           ) : (
             // Loading state
