@@ -90,6 +90,8 @@ const PostList = ({ postsData }) => {
   const [loadingReplies, setLoadingReplies] = useState({});
   const [showShareModal, setShowShareModal] = useState(false);
   const [postToShare, setPostToShare] = useState(null);
+  const [isSharing, setIsSharing] = useState(false);
+  const isSharingRef = useRef(false);
   const [showImagePreview, setShowImagePreview] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const [previewImages, setPreviewImages] = useState([]);
@@ -2015,26 +2017,36 @@ const PostList = ({ postsData }) => {
   }
 
   const confirmShare = () => {
-    if (postToShare) {
-      dispatch(sharePost({post_id: postToShare}))
-        .then((res) => {
-          dispatch(getPosts());
-          setShowShareModal(false);
-          setPostToShare(null);
-          toast.success("Shared Successfully")
-        })
-        .catch((error) => {
-          console.error('Share failed:', error);
-          setShowShareModal(false);
-          setPostToShare(null);
-        });
-    }
-  }
+    if (!postToShare || isSharingRef.current) return;
+
+    isSharingRef.current = true;
+    setIsSharing(true);
+
+    dispatch(sharePost({ post_id: postToShare }))
+      .then(() => {
+        dispatch(getPosts());
+        toast.success("Shared Successfully");
+        setShowShareModal(false);
+        setPostToShare(null);
+      })
+      .catch((error) => {
+        console.error('Share failed:', error);
+        setShowShareModal(false);
+        setPostToShare(null);
+      })
+      .finally(() => {
+        isSharingRef.current = false;
+        setIsSharing(false);
+      });
+  };
 
   const cancelShare = () => {
+    if (isSharingRef.current) return;
+    isSharingRef.current = false;
+    setIsSharing(false);
     setShowShareModal(false);
     setPostToShare(null);
-  }
+  };
 
   const handleImagePreview = (imageSrc, allImages, index) => {
     setPreviewImage(imageSrc);
@@ -4613,15 +4625,17 @@ const reactionsImages = (item) => {
             <div className="flex gap-3">
               <button
                 onClick={cancelShare}
-                className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+                disabled={isSharing}
+                className={`flex-1 px-4 py-2 rounded-lg transition-colors ${isSharing ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
               >
                 Cancel
               </button>
               <button
                 onClick={confirmShare}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                disabled={isSharing}
+                className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${isSharing ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
               >
-                Share Now
+                {isSharing ? 'Sharing...' : 'Share Now'}
               </button>
             </div>
           </div>
