@@ -130,19 +130,19 @@ const PostList = ({ postsData }) => {
 
   // Handle emoji selection
   const handleEmojiSelect = useCallback((emoji, inputKey) => {
-    if (inputKey.startsWith("reply-")) {
+    if (inputKey.includes("reply")) {
       const currentValue = modalReplyInputs[inputKey] || '';
-      setModalReplyInputs(prev => ({
+      setModalReplyInputs((prev) => ({
         ...prev,
-        [inputKey]: currentValue + emoji
+        [inputKey]: currentValue + emoji,
       }));
     } else {
       const parts = inputKey.split("-");
       const postId = parts[parts.length - 1];
       const currentValue = commentInputs[postId] || '';
-      setCommentInputs(prev => ({
+      setCommentInputs((prev) => ({
         ...prev,
-        [postId]: currentValue + emoji
+        [postId]: currentValue + emoji,
       }));
     }
     setShowEmojiPicker(null); // Close emoji picker
@@ -2819,8 +2819,126 @@ const reactionsImages = (item) => {
                           {/* Reply Actions */}
                           <div className="flex items-center gap-3 mt-1 ml-2 text-[12px] text-gray-600">
                             <span>{formatCompactTime(reply?.created_at)}</span>
-                            <button className="hover:underline cursor-pointer" type="button">
-                              Like
+                            <button
+                              className="hover:underline relative cursor-pointer"
+                              onClick={() =>
+                                setShowCommentReactionsFor(
+                                  showCommentReactionsFor === reply.id ? null : reply.id
+                                )
+                              }
+                              type="button"
+                            >
+                              {!reply?.single_reaction ? (
+                                <span>Like</span>
+                              ) : (
+                                <span className="inline-block">
+                                  {reply?.single_reaction?.type === "like" && (
+                                    <span className="font-semibold">
+                                      <span className="text-blue-500 text-[12px]">Like</span>
+                                    </span>
+                                  )}
+                                  {reply?.single_reaction?.type === "love" && (
+                                    <span className="font-semibold">
+                                      <span className="text-red-700 text-[12px]">Love</span>
+                                    </span>
+                                  )}
+                                  {reply?.single_reaction?.type === "care" && (
+                                    <span className="font-semibold">
+                                      <span className="text-yellow-700 text-[12px]">Care</span>
+                                    </span>
+                                  )}
+                                  {reply?.single_reaction?.type === "haha" && (
+                                    <span className="font-semibold">
+                                      <span className="text-yellow-700 text-[12px]">Haha</span>
+                                    </span>
+                                  )}
+                                  {reply?.single_reaction?.type === "wow" && (
+                                    <span className="font-semibold">
+                                      <span className="text-yellow-700 text-[12px]">Wow</span>
+                                    </span>
+                                  )}
+                                  {reply?.single_reaction?.type === "sad" && (
+                                    <span className="font-semibold">
+                                      <span className="text-yellow-700 text-[12px]">Sad</span>
+                                    </span>
+                                  )}
+                                  {reply?.single_reaction?.type === "angry" && (
+                                    <span className="font-semibold">
+                                      <span className="text-red-500 text-[12px]">Angry</span>
+                                    </span>
+                                  )}
+                                </span>
+                              )}
+                              {showCommentReactionsFor === reply.id && (
+                                <div
+                                  ref={commentReactionRef}
+                                  className="absolute bottom-full w-50 bg-white p-2 rounded-full shadow-lg flex space-x-2 z-10"
+                                >
+                                  <img
+                                    src="/like.png"
+                                    alt="Like"
+                                    className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleReplyReaction(reply.id, "like", reply.comment_id, item?.latest_comment?.id);
+                                    }}
+                                  />
+                                  <img
+                                    src="/love.png"
+                                    alt="Love"
+                                    className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleReplyReaction(reply.id, "love", reply.comment_id, item?.latest_comment?.id);
+                                    }}
+                                  />
+                                  <img
+                                    src="/care.png"
+                                    alt="Care"
+                                    className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleReplyReaction(reply.id, "care", reply.comment_id, item?.latest_comment?.id);
+                                    }}
+                                  />
+                                  <img
+                                    src="/haha.png"
+                                    alt="Haha"
+                                    className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleReplyReaction(reply.id, "haha", reply.comment_id, item?.latest_comment?.id);
+                                    }}
+                                  />
+                                  <img
+                                    src="/wow.png"
+                                    alt="Wow"
+                                    className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleReplyReaction(reply.id, "wow", reply.comment_id, item?.latest_comment?.id);
+                                    }}
+                                  />
+                                  <img
+                                    src="/sad.png"
+                                    alt="Sad"
+                                    className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleReplyReaction(reply.id, "sad", reply.comment_id, item?.latest_comment?.id);
+                                    }}
+                                  />
+                                  <img
+                                    src="/angry.png"
+                                    alt="Angry"
+                                    className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleReplyReaction(reply.id, "angry", reply.comment_id, item?.latest_comment?.id);
+                                    }}
+                                  />
+                                </div>
+                              )}
                             </button>
                             <button 
                               className="hover:underline cursor-pointer" 
@@ -2936,7 +3054,7 @@ const reactionsImages = (item) => {
 
                       {/* Emoji picker */}
                       {showEmojiPicker === `single-reply-${item.id}-${item?.latest_comment?.id}` && (
-                        <div className="absolute left-0 top-full mt-1 bg-white border rounded-lg shadow-xl z-[9999] w-80">
+                        <div className="emoji-picker-container absolute left-0 top-full mt-1 bg-white border rounded-lg shadow-xl z-[9999] w-80">
                           <div className="p-3">
                             {/* Emoji categories */}
                             <div className="flex gap-1 mb-2 border-b pb-2">
@@ -3065,14 +3183,14 @@ const reactionsImages = (item) => {
                       </button>
 
                       {/* Emoji picker button */}
-                  {/* <button
+                      <button
                         type="button"
                         className="p-1 text-gray-500 hover:text-yellow-500 transition-colors"
                         onClick={() => toggleEmojiPicker(`post-comment-${item.id}`)}
                         title="Add emoji"
                       >
                         <span className="text-base">😊</span>
-                      </button> */}
+                      </button>
 
                       {/* Send button */}
                       <button
@@ -3114,7 +3232,7 @@ const reactionsImages = (item) => {
 
                   {/* Emoji picker */}
                   {showEmojiPicker === `post-comment-${item.id}` && (
-                    <div className="absolute left-0 top-full mt-1 bg-white border rounded-lg shadow-xl z-[9999] w-80">
+                    <div className="emoji-picker-container absolute left-0 top-full mt-1 bg-white border rounded-lg shadow-xl z-[9999] w-80">
                       <div className="p-3">
                         {/* Emoji categories */}
                         <div className="flex gap-1 mb-2 border-b pb-2">
