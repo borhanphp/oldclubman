@@ -360,6 +360,26 @@ const PostList = ({ postsData }) => {
   const mentionDropdownRef = useRef(null);
   const mentionAbortControllerRef = useRef(null);
 
+  const measureCanvasRef = useRef(null);
+
+  const resetMentionState = useCallback((options = { abortRequest: true }) => {
+    const { abortRequest } = options;
+
+    setMentionOpenFor(null);
+    setMentionQuery("");
+    setMentionOptions([]);
+    setMentionActiveIndex(0);
+    setMentionPage(1);
+    setMentionHasMore(true);
+    setMentionLoading(false);
+    mentionMetaRef.current = {};
+
+    if (abortRequest && mentionAbortControllerRef.current) {
+      mentionAbortControllerRef.current.abort();
+      mentionAbortControllerRef.current = null;
+    }
+  }, []);
+
   const buildMentionCandidates = useCallback((query = "") => {
     // Collect users from multiple sources
     let allUsers = [];
@@ -533,56 +553,86 @@ const PostList = ({ postsData }) => {
   };
 
   const setInputValueByKey = (inputKey, value) => {
-    if (inputKey.startsWith("reply-") || inputKey.startsWith("single-reply-")) {
-      setModalReplyInputs((prev) => ({ ...prev, [inputKey]: value }));
-      return;
-    }
-    if (inputKey.startsWith("modal-comment-") || inputKey.startsWith("post-comment-")) {
-      const parts = inputKey.split("-");
-      const postId = parts[parts.length - 1];
-      setCommentInputs((prev) => ({ ...prev, [postId]: value }));
-      return;
-    }
+  if (inputKey.startsWith("reply-") || inputKey.startsWith("single-reply-")) {
+    setModalReplyInputs((prev) => ({ ...prev, [inputKey]: value }));
+    return;
+  }
+  if (inputKey.startsWith("modal-comment-") || inputKey.startsWith("post-comment-")) {
     const parts = inputKey.split("-");
     const postId = parts[parts.length - 1];
     setCommentInputs((prev) => ({ ...prev, [postId]: value }));
-  };
+    return;
+  }
+  const parts = inputKey.split("-");
+  const postId = parts[parts.length - 1];
+  setCommentInputs((prev) => ({ ...prev, [postId]: value }));
+};
 
-  const handleMentionDetect = async (e, inputKey) => {
+const calculateCaretOffset = useCallback((inputElement, selectionStart, value) => {
+  if (!inputElement) return { left: 0 };
+  if (typeof window === 'undefined') return { left: 0 };
+
+  if (!measureCanvasRef.current) {
+    measureCanvasRef.current = document.createElement('canvas');
+  }
+
+  const canvas = measureCanvasRef.current;
+  const context = canvas.getContext('2d');
+  if (!context) return { left: 0 };
+
+  const style = window.getComputedStyle(inputElement);
+  const fontParts = [style.fontStyle, style.fontVariant, style.fontWeight, style.fontSize, style.fontFamily].filter(Boolean);
+  context.font = fontParts.join(' ');
+
+  const textBeforeCaret = (value || '').slice(0, selectionStart);
+  const textMetrics = context.measureText(textBeforeCaret);
+  const paddingLeft = parseFloat(style.paddingLeft) || 0;
+  const borderLeft = parseFloat(style.borderLeftWidth) || 0;
+  const scrollLeft = inputElement.scrollLeft || 0;
+
+  const left = paddingLeft + borderLeft + textMetrics.width - scrollLeft;
+  return { left };
+}, []);
+
+const handleMentionDetect = async (e, inputKey) => {
     const value = e.target.value;
-    const caret = e.target.selectionStart || value.length;
+    const caret = e.target.selectionStart ?? value.length;
     const before = value.slice(0, caret);
-    const match = before.match(/@([^@]*)$/);
-    
-    console.log('🎯 Mention detect:', { value, before, match, inputKey, hasMatch: !!match });
-    
-    if (match) {
-      const q = match[1];
-      
-      mentionMetaRef.current[inputKey] = { anchor: caret - match[0].length };
-      setMentionQuery(q);
-      setMentionActiveIndex(0);
-      setMentionOpenFor(inputKey);
-      
-      // Reset pagination state for new search
-      setMentionPage(1);
-      setMentionHasMore(true);
-      
-      // Fetch mentioned people from API (first page)
-      await fetchMentionedPeople(q, 1, false);
-      
-    } else if (mentionOpenFor === inputKey) {
-      setMentionOpenFor(null);
-      setMentionQuery("");
-      setMentionOptions([]);
-      setMentionPage(1);
-      setMentionHasMore(true);
-      
-      // Cancel any ongoing API request
-      if (mentionAbortControllerRef.current) {
-        mentionAbortControllerRef.current.abort();
+    const atIndex = before.lastIndexOf('@');
+
+    console.log('🎯 Mention detect:', { value, before, atIndex, inputKey });
+
+    const shouldReset = () => {
+      if (mentionOpenFor === inputKey) {
+        resetMentionState();
       }
+    };
+
+    if (atIndex === -1) {
+      shouldReset();
+      return;
     }
+
+    const prevChar = atIndex === 0 ? ' ' : before[atIndex - 1];
+    const query = before.slice(atIndex + 1);
+    const isValidPrev = /\s|^|[\(\[{]/.test(prevChar);
+    const isValidQuery = /^[a-zA-Z0-9._-]*$/.test(query);
+
+    if (!isValidPrev || !isValidQuery) {
+      shouldReset();
+      return;
+    }
+
+    mentionMetaRef.current[inputKey] = { anchor: atIndex };
+    setMentionQuery(query);
+    setMentionActiveIndex(0);
+    setMentionOpenFor(inputKey);
+
+    // Reset pagination state for new search
+    setMentionPage(1);
+    setMentionHasMore(true);
+
+    await fetchMentionedPeople(query, 1, false);
   };
 
   // Store mention mappings persistently
@@ -620,10 +670,7 @@ const PostList = ({ postsData }) => {
     console.log('🔗 Stored mention mapping:', mentionMappingsRef.current.get(normalizedName));
     
     setInputValueByKey(inputKey, newValue);
-    setMentionOpenFor(null);
-    setMentionQuery("");
-    setMentionOptions([]);
-    setMentionActiveIndex(0);
+    resetMentionState({ abortRequest: false });
     setTimeout(() => {
       if (input) {
         const newCaret = (before + token).length;
@@ -631,9 +678,29 @@ const PostList = ({ postsData }) => {
         input.setSelectionRange(newCaret, newCaret);
       }
     }, 0);
-  }, []);
+  }, [resetMentionState]);
 
   // Handle infinite scrolling in mention dropdown
+  useEffect(() => {
+    if (!mentionOpenFor) return;
+
+    const handleClickOutside = (event) => {
+      const dropdownEl = mentionDropdownRef.current;
+      const activeInput = inputRefs.current[mentionOpenFor];
+
+      if (dropdownEl && dropdownEl.contains(event.target)) return;
+      if (activeInput && activeInput.contains(event.target)) return;
+
+      resetMentionState();
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [mentionOpenFor, resetMentionState]);
+
   const handleMentionScroll = useCallback(async (e) => {
     const { scrollTop, scrollHeight, clientHeight } = e.target;
     const isNearBottom = scrollTop + clientHeight >= scrollHeight - 10;
@@ -669,41 +736,54 @@ const PostList = ({ postsData }) => {
 
     // Calculate position for fixed dropdown
     const inputElement = inputRefs.current[inputKey];
-    let dropdownStyle = {
-      position: 'absolute',
-      left: 0,
-      top: 'calc(100% + 4px)',
-      zIndex: 9999,
-    };
+    let dropdownStyle = null;
 
-    if (inputElement) {
-      const inputRect = inputElement.getBoundingClientRect();
-      const anchor = inputElement.closest('[data-mention-anchor="true"]');
+    if (inputElement && typeof window !== 'undefined') {
+      const anchor = inputElement.closest('[data-mention-anchor="true"]') || inputElement;
+      const anchorRect = anchor.getBoundingClientRect();
+      const viewportPadding = 12;
+      const anchorWidth = anchor.clientWidth || anchorRect.width;
+      const minWidth = Math.min(260, window.innerWidth - viewportPadding * 2);
+      const dropdownWidth = Math.min(Math.max(inputElement.offsetWidth || anchorWidth, minWidth), anchorWidth);
 
-      if (anchor) {
-        const anchorRect = anchor.getBoundingClientRect();
-        dropdownStyle = {
-          position: 'absolute',
-          left: inputRect.left - anchorRect.left,
-          top: inputRect.bottom - anchorRect.top + 4,
-          minWidth: Math.max(inputRect.width, 200),
-          maxWidth: anchorRect.width,
-          zIndex: 9999,
-        };
+      const value = getInputValueByKey(inputKey) || '';
+      const selectionStart = inputElement.selectionStart ?? value.length;
+      const caretOffset = calculateCaretOffset(inputElement, selectionStart, value);
+      const caretBaseLeft = caretOffset.left;
+
+      const spaceBelow = anchorRect.height - (inputElement.offsetTop + inputElement.offsetHeight) + 4;
+      const spaceAbove = inputElement.offsetTop - 4;
+      const preferredHeight = 240;
+      let maxHeight = preferredHeight;
+      let top = inputElement.offsetTop + inputElement.offsetHeight + 4;
+
+      if (spaceBelow < 160 && spaceAbove > spaceBelow) {
+        maxHeight = Math.min(preferredHeight, Math.max(160, spaceAbove));
+        top = Math.max(0, inputElement.offsetTop - maxHeight - 4);
       } else {
-        dropdownStyle = {
-          position: 'absolute',
-          left: 0,
-          top: inputRect.height + 4,
-          minWidth: Math.max(inputRect.width, 200),
-          zIndex: 9999,
-        };
+        maxHeight = Math.min(preferredHeight, Math.max(160, spaceBelow));
       }
+
+      const desiredLeft = caretBaseLeft - dropdownWidth / 2;
+      const maxLeft = Math.max(0, anchorWidth - dropdownWidth);
+      const left = Math.max(0, Math.min(desiredLeft, maxLeft));
+
+      dropdownStyle = {
+        position: 'absolute',
+        left,
+        top,
+        width: dropdownWidth,
+        maxHeight,
+        overflowY: 'auto',
+        zIndex: 11000,
+      };
     }
 
 
+    if (!dropdownStyle) return null;
+
     return (
-      <div 
+      <div
         ref={mentionDropdownRef}
         className="bg-white border rounded-md shadow-xl max-h-56 overflow-auto"
         style={dropdownStyle}
@@ -725,16 +805,14 @@ const PostList = ({ postsData }) => {
             </div>
           </div>
         ))}
-        
-        {/* Loading indicator */}
+
         {mentionLoading && (
           <div className="flex items-center justify-center py-2 border-t">
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
             <span className="ml-2 text-xs text-gray-500">Loading more...</span>
           </div>
         )}
-        
-        {/* No more results indicator */}
+
         {!mentionHasMore && mentionOptions.length > 0 && !mentionLoading && (
           <div className="text-center py-2 text-xs text-gray-500 border-t">
             No more results
@@ -742,7 +820,7 @@ const PostList = ({ postsData }) => {
         )}
       </div>
     );
-  }, [mentionOpenFor, mentionOptions, mentionActiveIndex, mentionLoading, mentionHasMore, handleMentionScroll, insertMentionToken]);
+  }, [mentionOpenFor, mentionOptions, mentionActiveIndex, mentionLoading, mentionHasMore, handleMentionScroll, insertMentionToken, calculateCaretOffset, getInputValueByKey]);
 
   // Helper function to convert @Name format back to [Name](id) for server
   const processContentForServer = useCallback((content, mentionData = {}) => {
@@ -962,7 +1040,7 @@ const PostList = ({ postsData }) => {
     }
     if (e.key === "Escape") {
       e.preventDefault();
-      setMentionOpenFor(null);
+      resetMentionState();
       return true;
     }
     return false;
@@ -1133,6 +1211,18 @@ const PostList = ({ postsData }) => {
         console.error("Failed to submit reply:", error);
       });
   };
+
+  useEffect(() => {
+    if (!showCommentsModal) {
+      resetMentionState({ abortRequest: false });
+    }
+  }, [showCommentsModal, resetMentionState]);
+
+  useEffect(() => {
+    return () => {
+      resetMentionState();
+    };
+  }, [resetMentionState]);
 
   const handleViewAllReplies = (commentId, index) => {
     setLoadingReplies((prev) => ({ ...prev, [commentId]: true }));
@@ -3390,7 +3480,7 @@ const reactionsImages = (item) => {
                 </button>
               </div>
             </div>
-            <div className={`flex-1 px-6 pt-4 pb-2 ${mentionOpenFor ? 'overflow-visible' : 'overflow-y-auto'}`}>
+            <div className="flex-1 px-6 pt-4 pb-2 overflow-y-auto">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-10 h-10 rounded-full overflow-hidden">
                   <img
@@ -4406,8 +4496,16 @@ const reactionsImages = (item) => {
             *************************************************************** */}
             </div>
             
-            {/* Comment input at bottom */}
-            <div className="p-4 bg-gray-50 flex items-center gap-2">
+           <div className="relative">
+             {/* Mention dropdown */}
+           <div className="absolute left-20 bottom-65">
+                
+                {renderMentionDropdown(`modal-comment-${basicPostData.id}`)}
+                 </div>
+             {/* Comment input at bottom */}
+             <div className="p-4 bg-gray-50 flex items-center gap-2 ">
+            
+             
               <div className="w-9 h-9 rounded-full overflow-hidden">
                 <img
                   src={ profile?.client?.image ? 
@@ -4421,9 +4519,12 @@ const reactionsImages = (item) => {
                   }}
                 />
               </div>
+               
               <div className="relative flex-1" data-mention-anchor="true">
-                {/* Combined input container so images appear inside */}
+
                 <div className="w-full border rounded-full px-2 py-1 text-sm bg-white flex items-center gap-2 focus-within:ring-2 focus-within:ring-blue-400 relative">
+                {/* Combined input container so images appear inside */}
+                
                   {/* Thumbnails inside the input */}
                   {Array.isArray(modalReplyImages[`modal-comment-${basicPostData.id}`]) && modalReplyImages[`modal-comment-${basicPostData.id}`].length > 0 && (
                     <div className="flex items-center gap-1 max-w-32 overflow-x-auto">
@@ -4547,8 +4648,7 @@ const reactionsImages = (item) => {
                     </div>
                   )}
 
-                  {/* Mention dropdown */}
-                  {renderMentionDropdown(`modal-comment-${basicPostData.id}`)}
+                  
               </div>
               <button
                 onClick={() => handleCommentSubmit(basicPostData.id)}
@@ -4558,6 +4658,7 @@ const reactionsImages = (item) => {
                 Post
               </button>
             </div>
+           </div>
           </div>
         </div>
       )}
@@ -4812,3 +4913,5 @@ PostList.displayName = 'PostList';
 
 // Memoize the entire component to prevent unnecessary re-renders
 export default memo(PostList);
+
+
