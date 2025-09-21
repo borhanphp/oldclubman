@@ -100,6 +100,8 @@ const PostList = ({ postsData }) => {
   const [followLoading, setFollowLoading] = useState(false);
   const hidePopupTimeoutRef = useRef(null);
 
+  const profilePopupAnchorRef = useRef(null);
+
   // Memoize emoji categories since they're static
   const emojiCategories = useMemo(() => ({
     smileys: {
@@ -1730,13 +1732,23 @@ const PostList = ({ postsData }) => {
     setShowShareModal(true);
   };
 
+  // Helper to keep the profile overview anchored next to its trigger
+  const calculateProfilePopupPosition = useCallback((anchorEl) => {
+    if (!anchorEl) return null;
+
+    const rect = anchorEl.getBoundingClientRect();
+    return {
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10,
+    };
+  }, []);
+
   // Profile popup handlers
   const showProfilePopup = async (userId, event) => {
-    const rect = event.target.getBoundingClientRect();
-    const position = {
-      x: rect.left + rect.width / 2,
-      y: rect.top - 10
-    };
+    const anchorEl = event?.currentTarget || event?.target || null;
+    profilePopupAnchorRef.current = anchorEl;
+
+    const position = calculateProfilePopupPosition(anchorEl) || { x: 0, y: 0 };
 
     setProfilePopup({
       isVisible: true,
@@ -1867,6 +1879,7 @@ const PostList = ({ postsData }) => {
         clearTimeout(hidePopupTimeoutRef.current);
         hidePopupTimeoutRef.current = null;
       }
+      profilePopupAnchorRef.current = null;
       setProfilePopup({
         isVisible: false,
         userId: null,
@@ -1876,6 +1889,7 @@ const PostList = ({ postsData }) => {
     } else {
       // Add delay before hiding
       hidePopupTimeoutRef.current = setTimeout(() => {
+        profilePopupAnchorRef.current = null;
         setProfilePopup({
           isVisible: false,
           userId: null,
@@ -1892,6 +1906,48 @@ const PostList = ({ postsData }) => {
       hidePopupTimeoutRef.current = null;
     }
   };
+
+  useEffect(() => {
+    if (!profilePopup.isVisible) return;
+
+    const anchorEl = profilePopupAnchorRef.current;
+    if (!anchorEl) return;
+
+    const updatePosition = () => {
+      const nextPosition = calculateProfilePopupPosition(profilePopupAnchorRef.current);
+      if (!nextPosition) return;
+
+      setProfilePopup((prev) => {
+        if (!prev.isVisible) return prev;
+        if (Math.abs(prev.position.x - nextPosition.x) < 0.5 && Math.abs(prev.position.y - nextPosition.y) < 0.5) {
+          return prev;
+        }
+        return {
+          ...prev,
+          position: nextPosition,
+        };
+      });
+    };
+
+    updatePosition();
+
+    window.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('resize', updatePosition);
+
+    let resizeObserver = null;
+    if (typeof ResizeObserver !== 'undefined' && anchorEl) {
+      resizeObserver = new ResizeObserver(() => updatePosition());
+      resizeObserver.observe(anchorEl);
+    }
+
+    return () => {
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+    };
+  }, [profilePopup.isVisible, profilePopup.userId, calculateProfilePopupPosition]);
 
   // Handle follow/unfollow actions
   const handleFollowToggle = async (userId, isCurrentlyFollowing) => {
