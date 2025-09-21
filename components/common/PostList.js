@@ -665,18 +665,38 @@ const PostList = ({ postsData }) => {
 
     // Calculate position for fixed dropdown
     const inputElement = inputRefs.current[inputKey];
-    let dropdownStyle = {};
-    
+    let dropdownStyle = {
+      position: 'absolute',
+      left: 0,
+      top: 'calc(100% + 4px)',
+      zIndex: 9999,
+    };
+
     if (inputElement) {
-      const rect = inputElement.getBoundingClientRect();
-      dropdownStyle = {
-        position: 'fixed',
-        left: rect.left,
-        right: window.innerWidth - rect.right,
-        bottom: window.innerHeight - rect.top + 4, // Position above the input
-        zIndex: 999999
-      };
+      const inputRect = inputElement.getBoundingClientRect();
+      const anchor = inputElement.closest('[data-mention-anchor="true"]');
+
+      if (anchor) {
+        const anchorRect = anchor.getBoundingClientRect();
+        dropdownStyle = {
+          position: 'absolute',
+          left: inputRect.left - anchorRect.left,
+          top: inputRect.bottom - anchorRect.top + 4,
+          minWidth: Math.max(inputRect.width, 200),
+          maxWidth: anchorRect.width,
+          zIndex: 9999,
+        };
+      } else {
+        dropdownStyle = {
+          position: 'absolute',
+          left: 0,
+          top: inputRect.height + 4,
+          minWidth: Math.max(inputRect.width, 200),
+          zIndex: 9999,
+        };
+      }
     }
+
 
     return (
       <div 
@@ -1263,7 +1283,7 @@ const PostList = ({ postsData }) => {
               />
               
               {/* Input Container */}
-              <div className="flex-1 bg-gray-100 rounded-2xl border border-gray-200 hover:bg-gray-50 focus-within:bg-white focus-within:border-blue-500 transition-all duration-200 relative">
+              <div className="flex-1 bg-gray-100 rounded-2xl border border-gray-200 hover:bg-gray-50 focus-within:bg-white focus-within:border-blue-500 transition-all duration-200 relative" data-mention-anchor="true">
                 <div className="flex items-center px-3 py-2">
                   <input
                     type="text"
@@ -2449,7 +2469,7 @@ const reactionsImages = (item) => {
             </div>
 
             <div className="flex justify-between py-1 border-gray-200 border-b">
-              <div className="flex-1 relative">
+              <div className="flex-1 relative" data-mention-anchor="true">
                 <div className="relative">
                   <button
                     className="w-full py-1 cursor-pointer text-center text-blue-500 bg-gray-100 rounded-md"
@@ -2969,7 +2989,7 @@ const reactionsImages = (item) => {
                         e.currentTarget.src = "/common-avator.jpg";
                       }}
                     />
-                    <div className="flex-1 relative">
+                    <div className="flex-1 relative" data-mention-anchor="true">
                       {/* Combined input container with image previews */}
                       <div className="w-full border rounded-full px-2 py-1 text-sm bg-gray-100 flex items-center gap-2 focus-within:ring-2 focus-within:ring-blue-400 relative">
                         {/* Photo thumbnails inside the input */}
@@ -3124,7 +3144,7 @@ const reactionsImages = (item) => {
                     }}
                   />
                 </div>
-                <div className="flex-grow relative">
+                <div className="flex-grow relative" data-mention-anchor="true">
                   {/* Combined input container with image previews */}
                   <div className="w-full border rounded-full px-2 py-1 text-sm bg-gray-100 flex items-center gap-2 focus-within:ring-2 focus-within:ring-blue-400 relative">
                     {/* Photo thumbnails inside the input */}
@@ -3448,7 +3468,7 @@ const reactionsImages = (item) => {
               </div>
 
               <div className="flex justify-between py-1 border-gray-200 border-b mb-4">
-                <div className="flex-1 relative">
+                <div className="flex-1 relative" data-mention-anchor="true">
                   <div className="relative">
                     <button
                       className="w-full py-1 cursor-pointer text-center text-blue-500 bg-gray-100 rounded-md"
@@ -3726,7 +3746,7 @@ const reactionsImages = (item) => {
                           />
                           
                           {/* Input Container */}
-                          <div className="flex-1 bg-gray-100 rounded-2xl border border-gray-200 hover:bg-gray-50 focus-within:bg-white focus-within:border-blue-500 transition-all duration-200 relative">
+                          <div className="flex-1 bg-gray-100 rounded-2xl border border-gray-200 hover:bg-gray-50 focus-within:bg-white focus-within:border-blue-500 transition-all duration-200 relative" data-mention-anchor="true">
                             <div className="flex items-center px-3 py-2">
                           <input
                             type="text"
@@ -4142,7 +4162,7 @@ const reactionsImages = (item) => {
                                 />
                                 
                                 {/* Input Container */}
-                                <div className="flex-1 bg-gray-100 rounded-2xl border border-gray-200 hover:bg-gray-50 focus-within:bg-white focus-within:border-blue-500 transition-all duration-200 relative">
+                                <div className="flex-1 bg-gray-100 rounded-2xl border border-gray-200 hover:bg-gray-50 focus-within:bg-white focus-within:border-blue-500 transition-all duration-200 relative" data-mention-anchor="true">
                                   <div className="flex items-center px-3 py-2">
                                     <input
                                       type="text"
@@ -4333,7 +4353,7 @@ const reactionsImages = (item) => {
                   }}
                 />
               </div>
-              <div className="relative flex-1">
+              <div className="relative flex-1" data-mention-anchor="true">
                 {/* Combined input container so images appear inside */}
                 <div className="w-full border rounded-full px-2 py-1 text-sm bg-white flex items-center gap-2 focus-within:ring-2 focus-within:ring-blue-400 relative">
                   {/* Thumbnails inside the input */}
