@@ -1046,8 +1046,44 @@ const handleMentionDetect = async (e, inputKey) => {
     return false;
   };
 
-  // Render content with mentions - optimized with useCallback
-  const renderContentWithMentions = useCallback((text) => {
+  
+  // Sanitize HTML to allow only safe formatting tags
+  const sanitizeHTML = useCallback((html) => {
+    if (!html) return '';
+    
+    // Only allow specific formatting tags: b, i, u, strong, em, p, h1, a
+    const allowedTags = ['b', 'i', 'u', 'strong', 'em', 'p', 'h1', 'a'];
+    
+    // Remove all HTML tags except the allowed ones
+    let sanitized = html.replace(/<\/?([^>]+)>/g, (match, tagName) => {
+      const tag = tagName.toLowerCase().split(' ')[0]; // Get tag name without attributes
+      if (allowedTags.includes(tag)) {
+        // For anchor tags, only allow href and target attributes
+        if (tag === 'a') {
+          const hrefMatch = match.match(/href\s*=\s*["']([^"']*)["']/i);
+          const targetMatch = match.match(/target\s*=\s*["']([^"']*)["']/i);
+          
+          let cleanMatch = '<a';
+          if (hrefMatch) {
+            cleanMatch += ` href="${hrefMatch[1]}"`;
+          }
+          if (targetMatch) {
+            cleanMatch += ` target="${targetMatch[1]}"`;
+          }
+          cleanMatch += '>';
+          
+          return cleanMatch;
+        }
+        return match; // Keep allowed tags
+      }
+      return ''; // Remove disallowed tags
+    });
+    
+    return sanitized;
+  }, []);
+
+  // Render content with mentions and HTML formatting - optimized with useCallback
+  const renderContentWithHtml = useCallback((text) => {
     if (!text) return null;
     
     // Clean up ALL @ symbols from mention formats
@@ -1056,6 +1092,9 @@ const handleMentionDetect = async (e, inputKey) => {
       .replace(/@(\[.+?\]\(\d+\))/g, '$1')
       // Remove @ from standalone @Name mentions (but keep the name)
       .replace(/@([^@\s]+(?:\s[^@\s]+)*)/g, '$1');
+    
+    // Sanitize HTML to only allow safe formatting tags
+    cleanedText = sanitizeHTML(cleanedText);
     
     // Handle the clean [Name](id) format
     const fullFormatRegex = /\[(.+?)\]\((\d+)\)/g;
@@ -1093,9 +1132,151 @@ const handleMentionDetect = async (e, inputKey) => {
       elements.push(cleanedText.slice(lastIndex));
     }
     
-    // Return processed elements if we found mentions, otherwise return cleaned text
-    return elements.length > 0 ? elements : cleanedText;
-  }, []);
+        // If we have elements (mentions), we need to handle HTML in each text part
+        if (elements.length > 0) {
+          return elements.map((element, index) => {
+            if (typeof element === 'string') {
+              // For text parts, render sanitized HTML using dangerouslySetInnerHTML
+              return (
+                <div 
+                  key={index} 
+                  className="post-content"
+                  style={{
+                    '--p-display': 'block',
+                    '--p-margin': '0.5em 0',
+                    '--h1-display': 'block',
+                    '--h1-margin': '0.5em 0',
+                    '--h1-font-size': '1.5em',
+                    '--h1-font-weight': 'bold',
+                    '--a-color': '#2563eb',
+                    '--a-text-decoration': 'underline',
+                    '--a-hover-color': '#1d4ed8'
+                  }}
+                  dangerouslySetInnerHTML={{ __html: element }} 
+                />
+              );
+            }
+            return element;
+          });
+        }
+        
+        // If no mentions, render the cleaned text with sanitized HTML support
+        return (
+          <div 
+            className="post-content"
+            style={{
+              '--p-display': 'block',
+              '--p-margin': '0.5em 0',
+              '--h1-display': 'block',
+              '--h1-margin': '0.5em 0',
+              '--h1-font-size': '1.5em',
+              '--h1-font-weight': 'bold',
+              '--a-color': '#2563eb',
+              '--a-text-decoration': 'underline',
+              '--a-hover-color': '#1d4ed8'
+            }}
+            dangerouslySetInnerHTML={{ __html: cleanedText }} 
+          />
+        );
+  }, [sanitizeHTML]);
+
+  // Render content with mentions and HTML formatting - optimized with useCallback
+  const renderContentWithMentions = useCallback((text) => {
+    if (!text) return null;
+    
+    // Clean up ALL @ symbols from mention formats
+    let cleanedText = text
+      // Remove @ from @[Name](id) format
+      .replace(/@(\[.+?\]\(\d+\))/g, '$1')
+      // Remove @ from standalone @Name mentions (but keep the name)
+      .replace(/@([^@\s]+(?:\s[^@\s]+)*)/g, '$1');
+    
+    // Sanitize HTML to only allow safe formatting tags
+    cleanedText = sanitizeHTML(cleanedText);
+    
+    // Handle the clean [Name](id) format
+    const fullFormatRegex = /\[(.+?)\]\((\d+)\)/g;
+    
+    const elements = [];
+    let lastIndex = 0;
+    let match;
+    
+    // Handle full format mentions [Name](id) and make them clickable
+    while ((match = fullFormatRegex.exec(cleanedText)) !== null) {
+      const start = match.index;
+      const [full, name, id] = match;
+      
+      if (start > lastIndex) {
+        elements.push(cleanedText.slice(lastIndex, start));
+      }
+      elements.push(
+        <Link 
+          href={`/user/user-profile/${id}`} 
+          className="text-black hover:text-gray-700 font-bold cursor-pointer bg-blue-50 hover:bg-blue-100 px-1 py-0.5 rounded transition-colors duration-200" 
+          key={`m-${start}`}
+          onMouseEnter={(e) => {
+            cancelHidePopup();
+            showProfilePopup(id, e);
+          }}
+          onMouseLeave={() => hideProfilePopup(false)}
+        >
+          {name}
+        </Link>
+      );
+      lastIndex = start + full.length;
+    }
+    
+    if (lastIndex < cleanedText.length) {
+      elements.push(cleanedText.slice(lastIndex));
+    }
+    
+    // If we have elements (mentions), we need to handle HTML in each text part
+    if (elements.length > 0) {
+      return elements.map((element, index) => {
+        if (typeof element === 'string') {
+          // For text parts, render sanitized HTML using dangerouslySetInnerHTML
+          return (
+            <span 
+              key={index} 
+              className="post-content"
+              style={{
+                '--p-display': 'block',
+                '--p-margin': '0.5em 0',
+                '--h1-display': 'block',
+                '--h1-margin': '0.5em 0',
+                '--h1-font-size': '1.5em',
+                '--h1-font-weight': 'bold',
+                '--a-color': '#2563eb',
+                '--a-text-decoration': 'underline',
+                '--a-hover-color': '#1d4ed8'
+              }}
+              dangerouslySetInnerHTML={{ __html: element }} 
+            />
+          );
+        }
+        return element;
+      });
+    }
+    
+    // If no mentions, render the cleaned text with sanitized HTML support
+    return (
+      <span 
+        className="post-content"
+        style={{
+          '--p-display': 'block',
+          '--p-margin': '0.5em 0',
+          '--h1-display': 'block',
+          '--h1-margin': '0.5em 0',
+          '--h1-font-size': '1.5em',
+          '--h1-font-weight': 'bold',
+          '--a-color': '#2563eb',
+          '--a-text-decoration': 'underline',
+          '--a-hover-color': '#1d4ed8'
+        }}
+        dangerouslySetInnerHTML={{ __html: cleanedText }} 
+      />
+    );
+  }, [sanitizeHTML]);
 
   const handleEditPost = (postId) => {
     dispatch(getPostById(postId)).then(() => {
@@ -2412,6 +2593,21 @@ const reactionsImages = (item) => {
 
   return (
     <div className="">
+      {/* CSS for post content links */}
+      <style jsx>{`
+        .post-content a {
+          color: #2563eb !important;
+          text-decoration: underline !important;
+          cursor: pointer;
+        }
+        .post-content a:hover {
+          color: #1d4ed8 !important;
+        }
+        .post-content a:visited {
+          color: #7c3aed !important;
+        }
+      `}</style>
+      
       {processedPosts.map((item, index) => {
 
         return (
@@ -2525,19 +2721,25 @@ const reactionsImages = (item) => {
             </div>
 
             <div className="post-content">
-              {item.hasPath ? 
+              {item?.hasPath ? 
               <>
-                <div 
-                className="relative text-white text-center p-4 text-[40px] w-full min-h-[300px] rounded-lg flex items-center justify-center bg-cover bg-center bg-no-repeat"
+                <div
+                className="relative text-white text-center p-4 w-full min-h-[300px] rounded-lg flex items-center justify-center bg-cover bg-center bg-no-repeat"
                 style={{
                   backgroundImage: `url(${item.itemUrl})`,
                 }}
               >
-                {renderContentWithMentions(item?.message)}
-               
+                <p
+                  className=" dark:text-white py-2 px-6 font-bold  text-sm sm:text-base md:text-[30px]  leading-relaxed  w-full  break-words  overflow-hidden  whitespace-pre-wrap text-center">
+                  {renderContentWithHtml(item?.message)}
+                </p>
               </div>
+
               </>
-              : <p className="text-gray-700 py-2">{renderContentWithMentions(item?.message)}</p>
+              : 
+              <p className="py-2  text-[12px] sm:text-base md:text-lg leading-relaxed max-w-full sm:max-w-prose break-words">
+                {renderContentWithHtml(item?.message)}
+                </p>
               
               }
 
