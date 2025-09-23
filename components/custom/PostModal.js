@@ -202,7 +202,6 @@ const PostModal = () => {
     const plainLength = getPlainTextLength(html);
 
     if (selectedBackground !== null && plainLength > 280) {
-      toast.error("Can not write more then 150 charencter");
       editor.innerHTML = previousMessageRef.current || '';
 
       if (typeof window !== 'undefined') {

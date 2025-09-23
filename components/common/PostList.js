@@ -1096,6 +1096,9 @@ const handleMentionDetect = async (e, inputKey) => {
     // Sanitize HTML to only allow safe formatting tags
     cleanedText = sanitizeHTML(cleanedText);
     
+    // Add proper styling to H1 elements
+    cleanedText = cleanedText.replace(/<h1([^>]*)>/gi, '<h1$1 style="font-size: 1.5em; font-weight: bold; color: inherit; display: block; margin: 0.5em 0; line-height: 1.2;">');
+    
     // Handle the clean [Name](id) format
     const fullFormatRegex = /\[(.+?)\]\((\d+)\)/g;
     
@@ -2605,6 +2608,14 @@ const reactionsImages = (item) => {
         }
         .post-content a:visited {
           color: #7c3aed !important;
+        }
+        .post-content h1 {
+          font-size: 1.5em !important;
+          font-weight: bold !important;
+          margin: 0.5em 0 !important;
+          display: block !important;
+          line-height: 1.2 !important;
+          color: inherit !important;
         }
       `}</style>
       
