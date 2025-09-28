@@ -197,23 +197,15 @@ const PostModal = () => {
     if (!editor) {
       return;
     }
+    
 
     const html = editor.innerHTML;
     const plainLength = getPlainTextLength(html);
-
-    if (selectedBackground !== null && plainLength > 280) {
-      editor.innerHTML = previousMessageRef.current || '';
-
-      if (typeof window !== 'undefined') {
-        const range = document.createRange();
-        range.selectNodeContents(editor);
-        range.collapse(false);
-        const selection = window.getSelection();
-        selection.removeAllRanges();
-        selection.addRange(range);
-      }
-
-      return;
+    console.log('plainLength',plainLength)
+    console.log('null', plainLength > 280 ? "big" : "small")
+    if (plainLength > 280) {
+      setSelectedBackground(null);
+      storedRichMessageRef.current = '';
     }
 
     previousMessageRef.current = html;
@@ -358,7 +350,7 @@ const PostModal = () => {
       const formData = new FormData();
       formData.append('message', messageContent);
       formData.append('privacy_mode', basicPostData.privacy_mode);
-      if (selectedBackground) {
+      if (messageContent?.length < 280 && selectedBackground) {
         formData.append('background_url', selectedBackground?.image?.path);
       }
 
@@ -539,7 +531,7 @@ const PostModal = () => {
               >
                 <div className="relative w-full max-w-md">
                   {!plainMessageLength && (
-                    <span aria-hidden="true" className="pointer-events-none absolute left-30 top-10 text-white/70">{`What's on your mind, ${profile?.client?.fname}?`}</span>
+                    <span aria-hidden="true" className="pointer-events-none absolute left-30 top-5 text-white/70">{`What's on your mind, ${profile?.client?.fname}?`}</span>
                   )}
                   <div
                     ref={messageEditorRef}

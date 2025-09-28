@@ -722,13 +722,7 @@ const handleMentionDetect = async (e, inputKey) => {
 
   // Reusable mention dropdown component with pagination
   const renderMentionDropdown = useCallback((inputKey) => {
-    console.log('🎭 renderMentionDropdown:', { 
-      inputKey, 
-      mentionOpenFor, 
-      optionsLength: mentionOptions.length, 
-      mentionLoading,
-      shouldShow: mentionOpenFor === inputKey && (mentionOptions.length > 0 || mentionLoading)
-    });
+ 
     
     if (mentionOpenFor !== inputKey || (mentionOptions.length === 0 && !mentionLoading)) {
       return null;
@@ -2596,8 +2590,15 @@ const reactionsImages = (item) => {
 
   return (
     <div className="">
-      {/* CSS for post content links */}
+      {/* CSS for post content styling */}
       <style jsx>{`
+        .post-content h1 {
+          font-size: 1.5em !important;
+          font-weight: bold !important;
+          margin: 0.5em 0 !important;
+          display: block !important;
+          color: inherit !important;
+        }
         .post-content a {
           color: #2563eb !important;
           text-decoration: underline !important;
@@ -2608,14 +2609,6 @@ const reactionsImages = (item) => {
         }
         .post-content a:visited {
           color: #7c3aed !important;
-        }
-        .post-content h1 {
-          font-size: 1.5em !important;
-          font-weight: bold !important;
-          margin: 0.5em 0 !important;
-          display: block !important;
-          line-height: 1.2 !important;
-          color: inherit !important;
         }
       `}</style>
       
@@ -2740,17 +2733,17 @@ const reactionsImages = (item) => {
                   backgroundImage: `url(${item.itemUrl})`,
                 }}
               >
-                <p
+                <div
                   className=" dark:text-white py-2 px-6 font-bold  text-sm sm:text-base md:text-[30px]  leading-relaxed  w-full  break-words  overflow-hidden  whitespace-pre-wrap text-center">
                   {renderContentWithHtml(item?.message)}
-                </p>
+                </div>
               </div>
 
               </>
               : 
-              <p className="py-2  text-[12px] sm:text-base md:text-lg leading-relaxed max-w-full sm:max-w-prose break-words">
+              <div className="py-2  text-[12px] sm:text-base md:text-lg leading-relaxed max-w-full sm:max-w-prose break-words">
                 {renderContentWithHtml(item?.message)}
-                </p>
+                </div>
               
               }
 
