@@ -25,6 +25,7 @@ const PostModal = () => {
   const [isShowImageSection, setIsShowImageSection] = useState(id ? true :false);
   const [selectedBackground, setSelectedBackground] = useState(/\/post_background\/.+/.test(basicPostData?.background_url) ? basicPostData?.background_url : null);
   const [backgroundScrollIndex, setBackgroundScrollIndex] = useState(0);
+  const [isVisibleBg, setIsVisibleBg] = useState(true);
 
   const params = useParams();
 
@@ -43,7 +44,48 @@ const PostModal = () => {
   const visibleBackgrounds = backgroundOptions.slice(backgroundScrollIndex, backgroundScrollIndex + 8);
 
   const handleBackgroundSelect = (background) => {
+    // Preserve existing text and place it on background
+    // if (messageEditorRef.current) {
+    //   const currentHtml = messageEditorRef.current.innerHTML || '';
+    //   const plainText = getPlainTextFromHtml(currentHtml);
+    //   // Store the original HTML for later restoration
+    //   storedRichMessageRef.current = "";
+      
+    //   // Switch to plain text mode for background
+    //   messageEditorRef.current.innerText = plainText;
+      
+    //   // Update state with plain text
+    //   dispatch(bindPostData({ ...basicPostData, message: plainText }));
+    //   previousMessageRef.current = plainText;
+    // }
+    // console.log('sdfsdf',previousMessageRef.current)
+    const plainText = getPlainTextFromHtml(messageEditorRef.current.innerHTML || "");
+    dispatch(bindPostData({ ...basicPostData, message: plainText }));
     setSelectedBackground(background);
+  };
+
+  const handleBackgroundClear = () => {
+    // Restore text when removing background
+    if (messageEditorRef.current) {
+      const currentPlainText = messageEditorRef.current.innerText || '';
+      
+      // Convert plain text to HTML paragraphs
+      let contentToRestore;
+      if (currentPlainText.trim()) {
+        contentToRestore = currentPlainText.split('\n').map(line => 
+          line.trim() ? `<p>${line.trim()}</p>` : '<p><br></p>'
+        ).join('');
+      } else {
+        // If no text, restore stored content
+        contentToRestore = storedRichMessageRef.current || '';
+      }
+      
+      messageEditorRef.current.innerHTML = contentToRestore;
+      dispatch(bindPostData({ ...basicPostData, message: contentToRestore }));
+      previousMessageRef.current = contentToRestore;
+      storedRichMessageRef.current = '';
+    }
+    setSelectedBackground(null);
   };
 
   const scrollBackgrounds = (direction) => {
@@ -193,6 +235,7 @@ const PostModal = () => {
   }, [basicPostData, dispatch, isBackgroundActive]);
 
   const handleEditorInput = () => {
+  
     const editor = messageEditorRef.current;
     if (!editor) {
       return;
@@ -201,11 +244,20 @@ const PostModal = () => {
 
     const html = editor.innerHTML;
     const plainLength = getPlainTextLength(html);
-    console.log('plainLength',plainLength)
-    console.log('null', plainLength > 280 ? "big" : "small")
+
+    if(selectedBackground){
+      editor.style.color = "white"
+      editor.style.fontWeight = "bold"
+      editor.style.fontSize = "24px"
+      editor.style.textAlign = "center"
+    }
+    
     if (plainLength > 280) {
+      setIsVisibleBg(false);
       setSelectedBackground(null);
       storedRichMessageRef.current = '';
+    }else{
+      setIsVisibleBg(true);
     }
 
     previousMessageRef.current = html;
@@ -531,7 +583,7 @@ const PostModal = () => {
               >
                 <div className="relative w-full max-w-md">
                   {!plainMessageLength && (
-                    <span aria-hidden="true" className="pointer-events-none absolute left-30 top-5 text-white/70">{`What's on your mind, ${profile?.client?.fname}?`}</span>
+                    <span aria-hidden="true" className="pointer-events-none absolute left-30 top-10 text-white/70">{`What's on your mind, ${profile?.client?.fname}?`}</span>
                   )}
                   <div
                     ref={messageEditorRef}
@@ -583,7 +635,7 @@ const PostModal = () => {
 
                 {/* White Background Option */}
                 <div
-                  onClick={() => setSelectedBackground(null)}
+                  onClick={handleBackgroundClear}
                   className={`flex-shrink-0 w-8 h-8 rounded-md border-2 transition-all duration-200 hover:scale-110 bg-white cursor-pointer ${
                     selectedBackground?.id === 'white' 
                       ? 'border-white scale-110 shadow-lg' 
@@ -593,7 +645,8 @@ const PostModal = () => {
                 />
 
                 {/* Background Swatches */}
-                {visibleBackgrounds?.map((bg) => (
+                {}
+                {isVisibleBg && visibleBackgrounds?.map((bg) => (
                   <img
                     key={bg.id}
                     src={bg?.image?.url}
@@ -621,8 +674,8 @@ const PostModal = () => {
 
 
          
-          
-          <div className="">
+          {!selectedBackground && (
+            <div className="">
             <p 
               className={`text-gray-500 mb-2 text-center cursor-pointer ${!isShowImageSection ? "border py-2 pl-2 rounded-md" : ""}`}
               onClick={() => {setIsShowImageSection(!isShowImageSection)}}
@@ -686,6 +739,8 @@ const PostModal = () => {
             )}
            
           </div>
+          )}
+          
         </div>
         
         <div className="px-4 pb-4 flex-shrink-0">
