@@ -60,7 +60,9 @@ const PostModal = () => {
     // }
     // console.log('sdfsdf',previousMessageRef.current)
     const plainText = getPlainTextFromHtml(messageEditorRef.current.innerHTML || "");
-    dispatch(bindPostData({ ...basicPostData, message: plainText }));
+    messageEditorRef.current.innerText = "";
+   
+    dispatch(bindPostData({ ...basicPostData, message: plainText+" " }));
     setSelectedBackground(background);
   };
 
@@ -576,9 +578,10 @@ const PostModal = () => {
             </div>
             {selectedBackground && selectedBackground?.id !== 'white' && plainMessageLength < 280 ? (
               <div 
-                className="relative w-full min-h-[300px] rounded-lg flex items-center justify-center bg-cover bg-center bg-no-repeat"
+                className="relative w-full min-h-[400px] rounded-lg flex items-center justify-center bg-cover bg-center bg-no-repeat"
                 style={{
                   backgroundImage: selectedBackground?.image?.url ? `url(${selectedBackground.image.url})` : `url(${basicPostData?.background_url})`,
+                paddingBottom: "100px"
                 }}
               >
                 <div className="relative w-full max-w-md">
