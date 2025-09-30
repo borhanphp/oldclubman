@@ -323,7 +323,7 @@ function FeedHeader({
               <Link href={`/user/user-profile/${data?.client?.id}`}>
               <h2 className="text-xl font-bold hover:underline">
                 {data?.client
-                  ? data?.client?.fname + " " + data?.client?.last_name
+                  ? data?.client?.display_name || data?.client?.fname + " " + data?.client?.last_name
                   : "Loading..."}
               </h2>
               </Link>
