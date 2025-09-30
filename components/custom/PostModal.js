@@ -562,7 +562,7 @@ const PostModal = () => {
               >
                 <FaUnderline size={14} />
               </button>
-              <button
+              {/* <button
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={(e) => {
@@ -574,7 +574,7 @@ const PostModal = () => {
                 title="Heading 1"
               >
                 <FaHeading size={14} />
-              </button>
+              </button> */}
             </div>
             {selectedBackground && selectedBackground?.id !== 'white' && plainMessageLength < 280 ? (
               <div 
