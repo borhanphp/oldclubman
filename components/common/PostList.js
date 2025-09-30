@@ -2612,7 +2612,7 @@ const reactionsImages = (item) => {
         }
       `}</style>
       
-      {processedPosts.map((item, index) => {
+      {processedPosts?.map((item, index) => {
 
         return (
           <div
@@ -2642,7 +2642,7 @@ const reactionsImages = (item) => {
                   <div className="flex items-center gap-2">
                     <Link href={`/user/user-profile/${item?.client?.id}`}>
                       <h4 className="font-medium cursor-pointer hover:underline">
-                        {item?.client?.fname + " " + item?.client?.last_name}
+                        {item?.client?.display_name || item?.client?.fname + " " + item?.client?.last_name}
                       </h4>
                     </Link>
                     {item?.shared_post && (
@@ -2938,9 +2938,7 @@ const reactionsImages = (item) => {
                             href={`/user/user-profile/${item?.latest_comment?.client_id}`}
                             className="cursor-pointer hover:underline"
                           >
-                            {item?.latest_comment?.client?.fname +
-                              " " +
-                              item?.latest_comment?.client?.last_name}{" "}
+                            {item?.latest_comment?.client?.display_name || item?.latest_comment?.client?.fname +" " +item?.latest_comment?.client?.last_name}{" "}
                           </Link>
                           
                         </span>
@@ -3707,8 +3705,7 @@ const reactionsImages = (item) => {
                     className="cursor-pointer hover:underline"
                   >
                     <div className="font-semibold">
-                      {basicPostData?.client?.fname}{" "}
-                      {basicPostData?.client?.last_name}
+                      {basicPostData?.client?.display_name || basicPostData?.client?.fname + " " + basicPostData?.client?.last_name}
                     </div>
                   </Link>
                   <div className="flex gap-2 text-xs text-gray-500 font-semibold">
