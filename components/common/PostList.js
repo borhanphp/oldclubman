@@ -1045,8 +1045,8 @@ const handleMentionDetect = async (e, inputKey) => {
   const sanitizeHTML = useCallback((html) => {
     if (!html) return '';
     
-    // Only allow specific formatting tags: b, i, u, strong, em, p, h1, a
-    const allowedTags = ['b', 'i', 'u', 'strong', 'em', 'p', 'h1', 'a'];
+    // Only allow specific formatting tags: b, i, u, strong, em, p, h1, a, br
+    const allowedTags = ['b', 'i', 'u', 'strong', 'em', 'p', 'h1', 'a', 'br'];
     
     // Remove all HTML tags except the allowed ones
     let sanitized = html.replace(/<\/?([^>]+)>/g, (match, tagName) => {
@@ -1072,6 +1072,18 @@ const handleMentionDetect = async (e, inputKey) => {
       }
       return ''; // Remove disallowed tags
     });
+    
+    // Clean up excessive line breaks and empty paragraphs
+    sanitized = sanitized
+      // Replace multiple consecutive empty paragraphs with <br> tags with single one
+      .replace(/(<p><br><\/p>){2,}/gi, '<p><br></p>')
+      // Replace multiple consecutive <br> tags with single <br>
+      .replace(/(<br\s*\/?>){2,}/gi, '<br>')
+      // Remove <br> tags at the beginning and end
+      .replace(/^(<br\s*\/?>)+/gi, '')
+      .replace(/(<br\s*\/?>)+$/gi, '')
+      // Clean up multiple consecutive empty paragraphs
+      .replace(/(<p><\/p>){2,}/gi, '<p></p>');
     
     return sanitized;
   }, []);
