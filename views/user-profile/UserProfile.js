@@ -310,7 +310,7 @@ console.log(userData)
                     <li className="flex items-center gap-3">
                       <FaBirthdayCake className="text-gray-500 text-base" />
                       <span className="text-gray-700">
-                        Born <span className="font-bold">{moment(userProfileData?.client?.dob).format("MMM d, yyyy")}</span>
+                        Born <span className="font-bold">{moment(userProfileData?.client?.dob).format("MMM dd, yyyy")}</span>
                       </span>
                     </li>
                   )}

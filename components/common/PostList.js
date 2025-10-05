@@ -2818,7 +2818,7 @@ const reactionsImages = (item) => {
               </>
               : 
               <div className="py-2  text-[12px] sm:text-base md:text-lg leading-relaxed max-w-full sm:max-w-prose break-words">
-                {renderContentWithTruncation(item?.message, item?.id, 500)}
+                {renderContentWithTruncation(item?.message, item?.id, 400)}
                 </div>
               
               }

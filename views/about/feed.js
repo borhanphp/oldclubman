@@ -599,7 +599,7 @@ console.log('userData',userData)
                         <FaBirthdayCake className="text-gray-500 mr-3" />
                         <div>
                           <div className="text-gray-700 font-medium">Date of Birth</div>
-                          <div className="text-gray-500 text-sm">{moment(userData?.dob).format("MMM d, yyyy")}</div>
+                          <div className="text-gray-500 text-sm">{moment(userData?.dob).format("MMM dd, yyyy")}</div>
                         </div>
                       </div>
                       {/* {isMyProfile && (
