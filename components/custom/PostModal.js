@@ -401,6 +401,7 @@ const PostModal = () => {
         dispatch(bindPostData({ ...basicPostData, message: messageContent }));
       }
 
+
       const formData = new FormData();
       formData.append('message', messageContent);
       formData.append('privacy_mode', basicPostData.privacy_mode);

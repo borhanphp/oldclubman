@@ -1189,6 +1189,70 @@ const handleMentionDetect = async (e, inputKey) => {
         );
   }, [sanitizeHTML]);
 
+  // State for tracking expanded posts
+  const [expandedPosts, setExpandedPosts] = useState(new Set());
+
+  // Toggle post expansion
+  const togglePostExpansion = useCallback((postId) => {
+    setExpandedPosts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(postId)) {
+        newSet.delete(postId);
+      } else {
+        newSet.add(postId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  // Render content with truncation and "See more" functionality
+  const renderContentWithTruncation = useCallback((text, postId, maxLength = 200) => {
+    if (!text) return null;
+    
+    const isExpanded = expandedPosts.has(postId);
+    
+    // Get plain text length for truncation check (remove HTML tags)
+    const plainText = text.replace(/<[^>]*>/g, '');
+    const shouldTruncate = plainText.length > maxLength && !isExpanded;
+    
+    // If we need to truncate, truncate the original text
+    let displayText = text;
+    if (shouldTruncate) {
+      // Find a good truncation point (end of word)
+      let truncateAt = maxLength;
+      while (truncateAt > 0 && displayText[truncateAt] !== ' ' && displayText[truncateAt] !== '\n') {
+        truncateAt--;
+      }
+      if (truncateAt === 0) truncateAt = maxLength;
+      displayText = displayText.substring(0, truncateAt) + '...';
+    }
+    
+    // Use the original renderContentWithHtml function for the display text
+    const content = renderContentWithHtml(displayText);
+    
+    return (
+      <>
+        {content}
+        {shouldTruncate && (
+          <button
+            onClick={() => togglePostExpansion(postId)}
+            className="text-blue-600 hover:text-blue-800 font-medium text-sm mt-1 cursor-pointer"
+          >
+            See more
+          </button>
+        )}
+        {isExpanded && (
+          <button
+            onClick={() => togglePostExpansion(postId)}
+            className="text-blue-600 hover:text-blue-800 font-medium text-sm mt-1 cursor-pointer"
+          >
+            See less
+          </button>
+        )}
+      </>
+    );
+  }, [renderContentWithHtml, expandedPosts, togglePostExpansion]);
+
   // Render content with mentions and HTML formatting - optimized with useCallback
   const renderContentWithMentions = useCallback((text) => {
     if (!text) return null;
@@ -2754,7 +2818,7 @@ const reactionsImages = (item) => {
               </>
               : 
               <div className="py-2  text-[12px] sm:text-base md:text-lg leading-relaxed max-w-full sm:max-w-prose break-words">
-                {renderContentWithHtml(item?.message)}
+                {renderContentWithTruncation(item?.message, item?.id, 1000)}
                 </div>
               
               }
