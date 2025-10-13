@@ -1206,7 +1206,7 @@ const handleMentionDetect = async (e, inputKey) => {
   }, []);
 
   // Render content with truncation and "See more" functionality
-  const renderContentWithTruncation = useCallback((text, postId, maxLength = 200) => {
+  const renderContentWithTruncation = useCallback((text, postId, maxLength = 100) => {
     if (!text) return null;
     
     const isExpanded = expandedPosts.has(postId);
@@ -2828,7 +2828,7 @@ const reactionsImages = (item) => {
               </>
               : 
               <div className="py-2  text-[12px] sm:text-base md:text-lg leading-relaxed max-w-full sm:max-w-prose break-words">
-                {renderContentWithTruncation(item?.message, item?.id, 150)}
+                {renderContentWithTruncation(item?.message, item?.id, 100)}
                 </div>
               
               }
