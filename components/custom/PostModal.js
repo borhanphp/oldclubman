@@ -271,6 +271,46 @@ const PostModal = () => {
 
   const handleEditorPaste = (event) => {
     event.preventDefault();
+    
+    // Check if there are files (images) in the clipboard
+    const items = event.clipboardData?.items;
+    if (items) {
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        
+        // Handle image files
+        if (item.type.indexOf('image') !== -1) {
+          const file = item.getAsFile();
+          if (file) {
+            // Add the image file to the post data
+            dispatch(bindPostData({
+              ...basicPostData, 
+              files: [...(basicPostData.files || []), file]
+            }));
+            
+            // Generate preview for the pasted image
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              setFilePreviews(prev => [...prev, {
+                id: Date.now() + Math.random().toString(36).substring(2, 9),
+                src: reader.result,
+                file: file
+              }]);
+            };
+            reader.readAsDataURL(file);
+            
+            // Show image section when image is pasted
+            setIsShowImageSection(true);
+            
+            // Show success message
+            toast.success('Image pasted successfully!');
+            return;
+          }
+        }
+      }
+    }
+    
+    // If no images, handle text paste
     const textData = event.clipboardData?.getData('text/plain') ?? '';
 
     if (typeof document !== 'undefined') {
@@ -649,7 +689,6 @@ const PostModal = () => {
                 />
 
                 {/* Background Swatches */}
-                {}
                 {isVisibleBg && visibleBackgrounds?.map((bg) => (
                   <img
                     key={bg.id}

@@ -1214,6 +1214,8 @@ const handleMentionDetect = async (e, inputKey) => {
     // Get plain text length for truncation check (remove HTML tags)
     const plainText = text.replace(/<[^>]*>/g, '');
     const shouldTruncate = plainText.length > maxLength && !isExpanded;
+
+   
     
     // If we need to truncate, truncate the original text
     let displayText = text;
@@ -1224,7 +1226,7 @@ const handleMentionDetect = async (e, inputKey) => {
         truncateAt--;
       }
       if (truncateAt === 0) truncateAt = maxLength;
-      displayText = displayText.substring(0, truncateAt) + '...';
+      displayText = displayText.substring(0, truncateAt);
     }
     
     // Use the original renderContentWithHtml function for the display text
@@ -1232,24 +1234,32 @@ const handleMentionDetect = async (e, inputKey) => {
     
     return (
       <>
-        {content}
-        {shouldTruncate && (
-          <button
-            onClick={() => togglePostExpansion(postId)}
-            className="text-blue-600 hover:text-blue-800 font-medium text-sm mt-1 cursor-pointer"
-          >
-            See more
-          </button>
-        )}
-        {isExpanded && (
-          <button
-            onClick={() => togglePostExpansion(postId)}
-            className="text-blue-600 hover:text-blue-800 font-medium text-sm mt-1 cursor-pointer"
-          >
-            See less
-          </button>
-        )}
+ 
+    {content}
+
+    {shouldTruncate && !isExpanded && (
+      <>
+        ...<span
+          onClick={() => togglePostExpansion(postId)}
+          className="inline font-semibold cursor-pointer text-sm hover:underline ml-1"
+        >
+          See more
+        </span>
       </>
+    )}
+
+
+  {isExpanded && (
+    <button
+      onClick={() => togglePostExpansion(postId)}
+      className="text-blue-600 hover:text-blue-800 font-medium text-sm mt-1 cursor-pointer"
+    >
+      See less
+    </button>
+  )}
+</>
+
+    
     );
   }, [renderContentWithHtml, expandedPosts, togglePostExpansion]);
 
@@ -2818,7 +2828,7 @@ const reactionsImages = (item) => {
               </>
               : 
               <div className="py-2  text-[12px] sm:text-base md:text-lg leading-relaxed max-w-full sm:max-w-prose break-words">
-                {renderContentWithTruncation(item?.message, item?.id, 400)}
+                {renderContentWithTruncation(item?.message, item?.id, 150)}
                 </div>
               
               }
