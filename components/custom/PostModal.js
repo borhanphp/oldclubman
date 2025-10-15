@@ -563,6 +563,7 @@ const PostModal = () => {
             </div>
           </div>
           <div className="flex-1 mb-4">
+            {plainMessageLength > 280 ?
             <div className="flex items-center gap-2 mb-2">
               <button
                 type="button"
@@ -616,7 +617,7 @@ const PostModal = () => {
               >
                 <FaHeading size={14} />
               </button> */}
-            </div>
+            </div> : ""}
             {selectedBackground && selectedBackground?.id !== 'white' && plainMessageLength < 280 ? (
               <div 
                 className="relative w-full min-h-[400px] rounded-lg flex items-center justify-center bg-cover bg-center bg-no-repeat"
