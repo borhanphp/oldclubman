@@ -73,7 +73,7 @@ const FollowSuggestion = () => {
                   
                   {/* User Info */}
                   <div className="flex-1 min-w-0">
-                    <Link href={`/user/user-profile/${user?.id}`}>
+                    <Link href={`/user/user-profile/${user?.username}`}>
                       <p className="text-xs sm:text-sm hover:underline font-semibold text-gray-900 truncate">
                         {user?.fname + " " + user?.last_name || "Unknown User"}
                       </p>

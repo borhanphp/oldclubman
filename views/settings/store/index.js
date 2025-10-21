@@ -53,6 +53,27 @@ export const getUserProfile = createAsyncThunk( 'settings/getUserProfile', async
   return result;
 } )
 
+export const getUserProfileByUsername = createAsyncThunk( 'settings/getUserProfileByUsername', async (id, limit = 10) => {
+  const result = axios.get( `/client/user_profile_by_username/${id}` )
+  .then((res) => {
+      const resData = res.data.data;
+      const userProfile = {
+        ...resData,
+        client: {
+          ...resData.client,
+          marital_status_name: resData?.client?.marital_status === 1 ? "Single" : resData?.client?.marital_status === 2 ? "Married" : resData?.client?.marital_status === 3 ? "Divorced" : "Widowed",
+          profile_visibility: JSON.parse(resData?.client?.profile_visibility)
+        }
+
+      }
+      return userProfile;
+  })
+  .catch((err) => {
+      errorResponse(err);
+  })
+  return result;
+} )
+
 export const storeBsicInformation = createAsyncThunk( 'settings/storeBsicInformation', async ( data) => {
   const result = axios.post( "/client/save_profile", data )
   .then((res) => {
@@ -179,6 +200,119 @@ export const getPostBackgrounds = createAsyncThunk( 'settings/getPostBackgrounds
 } )
 
 
+// work settings in edit details page
+export const saveWork = createAsyncThunk( 'settings/saveWork', async (data) => {
+  const result = axios.post( `/client/save_work`, data)
+  .then((res) => {
+      const resData = res.data.data;
+      return resData;
+  })
+  .catch((err) => {
+      errorResponse(err);
+  })
+  return result;
+} )
+
+export const updateWork = createAsyncThunk( 'settings/updateWork', async (data) => {
+  const result = axios.post( `/client/update_work`, data)
+  .then((res) => {
+      const resData = res.data.data;
+      return resData;
+  })
+  .catch((err) => {
+      errorResponse(err);
+  })
+  return result;
+} )
+
+export const deleteWork = createAsyncThunk( 'settings/deleteWork', async (id) => {
+  const result = axios.post( `/client/delete_work`, id)
+  .then((res) => {
+      const resData = res.data.data;
+      return resData;
+  })
+  .catch((err) => {
+      errorResponse(err);
+  })
+  return result;
+} )
+
+// education settings in edit details page
+export const saveEducation = createAsyncThunk( 'settings/saveEducation', async (data) => {
+  const result = axios.post( `/client/save_education`, data)
+  .then((res) => {
+      const resData = res.data.data;
+      return resData;
+  })
+  .catch((err) => {
+      errorResponse(err);
+  })
+  return result;
+} )
+
+export const updateEducation = createAsyncThunk( 'settings/updateEducation', async (data) => {
+  const result = axios.post( `/client/update_education`, data)
+  .then((res) => {
+      const resData = res.data.data;
+      return resData;
+  })
+  .catch((err) => {
+      errorResponse(err);
+  })
+  return result;
+} )
+
+export const deleteEducation = createAsyncThunk( 'settings/deleteEducation', async (id) => {
+  const result = axios.post( `/client/delete_education`, id)
+  .then((res) => {
+      const resData = res.data.data;
+      return resData;
+  })
+  .catch((err) => {
+      errorResponse(err);
+  })
+  return result;
+} )
+
+// category settings in edit details page
+export const saveCategory = createAsyncThunk( 'settings/saveCategory', async (data) => {
+  const result = axios.post( `/client/save_category`, data)
+  .then((res) => {
+      const resData = res.data.data;
+      return resData;
+  })
+  .catch((err) => {
+      errorResponse(err);
+  })
+  return result;
+} )
+
+export const updateCategory = createAsyncThunk( 'settings/updateCategory', async (data) => {
+  const result = axios.post( `/client/update_category`, data)
+  .then((res) => {
+      const resData = res.data.data;
+      return resData;
+  })
+  .catch((err) => {
+      errorResponse(err);
+  })
+  return result;
+} )
+
+export const deleteCategory = createAsyncThunk( 'settings/deleteCategory', async (id) => {
+  const result = axios.post( `/client/delete_category`, id)
+  .then((res) => {
+      const resData = res.data.data;
+      return resData;
+  })
+  .catch((err) => {
+      errorResponse(err);
+  })
+  return result;
+} )
+
+
+
 
 export const settingsSlice = createSlice({
   name: "settings",
@@ -236,6 +370,10 @@ export const settingsSlice = createSlice({
         state.loading = false;
       })
       .addCase(getUserProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        state.userProfileData = action.payload;
+      })
+      .addCase(getUserProfileByUsername.fulfilled, (state, action) => {
         state.loading = false;
         state.userProfileData = action.payload;
       })

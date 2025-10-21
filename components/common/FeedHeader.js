@@ -320,7 +320,7 @@ function FeedHeader({
 
             {/* Profile Info */}
             <div className="data-info mb-2">
-              <Link href={`/user/user-profile/${data?.client?.id}`}>
+              <Link href={`/user/user-profile/${data?.client?.username}`}>
               <h2 className="text-xl font-bold hover:underline">
                 {data?.client
                   ? data?.client?.display_name || data?.client?.fname + " " + data?.client?.last_name
@@ -331,7 +331,7 @@ function FeedHeader({
               <p className="text-gray-600 text-sm">
                 <Link
                   href={`/user/user-profile/${
-                    userProfile ? params?.id : profile?.client?.id
+                    userProfile ? params?.username : profile?.client?.username
                   }/friends`}
                 >
                   <span className="hover:underline">
@@ -341,7 +341,7 @@ function FeedHeader({
                 ·{" "}
                 <Link
                   href={`/user/user-profile/${
-                    userProfile ? params?.id : profile?.client?.id
+                    userProfile ? params?.username : profile?.client?.username
                   }/friends`}
                 >
                   <span className="hover:underline">
@@ -482,7 +482,7 @@ function FeedHeader({
               NFC
             </Link>
             <Link
-              href={`/user/user-profile/${isMyProfile ? profile?.client?.id : params.id}/about`}
+              href={`/user/user-profile/${isMyProfile ? profile?.client?.username : params.username}/about`}
               className={`px-6 py-3 font-medium ${
                 isLinkActive("/user/about")
                   ? "text-blue-500 border-b-2 border-blue-500"
@@ -505,7 +505,7 @@ function FeedHeader({
              <>
               <Link
                 href={`/user/user-profile/${
-                  userProfile ? params?.id : profile?.client?.id
+                  userProfile ? params?.username : profile?.client?.username
                 }/friends`}
                 className={`px-6 py-3 font-medium ${
                   isLinkActive(

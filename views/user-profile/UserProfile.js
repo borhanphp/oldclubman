@@ -25,7 +25,7 @@ import PostModal from "@/components/custom/PostModal";
 import FeedHeader from "@/components/common/FeedHeader";
 import Intro from "@/components/common/Intro";
 import { useDispatch, useSelector } from "react-redux";
-import { bindProfileSettingData, getMyProfile, getUserProfile, storeProfileSetting } from "../settings/store";
+import { bindProfileSettingData, getMyProfile, getUserProfile, getUserProfileByUsername, storeProfileSetting } from "../settings/store";
 import moment from "moment";
 import CreatePostBox from "@/components/common/CreatePostBox";
 import PostList from "@/components/common/PostList";
@@ -97,7 +97,8 @@ const UserProfile = () => {
 
   useEffect(() => {
     dispatch(getMyProfile());
-    dispatch(getUserProfile(params?.id));
+    // dispatch(getUserProfile(params?.username));
+    dispatch(getUserProfileByUsername(params?.username));
   }, []);
 
   // Set bio text when userProfileData changes

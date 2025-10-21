@@ -10,6 +10,7 @@ import { deletePost, getGathering, getPostById, getPosts, setPostModalOpen, stor
 import FollowSuggestion from '@/components/common/FollowSuggestion';
 import CreatePostBox from "@/components/common/CreatePostBox";
 import PostList from '@/components/common/PostList';
+import SearchResults from '@/components/common/SearchResults';
 import FeedLayout from '@/components/common/FeedLayout';
 
 
@@ -248,6 +249,9 @@ const GatheringContent = () => {
               
               {/* Create Post */}
               <CreatePostBox />
+              
+              {/* Search Results */}
+              <SearchResults />
               
               {/* Post */}
               <PostList postsData={{...postsData, data: allPosts}}/>

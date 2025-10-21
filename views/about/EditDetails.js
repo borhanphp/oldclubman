@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { getMyProfile, storeBsicInformation } from "../settings/store";
+import { getMyProfile, saveEducation, saveWork, storeBsicInformation } from "../settings/store";
 import moment from "moment";
 import {
   CiCalendar,
@@ -149,6 +149,9 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
     toast.success("Updated")
     })
   };
+
+
+
 
   const OverViewBlock = (props) => {
     const { icon, title, value, field, visibility } = props;
@@ -541,6 +544,16 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
       };
       console.log('saveData', JSON.stringify(saveData, null, 2))
 
+      const submittedData = {
+        company_name: workFormData?.company,
+        position:workFormData?.position,
+        start_date:workFormData?.start_date,
+        end_date:workFormData?.end_date,
+        description: workFormData?.description,
+        status:1,
+      }
+      dispatch(saveWork(submittedData))
+
       dispatch(storeBsicInformation(saveData))
       .then(() => {
         dispatch(getMyProfile());
@@ -929,6 +942,17 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
         metas: JSON.stringify(metas).replace(/"/g, "'"),
         profile_visibility: profileData?.profile_visibility
       };
+
+      const submittedData = {
+        institution: educationFormData?.institution,
+        field_of_study:educationFormData?.field_of_study,
+        degree:educationFormData?.degree,
+        start_date:educationFormData?.start_date,
+        end_date: educationFormData?.end_date,
+        description: educationFormData?.description,
+        status: 1,
+      }
+      dispatch(saveEducation(submittedData))
 
       dispatch(storeBsicInformation(saveData))
       .then(() => {

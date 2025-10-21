@@ -38,6 +38,9 @@ const BasicInformation = () => {
     zip_code,
     marital_status,
     designation,
+    blood_group,
+    is_blood_donor,
+    is_spouse_need
   } = profileData;
 
   console.log('profileData from basick form',profileData)
@@ -107,8 +110,9 @@ const BasicInformation = () => {
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    dispatch(bindProfileData({ ...profileData, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    const inputValue = type === 'checkbox' ? checked : value;
+    dispatch(bindProfileData({ ...profileData, [name]: inputValue }));
 
     // Handle dependent dropdowns
     if (name === "current_country_id") {
@@ -133,6 +137,7 @@ const BasicInformation = () => {
       );
     }
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -166,6 +171,81 @@ const BasicInformation = () => {
     { value: 2, label: "Married" },
     { value: 3, label: "Divorced" },
     { value: 4, label: "Widowed" },
+  ];
+
+  const bloodGroupOptions = [
+    {
+      label: "A+",
+      value: "A+",
+      "abo_group": "A",
+      "rh_factor": "Positive",
+      "antigens": ["A", "Rh"],
+      "antibodies": ["Anti-B"],
+      "description": "Has A and Rh antigens on red cells, with Anti-B antibodies in plasma."
+    },
+    {
+      label: "A-",
+      value: "A-",
+      "abo_group": "A",
+      "rh_factor": "Negative",
+      "antigens": ["A"],
+      "antibodies": ["Anti-B", "Anti-Rh"],
+      "description": "Has A antigens on red cells, with Anti-B and Anti-Rh antibodies in plasma."
+    },
+    {
+      label: "B+",
+      value: "B+",
+      "abo_group": "B",
+      "rh_factor": "Positive",
+      "antigens": ["B", "Rh"],
+      "antibodies": ["Anti-A"],
+      "description": "Has B and Rh antigens on red cells, with Anti-A antibodies in plasma."
+    },
+    {
+      label: "B-",
+      value: "B-",
+      "abo_group": "B",
+      "rh_factor": "Negative",
+      "antigens": ["B"],
+      "antibodies": ["Anti-A", "Anti-Rh"],
+      "description": "Has B antigens on red cells, with Anti-A and Anti-Rh antibodies in plasma."
+    },
+    {
+      label: "AB+",
+      value: "AB+",
+      "abo_group": "AB",
+      "rh_factor": "Positive",
+      "antigens": ["A", "B", "Rh"],
+      "antibodies": [],
+      "description": "Has A, B, and Rh antigens on red cells, with no A or B antibodies in plasma (universal recipient)."
+    },
+    {
+      label: "AB-",
+      value: "AB-",
+      "abo_group": "AB",
+      "rh_factor": "Negative",
+      "antigens": ["A", "B"],
+      "antibodies": ["Anti-Rh"],
+      "description": "Has A and B antigens on red cells, with Anti-Rh antibodies in plasma."
+    },
+    {
+      label: "O+",
+      value: "O+",
+      "abo_group": "O",
+      "rh_factor": "Positive",
+      "antigens": ["Rh"],
+      "antibodies": ["Anti-A", "Anti-B"],
+      "description": "Has Rh antigens on red cells, with Anti-A and Anti-B antibodies in plasma."
+    },
+    {
+      label: "O-",
+      value: "O-",
+      "abo_group": "O",
+      "rh_factor": "Negative",
+      "antigens": [],
+      "antibodies": ["Anti-A", "Anti-B", "Anti-Rh"],
+      "description": "Has no A, B, or Rh antigens on red cells, with Anti-A, Anti-B, and Anti-Rh antibodies in plasma (universal donor)."
+    }
   ];
 
   return (
@@ -444,7 +524,7 @@ const BasicInformation = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div>
             <OldSelect
               label="Marital Status"
@@ -455,7 +535,51 @@ const BasicInformation = () => {
               placeholder="Select Marital Status"
               className="w-full"
             />
+            <div className="mt-1 ml-2">
+            <div className="flex items-center space-x-3 mb-4">
+              <input
+                type="checkbox"
+                id="is_spouse_need"
+                name="is_spouse_need"
+                checked={is_spouse_need || false}
+                onChange={handleInputChange}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+              />
+              <label htmlFor="is_spouse_need" className="text-sm font-medium text-gray-700">
+                Searching for spouse
+              </label>
+            </div>
           </div>
+          </div>
+
+          <div>
+            <OldSelect
+              label="Blood Group"
+              name="blood_group"
+              value={blood_group}
+              onChange={handleInputChange}
+              options={bloodGroupOptions}
+              placeholder="Select Marital Status"
+              className="w-full"
+            />
+            <div className="mt-1 ml-2">
+            <div className="flex items-center space-x-3 mb-4">
+              <input
+                type="checkbox"
+                id="is_blood_donor"
+                name="is_blood_donor"
+                checked={is_blood_donor || false}
+                onChange={handleInputChange}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+              />
+              <label htmlFor="is_blood_donor" className="text-sm font-medium text-gray-700">
+                I am a blood donor
+              </label>
+            </div>
+          </div>
+          </div>
+
+          
 
           <div>
             <OldInput

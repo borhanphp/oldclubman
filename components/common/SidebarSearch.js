@@ -45,13 +45,33 @@ const searchSingles = async (filters) => {
   return response.data.data;
 };
 
+// Advanced search profile API
+const advanceSearchProfile = async (filters) => {
+  const params = new URLSearchParams();
+  
+  if (filters.state_id) params.append('state_id', filters.state_id);
+  if (filters.city_id) params.append('city_id', filters.city_id);
+  if (filters.country_id) params.append('country_id', filters.country_id);
+  if (filters.school) params.append('school', filters.school);
+  if (filters.blood_group) params.append('blood_group', filters.blood_group);
+  if (filters.community) params.append('community', filters.community);
+  if (filters.is_single) params.append('is_single', filters.is_single);
+  
+  const response = await api.get(`/client/advance_search_profile?${params.toString()}`);
+  return response?.data?.data?.search_results || [];
+};
+
 const SidebarSearch = () => {
   const dispatch = useDispatch();
   const { query, results, loading } = useSelector(state => state.search);
+  const { profileData } = useSelector(({ settings }) => settings);
   const dropdownRef = useRef(null);
   const [loadingStates, setLoadingStates] = useState({});
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [searchCategory, setSearchCategory] = useState('general');
+  const [locationCountries, setLocationCountries] = useState([]);
+  const [locationStates, setLocationStates] = useState([]);
+  const [locationCities, setLocationCities] = useState([]);
   const [advancedFilters, setAdvancedFilters] = useState({
     city: '',
     country: '',
@@ -60,7 +80,11 @@ const SidebarSearch = () => {
     ageRange: { min: 18, max: 65 },
     bloodType: '',
     relationshipStatus: 'single',
-    radius: 10 // km
+    radius: 10, // km
+    state_id: '',
+    city_id: '',
+    country_id: '',
+    blood_group: ''
   });
 
   useEffect(() => {
@@ -68,6 +92,41 @@ const SidebarSearch = () => {
       dispatch(removeQuery())
     );
   }, []);
+
+  // Fetch location options for By Location category
+  useEffect(() => {
+    if (!showAdvancedSearch || searchCategory !== 'location') return;
+    const fetchCountries = async () => {
+      try {
+        const response = await api.get(`${process.env.NEXT_PUBLIC_API_URL}/location/country`);
+        const options = response?.data?.data?.map(c => ({ value: String(c.id), label: c.name })) || [];
+        setLocationCountries(options);
+      } catch (e) {
+        console.error('Failed to load countries', e);
+      }
+    };
+    fetchCountries();
+  }, [showAdvancedSearch, searchCategory]);
+
+  const fetchStates = async (countryId) => {
+    try {
+      const response = await api.get(`${process.env.NEXT_PUBLIC_API_URL}/location/state?country_id=${countryId}`);
+      const options = response?.data?.data?.map(s => ({ value: String(s.id), label: s.name })) || [];
+      setLocationStates(options);
+    } catch (e) {
+      console.error('Failed to load states', e);
+    }
+  };
+
+  const fetchCities = async (stateId) => {
+    try {
+      const response = await api.get(`${process.env.NEXT_PUBLIC_API_URL}/location/city?state_id=${stateId}`);
+      const options = response?.data?.data?.map(c => ({ value: String(c.id), label: c.name })) || [];
+      setLocationCities(options);
+    } catch (e) {
+      console.error('Failed to load cities', e);
+    }
+  };
 
   // Function to handle following a user
   const handleFollow = async (userId) => {
@@ -105,33 +164,167 @@ const SidebarSearch = () => {
     }
   };
 
+  // Demo data for testing
+  const getDemoResults = () => {
+    return [
+      {
+        id: 1,
+        fname: "Sarah",
+        last_name: "Johnson",
+        email: "sarah.johnson@email.com",
+        image: "/common-avator.jpg",
+        designation: "Software Engineer",
+        blood_group: "O+",
+        is_blood_donor: true,
+        is_spouse_need: false,
+        followed: "not_followed",
+        followers: [
+          { follower_client: { display_name: "Mike Chen" } },
+          { follower_client: { display_name: "Emma Wilson" } }
+        ]
+      },
+      {
+        id: 2,
+        fname: "Ahmed",
+        last_name: "Hassan",
+        email: "ahmed.hassan@email.com",
+        image: "/common-avator.jpg",
+        designation: "Doctor",
+        blood_group: "A-",
+        is_blood_donor: true,
+        is_spouse_need: true,
+        followed: "followed",
+        followers: [
+          { follower_client: { display_name: "Fatima Ali" } }
+        ]
+      },
+      {
+        id: 3,
+        fname: "Priya",
+        last_name: "Sharma",
+        email: "priya.sharma@email.com",
+        image: "/common-avator.jpg",
+        designation: "Teacher",
+        blood_group: "B+",
+        is_blood_donor: false,
+        is_spouse_need: true,
+        followed: "not_followed",
+        followers: []
+      },
+      {
+        id: 4,
+        fname: "David",
+        last_name: "Brown",
+        email: "david.brown@email.com",
+        image: "/common-avator.jpg",
+        designation: "Marketing Manager",
+        blood_group: "AB+",
+        is_blood_donor: true,
+        is_spouse_need: false,
+        followed: "not_followed",
+        followers: [
+          { follower_client: { display_name: "Lisa Garcia" } },
+          { follower_client: { display_name: "John Smith" } },
+          { follower_client: { display_name: "Maria Rodriguez" } }
+        ]
+      },
+      {
+        id: 5,
+        fname: "Fatima",
+        last_name: "Al-Zahra",
+        email: "fatima.alzahra@email.com",
+        image: "/common-avator.jpg",
+        designation: "Nurse",
+        blood_group: "O-",
+        is_blood_donor: true,
+        is_spouse_need: true,
+        followed: "followed",
+        followers: [
+          { follower_client: { display_name: "Ahmed Hassan" } }
+        ]
+      },
+      {
+        id: 6,
+        fname: "Michael",
+        last_name: "Chen",
+        email: "michael.chen@email.com",
+        image: "/common-avator.jpg",
+        designation: "Data Scientist",
+        blood_group: "A+",
+        is_blood_donor: false,
+        is_spouse_need: false,
+        followed: "not_followed",
+        followers: [
+          { follower_client: { display_name: "Sarah Johnson" } }
+        ]
+      }
+    ];
+  };
+
   // Handle advanced search
   const handleAdvancedSearch = async () => {
     dispatch(setSearchLoading(true));
     try {
       let searchResults = [];
       
-      switch (searchCategory) {
-        case 'blood_donors':
-          searchResults = await searchBloodDonors(advancedFilters);
-          break;
-        case 'location':
-          searchResults = await searchByLocation(advancedFilters);
-          break;
-        case 'community':
-          searchResults = await searchCommunity(advancedFilters);
-          break;
-        case 'nearby':
-          searchResults = await searchNearby(advancedFilters);
-          break;
-        case 'school':
-          searchResults = await searchSchoolFriends(advancedFilters);
-          break;
-        case 'singles':
-          searchResults = await searchSingles(advancedFilters);
-          break;
-        default:
-          searchResults = await searchApi(query);
+      // Use the new advance search API for advance category
+      if (searchCategory === 'advance') {
+        searchResults = await advanceSearchProfile(advancedFilters);
+        dispatch(setSearchQuery('Advanced Search'));
+      } else {
+        switch (searchCategory) {
+          case 'singles': {
+            // Only is_single filter
+            const params = { is_single: 'yes' };
+            searchResults = await advanceSearchProfile(params);
+            dispatch(setSearchQuery('Advanced Search'));
+            break;
+          }
+          case 'blood_donors': {
+            if (!advancedFilters.blood_group) {
+              // Wait for user to choose a group; don't call yet
+              searchResults = [];
+              break;
+            }
+            // Only blood_group filter
+            const params = { blood_group: advancedFilters.blood_group };
+            searchResults = await advanceSearchProfile(params);
+            dispatch(setSearchQuery('Advanced Search'));
+            break;
+          }
+          case 'location': {
+            if (!advancedFilters.country_id || !advancedFilters.state_id || !advancedFilters.city_id) {
+              searchResults = [];
+              break;
+            }
+            const params = {
+              country_id: advancedFilters.country_id,
+              state_id: advancedFilters.state_id,
+              city_id: advancedFilters.city_id
+            };
+            searchResults = await advanceSearchProfile(params);
+            dispatch(setSearchQuery('Advanced Search'));
+            break;
+          }
+          case 'school': {
+            // Only school filter
+            const params = { school: 'yes' };
+            searchResults = await advanceSearchProfile(params);
+            dispatch(setSearchQuery('Advanced Search'));
+            break;
+          }
+          case 'community': {
+            // Only community filter
+            const params = { community: 'yes' };
+            searchResults = await advanceSearchProfile(params);
+            dispatch(setSearchQuery('Advanced Search'));
+            break;
+          }
+          default: {
+            // Fallback to basic search for other categories
+            searchResults = await searchApi(query);
+          }
+        }
       }
       
       dispatch(setSearchResults(searchResults));
@@ -164,6 +357,20 @@ const SidebarSearch = () => {
     }
   }, [query, dispatch, showAdvancedSearch]);
 
+  // Auto-trigger advanced search for category shortcuts
+  useEffect(() => {
+    if (!showAdvancedSearch) return;
+    // Auto trigger only the selected category's call
+    if (['singles', 'school', 'community'].includes(searchCategory)) {
+      handleAdvancedSearch();
+    } else if (searchCategory === 'blood_donors' && advancedFilters.blood_group) {
+      handleAdvancedSearch();
+    } else if (searchCategory === 'location' && advancedFilters.country_id && advancedFilters.state_id && advancedFilters.city_id) {
+      handleAdvancedSearch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchCategory, showAdvancedSearch, advancedFilters.blood_group, advancedFilters.country_id, advancedFilters.state_id, advancedFilters.city_id]);
+
   // Optional: close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event) {
@@ -189,6 +396,18 @@ const SidebarSearch = () => {
           <span>Advanced</span>
           {showAdvancedSearch ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />}
         </button>
+        
+        {query && (
+          <button
+            onClick={() => {
+              dispatch(setSearchResults([]));
+              dispatch(removeQuery());
+            }}
+            className="text-red-600 hover:text-red-800 text-sm"
+          >
+            Clear Search
+          </button>
+        )}
       </div>
 
       {/* Advanced Search Options */}
@@ -222,15 +441,7 @@ const SidebarSearch = () => {
               <FaUsers size={14} />
               <span>Community</span>
             </button>
-            <button
-              onClick={() => setSearchCategory('nearby')}
-              className={`flex items-center space-x-2 p-2 rounded-md text-sm ${
-                searchCategory === 'nearby' ? 'bg-purple-100 text-purple-700' : 'bg-white text-gray-700'
-              }`}
-            >
-              <FaMapMarkerAlt size={14} />
-              <span>Nearby</span>
-            </button>
+            
             <button
               onClick={() => setSearchCategory('school')}
               className={`flex items-center space-x-2 p-2 rounded-md text-sm ${
@@ -249,11 +460,12 @@ const SidebarSearch = () => {
               <FaHeart size={14} />
               <span>Singles</span>
             </button>
+           
           </div>
 
           {/* Dynamic Filter Fields */}
           <div className="space-y-2">
-            {(searchCategory === 'blood_donors' || searchCategory === 'location' || searchCategory === 'community' || searchCategory === 'singles') && (
+            {/* {(searchCategory === 'location' || searchCategory === 'community' || searchCategory === 'singles') && (
               <>
                 <input
                   type="text"
@@ -270,12 +482,12 @@ const SidebarSearch = () => {
                   className="w-full p-2 border border-gray-300 rounded-md text-sm"
                 />
               </>
-            )}
+            )} */}
 
             {searchCategory === 'blood_donors' && (
               <select
-                value={advancedFilters.bloodType}
-                onChange={(e) => setAdvancedFilters({...advancedFilters, bloodType: e.target.value})}
+                value={advancedFilters.blood_group}
+                onChange={(e) => setAdvancedFilters({...advancedFilters, blood_group: e.target.value})}
                 className="w-full p-2 border border-gray-300 rounded-md text-sm"
               >
                 <option value="">Select Blood Type</option>
@@ -300,17 +512,9 @@ const SidebarSearch = () => {
               />
             )}
 
-            {searchCategory === 'school' && (
-              <input
-                type="text"
-                placeholder="School Name"
-                value={advancedFilters.school}
-                onChange={(e) => setAdvancedFilters({...advancedFilters, school: e.target.value})}
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-              />
-            )}
+            {/* No extra inputs for School Friends; it triggers school=yes */}
 
-            {searchCategory === 'singles' && (
+            {/* {searchCategory === 'singles' && (
               <>
                 <div className="flex space-x-2">
                   <input
@@ -336,20 +540,104 @@ const SidebarSearch = () => {
                   className="w-full p-2 border border-gray-300 rounded-md text-sm"
                 />
               </>
-            )}
+            )} */}
 
-            {(searchCategory === 'nearby' || searchCategory === 'location') && (
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-600">Radius:</span>
+         
+
+            {searchCategory === 'advance' && (
+              <>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="number"
+                    placeholder="State ID"
+                    value={advancedFilters.state_id}
+                    onChange={(e) => setAdvancedFilters({...advancedFilters, state_id: e.target.value})}
+                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                  />
+                  <input
+                    type="number"
+                    placeholder="City ID"
+                    value={advancedFilters.city_id}
+                    onChange={(e) => setAdvancedFilters({...advancedFilters, city_id: e.target.value})}
+                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
                 <input
                   type="number"
-                  placeholder="10"
-                  value={advancedFilters.radius}
-                  onChange={(e) => setAdvancedFilters({...advancedFilters, radius: parseInt(e.target.value)})}
-                  className="w-20 p-2 border border-gray-300 rounded-md text-sm"
+                  placeholder="Country ID"
+                  value={advancedFilters.country_id}
+                  onChange={(e) => setAdvancedFilters({...advancedFilters, country_id: e.target.value})}
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
                 />
-                <span className="text-sm text-gray-600">km</span>
-              </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    placeholder="School (yes/no)"
+                    value={advancedFilters.school}
+                    onChange={(e) => setAdvancedFilters({...advancedFilters, school: e.target.value})}
+                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Blood Group (yes/no)"
+                    value={advancedFilters.blood_group}
+                    onChange={(e) => setAdvancedFilters({...advancedFilters, blood_group: e.target.value})}
+                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Community (yes/no)"
+                  value={advancedFilters.community}
+                  onChange={(e) => setAdvancedFilters({...advancedFilters, community: e.target.value})}
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                />
+              </>
+            )}
+
+            {searchCategory === 'location' && (
+              <>
+                <select
+                  value={advancedFilters.country_id}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setAdvancedFilters({ ...advancedFilters, country_id: val, state_id: '', city_id: '' });
+                    if (val) fetchStates(val);
+                  }}
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                >
+                  <option value="">Select Country</option>
+                  {locationCountries.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+                <select
+                  value={advancedFilters.state_id}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setAdvancedFilters({ ...advancedFilters, state_id: val, city_id: '' });
+                    if (val) fetchCities(val);
+                  }}
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                  disabled={!advancedFilters.country_id}
+                >
+                  <option value="">Select State</option>
+                  {locationStates.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+                <select
+                  value={advancedFilters.city_id}
+                  onChange={(e) => setAdvancedFilters({ ...advancedFilters, city_id: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                  disabled={!advancedFilters.state_id}
+                >
+                  <option value="">Select City</option>
+                  {locationCities.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </>
             )}
 
             <button
@@ -358,6 +646,28 @@ const SidebarSearch = () => {
             >
               Search {searchCategory.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
             </button>
+            
+          
+            
+            {searchCategory === 'advance' && (
+              <button
+                onClick={() => {
+                  // Set example values based on the provided API URL
+                  setAdvancedFilters({
+                    ...advancedFilters,
+                    state_id: '4',
+                    city_id: '1',
+                    country_id: '1',
+                    school: 'yes',
+                    blood_group: 'yes',
+                    community: 'yes'
+                  });
+                }}
+                className="w-full bg-purple-500 text-white py-2 px-4 rounded-md hover:bg-purple-600 text-sm font-medium mt-2"
+              >
+                Load Example Filters
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -377,8 +687,8 @@ const SidebarSearch = () => {
         />
       </div>
 
-      {/* Search Results Dropdown */}
-      {query && results.length > 0 && (
+      {/* Search Results Dropdown - Only show for normal search, not advanced search */}
+      {query && results.length > 0 && !showAdvancedSearch && !results.some(result => result.is_blood_donor !== undefined || result.is_spouse_need !== undefined) && query !== 'Demo Search' && query !== 'Advanced Search' && (
         <div className="absolute left-0 right-0 mt-2 z-50 rounded-md max-h-96 overflow-y-auto">
           <div className="py-2">
             <h3 className="text-sm font-semibold mb-2 px-4 text-gray-700">Search Results</h3>

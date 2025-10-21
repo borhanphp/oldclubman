@@ -23,7 +23,7 @@ import PostModal from "@/components/custom/PostModal";
 import FeedHeader from "@/components/common/FeedHeader";
 import Intro from "@/components/common/Intro";
 import { useDispatch, useSelector } from "react-redux";
-import { getMyProfile, getUserProfile, setPrivacyDetailsModal, storeBsicInformation } from "../settings/store";
+import { getMyProfile, getUserProfile, getUserProfileByUsername, setPrivacyDetailsModal, storeBsicInformation } from "../settings/store";
 import moment from "moment";
 import CreatePostBox from "@/components/common/CreatePostBox";
 import PostList from "@/components/common/PostList";
@@ -81,7 +81,9 @@ const AboutContent = () => {
 
   useEffect(() => {
     dispatch(getMyProfile());
-    dispatch(getUserProfile(params?.id));
+    // dispatch(getUserProfile(params?.id));
+    dispatch(getUserProfileByUsername(params?.username));
+
   }, []);
 
 const categoryData = userData?.metas?.filter(dd => dd.meta_key === "PROFILE")[0]?.meta_value;
