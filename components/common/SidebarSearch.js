@@ -164,102 +164,6 @@ const SidebarSearch = () => {
     }
   };
 
-  // Demo data for testing
-  const getDemoResults = () => {
-    return [
-      {
-        id: 1,
-        fname: "Sarah",
-        last_name: "Johnson",
-        email: "sarah.johnson@email.com",
-        image: "/common-avator.jpg",
-        designation: "Software Engineer",
-        blood_group: "O+",
-        is_blood_donor: true,
-        is_spouse_need: false,
-        followed: "not_followed",
-        followers: [
-          { follower_client: { display_name: "Mike Chen" } },
-          { follower_client: { display_name: "Emma Wilson" } }
-        ]
-      },
-      {
-        id: 2,
-        fname: "Ahmed",
-        last_name: "Hassan",
-        email: "ahmed.hassan@email.com",
-        image: "/common-avator.jpg",
-        designation: "Doctor",
-        blood_group: "A-",
-        is_blood_donor: true,
-        is_spouse_need: true,
-        followed: "followed",
-        followers: [
-          { follower_client: { display_name: "Fatima Ali" } }
-        ]
-      },
-      {
-        id: 3,
-        fname: "Priya",
-        last_name: "Sharma",
-        email: "priya.sharma@email.com",
-        image: "/common-avator.jpg",
-        designation: "Teacher",
-        blood_group: "B+",
-        is_blood_donor: false,
-        is_spouse_need: true,
-        followed: "not_followed",
-        followers: []
-      },
-      {
-        id: 4,
-        fname: "David",
-        last_name: "Brown",
-        email: "david.brown@email.com",
-        image: "/common-avator.jpg",
-        designation: "Marketing Manager",
-        blood_group: "AB+",
-        is_blood_donor: true,
-        is_spouse_need: false,
-        followed: "not_followed",
-        followers: [
-          { follower_client: { display_name: "Lisa Garcia" } },
-          { follower_client: { display_name: "John Smith" } },
-          { follower_client: { display_name: "Maria Rodriguez" } }
-        ]
-      },
-      {
-        id: 5,
-        fname: "Fatima",
-        last_name: "Al-Zahra",
-        email: "fatima.alzahra@email.com",
-        image: "/common-avator.jpg",
-        designation: "Nurse",
-        blood_group: "O-",
-        is_blood_donor: true,
-        is_spouse_need: true,
-        followed: "followed",
-        followers: [
-          { follower_client: { display_name: "Ahmed Hassan" } }
-        ]
-      },
-      {
-        id: 6,
-        fname: "Michael",
-        last_name: "Chen",
-        email: "michael.chen@email.com",
-        image: "/common-avator.jpg",
-        designation: "Data Scientist",
-        blood_group: "A+",
-        is_blood_donor: false,
-        is_spouse_need: false,
-        followed: "not_followed",
-        followers: [
-          { follower_client: { display_name: "Sarah Johnson" } }
-        ]
-      }
-    ];
-  };
 
   // Handle advanced search
   const handleAdvancedSearch = async () => {
@@ -287,7 +191,7 @@ const SidebarSearch = () => {
               break;
             }
             // Only blood_group filter
-            const params = { blood_group: advancedFilters.blood_group };
+            const params = { blood_group: advancedFilters?.blood_group };
             searchResults = await advanceSearchProfile(params);
             dispatch(setSearchQuery('Advanced Search'));
             break;
