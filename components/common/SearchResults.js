@@ -56,7 +56,7 @@ const SearchResults = () => {
           Search Results ({results.length})
         </h2>
         <span className="text-sm text-gray-500">
-          Found {results.length} results for "{query}"
+          Found {results.length} results for &quot;{query}&quot;
         </span>
       </div>
 
