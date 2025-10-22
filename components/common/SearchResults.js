@@ -5,11 +5,16 @@ import Link from 'next/link';
 import { FaMapMarkerAlt, FaHeart, FaGraduationCap, FaUsers, FaTint } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
 import { followTo, unFollowTo } from '@/views/settings/store';
+import { setSearchResults, removeQuery } from '@/views/search/store';
 
 const SearchResults = () => {
   const dispatch = useDispatch();
   const { results, loading, query } = useSelector(state => state.search);
   const [loadingStates, setLoadingStates] = useState({});
+  const clearResults = () => {
+    dispatch(setSearchResults([]));
+    dispatch(removeQuery());
+  };
 
   // Function to handle following a user
   const handleFollow = async (userId) => {
@@ -55,9 +60,19 @@ const SearchResults = () => {
         <h2 className="text-lg font-semibold text-gray-800">
           Search Results ({results.length})
         </h2>
-        <span className="text-sm text-gray-500">
-          Found {results.length} results for &quot;{query}&quot;
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-500">
+            Found {results.length} results for &quot;{query}&quot;
+          </span>
+          <button
+            onClick={clearResults}
+            aria-label="Clear search results"
+            title="Clear"
+            className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300"
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -94,7 +109,7 @@ const SearchResults = () => {
                 </div>
                 
                 <div className="flex-1 min-w-0">
-                  <Link href={`/user/user-profile/${result?.id}`}>
+                  <Link href={`/${result?.username}`}>
                     <div className="font-medium text-gray-900 text-lg hover:underline truncate cursor-pointer">
                       {(result.fname || '') + (result.middle_name ? ' ' + result.middle_name : '') + (result.last_name ? ' ' + result.last_name : '')}
                     </div>

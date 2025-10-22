@@ -34,6 +34,7 @@ function FeedHeader({
   showMsgBtn = false,
   showFriends = false,
   showEditBtn = false,
+  hideProfileSection = false,
 }) {
   const { profile, userProfileData, followLoading, profileSettingData } = useSelector(
     ({ settings }) => settings
@@ -281,6 +282,7 @@ function FeedHeader({
       </div>
 
       {/* Profile Section */}
+      {!hideProfileSection && (
       <div className="data-section bg-white px-6 py-4 relative">
         <div className="flex justify-between ">
           <div className="flex items-end">
@@ -320,7 +322,7 @@ function FeedHeader({
 
             {/* Profile Info */}
             <div className="data-info mb-2">
-              <Link href={`/user/user-profile/${data?.client?.username}`}>
+              <Link href={`/${data?.client?.username}`}>
               <h2 className="text-xl font-bold hover:underline">
                 {data?.client
                   ? data?.client?.display_name || data?.client?.fname + " " + data?.client?.last_name
@@ -330,7 +332,7 @@ function FeedHeader({
              
               <p className="text-gray-600 text-sm">
                 <Link
-                  href={`/user/user-profile/${
+                  href={`/${
                     userProfile ? params?.username : profile?.client?.username
                   }/friends`}
                 >
@@ -340,7 +342,7 @@ function FeedHeader({
                 </Link>{" "}
                 ·{" "}
                 <Link
-                  href={`/user/user-profile/${
+                  href={`/${
                     userProfile ? params?.username : profile?.client?.username
                   }/friends`}
                 >
@@ -360,7 +362,7 @@ function FeedHeader({
                         } cursor-pointer rounded-full w-8 h-8 border-2 border-white overflow-hidden`}
                       >
                         <Link
-                          href={`/user/user-profile/${
+                          href={`/${
                             userProfile ? params?.id : profile?.client?.id
                           }/friends`}
                         >
@@ -466,6 +468,7 @@ function FeedHeader({
           </div>)}
         </div>
       </div>
+      )}
 
       {/* Navigation Tabs */}
       <div className="data-nav rounded-b-md bg-white border-t border-b border-gray-200">
@@ -482,7 +485,7 @@ function FeedHeader({
               NFC
             </Link>
             <Link
-              href={`/user/user-profile/${isMyProfile ? profile?.client?.username : params.username}/about`}
+              href={`/${isMyProfile ? profile?.client?.username : params.username}/about`}
               className={`px-6 py-3 font-medium ${
                 isLinkActive("/user/about")
                   ? "text-blue-500 border-b-2 border-blue-500"
@@ -504,12 +507,12 @@ function FeedHeader({
             {(userProfile || friendsTab) && (
              <>
               <Link
-                href={`/user/user-profile/${
+                href={`/${
                   userProfile ? params?.username : profile?.client?.username
                 }/friends`}
                 className={`px-6 py-3 font-medium ${
                   isLinkActive(
-                    `/user/user-profile/${
+                    `/${
                       params?.id || profile?.client?.id
                     }/friends`
                   )

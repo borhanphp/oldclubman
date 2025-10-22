@@ -1122,7 +1122,7 @@ const handleMentionDetect = async (e, inputKey) => {
       }
       elements.push(
         <Link 
-          href={`/user/user-profile/${id}`} 
+          href={`/${id}`} 
           className="text-black hover:text-gray-700 font-bold cursor-pointer bg-blue-50 hover:bg-blue-100 px-1 py-0.5 rounded transition-colors duration-200" 
           key={`m-${start}`}
           onMouseEnter={(e) => {
@@ -1294,7 +1294,7 @@ const handleMentionDetect = async (e, inputKey) => {
       }
       elements.push(
         <Link 
-          href={`/user/user-profile/${id}`} 
+          href={`/${id}`} 
           className="text-black hover:text-gray-700 font-bold cursor-pointer bg-blue-50 hover:bg-blue-100 px-1 py-0.5 rounded transition-colors duration-200" 
           key={`m-${start}`}
           onMouseEnter={(e) => {
@@ -1527,7 +1527,7 @@ const handleMentionDetect = async (e, inputKey) => {
         <div className="flex flex-col w-full">
           <div className="bg-gray-50 w-full p-2 rounded-md flex flex-col">
             <span className="font-medium text-xs">
-              <Link href={`/user/user-profile/${reply?.username}`} className="cursor-pointer hover:underline">
+              <Link href={`/${reply?.username}`} className="cursor-pointer hover:underline">
                 {`${reply?.client_comment?.fname || ""} ${reply?.client_comment?.last_name || ""}`.trim() || reply?.user}
               </Link>
               <span className="text-gray-400 ml-1">
@@ -2357,13 +2357,13 @@ const handleMentionDetect = async (e, inputKey) => {
     // Navigate to appropriate page or open modal
     switch (type) {
       case 'posts':
-        window.location.href = `/user/user-profile/${userId}`;
+        window.location.href = `/${userId}`;
         break;
       case 'followers':
-        window.location.href = `/user/user-profile/${userId}?tab=followers`;
+        window.location.href = `/${userId}?tab=followers`;
         break;
       case 'following':
-        window.location.href = `/user/user-profile/${userId}?tab=following`;
+        window.location.href = `/${userId}?tab=following`;
         break;
       default:
         break;
@@ -2726,7 +2726,7 @@ const reactionsImages = (item) => {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <Link href={`/user/user-profile/${item?.client?.username}`}>
+                    <Link href={`/${item?.client?.username}`}>
                       <h4 className="font-medium cursor-pointer hover:underline">
                         {item?.client?.display_name || item?.client?.fname + " " + item?.client?.last_name}
                       </h4>
@@ -2737,7 +2737,7 @@ const reactionsImages = (item) => {
                       <p className="text-sm text-gray-500">
                       Shared from {" "}
                       <span className="font-semibold hover:underline cursor-pointer">
-                      <Link href={`/user/user-profile/${item?.shared_post?.client?.username}`}>
+                      <Link href={`/${item?.shared_post?.client?.username}`}>
                         {item?.shared_post?.client?.fname + " " + item?.shared_post?.client?.last_name}
                       </Link>
                       </span>
@@ -3021,7 +3021,7 @@ const reactionsImages = (item) => {
                       <div className="flex flex-col bg-gray-100 p-2 rounded-md">
                         <span className="font-medium">
                           <Link
-                            href={`/user/user-profile/${item?.latest_comment?.username}`}
+                            href={`/${item?.latest_comment?.username}`}
                             className="cursor-pointer hover:underline"
                           >
                             {item?.latest_comment?.client?.display_name || item?.latest_comment?.client?.fname +" " +item?.latest_comment?.client?.last_name}{" "}
@@ -3259,7 +3259,7 @@ const reactionsImages = (item) => {
                           <div className="bg-gray-100 rounded-lg px-3 py-2">
                             <span className="font-medium text-sm">
                               <Link
-                                href={`/user/user-profile/${reply?.username}`}
+                                href={`/${reply?.username}`}
                                 className="cursor-pointer hover:underline"
                               >
                                 {(reply?.client_comment?.fname || "") + " " + (reply?.client_comment?.last_name || "")}
@@ -3787,7 +3787,7 @@ const reactionsImages = (item) => {
                 </div>
                 <div>
                   <Link
-                    href={`/user/user-profile/${basicPostData?.client?.username}`}
+                    href={`/${basicPostData?.client?.username}`}
                     className="cursor-pointer hover:underline"
                   >
                     <div className="font-semibold">
@@ -4004,7 +4004,7 @@ const reactionsImages = (item) => {
                       <div className="bg-gray-100 p-3 rounded-2xl relative border border-gray-200">
                         <div className="font-medium text-sm">
                           <Link
-                            href={`/user/user-profile/${c?.username}`}
+                            href={`/${c?.username}`}
                             className="cursor-pointer hover:underline"
                           >
                             {c?.client_comment?.fname +
@@ -4413,7 +4413,7 @@ const reactionsImages = (item) => {
                             <div className="bg-gray-50 w-full p-2 rounded-2xl border border-gray-200 flex flex-col">
                               <span className="font-medium text-xs">
                                 <Link
-                                  href={`/user/user-profile/${reply?.username}`}
+                                  href={`/${reply?.username}`}
                                   className="cursor-pointer hover:underline"
                                 >
                                   {reply?.client_comment?.fname +
@@ -5060,7 +5060,7 @@ const reactionsImages = (item) => {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-bold text-lg text-gray-900 hover:underline cursor-pointer">
-                    <Link href={`/user/user-profile/${profilePopup.profileData?.username}`}>
+                    <Link href={`/${profilePopup.profileData?.username}`}>
                       {profilePopup.profileData.name}
                     </Link>
                   </h3>
@@ -5129,7 +5129,7 @@ const reactionsImages = (item) => {
               {/* Action buttons */}
               <div className="flex gap-2">
                 <Link
-                  href={`/user/user-profile/${profilePopup.profileData?.username}`}
+                  href={`/${profilePopup.profileData?.username}`}
                   className="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium text-sm"
                   onClick={() => hideProfilePopup(true)}
                 >

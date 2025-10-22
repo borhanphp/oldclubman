@@ -6,6 +6,7 @@ import { setSearchQuery, setSearchResults, setSearchLoading, removeQuery } from 
 import api from '@/helpers/axios';
 import { followTo, unFollowTo } from '@/views/settings/store';
 import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import { FaSearch, FaEllipsisV, FaMapMarkerAlt, FaHeart, FaGraduationCap, FaUsers, FaTint, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 
 const searchApi = async (query) => {
@@ -16,32 +17,32 @@ const searchApi = async (query) => {
 
 // Advanced search APIs
 const searchBloodDonors = async (filters) => {
-  const response = await api.get(`/client/search_blood_donors?city=${filters.city}&country=${filters.country}&blood_type=${filters.bloodType}`);
+  const response = await api.get(`/client/advance_search_profile?city=${filters.city}&country=${filters.country}&blood_type=${filters.bloodType}`);
   return response.data.data;
 };
 
 const searchByLocation = async (filters) => {
-  const response = await api.get(`/client/search_by_location?city=${filters.city}&country=${filters.country}&radius=${filters.radius}`);
+  const response = await api.get(`/client/advance_search_profile?city=${filters.city}&country=${filters.country}&radius=${filters.radius}`);
   return response.data.data;
 };
 
 const searchCommunity = async (filters) => {
-  const response = await api.get(`/client/search_community?city=${filters.city}&country=${filters.country}&community=${filters.community}`);
+  const response = await api.get(`/client/advance_search_profile?city=${filters.city}&country=${filters.country}&community=${filters.community}`);
   return response.data.data;
 };
 
 const searchNearby = async (filters) => {
-  const response = await api.get(`/client/search_nearby?radius=${filters.radius}`);
+  const response = await api.get(`/client/advance_search_profile?radius=${filters.radius}`);
   return response.data.data;
 };
 
 const searchSchoolFriends = async (filters) => {
-  const response = await api.get(`/client/search_school_friends?school=${filters.school}&city=${filters.city}`);
+  const response = await api.get(`/client/advance_search_profile?school=${filters.school}&city=${filters.city}`);
   return response.data.data;
 };
 
 const searchSingles = async (filters) => {
-  const response = await api.get(`/client/search_singles?city=${filters.city}&country=${filters.country}&min_age=${filters.ageRange.min}&max_age=${filters.ageRange.max}&community=${filters.community}`);
+  const response = await api.get(`/client/advance_search_profile?city=${filters.city}&country=${filters.country}&min_age=${filters.ageRange.min}&max_age=${filters.ageRange.max}&community=${filters.community}`);
   return response.data.data;
 };
 
@@ -57,7 +58,12 @@ const advanceSearchProfile = async (filters) => {
   if (filters.community) params.append('community', filters.community);
   if (filters.is_single) params.append('is_single', filters.is_single);
   
-  const response = await api.get(`/client/advance_search_profile?${params.toString()}`);
+  // Build query string and keep '+' visible for blood_group
+  let queryString = params.toString();
+  if (filters.blood_group && filters.blood_group.includes('+')) {
+    queryString = queryString.replace(/blood_group=([^&]+)/, (m) => m.replace(/%2B/g, '+'));
+  }
+  const response = await api.get(`/client/advance_search_profile?${queryString}`);
   return response?.data?.data?.search_results || [];
 };
 
@@ -69,6 +75,8 @@ const SidebarSearch = () => {
   const [loadingStates, setLoadingStates] = useState({});
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [searchCategory, setSearchCategory] = useState('general');
+  const pathname = usePathname();
+  const router = useRouter();
   const [locationCountries, setLocationCountries] = useState([]);
   const [locationStates, setLocationStates] = useState([]);
   const [locationCities, setLocationCities] = useState([]);
@@ -275,16 +283,14 @@ const SidebarSearch = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchCategory, showAdvancedSearch, advancedFilters.blood_group, advancedFilters.country_id, advancedFilters.state_id, advancedFilters.city_id]);
 
-  // Optional: close dropdown on outside click
+  // Clear results when route changes
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        dispatch(setSearchResults([]));
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [dispatch]);
+    if (!pathname) return;
+    dispatch(setSearchResults([]));
+    // Do not forcibly remove query; let user keep it unless navigating away
+    // If you want to fully reset on route change, uncomment next line
+    // dispatch(removeQuery());
+  }, [pathname, dispatch]);
 
   return (
     <div className="p-4 border-b border-gray-200 relative" ref={dropdownRef}>
@@ -627,7 +633,6 @@ const SidebarSearch = () => {
                     <div className="flex-1 min-w-0">
                       <Link href={`/user/user-profile/${result?.id}`}>
                         <div 
-                          onClick={() => dispatch(removeQuery())} 
                           className="font-medium text-gray-900 text-sm hover:underline truncate"
                         >
                           {result.fname + " " + result.last_name}
