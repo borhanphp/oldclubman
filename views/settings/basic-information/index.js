@@ -526,18 +526,19 @@ const BasicInformation = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div>
-            <OldSelect
-              label="Marital Status"
-              name="marital_status"
-              value={marital_status}
-              onChange={handleInputChange}
-              options={maritalStatusOptions}
-              placeholder="Select Marital Status"
-              className="w-full"
-            />
-            <div className="mt-1 ml-2">
-            <div className="flex items-center space-x-3 mb-4">
-              <input
+             <OldSelect
+               label={
+                 <div className="mt-1">
+               <div>
+                 <div className="flex items-center space-x-3">
+                 Marital Status <span className="relative inline-block group">
+                   <span className="ml-1 inline-flex h-5 w-8 items-center justify-center rounded-full  text-gray-700 text-xs font-semibold hover:cursor-pointer">{"*<?>"}</span>
+                   <div className="pointer-events-none absolute z-10 hidden w-72 -translate-x-1/2 rounded-md bg-gray-900 px-3 py-2 text-xs text-white shadow-lg group-hover:block left-1/2 top-6">
+                     Your profile will be visible to individuals seeking a long-term friendship or relationship.
+                     <span className="absolute -top-1 left-1/2 -translate-x-1/2 h-2 w-2 rotate-45 bg-gray-900"></span>
+                   </div>
+                 </span>
+               <input
                 type="checkbox"
                 id="is_spouse_need"
                 name="is_spouse_need"
@@ -546,25 +547,36 @@ const BasicInformation = () => {
                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
               />
               <label htmlFor="is_spouse_need" className="text-sm font-medium text-gray-700">
-                Searching for spouse
+                
               </label>
             </div>
           </div>
+              </div>}
+              name="marital_status"
+              value={marital_status}
+              onChange={handleInputChange}
+              options={maritalStatusOptions}
+              placeholder="Select Marital Status"
+              className="w-full"
+            />
+            
+            
           </div>
 
           <div>
             <OldSelect
-              label="Blood Group"
-              name="blood_group"
-              value={blood_group}
-              onChange={handleInputChange}
-              options={bloodGroupOptions}
-              placeholder="Select Marital Status"
-              className="w-full"
-            />
-            <div className="mt-1 ml-2">
-            <div className="flex items-center space-x-3 mb-4">
-              <input
+              label=
+                {
+                  <div className="mt-1">
+                <div>
+                  <div className="flex items-center space-x-3">
+                   Blood Group <span className="relative inline-block group">
+                     <span className="ml-1 inline-flex h-5 w-8 items-center justify-center rounded-full  text-gray-700 text-xs font-semibold hover:cursor-pointer">{"*<?>"}</span>
+                    <div className="pointer-events-none absolute z-10 hidden w-72 -translate-x-1/2 rounded-md bg-gray-900 px-3 py-2 text-xs text-white shadow-lg group-hover:block left-1/2 top-6">
+                    Human for human — together, we can make a difference. If you’d like, you can donate your blood to help save lives. Would you like to register as a blood donor?                      <span className="absolute -top-1 left-1/2 -translate-x-1/2 h-2 w-2 rotate-45 bg-gray-900"></span>
+                    </div>
+                  </span>
+                  <input
                 type="checkbox"
                 id="is_blood_donor"
                 name="is_blood_donor"
@@ -572,11 +584,21 @@ const BasicInformation = () => {
                 onChange={handleInputChange}
                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
               />
-              <label htmlFor="is_blood_donor" className="text-sm font-medium text-gray-700">
-                I am a blood donor
+               <label htmlFor="is_blood_donor" className="text-sm font-medium text-gray-700">
+                
               </label>
-            </div>
-          </div>
+             </div>
+           </div>
+               </div>}
+              
+              name="blood_group"
+              value={blood_group}
+              onChange={handleInputChange}
+              options={bloodGroupOptions}
+              placeholder="Select Marital Status"
+              className="w-full"
+            />
+           
           </div>
 
           
