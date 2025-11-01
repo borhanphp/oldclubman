@@ -23,6 +23,7 @@ export const getMyProfile = createAsyncThunk( 'settings/getMyProfile', async ( )
           }
 
         }
+        console.log('resData from myprofile', resData)
 
         return myProfile;
     })
