@@ -2981,13 +2981,15 @@ const reactionsImages = (item) => {
                     ref={dropdownRef}
                     className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl z-20"
                   >
-                    {profile?.client?.id === item?.client?.id && <button
+                    {profile?.client?.id === item?.client?.id && !item?.post_location && 
+                    <button
                       onClick={() => handleEditPost(item.id)}
                       className="cursor-pointer flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                      <CiEdit className="mr-2"/>
                       Edit post
-                    </button> }
+                    </button> 
+                    }
                     {profile?.client?.id === item?.client?.id && <button
                       onClick={() => handleOnlyMe(item)}
                       className="cursor-pointer flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
