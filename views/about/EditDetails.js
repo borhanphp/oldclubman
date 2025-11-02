@@ -15,6 +15,7 @@ import {
   CiUser,
 } from "react-icons/ci";
 import toast from "react-hot-toast";
+import Link from "next/link";
 
 // Utility function to handle image loading with fallbacks
 const getImageSrc = (imagePath, fallback = "/common-avator.jpg") => {
@@ -65,7 +66,7 @@ const EditDetails = () => {
 const workDataForShow = profile.client?.metas?.filter(dd => dd.meta_key === "WORK")
 const educationDataShow = profile.client?.metas?.filter(dd => dd.meta_key === "EDUCATION")
 const profileDataForShow = profile.client?.metas?.filter(dd => dd.meta_key === "PROFILE")
-
+const socialLinksDataForShow = profile.client?.metas?.filter(dd => dd.meta_key === "SOCIAL_LINKS")
 const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value);
 
   
@@ -1218,6 +1219,392 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
     );
   };
 
+  const SocialLinksSection = () => {
+    const [isAddingSocialLink, setIsAddingSocialLink] = useState(false);
+    const [editingSocialLinkId, setEditingSocialLinkId] = useState(null);
+    const [socialLinkFormData, setSocialLinkFormData] = useState({
+      id: "",
+      platform: "",
+      username: ""
+    });
+  
+    const socialPlatforms = [
+      { link: "youtube.com/@", value: "youtube", label: "YouTube" },
+      { link: "instagram.com/", value: "instagram", label: "Instagram" },
+      { link: "facebook.com/", value: "facebook", label: "Facebook" },
+      { link: "x.com/", value: "twitter", label: "Twitter" },
+      { link: "linkedin.com/", value: "linkedin", label: "LinkedIn" },
+      { link: "tiktok.com/", value: "tiktok", label: "TikTok" },
+      { link: "snapchat.com/", value: "snapchat", label: "Snapchat" },
+      { link: "pinterest.com/", value: "pinterest", label: "Pinterest" },
+      // { link: "wh.", value: "whatsapp", label: "WhatsApp" },
+      // { link: "", value: "telegram", label: "Telegram" }
+    ];
+  
+    const handleSocialLinkPrivacyToggle = (id) => {
+      const currentSocialLinkData = socialLinksDataForShow && socialLinksDataForShow.length > 0 ? socialLinksDataForShow[0] : null;
+      if (!currentSocialLinkData) return;
+  
+      let socialLinkEntries = [];
+      try {
+        socialLinkEntries = typeof currentSocialLinkData.meta_value === 'string' 
+          ? JSON.parse(currentSocialLinkData.meta_value) 
+          : currentSocialLinkData.meta_value || [];
+      } catch (error) {
+        console.error('Error parsing social link data:', error);
+        return;
+      }
+  
+      const updatedSocialLinkEntries = socialLinkEntries.map(link => {
+        if (link.id === id) {
+          const currentStatus = link.status || 'public';
+          return {
+            ...link,
+            status: currentStatus === 'public' ? 'private' : 'public'
+          };
+        }
+        return link;
+      });
+  
+      const metas = [
+        {
+          meta_key: 'SOCIAL_LINKS',
+          meta_value: JSON.stringify(updatedSocialLinkEntries),
+          meta_status: '1'
+        }
+      ];
+  
+      const saveData = {
+        ...profileData,
+        metas: JSON.stringify(metas).replace(/"/g, "'"),
+        profile_visibility: profileData?.profile_visibility
+      };
+  
+      dispatch(storeBsicInformation(saveData))
+        .then(() => {
+          dispatch(getMyProfile());
+          toast.success("Social link privacy updated");
+        });
+    };
+  
+    const handleAddSocialLink = () => {
+      const linkId = `social_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      setIsAddingSocialLink(true);
+      setSocialLinkFormData({
+        id: linkId,
+        platform: "",
+        username: ""
+      });
+    };
+  
+    const handleEditSocialLink = (link) => {
+      setEditingSocialLinkId(link.id);
+      setSocialLinkFormData({
+        id: link.id,
+        platform: link.platform || "",
+        username: link.username || ""
+      });
+    };
+  
+    const handleSaveSocialLink = () => {
+      const linkId = editingSocialLinkId || `social_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      if (!socialLinkFormData.platform || !socialLinkFormData.username) {
+        toast.error("Please fill in all fields");
+        return;
+      }
+      
+      const newSocialLink = {
+        id: linkId,
+        ...socialLinkFormData,
+        status: 'public'
+      };
+  
+      let currentSocialLinkEntries = [];
+      if (socialLinksDataForShow && socialLinksDataForShow.length > 0) {
+        try {
+          currentSocialLinkEntries = typeof socialLinksDataForShow[0].meta_value === 'string' 
+            ? JSON.parse(socialLinksDataForShow[0].meta_value) 
+            : socialLinksDataForShow[0].meta_value || [];
+        } catch (error) {
+          console.error('Error parsing current social link data:', error);
+          currentSocialLinkEntries = [];
+        }
+      }
+  
+      let updatedSocialLinkEntries;
+      if (editingSocialLinkId) {
+        updatedSocialLinkEntries = currentSocialLinkEntries.map(link => 
+          link.id === editingSocialLinkId ? newSocialLink : link
+        );
+      } else {
+        updatedSocialLinkEntries = [...currentSocialLinkEntries, newSocialLink];
+      }
+  
+      const metas = [
+        {
+          meta_key: 'SOCIAL_LINKS',
+          meta_value: JSON.stringify(updatedSocialLinkEntries),
+          meta_status: '1'
+        }
+      ];
+  
+      const saveData = {
+        ...profileData,
+        metas: JSON.stringify(metas).replace(/"/g, "'"),
+        profile_visibility: profileData?.profile_visibility
+      };
+  
+      dispatch(storeBsicInformation(saveData))
+        .then(() => {
+          dispatch(getMyProfile());
+          toast.success("Updated");
+        });
+  
+      setIsAddingSocialLink(false);
+      setEditingSocialLinkId(null);
+      setSocialLinkFormData({
+        id: "",
+        platform: "",
+        username: ""
+      });
+    };
+  
+    const handleCancelSocialLink = () => {
+      setIsAddingSocialLink(false);
+      setEditingSocialLinkId(null);
+      setSocialLinkFormData({
+        id: "",
+        platform: "",
+        username: ""
+      });
+    };
+  
+    const handleSocialLinkFormChange = (e) => {
+      const { name, value } = e.target;
+      setSocialLinkFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    };
+  
+    const handleDeleteSocialLink = (data, id) => {
+      const updatedSocialLinkEntries = data?.filter(link => link.id !== id);
+      
+      const metas = [
+        {
+          meta_key: 'SOCIAL_LINKS',
+          meta_value: JSON.stringify(updatedSocialLinkEntries),
+          meta_status: '1'
+        }
+      ];
+  
+      const saveData = {
+        ...profileData,
+        metas: JSON.stringify(metas).replace(/"/g, "'"),
+        profile_visibility: profileData?.profile_visibility
+      };
+  
+      dispatch(storeBsicInformation(saveData))
+        .then(() => {
+          dispatch(getMyProfile());
+          toast.success("Social link deleted");
+        });
+    };
+  
+    const getPlatformLabel = (platformValue) => {
+      const platform = socialPlatforms.find(p => p.value === platformValue);
+      return platform ? platform?.link : platformValue;
+    };
+    
+    const getPlatformUrl = (platformValue, username) => {
+      if (!platformValue || !username) return '#';
+      
+      const platform = socialPlatforms.find(p => p.value === platformValue);
+      if (!platform) return '#';
+      
+      const baseUrl = platform.link;
+      // Ensure username doesn't already include the domain
+      const cleanUsername = username.replace(/^https?:\/\//, '').replace(/^www\./, '');
+      
+      // Build full URL
+      let fullUrl = baseUrl + cleanUsername;
+      
+      // Add protocol if not present
+      if (!fullUrl.startsWith('http://') && !fullUrl.startsWith('https://')) {
+        fullUrl = 'https://' + fullUrl;
+      }
+      
+      return fullUrl;
+    };
+  
+    return (
+      <div className="bg-white rounded-lg border border-gray-100 p-4 mb-4">
+        <h4 className="text-base font-bold text-gray-800 mb-4">SOCIAL LINKS</h4>
+  
+        {/* Display social link entries */}
+        {socialLinksDataForShow && socialLinksDataForShow.length > 0 && socialLinksDataForShow.map((socialLinkData, index) => {
+          const socialLinkEntries = typeof socialLinkData.meta_value === 'string' 
+            ? JSON.parse(socialLinkData.meta_value) 
+            : socialLinkData.meta_value || [];
+          
+          return Array.isArray(socialLinkEntries) ? socialLinkEntries.map((entry, entryIndex) => {
+            const uniqueId = entry.id || `social_${index}_${entryIndex}_${Date.now()}`;
+            
+            return (
+              <div key={uniqueId} className="flex items-center mb-3 last:mb-0">
+                {/* Privacy Toggle */}
+                <div className="flex items-center mr-4">
+                  <button
+                    onClick={() => handleSocialLinkPrivacyToggle(entry.id || uniqueId)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                      (entry.status || 'public') === 'public' ? "bg-blue-600" : "bg-gray-200"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        (entry.status || 'public') === 'public' ? "translate-x-6" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+  
+                {/* Platform and Username */}
+                <div className="flex-1 text-sm text-gray-700 flex items-center gap-2">
+                  <Link 
+                    className="hover:underline font-medium" 
+                    href={getPlatformUrl(entry.platform, entry.username)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {getPlatformLabel(entry.platform)}{entry?.username}
+                  </Link>
+                </div>
+  
+                {/* Edit Icon */}
+                <button 
+                  className="text-gray-400 ml-2 hover:text-gray-600"
+                  onClick={() => handleEditSocialLink({...entry, id: entry.id || uniqueId})}
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                  </svg>
+                </button>
+  
+                {/* Delete Icon */}
+                <button 
+                  className="text-red-400 ml-2 hover:text-red-600"
+                  onClick={() => handleDeleteSocialLink(socialLinkEntries, entry.id || uniqueId)}
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            );
+          }) : null;
+        })}
+  
+        {/* Show message when no social link data */}
+        {(!socialLinksDataForShow || socialLinksDataForShow.length === 0) && (
+          <div className="text-gray-500 text-sm py-2">No social links found</div>
+        )}
+  
+        {/* Add/Edit Social Link Form */}
+        {(isAddingSocialLink || editingSocialLinkId) && (
+          <div className="bg-gray-50 p-4 rounded-lg mb-4">
+            <h5 className="font-semibold mb-3">
+              {editingSocialLinkId ? 'Edit Social Link' : 'Add a social link'}
+            </h5>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Username</label>
+                <input
+                  type="text"
+                  name="username"
+                  placeholder="Username"
+                  value={socialLinkFormData.username}
+                  onChange={handleSocialLinkFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Platform</label>
+                <select
+                  name="platform"
+                  value={socialLinkFormData.platform}
+                  onChange={handleSocialLinkFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                >
+                  <option value="">Select platform</option>
+                  {socialPlatforms.map((platform) => (
+                    <option key={platform.value} value={platform.value}>
+                      {platform.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center justify-between pt-2">
+                <button className="flex items-center px-3 py-1 rounded-full text-sm bg-gray-200 text-gray-700 hover:bg-gray-300">
+                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clipRule="evenodd" />
+                  </svg>
+                  Public
+                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleCancelSocialLink}
+                    className="px-3 py-1 rounded-full text-sm bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveSocialLink}
+                    className={`px-3 py-1 rounded-full text-sm ${
+                      socialLinkFormData.platform && socialLinkFormData.username
+                        ? "bg-blue-500 text-white hover:bg-blue-600" 
+                        : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                    }`}
+                    disabled={!socialLinkFormData.platform || !socialLinkFormData.username}
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+  
+        {/* Add Social Link Button */}
+        {!isAddingSocialLink && !editingSocialLinkId && (
+          <div className="flex items-center mt-4">
+            <button 
+              className="flex items-center text-blue-600 hover:text-blue-700 transition-colors"
+              onClick={handleAddSocialLink}
+            >
+              <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center mr-3">
+                <svg
+                  className="w-4 h-4 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
+                </svg>
+              </div>
+              <span className="text-sm font-medium">Add a social link</span>
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const ProfileSection = () => {
     const [profileEntries, setProfileEntries] = useState([]);
     const [isAddingProfile, setIsAddingProfile] = useState(false);
@@ -1798,6 +2185,9 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
 
             {/* Profile Section */}
             <ProfileSection />
+
+            {/* Social Links Section */}
+<SocialLinksSection />
 
             <OverViewBlock
               icon={<CiPhone size={20} />}

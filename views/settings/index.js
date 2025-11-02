@@ -45,7 +45,7 @@ const Settings = () => {
       <div className="mx-auto pt-3">
       <div className="flex flex-col md:flex-row gap-6">
         {/* Sidebar */}
-        <div className="w-full h-full md:w-80 bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="w-full h-full md:w-60 bg-white rounded-lg shadow-sm overflow-hidden">
           <div>
             <div 
               className={`p-4 cursor-pointer ${activeTab === 'basic-information' ? 'bg-blue-50 border-l-4 border-blue-500' : 'hover:bg-gray-50 border-l-4 border-transparent'}`}

@@ -463,7 +463,7 @@ const BasicInformation = () => {
       <h2 className="text-xl font-semibold mb-8">Basic Information</h2>
 
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div>
             <OldInput
               label="First name"
@@ -514,10 +514,10 @@ const BasicInformation = () => {
 
           <div>
             <OldInput
-              label="User name"
+              label={`User name (Link: oldclubman.com/${username})`}
               type="text"
               name="username"
-              value={"oldclubman.com/" + username}
+              value={username}
               onChange={handleInputChange}
               placeholder="Username"
               className="w-full"
@@ -827,10 +827,12 @@ const BasicInformation = () => {
           </div>
 
 {/* education section start */}
-          <div className="col-span-1 md:col-span-2">
+       
+         <div className="col-span-1 md:col-span-3 ">
             <h3 className="text-lg font-semibold mb-4">Add Education</h3>
-            <div className="space-y-4">
-              <div>
+            <div className="grid-cols-3 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
                 <OldInput
                   label="Institution"
                   type="text"
@@ -840,9 +842,8 @@ const BasicInformation = () => {
                   placeholder="Institution"
                   className="w-full"
                 />
-              </div>
-
-              <div>
+                </div>
+                <div>
                 <OldInput
                   label="Degree"
                   type="text"
@@ -852,10 +853,9 @@ const BasicInformation = () => {
                   placeholder="Degree"
                   className="w-full"
                 />
-              </div>
-
-              <div>
-                <OldInput
+                </div>
+               <div>
+               <OldInput
                   label="Field of Study"
                   type="text"
                   name="field_of_study"
@@ -864,10 +864,8 @@ const BasicInformation = () => {
                   placeholder="Field of Study"
                   className="w-full"
                 />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+               </div>
+               <div>
                   <OldInput
                     label="Start Date"
                     type="date"
@@ -889,13 +887,11 @@ const BasicInformation = () => {
                     className="w-full"
                   />
                 </div>
-              </div>
-
-              <div>
+                <div>
                 <label htmlFor="description" className="block text-sm font-medium text-gray-600 mb-2">
                   Description
                 </label>
-                <textarea
+                <OldInput
                   name="description"
                   id="description"
                   value={educationFormData.description}
@@ -905,6 +901,11 @@ const BasicInformation = () => {
                   className="w-full border border-slate-200 rounded-md px-[1rem] py-[0.3rem] focus:border-[#155DFC] focus:outline-none resize-y"
                 />
               </div>
+              </div>
+
+             
+
+             
 
               <div className="flex gap-3">
                 <button
@@ -924,15 +925,17 @@ const BasicInformation = () => {
               </div>
             </div>
           </div>
+      
 {/* education section end */}
          
 
          
 
           {/* work section start here */}
-          <div className="col-span-1 md:col-span-2">
+          <div className="col-span-1 md:col-span-3">
             <h3 className="text-lg font-semibold mb-4">Add Work</h3>
             <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <OldInput
                   label="Position"
@@ -957,7 +960,7 @@ const BasicInformation = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             
                 <div>
                   <OldInput
                     label="Start Date"

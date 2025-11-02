@@ -153,6 +153,7 @@ const PostModal = () => {
         type: place.type,
         osm_id: place.osm_id
       }));
+      console.log(results)
       
       setPlaceSearchResults(results);
     } catch (error) {
@@ -274,9 +275,222 @@ const PostModal = () => {
     }
   }, [checkInMode]);
 
+  // useEffect(() => {
+  //   if (!showLocationModal) {
+  //     // Clean up map when modal closes
+  //     if (routeMapRef.current) {
+  //       try {
+  //         routeMapRef.current.remove();
+  //       } catch (e) {
+  //         console.error('Error removing map:', e);
+  //       }
+  //       routeMapRef.current = null;
+  //     }
+      
+  //     // Clean up the container
+  //     if (routeMapContainerRef.current) {
+  //       routeMapContainerRef.current._leaflet_id = null;
+  //       routeMapContainerRef.current.innerHTML = '';
+  //     }
+  //     return;
+  //   }
+    
+  //   let mapInstance = null;
+  //   let timeoutId = null;
+  //   let retryTimeoutId = null;
+    
+  //   // Wait for the container to be available (delay for CSS transition)
+  //   const initMap = () => {
+  //     console.log('initMap called', {
+  //       hasMapRef: !!routeMapRef.current,
+  //       hasContainerRef: !!routeMapContainerRef.current,
+  //       showLocationModal,
+  //       checkInMode
+  //     });
+      
+  //     // Check if already initialized or container not ready
+  //     if (routeMapRef.current || !routeMapContainerRef.current) {
+  //       console.log('Map already initialized or container not ready');
+  //       return;
+  //     }
+      
+  //     // Ensure container is actually visible and has dimensions
+  //     const container = routeMapContainerRef.current;
+     
+      
+  //     if (!container || container.offsetWidth === 0 || container.offsetHeight === 0) {
+  //       console.log('Container has no dimensions, skipping initialization');
+  //       return;
+  //     }
+      
+  //     console.log('Loading Leaflet assets...');
+      
+  //     loadLeafletAssets().then(() => {
+  //       // Double check after assets load
+  //       if (routeMapRef.current || !routeMapContainerRef.current) return;
+        
+  //       const L = window.L;
+  //       try {
+  //         console.log('Initializing Leaflet map...');
+          
+  //         // Clear any existing leaflet instance from the container
+  //         if (routeMapContainerRef.current._leaflet_id) {
+  //           console.log('Cleaning up existing leaflet instance...');
+  //           routeMapContainerRef.current._leaflet_id = null;
+  //           routeMapContainerRef.current.innerHTML = '';
+  //         }
+          
+  //         mapInstance = L.map(routeMapContainerRef.current).setView([23.8103, 90.4125], 5);
+  //         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  //           attribution: '&copy; OpenStreetMap contributors',
+  //           maxZoom: 19
+  //         }).addTo(mapInstance);
+  //         routeMapRef.current = mapInstance;
+  //         console.log('Map initialized successfully!');
+          
+  //         // Force the map to recalculate its size after initialization
+  //         setTimeout(() => {
+  //           if (mapInstance) {
+  //             console.log('Invalidating map size...');
+  //             mapInstance.invalidateSize();
+  //           }
+  //         }, 100);
+
+  //         // Initialize check-in marker if location is already selected
+  //         if (checkInLocation && checkInMode === 'checkin') {
+  //           const marker = L.marker([checkInLocation.lat, checkInLocation.lng], {
+  //             icon: L.icon({
+  //               iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+  //               shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+  //               iconSize: [25, 41],
+  //               iconAnchor: [12, 41],
+  //               popupAnchor: [1, -34],
+  //               shadowSize: [41, 41]
+  //             })
+  //           }).addTo(mapInstance);
+  //           marker.bindPopup(`<b>${checkInLocation.place_name}</b>`).openPopup();
+  //           routeMarkersRef.current.checkin = marker;
+  //           mapInstance.setView([checkInLocation.lat, checkInLocation.lng], 15);
+  //         }
+
+  //         // Handle map clicks based on mode
+  //         if (checkInMode === 'route') {
+  //           mapInstance.on('click', (e) => {
+  //             const { latlng } = e;
+  //             if (!routeMarkersRef.current.origin) {
+  //               routeMarkersRef.current.origin = L.marker(latlng, { draggable: true }).addTo(mapInstance);
+  //               setRouteOrigin({ lat: latlng.lat, lng: latlng.lng });
+  //               routeMarkersRef.current.origin.on('dragend', (ev) => {
+  //                 const pos = ev.target.getLatLng();
+  //                 setRouteOrigin({ lat: pos.lat, lng: pos.lng });
+  //                 if (routeDestination) drawRouteLine({ lat: pos.lat, lng: pos.lng }, routeDestination);
+  //               });
+  //             } else if (!routeMarkersRef.current.destination) {
+  //               routeMarkersRef.current.destination = L.marker(latlng, { draggable: true }).addTo(mapInstance);
+  //               setRouteDestination({ lat: latlng.lat, lng: latlng.lng });
+  //               routeMarkersRef.current.destination.on('dragend', (ev) => {
+  //                 const pos = ev.target.getLatLng();
+  //                 setRouteDestination({ lat: pos.lat, lng: pos.lng });
+  //                 if (routeOrigin) drawRouteLine(routeOrigin, { lat: pos.lat, lng: pos.lng });
+  //               });
+  //               drawRouteLine(routeOrigin || latlng, { lat: latlng.lat, lng: latlng.lng });
+  //             } else {
+  //               // third click resets
+  //               resetRoute();
+  //             }
+  //           });
+  //         } else if (checkInMode === 'checkin') {
+  //           // For check-in mode, clicking on map can also set location
+  //           mapInstance.on('click', (e) => {
+  //             const { latlng } = e;
+  //             // Reverse geocode to get place name
+  //             fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}`)
+  //               .then(res => res.json())
+  //               .then(data => {
+  //                 const place = {
+  //                   place_name: data.display_name || 'Selected Location',
+  //                   lat: latlng.lat,
+  //                   lng: latlng.lng,
+  //                   address: data.display_name || 'Selected Location'
+  //                 };
+  //                 selectPlace(place);
+  //               })
+  //               .catch(() => {
+  //                 // Fallback if reverse geocoding fails
+  //                 const place = {
+  //                   place_name: `Location (${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)})`,
+  //                   lat: latlng.lat,
+  //                   lng: latlng.lng,
+  //                   address: `Location (${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)})`
+  //                 };
+  //                 selectPlace(place);
+  //               });
+  //           });
+  //         }
+  //       } catch (error) {
+  //         console.error('Error initializing map:', error);
+  //       }
+  //     }).catch((error) => {
+  //       console.error('Error loading map assets:', error);
+  //     });
+  //   };
+    
+  //   // Try after a delay to ensure DOM is ready (for CSS transitions)
+  //   // Increased delay to account for the sliding animation
+  //   timeoutId = setTimeout(() => {
+  //     console.log('First init attempt...');
+  //     initMap();
+  //     // Try again after another delay if still not initialized
+  //     retryTimeoutId = setTimeout(() => {
+  //       console.log('Retry init attempt...');
+  //       if (!routeMapRef.current && routeMapContainerRef.current) {
+  //         console.log('Container exists, retrying initialization');
+  //         initMap();
+  //       } else {
+  //         console.log('Skip retry - map already initialized or container not found');
+  //       }
+  //     }, 500);
+  //   }, 500);
+    
+  //   return () => {
+  //     if (timeoutId) {
+  //       clearTimeout(timeoutId);
+  //     }
+  //     if (retryTimeoutId) {
+  //       clearTimeout(retryTimeoutId);
+  //     }
+      
+  //     // Only remove if the map instance still exists and hasn't been removed
+  //     const mapToRemove = routeMapRef.current || mapInstance;
+  //     if (mapToRemove && mapToRemove._container) {
+  //       try {
+  //         mapToRemove.remove();
+  //       } catch (e) {
+  //         // Ignore errors - map might already be removed
+  //         console.log('Map cleanup skipped (already removed)');
+  //       }
+  //     }
+      
+  //     // Clear refs
+  //     routeMapRef.current = null;
+  //     mapInstance = null;
+      
+  //     // Clean up the container
+  //     if (routeMapContainerRef.current) {
+  //       routeMapContainerRef.current._leaflet_id = null;
+  //       routeMapContainerRef.current.innerHTML = '';
+  //     }
+  //   };
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [showLocationModal, checkInMode]);
+
   useEffect(() => {
-    if (!showLocationModal) {
-      // Clean up map when modal closes
+    // Create a separate ref for main modal map if needed, or reuse the same one
+    const mainModalMapContainer = document.getElementById('checkin-map-container');
+    const shouldInitMainMap = !showLocationModal && (checkInLocation || routeDestination) && mainModalMapContainer;
+    
+    if (!showLocationModal && !shouldInitMainMap) {
+      // Clean up map when modal closes and no location is selected
       if (routeMapRef.current) {
         try {
           routeMapRef.current.remove();
@@ -298,68 +512,47 @@ const PostModal = () => {
     let timeoutId = null;
     let retryTimeoutId = null;
     
-    // Wait for the container to be available (delay for CSS transition)
     const initMap = () => {
-      console.log('initMap called', {
-        hasMapRef: !!routeMapRef.current,
-        hasContainerRef: !!routeMapContainerRef.current,
-        showLocationModal,
-        checkInMode
-      });
+      const container = showLocationModal 
+        ? routeMapContainerRef.current 
+        : mainModalMapContainer;
       
-      // Check if already initialized or container not ready
-      if (routeMapRef.current || !routeMapContainerRef.current) {
-        console.log('Map already initialized or container not ready');
+      if (!container) {
+        console.log('Container not found');
         return;
       }
       
-      // Ensure container is actually visible and has dimensions
-      const container = routeMapContainerRef.current;
-      console.log('Container dimensions:', {
-        width: container?.offsetWidth,
-        height: container?.offsetHeight
-      });
-      
-      if (!container || container.offsetWidth === 0 || container.offsetHeight === 0) {
-        console.log('Container has no dimensions, skipping initialization');
+      if (routeMapRef.current || container.offsetWidth === 0 || container.offsetHeight === 0) {
+        console.log('Map already initialized or container has no dimensions');
         return;
       }
-      
-      console.log('Loading Leaflet assets...');
       
       loadLeafletAssets().then(() => {
-        // Double check after assets load
-        if (routeMapRef.current || !routeMapContainerRef.current) return;
+        if (routeMapRef.current || !container) return;
         
         const L = window.L;
         try {
-          console.log('Initializing Leaflet map...');
-          
-          // Clear any existing leaflet instance from the container
-          if (routeMapContainerRef.current._leaflet_id) {
-            console.log('Cleaning up existing leaflet instance...');
-            routeMapContainerRef.current._leaflet_id = null;
-            routeMapContainerRef.current.innerHTML = '';
+          // Clear any existing leaflet instance
+          if (container._leaflet_id) {
+            container._leaflet_id = null;
+            container.innerHTML = '';
           }
           
-          mapInstance = L.map(routeMapContainerRef.current).setView([23.8103, 90.4125], 5);
+          mapInstance = L.map(container).setView([23.8103, 90.4125], 5);
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors',
             maxZoom: 19
           }).addTo(mapInstance);
           routeMapRef.current = mapInstance;
-          console.log('Map initialized successfully!');
           
-          // Force the map to recalculate its size after initialization
           setTimeout(() => {
             if (mapInstance) {
-              console.log('Invalidating map size...');
               mapInstance.invalidateSize();
             }
           }, 100);
-
-          // Initialize check-in marker if location is already selected
-          if (checkInLocation && checkInMode === 'checkin') {
+  
+          // Add markers for selected locations
+          if (checkInLocation) {
             const marker = L.marker([checkInLocation.lat, checkInLocation.lng], {
               icon: L.icon({
                 iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
@@ -370,64 +563,67 @@ const PostModal = () => {
                 shadowSize: [41, 41]
               })
             }).addTo(mapInstance);
-            marker.bindPopup(`<b>${checkInLocation.place_name}</b>`).openPopup();
+            marker.bindPopup(`<b>${checkInLocation.place_name}</b>`);
             routeMarkersRef.current.checkin = marker;
-            mapInstance.setView([checkInLocation.lat, checkInLocation.lng], 15);
           }
-
-          // Handle map clicks based on mode
-          if (checkInMode === 'route') {
-            mapInstance.on('click', (e) => {
-              const { latlng } = e;
-              if (!routeMarkersRef.current.origin) {
-                routeMarkersRef.current.origin = L.marker(latlng, { draggable: true }).addTo(mapInstance);
-                setRouteOrigin({ lat: latlng.lat, lng: latlng.lng });
-                routeMarkersRef.current.origin.on('dragend', (ev) => {
-                  const pos = ev.target.getLatLng();
-                  setRouteOrigin({ lat: pos.lat, lng: pos.lng });
-                  if (routeDestination) drawRouteLine({ lat: pos.lat, lng: pos.lng }, routeDestination);
-                });
-              } else if (!routeMarkersRef.current.destination) {
-                routeMarkersRef.current.destination = L.marker(latlng, { draggable: true }).addTo(mapInstance);
-                setRouteDestination({ lat: latlng.lat, lng: latlng.lng });
-                routeMarkersRef.current.destination.on('dragend', (ev) => {
-                  const pos = ev.target.getLatLng();
-                  setRouteDestination({ lat: pos.lat, lng: pos.lng });
-                  if (routeOrigin) drawRouteLine(routeOrigin, { lat: pos.lat, lng: pos.lng });
-                });
-                drawRouteLine(routeOrigin || latlng, { lat: latlng.lat, lng: latlng.lng });
-              } else {
-                // third click resets
-                resetRoute();
-              }
-            });
-          } else if (checkInMode === 'checkin') {
-            // For check-in mode, clicking on map can also set location
-            mapInstance.on('click', (e) => {
-              const { latlng } = e;
-              // Reverse geocode to get place name
-              fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}`)
-                .then(res => res.json())
-                .then(data => {
-                  const place = {
-                    place_name: data.display_name || 'Selected Location',
-                    lat: latlng.lat,
-                    lng: latlng.lng,
-                    address: data.display_name || 'Selected Location'
-                  };
-                  selectPlace(place);
-                })
-                .catch(() => {
-                  // Fallback if reverse geocoding fails
-                  const place = {
-                    place_name: `Location (${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)})`,
-                    lat: latlng.lat,
-                    lng: latlng.lng,
-                    address: `Location (${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)})`
-                  };
-                  selectPlace(place);
-                });
-            });
+  
+          if (routeDestination) {
+            const marker = L.marker([routeDestination.lat, routeDestination.lng], {
+              icon: L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+              })
+            }).addTo(mapInstance);
+            marker.bindPopup(`<b>${routeDestination.place_name}</b>`);
+            routeMarkersRef.current.destination = marker;
+          }
+  
+          // Draw route line if both locations exist
+          if (checkInLocation && routeDestination) {
+            drawRouteLine(checkInLocation, routeDestination);
+          }
+  
+          // Fit bounds to show all markers
+          if (checkInLocation || routeDestination) {
+            const bounds = [];
+            if (checkInLocation) bounds.push([checkInLocation.lat, checkInLocation.lng]);
+            if (routeDestination) bounds.push([routeDestination.lat, routeDestination.lng]);
+            if (bounds.length > 0) {
+              mapInstance.fitBounds(bounds, { padding: [50, 50] });
+            }
+          }
+  
+          // Only allow click interactions in location modal
+          if (showLocationModal) {
+            if (checkInMode === 'checkin' || checkInMode === 'destination') {
+              mapInstance.on('click', (e) => {
+                const { latlng } = e;
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}`)
+                  .then(res => res.json())
+                  .then(data => {
+                    const place = {
+                      place_name: data.display_name || 'Selected Location',
+                      lat: latlng.lat,
+                      lng: latlng.lng,
+                      address: data.display_name || 'Selected Location'
+                    };
+                    selectPlace(place);
+                  })
+                  .catch(() => {
+                    const place = {
+                      place_name: `Location (${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)})`,
+                      lat: latlng.lat,
+                      lng: latlng.lng,
+                      address: `Location (${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)})`
+                    };
+                    selectPlace(place);
+                  });
+              });
+            }
           }
         } catch (error) {
           console.error('Error initializing map:', error);
@@ -437,54 +633,41 @@ const PostModal = () => {
       });
     };
     
-    // Try after a delay to ensure DOM is ready (for CSS transitions)
-    // Increased delay to account for the sliding animation
     timeoutId = setTimeout(() => {
-      console.log('First init attempt...');
       initMap();
-      // Try again after another delay if still not initialized
       retryTimeoutId = setTimeout(() => {
-        console.log('Retry init attempt...');
-        if (!routeMapRef.current && routeMapContainerRef.current) {
-          console.log('Container exists, retrying initialization');
+        if (!routeMapRef.current) {
           initMap();
-        } else {
-          console.log('Skip retry - map already initialized or container not found');
         }
       }, 500);
     }, 500);
     
     return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-      if (retryTimeoutId) {
-        clearTimeout(retryTimeoutId);
-      }
+      if (timeoutId) clearTimeout(timeoutId);
+      if (retryTimeoutId) clearTimeout(retryTimeoutId);
       
-      // Only remove if the map instance still exists and hasn't been removed
       const mapToRemove = routeMapRef.current || mapInstance;
       if (mapToRemove && mapToRemove._container) {
         try {
           mapToRemove.remove();
         } catch (e) {
-          // Ignore errors - map might already be removed
           console.log('Map cleanup skipped (already removed)');
         }
       }
       
-      // Clear refs
       routeMapRef.current = null;
       mapInstance = null;
       
-      // Clean up the container
-      if (routeMapContainerRef.current) {
-        routeMapContainerRef.current._leaflet_id = null;
-        routeMapContainerRef.current.innerHTML = '';
+      const container = showLocationModal 
+        ? routeMapContainerRef.current 
+        : mainModalMapContainer;
+      if (container) {
+        container._leaflet_id = null;
+        container.innerHTML = '';
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showLocationModal, checkInMode]);
+  }, [showLocationModal, checkInMode, checkInLocation, routeDestination]);
 
   const handleBackgroundSelect = (background) => {
     // Preserve existing text and place it on background
@@ -888,22 +1071,70 @@ const PostModal = () => {
       const formData = new FormData();
       formData.append('message', messageContent);
       formData.append('privacy_mode', basicPostData.privacy_mode);
-      
-      // Add check-in location data
+
+      // Build post_locations array
+      const postLocations = [];
+
+      // Add check-in location (post_type: 1)
       if (checkInLocation) {
-        formData.append('checkin_place_name', checkInLocation.place_name);
-        formData.append('checkin_lat', String(checkInLocation.lat));
-        formData.append('checkin_lng', String(checkInLocation.lng));
-        formData.append('checkin_address', checkInLocation.address || checkInLocation.place_name);
+        postLocations.push({
+          post_type: 1,
+          place_name: checkInLocation.place_name || '',
+          lat: checkInLocation.lat,
+          lon: checkInLocation.lng, // API uses 'lon' not 'lng'
+          address: checkInLocation.address || checkInLocation.place_name || '',
+          type: checkInLocation.type || '',
+          place_id: checkInLocation.osm_id || checkInLocation.place_id || null,
+          place_rank: checkInLocation.place_rank || 0,
+          name: checkInLocation.name || checkInLocation.place_name.split(',')[0] || ''
+        });
+      }
+
+      // Add destination location (post_type: 2)
+      if (routeDestination) {
+        postLocations.push({
+          post_type: 2,
+          place_name: routeDestination.place_name || '',
+          lat: routeDestination.lat,
+          lon: routeDestination.lng, // API uses 'lon' not 'lng'
+          address: routeDestination.address || routeDestination.place_name || '',
+          type: routeDestination.type || '',
+          place_id: routeDestination.osm_id || routeDestination.place_id || null,
+          place_rank: routeDestination.place_rank || 0,
+          name: routeDestination.name || routeDestination.place_name.split(',')[0] || ''
+        });
+      }
+
+      // Add post_locations to FormData as array
+      if (postLocations.length > 0) {
+        postLocations.forEach((location, index) => {
+          formData.append(`post_locations[${index}][post_type]`, location.post_type);
+          formData.append(`post_locations[${index}][place_name]`, location.place_name);
+          formData.append(`post_locations[${index}][lat]`, String(location.lat));
+          formData.append(`post_locations[${index}][lon]`, String(location.lon));
+          formData.append(`post_locations[${index}][address]`, location.address);
+          formData.append(`post_locations[${index}][type]`, location.type);
+          formData.append(`post_locations[${index}][place_id]`, String(location.place_id || ''));
+          formData.append(`post_locations[${index}][place_rank]`, String(location.place_rank));
+          formData.append(`post_locations[${index}][name]`, location.name);
+        });
       }
       
-      // Add route data (if route mode is used)
-      if (routeOrigin && routeDestination) {
-        formData.append('origin_lat', String(routeOrigin.lat));
-        formData.append('origin_lng', String(routeOrigin.lng));
-        formData.append('destination_lat', String(routeDestination.lat));
-        formData.append('destination_lng', String(routeDestination.lng));
-      }
+      // // Add check-in location data
+      // if (checkInLocation) {
+      //   formData.append('checkin_place_name', checkInLocation.place_name);
+      //   formData.append('checkin_lat', String(checkInLocation.lat));
+      //   formData.append('checkin_lng', String(checkInLocation.lng));
+      //   formData.append('checkin_address', checkInLocation.address || checkInLocation.place_name);
+      // }
+      
+      // // Add route data (if route mode is used)
+      // if (routeOrigin && routeDestination) {
+      //   formData.append('origin_lat', String(routeOrigin.lat));
+      //   formData.append('origin_lng', String(routeOrigin.lng));
+      //   formData.append('destination_lat', String(routeDestination.lat));
+      //   formData.append('destination_lng', String(routeDestination.lng));
+      // }
       
       if (messageContent?.length < 280 && selectedBackground) {
         formData.append('background_url', selectedBackground?.image?.path);
@@ -1217,7 +1448,27 @@ const PostModal = () => {
             )}
           </div>
 
+          {(checkInLocation || routeDestination) && (
+            <div className="mb-4">
+              <div
+                ref={routeMapContainerRef}
+                id="checkin-map-container"
+                className="w-full rounded-md border border-gray-200"
+                style={{ height: '384px', width: '100%', position: 'relative', zIndex: 0 }}
+              />
+              <div className="mt-2 text-xs text-gray-600">
+                {checkInLocation && routeDestination
+                  ? `Route: ${checkInLocation.place_name.split(',')[0]} → ${routeDestination.place_name.split(',')[0]}`
+                  : checkInLocation
+                    ? `Check-in: ${checkInLocation.place_name}`
+                    : `Destination: ${routeDestination.place_name}`
+                }
+              </div>
+            </div>
+          )}
+
           {/* Background Selection Row */}
+          {(!checkInLocation && !routeDestination) && 
           <div className="mb-1">
             <div className="flex items-center space-x-2 overflow-x-auto py-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
               {/* Left Arrow */}
@@ -1267,10 +1518,10 @@ const PostModal = () => {
                 </button>
               )}
             </div>
-          </div>
+          </div>}
 
          
-          {!selectedBackground && (
+          {(!selectedBackground && !checkInLocation && !routeDestination) && (
             <div className="">
               <p
                 className={`text-gray-500 mb-2 text-center cursor-pointer ${
@@ -1543,12 +1794,12 @@ const PostModal = () => {
                         />
                         
                         {/* Search Results Dropdown */}
-                        {showPlaceSearch && placeSearchResults.length > 0 && (
+                        {showPlaceSearch && placeSearchResults?.length > 0 && (
                           <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
                             {isSearchingPlaces && (
                               <div className="px-3 py-2 text-sm text-gray-500">Searching...</div>
                             )}
-                            {placeSearchResults.map((place, index) => (
+                            {placeSearchResults?.map((place, index) => (
                               <div
                                 key={index}
                                 onClick={() => selectPlace(place)}

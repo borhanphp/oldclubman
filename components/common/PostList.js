@@ -50,6 +50,9 @@ const PostList = ({ postsData }) => {
   const { profile, myFollowers } = useSelector(({ settings }) => settings);
   const dispatch = useDispatch();
   const params = useParams();
+  const mapRefs = useRef({});
+  const mapInstances = useRef({});
+
   useEffect(() => {
     let isMounted = true;
     
@@ -73,6 +76,8 @@ const PostList = ({ postsData }) => {
       isMounted = false;
     };
   }, [dispatch]);
+
+ 
 
   const [showReactionsFor, setShowReactionsFor] = useState(null);
   const [showCommentReactionsFor, setShowCommentReactionsFor] = useState(null);
@@ -180,6 +185,175 @@ const PostList = ({ postsData }) => {
     };
   }, []);
 
+
+   // Load Leaflet assets function
+   const loadLeafletAssets = () => {
+    if (typeof window === 'undefined') return Promise.resolve();
+    if (window.L) return Promise.resolve();
+
+    return new Promise((resolve, reject) => {
+      const existingCss = document.querySelector('link[href*="leaflet.css"]');
+      if (!existingCss) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        link.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
+        link.crossOrigin = '';
+        document.head.appendChild(link);
+      }
+
+      const existingJs = document.querySelector('script[src*="leaflet@1.9.4"]');
+      if (existingJs) {
+        existingJs.addEventListener('load', () => resolve());
+        existingJs.addEventListener('error', reject);
+        if (window.L) resolve();
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
+      script.crossOrigin = '';
+      script.onload = () => resolve();
+      script.onerror = reject;
+      document.body.appendChild(script);
+    });
+  };
+
+
+   // Initialize map for a post
+   const initMapForPost = async (postId, postLocations) => {
+    if (!postLocations || postLocations.length === 0) return;
+    
+    await loadLeafletAssets();
+    
+    const containerId = `map-container-${postId}`;
+    const container = document.getElementById(containerId);
+    
+    if (!container || mapInstances.current[postId]) return;
+    
+    // Clean up if container already has leaflet instance
+    if (container._leaflet_id) {
+      container._leaflet_id = null;
+      container.innerHTML = '';
+    }
+    
+    const L = window.L;
+    if (!L) return;
+    
+    try {
+      const map = L.map(container);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19
+      }).addTo(map);
+      
+      mapInstances.current[postId] = map;
+      
+      const bounds = [];
+      const markers = [];
+      
+      // Process locations
+      const checkIn = postLocations.find(loc => loc.post_type === 1);
+      const destination = postLocations.find(loc => loc.post_type === 2);
+      
+      // Add check-in marker
+      if (checkIn && checkIn.lat && checkIn.lon) {
+        const marker = L.marker([checkIn.lat, checkIn.lon], {
+          icon: L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+          })
+        }).addTo(map);
+        marker.bindPopup(`<b>${checkIn.place_name || 'Check-in'}</b>`);
+        markers.push(marker);
+        bounds.push([checkIn.lat, checkIn.lon]);
+      }
+      
+      // Add destination marker
+      if (destination && destination.lat && destination.lon) {
+        const marker = L.marker([destination.lat, destination.lon], {
+          icon: L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+          })
+        }).addTo(map);
+        marker.bindPopup(`<b>${destination.place_name || 'Destination'}</b>`);
+        markers.push(marker);
+        bounds.push([destination.lat, destination.lon]);
+      }
+      
+      // Draw route line if both exist
+      if (checkIn && destination && checkIn.lat && checkIn.lon && destination.lat && destination.lon) {
+        L.polyline([
+          [checkIn.lat, checkIn.lon],
+          [destination.lat, destination.lon]
+        ], { color: '#2563eb', weight: 4, opacity: 0.7 }).addTo(map);
+      }
+      
+      // Fit bounds to show all markers
+      if (bounds.length > 0) {
+        if (bounds.length === 1) {
+          map.setView(bounds[0], 15);
+        } else {
+          map.fitBounds(bounds, { padding: [50, 50] });
+        }
+      } else {
+        map.setView([23.8103, 90.4125], 5);
+      }
+      
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 100);
+    } catch (error) {
+      console.error(`Error initializing map for post ${postId}:`, error);
+    }
+  };
+
+  // Initialize maps for posts with location data
+useEffect(() => {
+  if (!postsData || !Array.isArray(postsData)) return;
+  
+  postsData.forEach(item => {
+    if (item?.post_location && item.post_location.length > 0 && item.id) {
+      // Delay initialization to ensure DOM is ready
+      setTimeout(() => {
+        initMapForPost(item.id, item.post_location);
+      }, 300);
+    }
+  });
+  
+  // Cleanup on unmount
+  return () => {
+    Object.keys(mapInstances.current).forEach(postId => {
+      try {
+        if (mapInstances.current[postId]) {
+          mapInstances.current[postId].remove();
+        }
+      } catch (error) {
+        console.error('Error cleaning up map:', error);
+      }
+    });
+    mapInstances.current = {};
+  };
+}, [postsData]);
+
+// Create a callback ref for each post
+const setMapContainerRef = (postId, postLocations) => (element) => {
+  if (element && !mapInstances.current[postId]) {
+    // Small delay to ensure element is fully mounted
+    setTimeout(() => {
+      initMapForPost(postId, postLocations);
+    }, 100);
+  }
+};
   
 
   const handleCommentSubmit = (postId) => {
@@ -2746,10 +2920,40 @@ const reactionsImages = (item) => {
                     )}
                     
                     <span className="text-gray-500">•</span>
+                    
                     <p className="text-sm text-gray-500">
                       {formatCompactTime(item.created_at)}
                     </p>
-                   
+                    {/* maping details details */}
+                    {(() => {
+                      // Extract check-in and destination from post_location
+                      const checkIn = item?.post_location?.find(loc => loc.post_type === 1);
+                      const destination = item?.post_location?.find(loc => loc.post_type === 2);
+                      
+                      if (checkIn && destination) {
+                        return (
+                          <span className="text-sm text-gray-500">
+                            <span className="text-gray-500">•</span>
+                            📍 From <span className="font-bold">{checkIn.place_name?.split(',')[0] || checkIn.place_name || 'Location'}</span>  Traveling to ✈️ <span className="font-bold">{destination.place_name?.split(',')[0] || destination.place_name || 'Location'}</span>
+                          </span>
+                        );
+                      } else if (checkIn) {
+                        return (
+                          <span className="text-sm text-gray-500">
+                            <span className="text-gray-500">•</span>
+                            📍 Checking in <span className="font-bold">{checkIn.place_name?.split(',')[0] || checkIn.place_name || 'Check-in'}</span>
+                          </span>
+                        );
+                      } else if (destination) {
+                        return (
+                          <span className="text-sm text-gray-500">
+                            <span className="text-gray-500">•</span>
+                            📍 Traveling to ✈️ <span className="font-bold">{destination.place_name?.split(',')[0] || destination.place_name || 'Destination'}</span>
+                          </span>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                   <p className="text-gray-500 text-sm">
                     {item?.client?.fromcountry?.name ? item?.client?.fromcountry?.name : 'This Account Location Not Set Yet.'}{" "}
@@ -2832,6 +3036,33 @@ const reactionsImages = (item) => {
                 </div>
               
               }
+
+        {/* map for shwoing mapping data */}
+        {item?.post_location && item?.post_location.length > 0 && (
+          <div className="mb-4">
+            <div
+              ref={setMapContainerRef(item.id, item.post_location)}
+              id={`map-container-${item.id}`}
+              className="w-full rounded-md border border-gray-200"
+              style={{ height: '384px', width: '100%', position: 'relative', zIndex: 0 }}
+            />
+            <div className="mt-2 text-xs text-gray-600">
+              {(() => {
+                const checkIn = item.post_location.find(loc => loc.post_type === 1);
+                const destination = item.post_location.find(loc => loc.post_type === 2);
+                
+                if (checkIn && destination) {
+                  return `Route: ${checkIn.place_name?.split(',')[0] || 'Location'} → ${destination.place_name?.split(',')[0] || 'Location'}`;
+                } else if (checkIn) {
+                  return `Check-in: ${checkIn.place_name || 'Location'}`;
+                } else if (destination) {
+                  return `Destination: ${destination.place_name || 'Location'}`;
+                }
+                return 'Location';
+              })()}
+            </div>
+          </div>
+        )}
 
               {/* Display Post Images */}
               {item?.files && item?.files?.length > 0 && (
