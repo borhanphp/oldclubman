@@ -131,7 +131,7 @@ const PostModal = () => {
     setPlaceSearchResults([]);
   };
 
-  // Search for places using Nominatim (OpenStreetMap geocoding API)
+  // Search for places using Google Geocoding API
   const searchPlaces = async (query) => {
     if (!query || query.trim().length < 3) {
       setPlaceSearchResults([]);
@@ -140,22 +140,49 @@ const PostModal = () => {
 
     setIsSearchingPlaces(true);
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`
-      );
-      const data = await response.json();
+      const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
       
-      const results = data.map((place) => ({
-        place_name: place.display_name,
-        lat: parseFloat(place.lat),
-        lng: parseFloat(place.lon),
-        address: place.display_name,
-        type: place.type,
-        osm_id: place.osm_id
-      }));
-      console.log(results)
-      
-      setPlaceSearchResults(results);
+      if (googleApiKey) {
+        // Use Google Geocoding API
+        const response = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${googleApiKey}&limit=5`
+        );
+        const data = await response.json();
+        
+        if (data.status === 'OK' && data.results) {
+          const results = data.results.map((place) => ({
+            place_name: place.formatted_address,
+            lat: place.geometry.location.lat,
+            lng: place.geometry.location.lng,
+            address: place.formatted_address,
+            type: place.types[0] || '',
+            place_id: place.place_id || null,
+            place_rank: 0,
+            name: place.address_components[0]?.short_name || place.formatted_address.split(',')[0] || ''
+          }));
+          setPlaceSearchResults(results);
+        } else {
+          console.error('Google Geocoding API error:', data.status);
+          setPlaceSearchResults([]);
+        }
+      } else {
+        // Fallback to Nominatim (OpenStreetMap)
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`
+        );
+        const data = await response.json();
+        
+        const results = data.map((place) => ({
+          place_name: place.display_name,
+          lat: parseFloat(place.lat),
+          lng: parseFloat(place.lon),
+          address: place.display_name,
+          type: place.type,
+          osm_id: place.osm_id
+        }));
+        
+        setPlaceSearchResults(results);
+      }
     } catch (error) {
       console.error('Error searching places:', error);
       setPlaceSearchResults([]);
@@ -275,214 +302,6 @@ const PostModal = () => {
     }
   }, [checkInMode]);
 
-  // useEffect(() => {
-  //   if (!showLocationModal) {
-  //     // Clean up map when modal closes
-  //     if (routeMapRef.current) {
-  //       try {
-  //         routeMapRef.current.remove();
-  //       } catch (e) {
-  //         console.error('Error removing map:', e);
-  //       }
-  //       routeMapRef.current = null;
-  //     }
-      
-  //     // Clean up the container
-  //     if (routeMapContainerRef.current) {
-  //       routeMapContainerRef.current._leaflet_id = null;
-  //       routeMapContainerRef.current.innerHTML = '';
-  //     }
-  //     return;
-  //   }
-    
-  //   let mapInstance = null;
-  //   let timeoutId = null;
-  //   let retryTimeoutId = null;
-    
-  //   // Wait for the container to be available (delay for CSS transition)
-  //   const initMap = () => {
-  //     console.log('initMap called', {
-  //       hasMapRef: !!routeMapRef.current,
-  //       hasContainerRef: !!routeMapContainerRef.current,
-  //       showLocationModal,
-  //       checkInMode
-  //     });
-      
-  //     // Check if already initialized or container not ready
-  //     if (routeMapRef.current || !routeMapContainerRef.current) {
-  //       console.log('Map already initialized or container not ready');
-  //       return;
-  //     }
-      
-  //     // Ensure container is actually visible and has dimensions
-  //     const container = routeMapContainerRef.current;
-     
-      
-  //     if (!container || container.offsetWidth === 0 || container.offsetHeight === 0) {
-  //       console.log('Container has no dimensions, skipping initialization');
-  //       return;
-  //     }
-      
-  //     console.log('Loading Leaflet assets...');
-      
-  //     loadLeafletAssets().then(() => {
-  //       // Double check after assets load
-  //       if (routeMapRef.current || !routeMapContainerRef.current) return;
-        
-  //       const L = window.L;
-  //       try {
-  //         console.log('Initializing Leaflet map...');
-          
-  //         // Clear any existing leaflet instance from the container
-  //         if (routeMapContainerRef.current._leaflet_id) {
-  //           console.log('Cleaning up existing leaflet instance...');
-  //           routeMapContainerRef.current._leaflet_id = null;
-  //           routeMapContainerRef.current.innerHTML = '';
-  //         }
-          
-  //         mapInstance = L.map(routeMapContainerRef.current).setView([23.8103, 90.4125], 5);
-  //         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  //           attribution: '&copy; OpenStreetMap contributors',
-  //           maxZoom: 19
-  //         }).addTo(mapInstance);
-  //         routeMapRef.current = mapInstance;
-  //         console.log('Map initialized successfully!');
-          
-  //         // Force the map to recalculate its size after initialization
-  //         setTimeout(() => {
-  //           if (mapInstance) {
-  //             console.log('Invalidating map size...');
-  //             mapInstance.invalidateSize();
-  //           }
-  //         }, 100);
-
-  //         // Initialize check-in marker if location is already selected
-  //         if (checkInLocation && checkInMode === 'checkin') {
-  //           const marker = L.marker([checkInLocation.lat, checkInLocation.lng], {
-  //             icon: L.icon({
-  //               iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-  //               shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-  //               iconSize: [25, 41],
-  //               iconAnchor: [12, 41],
-  //               popupAnchor: [1, -34],
-  //               shadowSize: [41, 41]
-  //             })
-  //           }).addTo(mapInstance);
-  //           marker.bindPopup(`<b>${checkInLocation.place_name}</b>`).openPopup();
-  //           routeMarkersRef.current.checkin = marker;
-  //           mapInstance.setView([checkInLocation.lat, checkInLocation.lng], 15);
-  //         }
-
-  //         // Handle map clicks based on mode
-  //         if (checkInMode === 'route') {
-  //           mapInstance.on('click', (e) => {
-  //             const { latlng } = e;
-  //             if (!routeMarkersRef.current.origin) {
-  //               routeMarkersRef.current.origin = L.marker(latlng, { draggable: true }).addTo(mapInstance);
-  //               setRouteOrigin({ lat: latlng.lat, lng: latlng.lng });
-  //               routeMarkersRef.current.origin.on('dragend', (ev) => {
-  //                 const pos = ev.target.getLatLng();
-  //                 setRouteOrigin({ lat: pos.lat, lng: pos.lng });
-  //                 if (routeDestination) drawRouteLine({ lat: pos.lat, lng: pos.lng }, routeDestination);
-  //               });
-  //             } else if (!routeMarkersRef.current.destination) {
-  //               routeMarkersRef.current.destination = L.marker(latlng, { draggable: true }).addTo(mapInstance);
-  //               setRouteDestination({ lat: latlng.lat, lng: latlng.lng });
-  //               routeMarkersRef.current.destination.on('dragend', (ev) => {
-  //                 const pos = ev.target.getLatLng();
-  //                 setRouteDestination({ lat: pos.lat, lng: pos.lng });
-  //                 if (routeOrigin) drawRouteLine(routeOrigin, { lat: pos.lat, lng: pos.lng });
-  //               });
-  //               drawRouteLine(routeOrigin || latlng, { lat: latlng.lat, lng: latlng.lng });
-  //             } else {
-  //               // third click resets
-  //               resetRoute();
-  //             }
-  //           });
-  //         } else if (checkInMode === 'checkin') {
-  //           // For check-in mode, clicking on map can also set location
-  //           mapInstance.on('click', (e) => {
-  //             const { latlng } = e;
-  //             // Reverse geocode to get place name
-  //             fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}`)
-  //               .then(res => res.json())
-  //               .then(data => {
-  //                 const place = {
-  //                   place_name: data.display_name || 'Selected Location',
-  //                   lat: latlng.lat,
-  //                   lng: latlng.lng,
-  //                   address: data.display_name || 'Selected Location'
-  //                 };
-  //                 selectPlace(place);
-  //               })
-  //               .catch(() => {
-  //                 // Fallback if reverse geocoding fails
-  //                 const place = {
-  //                   place_name: `Location (${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)})`,
-  //                   lat: latlng.lat,
-  //                   lng: latlng.lng,
-  //                   address: `Location (${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)})`
-  //                 };
-  //                 selectPlace(place);
-  //               });
-  //           });
-  //         }
-  //       } catch (error) {
-  //         console.error('Error initializing map:', error);
-  //       }
-  //     }).catch((error) => {
-  //       console.error('Error loading map assets:', error);
-  //     });
-  //   };
-    
-  //   // Try after a delay to ensure DOM is ready (for CSS transitions)
-  //   // Increased delay to account for the sliding animation
-  //   timeoutId = setTimeout(() => {
-  //     console.log('First init attempt...');
-  //     initMap();
-  //     // Try again after another delay if still not initialized
-  //     retryTimeoutId = setTimeout(() => {
-  //       console.log('Retry init attempt...');
-  //       if (!routeMapRef.current && routeMapContainerRef.current) {
-  //         console.log('Container exists, retrying initialization');
-  //         initMap();
-  //       } else {
-  //         console.log('Skip retry - map already initialized or container not found');
-  //       }
-  //     }, 500);
-  //   }, 500);
-    
-  //   return () => {
-  //     if (timeoutId) {
-  //       clearTimeout(timeoutId);
-  //     }
-  //     if (retryTimeoutId) {
-  //       clearTimeout(retryTimeoutId);
-  //     }
-      
-  //     // Only remove if the map instance still exists and hasn't been removed
-  //     const mapToRemove = routeMapRef.current || mapInstance;
-  //     if (mapToRemove && mapToRemove._container) {
-  //       try {
-  //         mapToRemove.remove();
-  //       } catch (e) {
-  //         // Ignore errors - map might already be removed
-  //         console.log('Map cleanup skipped (already removed)');
-  //       }
-  //     }
-      
-  //     // Clear refs
-  //     routeMapRef.current = null;
-  //     mapInstance = null;
-      
-  //     // Clean up the container
-  //     if (routeMapContainerRef.current) {
-  //       routeMapContainerRef.current._leaflet_id = null;
-  //       routeMapContainerRef.current.innerHTML = '';
-  //     }
-  //   };
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [showLocationModal, checkInMode]);
 
   useEffect(() => {
     // Create a separate ref for main modal map if needed, or reuse the same one
@@ -539,10 +358,25 @@ const PostModal = () => {
           }
           
           mapInstance = L.map(container).setView([23.8103, 90.4125], 5);
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors',
-            maxZoom: 19
-          }).addTo(mapInstance);
+
+          // Replace OpenStreetMap tiles with Google Maps tiles
+          const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+          if (googleApiKey) {
+            // Use Google Maps tiles with Leaflet
+            L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+              maxZoom: 20,
+              subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+              attribution: '© Google Maps'
+            }).addTo(mapInstance);
+          } else {
+            // Fallback to OpenStreetMap if no API key
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '&copy; OpenStreetMap contributors',
+              maxZoom: 19
+            }).addTo(mapInstance);
+          }
+
           routeMapRef.current = mapInstance;
           
           setTimeout(() => {
@@ -602,26 +436,80 @@ const PostModal = () => {
             if (checkInMode === 'checkin' || checkInMode === 'destination') {
               mapInstance.on('click', (e) => {
                 const { latlng } = e;
-                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}`)
-                  .then(res => res.json())
-                  .then(data => {
-                    const place = {
-                      place_name: data.display_name || 'Selected Location',
-                      lat: latlng.lat,
-                      lng: latlng.lng,
-                      address: data.display_name || 'Selected Location'
-                    };
-                    selectPlace(place);
-                  })
-                  .catch(() => {
-                    const place = {
-                      place_name: `Location (${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)})`,
-                      lat: latlng.lat,
-                      lng: latlng.lng,
-                      address: `Location (${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)})`
-                    };
-                    selectPlace(place);
-                  });
+                const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+                
+                if (googleApiKey) {
+                  // Use Google Reverse Geocoding
+                  fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latlng.lat},${latlng.lng}&key=${googleApiKey}`)
+                    .then(res => res.json())
+                    .then(data => {
+                      if (data.status === 'OK' && data.results && data.results.length > 0) {
+                        const place = {
+                          place_name: data.results[0].formatted_address,
+                          lat: latlng.lat,
+                          lng: latlng.lng,
+                          address: data.results[0].formatted_address,
+                          place_id: data.results[0].place_id || null,
+                          name: data.results[0].address_components[0]?.short_name || ''
+                        };
+                        selectPlace(place);
+                      } else {
+                        // Fallback if Google API fails
+                        const place = {
+                          place_name: `Location (${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)})`,
+                          lat: latlng.lat,
+                          lng: latlng.lng,
+                          address: `Location (${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)})`
+                        };
+                        selectPlace(place);
+                      }
+                    })
+                    .catch(() => {
+                      // Fallback to Nominatim if Google fails
+                      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}`)
+                        .then(res => res.json())
+                        .then(data => {
+                          const place = {
+                            place_name: data.display_name || 'Selected Location',
+                            lat: latlng.lat,
+                            lng: latlng.lng,
+                            address: data.display_name || 'Selected Location'
+                          };
+                          selectPlace(place);
+                        })
+                        .catch(() => {
+                          const place = {
+                            place_name: `Location (${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)})`,
+                            lat: latlng.lat,
+                            lng: latlng.lng,
+                            address: `Location (${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)})`
+                          };
+                          selectPlace(place);
+                        });
+                    });
+                } else {
+                  // Use Nominatim (existing code)
+                  fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}`)
+                    .then(res => res.json())
+                    .then(data => {
+                      const place = {
+                        place_name: data.display_name || 'Selected Location',
+                        lat: latlng.lat,
+                        lng: latlng.lng,
+                        address: data.display_name || 'Selected Location'
+                      };
+                      selectPlace(place);
+                    })
+                    .catch(() => {
+                      const place = {
+                        place_name: `Location (${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)})`,
+                        lat: latlng.lat,
+                        lng: latlng.lng,
+                        address: `Location (${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)})`
+                      };
+                      selectPlace(place);
+                    });
+                }
               });
             }
           }
@@ -670,21 +558,7 @@ const PostModal = () => {
   }, [showLocationModal, checkInMode, checkInLocation, routeDestination]);
 
   const handleBackgroundSelect = (background) => {
-    // Preserve existing text and place it on background
-    // if (messageEditorRef.current) {
-    //   const currentHtml = messageEditorRef.current.innerHTML || '';
-    //   const plainText = getPlainTextFromHtml(currentHtml);
-    //   // Store the original HTML for later restoration
-    //   storedRichMessageRef.current = "";
-      
-    //   // Switch to plain text mode for background
-    //   messageEditorRef.current.innerText = plainText;
-      
-    //   // Update state with plain text
-    //   dispatch(bindPostData({ ...basicPostData, message: plainText }));
-    //   previousMessageRef.current = plainText;
-    // }
-    // console.log('sdfsdf',previousMessageRef.current)
+   
     const plainText = getPlainTextFromHtml(messageEditorRef.current.innerHTML || "");
     messageEditorRef.current.innerText = "";
    
@@ -1120,22 +994,6 @@ const PostModal = () => {
         });
       }
       
-      // // Add check-in location data
-      // if (checkInLocation) {
-      //   formData.append('checkin_place_name', checkInLocation.place_name);
-      //   formData.append('checkin_lat', String(checkInLocation.lat));
-      //   formData.append('checkin_lng', String(checkInLocation.lng));
-      //   formData.append('checkin_address', checkInLocation.address || checkInLocation.place_name);
-      // }
-      
-      // // Add route data (if route mode is used)
-      // if (routeOrigin && routeDestination) {
-      //   formData.append('origin_lat', String(routeOrigin.lat));
-      //   formData.append('origin_lng', String(routeOrigin.lng));
-      //   formData.append('destination_lat', String(routeDestination.lat));
-      //   formData.append('destination_lng', String(routeDestination.lng));
-      // }
-      
       if (messageContent?.length < 280 && selectedBackground) {
         formData.append('background_url', selectedBackground?.image?.path);
       }
@@ -1448,24 +1306,7 @@ const PostModal = () => {
             )}
           </div>
 
-          {(checkInLocation || routeDestination) && (
-            <div className="mb-4">
-              <div
-                ref={routeMapContainerRef}
-                id="checkin-map-container"
-                className="w-full rounded-md border border-gray-200"
-                style={{ height: '384px', width: '100%', position: 'relative', zIndex: 0 }}
-              />
-              <div className="mt-2 text-xs text-gray-600">
-                {checkInLocation && routeDestination
-                  ? `Route: ${checkInLocation.place_name.split(',')[0]} → ${routeDestination.place_name.split(',')[0]}`
-                  : checkInLocation
-                    ? `Check-in: ${checkInLocation.place_name}`
-                    : `Destination: ${routeDestination.place_name}`
-                }
-              </div>
-            </div>
-          )}
+         
 
           {/* Background Selection Row */}
           {(!checkInLocation && !routeDestination) && 
@@ -1600,130 +1441,24 @@ const PostModal = () => {
             </div>
           )}
 
-          {/* Display selected check-in location */}
-          {checkInLocation && (
-            <div className="mt-4 p-3 bg-blue-50 rounded-md border border-blue-200">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start flex-1">
-                  <LuMapPinCheckInside size={20} className="text-red-600 mr-2 mt-0.5" />
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900">
-                      {checkInLocation.place_name.split(',')[0]}
-                    </div>
-                    <div className="text-xs text-gray-600 mt-1">
-                      {checkInLocation.place_name}
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={resetCheckIn}
-                  className="text-gray-500 hover:text-gray-700 ml-2"
-                >
-                  <FaTimes size={14} />
-                </button>
-              </div>
+          {(checkInLocation || routeDestination) && (
+            <div className="">
+              <div
+                ref={routeMapContainerRef}
+                id="checkin-map-container"
+                className="w-full rounded-md border border-gray-200"
+                style={{ 
+                  height: '384px', 
+                  width: '100%', 
+                  position: 'relative', 
+                  zIndex: 0 
+                }}
+              />
             </div>
           )}
+            </div>
 
-          {/* Display route when both check-in and destination are set */}
-          {(checkInLocation && routeDestination) && (
-            <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-green-50 rounded-md border-2 border-blue-200">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start flex-1">
-                  <div className="text-blue-600 mr-2 mt-0.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900 mb-2">
-                      Traveling Route
-                    </div>
-                    <div className="text-xs text-gray-700 space-y-2">
-                      <div className="flex items-start">
-                        <span className="inline-block w-3 h-3 rounded-full bg-blue-500 mr-2 mt-0.5 flex-shrink-0"></span>
-                        <div>
-                          <div className="font-medium">From:</div>
-                          <div className="text-gray-600">{checkInLocation.place_name}</div>
-                        </div>
-                      </div>
-                      <div className="ml-1.5 border-l-2 border-dashed border-gray-400 h-4"></div>
-                      <div className="flex items-start">
-                        <span className="inline-block w-3 h-3 rounded-full bg-green-500 mr-2 mt-0.5 flex-shrink-0"></span>
-                        <div>
-                          <div className="font-medium">To:</div>
-                          <div className="text-gray-600">{routeDestination.place_name}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    resetCheckIn();
-                    setRouteDestination(null);
-                  }}
-                  className="text-gray-500 hover:text-gray-700 ml-2"
-                >
-                  <FaTimes size={14} />
-                </button>
-              </div>
-            </div>
-          )}
           
-          {/* Display only check-in when no destination */}
-          {checkInLocation && !routeDestination && (
-            <div className="mt-4 p-3 bg-blue-50 rounded-md border border-blue-200">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start flex-1">
-                  <LuMapPinCheckInside size={20} className="text-red-600 mr-2 mt-0.5" />
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900">
-                      {checkInLocation.place_name.split(',')[0]}
-                    </div>
-                    <div className="text-xs text-gray-600 mt-1">
-                      {checkInLocation.place_name}
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={resetCheckIn}
-                  className="text-gray-500 hover:text-gray-700 ml-2"
-                >
-                  <FaTimes size={14} />
-                </button>
-              </div>
-            </div>
-          )}
-          
-          {/* Display only destination when no check-in */}
-          {!checkInLocation && routeDestination && (
-            <div className="mt-4 p-3 bg-green-50 rounded-md border border-green-200">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start flex-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900">
-                      Destination: {routeDestination.place_name.split(',')[0]}
-                    </div>
-                    <div className="text-xs text-gray-600 mt-1">
-                      {routeDestination.place_name}
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setRouteDestination(null)}
-                  className="text-gray-500 hover:text-gray-700 ml-2"
-                >
-                  <FaTimes size={14} />
-                </button>
-              </div>
-            </div>
-          )}
-            </div>
             
             {/* Post Button */}
             <div className="px-4 pb-4 flex-shrink-0 border-t border-gray-200">
@@ -1731,13 +1466,13 @@ const PostModal = () => {
                 onClick={handlePost}
                 className={`px-4 py-2 w-full rounded-md transition font-medium ${
                   loading ||
-                  (plainMessageLength === 0 && !basicPostData?.files?.length)
+                  (plainMessageLength === 0 && !basicPostData?.files?.length && !checkInLocation && !routeDestination)
                     ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                     : "bg-blue-500 text-white hover:bg-blue-600 cursor-pointer"
                 }`}
                 disabled={
                   loading ||
-                  (plainMessageLength === 0 && !basicPostData?.files?.length)
+                  (plainMessageLength === 0 && !basicPostData?.files?.length && !checkInLocation && !routeDestination)
                 }
               >
                 {loading ? "Posting..." : "Post"}
@@ -1802,7 +1537,7 @@ const PostModal = () => {
                             {placeSearchResults?.map((place, index) => (
                               <div
                                 key={index}
-                                onClick={() => selectPlace(place)}
+                                onClick={() => {selectPlace(place); setShowLocationModal(false);}}
                                 className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
                               >
                                 <div className="text-sm font-medium text-gray-900">
@@ -1893,15 +1628,7 @@ const PostModal = () => {
                 )}
             </div>
 
-            {/* Footer */}
-            <div className="p-4 border-t border-gray-200 flex-shrink-0">
-              <button
-                onClick={() => setShowLocationModal(false)}
-                className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors font-medium"
-              >
-                Done
-              </button>
-          </div>
+           
         </div>
         )}
       </div>
