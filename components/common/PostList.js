@@ -242,7 +242,7 @@ const PostList = ({ postsData }) => {
     
     try {
       // Set max zoom limit to prevent excessive zooming
-      const MAX_ZOOM = 15;
+      const MAX_ZOOM = 20;
       const MIN_ZOOM = 3;
       
       const map = L.map(container, {
@@ -395,24 +395,102 @@ const PostList = ({ postsData }) => {
       }
       
       // Fit bounds to show all markers with zoom limits
+      let hasLargeDistance = false; // Track if we're handling large distances
+      
       if (bounds.length > 0) {
         if (bounds.length === 1) {
           // Limit single marker zoom to max zoom level
           map.setView(bounds[0], Math.min(15, MAX_ZOOM));
         } else {
-          // Limit fitBounds zoom with maxZoom option
-          map.fitBounds(bounds, { 
-            padding: [50, 50],
-            maxZoom: MAX_ZOOM
-          });
+          // Calculate distance between points to determine appropriate zoom strategy
+          const [lat1, lon1] = bounds[0];
+          const [lat2, lon2] = bounds[1];
+          
+          // Calculate approximate distance in kilometers using Haversine formula
+          const R = 6371; // Earth's radius in km
+          const dLat = (lat2 - lat1) * Math.PI / 180;
+          const dLon = (lon2 - lon1) * Math.PI / 180;
+          const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          const distanceKm = R * c;
+          
+          // Create a proper LatLngBounds object from the marker positions
+          const latLngBounds = L.latLngBounds(bounds);
+          
+          // For very large distances (e.g., continents apart), ensure both markers are visible
+          if (distanceKm > 1000) {
+            hasLargeDistance = true; // Mark that we're handling large distances
+            console.log(`Large distance detected: ${distanceKm.toFixed(2)} km between markers`);
+            
+            // Keep MIN_ZOOM at 1 for very large distances to allow zooming out enough
+            // Don't restore it back to 3, as that causes the map to zoom in
+            map.setMinZoom(1);
+            
+            // Use fitBounds with zero padding first - this should show both markers
+            map.fitBounds(latLngBounds, { 
+              padding: [0, 0],
+              animate: false
+            });
+            
+            // Verify and fix if needed
+            setTimeout(() => {
+              const bounds_check = map.getBounds();
+              const marker1 = L.latLng(bounds[0]);
+              const marker2 = L.latLng(bounds[1]);
+              const marker1Visible = bounds_check.contains(marker1);
+              const marker2Visible = bounds_check.contains(marker2);
+              
+              console.log(`After fitBounds - Marker 1 visible: ${marker1Visible}, Marker 2 visible: ${marker2Visible}`);
+              
+              if (!marker1Visible || !marker2Visible) {
+                // If not visible, expand bounds by 20% and try again
+                const expandedBounds = latLngBounds.pad(0.2);
+                map.fitBounds(expandedBounds, { 
+                  padding: [0, 0],
+                  animate: false
+                });
+                
+                // Check again after expansion
+                setTimeout(() => {
+                  const secondCheck = map.getBounds();
+                  const stillNotVisible = !secondCheck.contains(marker1) || !secondCheck.contains(marker2);
+                  
+                  if (stillNotVisible) {
+                    console.log('Markers still not visible, using world bounds');
+                    // Last resort: show entire world to ensure both markers are visible
+                    const worldBounds = L.latLngBounds([[-85, -180], [85, 180]]);
+                    map.fitBounds(worldBounds, { 
+                      padding: [0, 0], 
+                      animate: false 
+                    });
+                  }
+                  map.invalidateSize();
+                }, 100);
+              } else {
+                map.invalidateSize();
+              }
+            }, 200);
+          } else {
+            // Normal distance - use standard padding and zoom limits
+            map.fitBounds(latLngBounds, { 
+              padding: [50, 50],
+              maxZoom: MAX_ZOOM
+            });
+          }
         }
       } else {
         map.setView([23.8103, 90.4125], Math.max(5, MIN_ZOOM));
       }
       
-      setTimeout(() => {
-        map.invalidateSize();
-      }, 100);
+      // Only call invalidateSize if we haven't already handled it for large distances
+      // For large distances, invalidateSize is called inside the setTimeout above
+      if (!hasLargeDistance) {
+        setTimeout(() => {
+          map.invalidateSize();
+        }, 100);
+      }
     } catch (error) {
       console.error(`Error initializing map for post ${postId}:`, error);
     }
