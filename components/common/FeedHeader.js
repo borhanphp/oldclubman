@@ -245,7 +245,7 @@ function FeedHeader({
   };
 
   return (
-    <div className="">
+    <div className="w-full">
       {/* Cover Photo */}
       <div className="cover-photo rounded-t-md relative w-full h-60 overflow-hidden group">
         <div className="absolute inset-0 w-full">

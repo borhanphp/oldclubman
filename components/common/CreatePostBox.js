@@ -39,7 +39,7 @@ const CreatePostBox = () => {
         />
       </div>
     </div>
-    <div className="flex border-gray-100 pt-3">
+    {/* <div className="flex border-gray-100 pt-3">
       <button 
         className="flex items-center text-gray-500 bg-gray-100 rounded-md px-3 py-1 text-sm"
         onClick={() => {openPostModal()}}
@@ -47,7 +47,7 @@ const CreatePostBox = () => {
         <FaVideo className="mr-2 text-blue-500" />
         <span>Video</span>
       </button>
-    </div>
+    </div> */}
   </div>
   )
 

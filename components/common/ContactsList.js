@@ -69,7 +69,7 @@ const ContactsList = () => {
   };
 
   return (
-    <div className="h-screen border-l border-gray-200 flex flex-col overflow-hidden">
+    <div className="h-screen hidden md:block border-l border-gray-200 flex-col overflow-hidden">
       {/* Header */}
       <div className="p-3 border-b border-gray-200">
         <div className="flex items-center justify-between mb-3">

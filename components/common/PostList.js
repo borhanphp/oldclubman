@@ -241,7 +241,14 @@ const PostList = ({ postsData }) => {
     if (!L) return;
     
     try {
-      const map = L.map(container);
+      // Set max zoom limit to prevent excessive zooming
+      const MAX_ZOOM = 15;
+      const MIN_ZOOM = 3;
+      
+      const map = L.map(container, {
+        maxZoom: MAX_ZOOM,
+        minZoom: MIN_ZOOM
+      });
       
       // Use Google Maps tiles if API key is available
       const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -249,7 +256,7 @@ const PostList = ({ postsData }) => {
       if (googleApiKey) {
         // Use Google Maps tiles with Leaflet
         L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-          maxZoom: 20,
+          maxZoom: MAX_ZOOM,
           subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
           attribution: '© Google Maps'
         }).addTo(map);
@@ -257,7 +264,7 @@ const PostList = ({ postsData }) => {
         // Fallback to OpenStreetMap if no API key
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '&copy; OpenStreetMap contributors',
-          maxZoom: 19
+          maxZoom: MAX_ZOOM
         }).addTo(map);
       }
       
@@ -272,55 +279,135 @@ const PostList = ({ postsData }) => {
       
       // Add check-in marker
       if (checkIn && checkIn.lat && checkIn.lon) {
-        const marker = L.marker([checkIn.lat, checkIn.lon], {
-          icon: L.icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34],
-            shadowSize: [41, 41]
-          })
-        }).addTo(map);
-        marker.bindPopup(`<b>${checkIn.place_name || 'Check-in'}</b>`);
-        markers.push(marker);
-        bounds.push([checkIn.lat, checkIn.lon]);
+        const checkInLat = parseFloat(checkIn.lat);
+        const checkInLon = parseFloat(checkIn.lon);
+        if (!isNaN(checkInLat) && !isNaN(checkInLon)) {
+          const marker = L.marker([checkInLat, checkInLon], {
+            icon: L.icon({
+              iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+              shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+              iconSize: [25, 41],
+              iconAnchor: [12, 41],
+              popupAnchor: [1, -34],
+              shadowSize: [41, 41]
+            })
+          }).addTo(map);
+          marker.bindPopup(`<b>${checkIn.place_name || 'Check-in'}</b>`);
+          markers.push(marker);
+          bounds.push([checkInLat, checkInLon]);
+        }
       }
       
       // Add destination marker
       if (destination && destination.lat && destination.lon) {
-        const marker = L.marker([destination.lat, destination.lon], {
-          icon: L.icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34],
-            shadowSize: [41, 41]
-          })
-        }).addTo(map);
-        marker.bindPopup(`<b>${destination.place_name || 'Destination'}</b>`);
-        markers.push(marker);
-        bounds.push([destination.lat, destination.lon]);
+        const destLat = parseFloat(destination.lat);
+        const destLon = parseFloat(destination.lon);
+        if (!isNaN(destLat) && !isNaN(destLon)) {
+          const marker = L.marker([destLat, destLon], {
+            icon: L.icon({
+              iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+              shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+              iconSize: [25, 41],
+              iconAnchor: [12, 41],
+              popupAnchor: [1, -34],
+              shadowSize: [41, 41]
+            })
+          }).addTo(map);
+          marker.bindPopup(`<b>${destination.place_name || 'Destination'}</b>`);
+          markers.push(marker);
+          bounds.push([destLat, destLon]);
+        }
       }
       
       // Draw route line if both exist
       if (checkIn && destination && checkIn.lat && checkIn.lon && destination.lat && destination.lon) {
-        L.polyline([
-          [checkIn.lat, checkIn.lon],
-          [destination.lat, destination.lon]
-        ], { color: '#2563eb', weight: 4, opacity: 0.7 }).addTo(map);
+        try {
+          // Create curved path by adding intermediate control points
+          // Ensure coordinates are numbers
+          const startLat = parseFloat(checkIn.lat);
+          const startLon = parseFloat(checkIn.lon);
+          const endLat = parseFloat(destination.lat);
+          const endLon = parseFloat(destination.lon);
+          
+          // Validate coordinates
+          if (isNaN(startLat) || isNaN(startLon) || isNaN(endLat) || isNaN(endLon)) {
+            console.error('Invalid coordinates for route line');
+            // Skip curve drawing but continue with map initialization
+            throw new Error('Invalid coordinates');
+          }
+          
+          // Calculate midpoint
+          const midLat = (startLat + endLat) / 2;
+          const midLon = (startLon + endLon) / 2;
+          
+          // Calculate distance between points
+          const latDiff = endLat - startLat;
+          const lonDiff = endLon - startLon;
+          
+          // Create curve by offsetting midpoint perpendicular to the line
+          // Offset factor controls the curve intensity (smaller = more subtle curve)
+          const offsetFactor = 0.3;
+          const perpLat = -lonDiff * offsetFactor;
+          const perpLon = latDiff * offsetFactor;
+          
+          const curveLat = midLat + perpLat;
+          const curveLon = midLon + perpLon;
+          
+          // Generate smooth curve points using quadratic Bezier approximation
+          const curvePoints = [];
+          const numPoints = 20; // Number of points for smooth curve
+          
+          for (let i = 0; i <= numPoints; i++) {
+            const t = i / numPoints;
+            // Quadratic Bezier curve formula: (1-t)²P₀ + 2(1-t)tP₁ + t²P₂
+            const lat = (1 - t) * (1 - t) * startLat + 2 * (1 - t) * t * curveLat + t * t * endLat;
+            const lon = (1 - t) * (1 - t) * startLon + 2 * (1 - t) * t * curveLon + t * t * endLon;
+            curvePoints.push([lat, lon]);
+          }
+          
+          L.polyline(curvePoints, { 
+            color: '#2563eb', 
+            weight: 4, 
+            opacity: 0.7,
+            dashArray: '8, 5', // Creates dotted/dashed line style
+            lineCap: 'round', // Rounded line caps
+            lineJoin: 'round' // Rounded line joins
+          }).addTo(map);
+        } catch (error) {
+          console.error('Error drawing route line:', error);
+          // Fallback to straight line if curve fails
+          try {
+            L.polyline([
+              [parseFloat(checkIn.lat), parseFloat(checkIn.lon)],
+              [parseFloat(destination.lat), parseFloat(destination.lon)]
+            ], { 
+              color: '#2563eb', 
+              weight: 4, 
+              opacity: 0.7,
+              dashArray: '8, 5',
+              lineCap: 'round',
+              lineJoin: 'round'
+            }).addTo(map);
+          } catch (fallbackError) {
+            console.error('Error drawing fallback route line:', fallbackError);
+          }
+        }
       }
       
-      // Fit bounds to show all markers
+      // Fit bounds to show all markers with zoom limits
       if (bounds.length > 0) {
         if (bounds.length === 1) {
-          map.setView(bounds[0], 15);
+          // Limit single marker zoom to max zoom level
+          map.setView(bounds[0], Math.min(15, MAX_ZOOM));
         } else {
-          map.fitBounds(bounds, { padding: [50, 50] });
+          // Limit fitBounds zoom with maxZoom option
+          map.fitBounds(bounds, { 
+            padding: [50, 50],
+            maxZoom: MAX_ZOOM
+          });
         }
       } else {
-        map.setView([23.8103, 90.4125], 5);
+        map.setView([23.8103, 90.4125], Math.max(5, MIN_ZOOM));
       }
       
       setTimeout(() => {
@@ -2913,7 +3000,7 @@ const reactionsImages = (item) => {
                   />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                     <Link href={`/${item?.client?.username}`}>
                       <h4 className="font-medium cursor-pointer hover:underline">
                         {item?.client?.display_name || item?.client?.fname + " " + item?.client?.last_name}
@@ -2921,7 +3008,7 @@ const reactionsImages = (item) => {
                     </Link>
                     {item?.shared_post && (
                       <>
-                      <span className="text-gray-500">•</span>
+                      <span className="text-gray-500 hidden sm:inline">•</span>
                       <p className="text-sm text-gray-500">
                       Shared from {" "}
                       <span className="font-semibold hover:underline cursor-pointer">
@@ -2933,12 +3020,13 @@ const reactionsImages = (item) => {
                       </>
                     )}
                     
-                    <span className="text-gray-500">•</span>
+                    <span className="text-gray-500 hidden sm:inline">•</span>
                     
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 whitespace-nowrap">
                       {formatCompactTime(item.created_at)}
                     </p>
-                    {/* maping details details */}
+                    
+                    {/* Check-in and location details */}
                     {(() => {
                       // Extract check-in and destination from post_location
                       const checkIn = item?.post_location?.find(loc => loc.post_type === 1);
@@ -2946,24 +3034,33 @@ const reactionsImages = (item) => {
                       
                       if (checkIn && destination) {
                         return (
-                          <span className="text-sm text-gray-500">
-                            <span className="text-gray-500">•</span>
-                            📍 From <span className="font-bold">{checkIn.place_name?.split(',')[0] || checkIn.place_name || 'Location'}</span>  Traveling to ✈️ <span className="font-bold">{destination.place_name?.split(',')[0] || destination.place_name || 'Location'}</span>
-                          </span>
+                          <>
+                            <span className="text-gray-500 hidden sm:inline">•</span>
+                            <span className="text-sm text-gray-500">
+                              📍 From <span className="font-bold">{checkIn.place_name?.split(',')[0] || checkIn.place_name || 'Location'}</span>
+                              <span className="hidden sm:inline"> Traveling to ✈️ </span>
+                              <span className="sm:hidden">{" "}✈️ </span>
+                              <span className="font-bold">{destination.place_name?.split(',')[0] || destination.place_name || 'Location'}</span>
+                            </span>
+                          </>
                         );
                       } else if (checkIn) {
                         return (
-                          <span className="text-sm text-gray-500">
-                            <span className="text-gray-500">•</span>
-                            📍 Checking in <span className="font-bold">{checkIn.place_name?.split(',')[0] || checkIn.place_name || 'Check-in'}</span>
-                          </span>
+                          <>
+                            <span className="text-gray-500 hidden sm:inline">•</span>
+                            <span className="text-sm text-gray-500">
+                              📍 Checking in <span className="font-bold">{checkIn.place_name?.split(',')[0] || checkIn.place_name || 'Check-in'}</span>
+                            </span>
+                          </>
                         );
                       } else if (destination) {
                         return (
-                          <span className="text-sm text-gray-500">
-                            <span className="text-gray-500">•</span>
-                            📍 Traveling to ✈️ <span className="font-bold">{destination.place_name?.split(',')[0] || destination.place_name || 'Destination'}</span>
-                          </span>
+                          <>
+                            <span className="text-gray-500 hidden sm:inline">•</span>
+                            <span className="text-sm text-gray-500">
+                              📍 Traveling to ✈️ <span className="font-bold">{destination.place_name?.split(',')[0] || destination.place_name || 'Destination'}</span>
+                            </span>
+                          </>
                         );
                       }
                       return null;

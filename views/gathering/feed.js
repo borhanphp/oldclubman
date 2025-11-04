@@ -243,9 +243,9 @@ const GatheringContent = () => {
             {/* Center Content / Feed - Full width on mobile, 6 cols on large screens */}
             <div className="col-span-1 lg:col-span-8">
               {/* Mobile-only Who to Follow Widget */}
-              <div className="lg:hidden mb-4">
+              {/* <div className="hidden md:block mb-4">
                 <FollowSuggestion/>
-              </div>
+              </div> */}
               
               {/* Create Post */}
               <CreatePostBox />

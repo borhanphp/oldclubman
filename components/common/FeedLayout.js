@@ -15,11 +15,11 @@ const FeedLayout = ({
   const showAdvancedOnly = isAdvancedMode && Array.isArray(results) && results.length > 0;
   return (
     <div className="grid grid-cols-11 min-h-screen">
-      <div className="col-span-2 sticky top-0 h-screen overflow-y-auto">
+      <div className="col-span-2 hidden md:block sticky top-0 h-screen overflow-y-auto">
         {/* Left sidebar - Search box */}
         <SidebarSearch />
       </div>
-      <div className="col-span-7 overflow-y-auto">
+      <div className="col-span-11 md:col-span-7 overflow-y-auto">
         {showAdvancedOnly ? (
           <SearchResults />
         ) : (
@@ -29,7 +29,7 @@ const FeedLayout = ({
           </>
         )}
       </div>
-      <div className="col-span-2 sticky top-0 h-screen">
+      <div className="col-span-2 hidden md:block sticky top-0 h-screen">
         <ContactsList />
       </div>
     </div>

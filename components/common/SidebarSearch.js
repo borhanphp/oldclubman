@@ -293,7 +293,7 @@ const SidebarSearch = () => {
   }, [pathname, dispatch]);
 
   return (
-    <div className="p-4 border-b border-gray-200 relative" ref={dropdownRef}>
+    <div className="p-4 hidden md:block border-b border-gray-200 relative" ref={dropdownRef}>
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-semibold text-gray-800">

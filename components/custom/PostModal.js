@@ -1074,9 +1074,13 @@ const PostModal = () => {
             )}
             <h2 className="text-xl font-semibold flex-1 text-center">
               {showLocationModal 
-                ? (checkInMode === 'checkin' ? 'Check in at a place' : 'Add route (from → to)')
+                ? (checkInMode === 'checkin' ? 'Check in at a place' : 'Add destination')
                 : (id ? "Edit Post" : "Create post")}
+
+
             </h2>
+            <div>
+
             <button
               onClick={() => {
                 close();
@@ -1085,6 +1089,9 @@ const PostModal = () => {
             >
               <FaTimes size={20} />
             </button>
+
+            </div>
+           
           </div>
         </div>
 
@@ -1497,7 +1504,7 @@ const PostModal = () => {
                   <FaChevronLeft size={18} />
                 </button>
                 <h3 className="text-lg font-semibold text-gray-900">
-                  {checkInMode === 'checkin' ? 'Check in at a place' : 'Add route (from → to)'}
+                  {checkInMode === 'checkin' ? 'Check in at a place' : 'Add Destination'}
                 </h3>
               </div>
               <button
@@ -1527,6 +1534,7 @@ const PostModal = () => {
                           onFocus={() => setShowPlaceSearch(true)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
+                       
                         
                         {/* Search Results Dropdown */}
                         {showPlaceSearch && placeSearchResults?.length > 0 && (
@@ -1537,7 +1545,10 @@ const PostModal = () => {
                             {placeSearchResults?.map((place, index) => (
                               <div
                                 key={index}
-                                onClick={() => {selectPlace(place); setShowLocationModal(false);}}
+                                onClick={() => {
+                                  selectPlace(place); 
+                                  // setShowLocationModal(true);
+                                }}
                                 className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
                               >
                                 <div className="text-sm font-medium text-gray-900">
@@ -1628,7 +1639,9 @@ const PostModal = () => {
                 )}
             </div>
 
-           
+            {(checkInMode === 'checkin' && checkInLocation && !routeDestination)  && <button className='border py-3 border-green-400 cursor-pointer bg-green-200 hover:bg-green-300 font-bold text-[18px] ' onClick={() => {setCheckInMode("destination")}}>Set Destination</button>}
+
+
         </div>
         )}
       </div>
