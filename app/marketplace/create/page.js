@@ -1,41 +1,65 @@
 "use client";
 
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSelector } from "react-redux";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { FaCamera, FaGlobe, FaTrash, FaMobileAlt, FaMapMarkerAlt, FaChevronUp, FaChevronDown, FaLock } from "react-icons/fa";
+import api from "@/helpers/axios";
 
 
 export default function CreateListingPage() {
-  const { profile } = useSelector(({ settings }) => settings);
+  const { profile, profileData } = useSelector(({ settings }) => settings);
   const router = useRouter();
+  const params = useParams();
+  const searchParams = useSearchParams();
+  
+  // Check if we're in edit mode (ID from URL params or query string)
+  const editId = params?.id || searchParams?.get('id') || null;
+  const isEditMode = !!editId;
 
-  const [images, setImages] = useState([]); // {file, url}
+  const [loadingListing, setLoadingListing] = useState(isEditMode);
+  const [images, setImages] = useState([]); // {file, url, existingId}
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState("1");
   const [condition, setCondition] = useState("");
   const [description, setDescription] = useState("");
   const [availability, setAvailability] = useState("in_stock");
   const [productTags, setProductTags] = useState("");
   const [sku, setSku] = useState("");
   const [location, setLocation] = useState("Singapore");
+  
+  // Get location IDs from logged-in user's profile
+  const countryId = useMemo(() => {
+    return profileData?.current_country_id || profileData?.from_country_id || profile?.client?.current_country_id || profile?.client?.from_country_id || 1;
+  }, [profileData, profile]);
+
+  const stateId = useMemo(() => {
+    return profileData?.current_state_id || profileData?.from_state_id || profile?.client?.current_state_id || profile?.client?.from_state_id || 1;
+  }, [profileData, profile]);
+
+  const cityId = useMemo(() => {
+    return profileData?.from_city_id || profile?.client?.from_city_id || 1;
+  }, [profileData, profile]);
   const [showMoreDetails, setShowMoreDetails] = useState(true);
   const [meetupPreferences, setMeetupPreferences] = useState({
-    publicMeetup: false,
-    doorPickup: false,
-    doorDropoff: false,
+    publicMeetup: true, // Default to 1 (Yes) as per API structure
+    doorPickup: true,   // Default to 1 (Yes) as per API structure
+    doorDropoff: true,  // Default to 1 (Yes) as per API structure
   });
   const [hideFromFriends, setHideFromFriends] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
   const fileInputRef = useRef(null);
 
   const onFilesSelected = useCallback((files) => {
     const lim = 10 - images.length;
     const slice = Array.from(files || []).slice(0, lim);
-    const mapped = slice.map((file) => ({ file, url: URL.createObjectURL(file) }));
+    const mapped = slice.map((file) => ({ file, url: URL.createObjectURL(file), existingId: null }));
     setImages((prev) => {
       const newImages = [...prev, ...mapped];
       // Set selected image to first image if no images existed before
@@ -55,7 +79,8 @@ export default function CreateListingPage() {
     setImages((prev) => {
       const next = [...prev];
       const item = next[idx];
-      if (item?.url) URL.revokeObjectURL(item.url);
+      // Only revoke URL if it's a new file (not existing image)
+      if (item?.url && !item.existingId) URL.revokeObjectURL(item.url);
       next.splice(idx, 1);
       return next;
     });
@@ -73,9 +98,239 @@ export default function CreateListingPage() {
     });
   };
 
+  // Load listing data if in edit mode
+  useEffect(() => {
+    const fetchListing = async () => {
+      if (!editId) return;
+      
+      try {
+        setLoadingListing(true);
+        const response = await api.get(`/single_sale_post/${editId}`);
+        const listingData = response.data?.success 
+          ? response.data.data 
+          : response.data?.data 
+          ? response.data.data 
+          : response.data;
+
+        if (listingData) {
+          // Pre-fill form fields
+          setTitle(listingData.title || "");
+          setPrice(listingData.price || "");
+          setCategory(listingData.category_id?.toString() || "1");
+          // Convert condition number to string format
+          const conditionMap = { "1": "new", "2": "like_new", "3": "good", "4": "fair", "5": "for_parts" };
+          setCondition(conditionMap[listingData.condition?.toString()] || "");
+          setDescription(listingData.description || "");
+          setAvailability(listingData.availability === 1 ? "in_stock" : listingData.availability === 2 ? "out_of_stock" : "available_soon");
+          setSku(listingData.sku || "");
+          setProductTags(listingData.tags?.map(t => t.name).filter(Boolean).join(", ") || "");
+          setHideFromFriends(listingData.hide_from_friends === 1);
+          setMeetupPreferences({
+            publicMeetup: listingData.public_meetup === 1,
+            doorPickup: listingData.door_pickup === 1,
+            doorDropoff: listingData.door_dropoff === 1,
+          });
+
+          // Load existing images
+          if (listingData.files && listingData.files.length > 0) {
+            const existingImages = listingData.files.map((file) => {
+              const base = process.env.NEXT_PUBLIC_FILE_PATH || '';
+              const cleanBase = base ? base.replace(/\/+$/, '') : '';
+              const cleanPath = String(file.file_path || '').replace(/^\/+/, '');
+              const imageUrl = cleanBase ? `${cleanBase}/sale_post/${cleanPath}` : `/public/uploads/sale_post/${cleanPath}`;
+              return {
+                existingId: file.id,
+                url: imageUrl,
+                file: null, // Existing image, no file object
+              };
+            });
+            setImages(existingImages);
+            setSelectedImageIndex(0);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching listing:", error);
+        alert("Failed to load listing. Please try again.");
+        router.push("/marketplace/selling/listings");
+      } finally {
+        setLoadingListing(false);
+      }
+    };
+
+    if (editId) {
+      fetchListing();
+    }
+  }, [editId, router]);
+
+  // Fetch categories on component mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoadingCategories(true);
+        const response = await api.get("/sale_post_category");
+        if (response.data && response.data.data) {
+          setCategories(response.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
   const canProceed = useMemo(() => {
-    return title.trim().length > 0 && price !== "" && category && condition;
-  }, [title, price, category, condition]);
+    return title.trim().length > 0 && price !== "" && images.length > 0 && category && condition;
+  }, [title, price, images.length, category, condition]);
+
+  // Get category ID from selected category value (which is now the ID)
+  const getCategoryId = (categoryValue) => {
+    return categoryValue ? parseInt(categoryValue) : null;
+  };
+
+  const getConditionId = (conditionValue) => {
+    const conditionMap = {
+      new: 1,
+      like_new: 2,
+      good: 3,
+      fair: 4,
+      for_parts: 5,
+    };
+    return conditionMap[conditionValue] || 1;
+  };
+
+  const getAvailabilityId = (availabilityValue) => {
+    const availabilityMap = {
+      in_stock: 1,
+      out_of_stock: 2,
+      available_soon: 3,
+    };
+    return availabilityMap[availabilityValue] || 1;
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return null;
+    // Format: YYYY-MM-DD
+    return dateString;
+  };
+
+  const handleSubmit = async () => {
+    if (!canProceed) return;
+
+    try {
+      setIsSubmitting(true);
+
+      // Create FormData
+      const formData = new FormData();
+
+      // Dynamic fields only: title, price, photo (photos[]), category, condition
+      formData.append("title", title.trim());
+      formData.append("price", price);
+      
+      const categoryId = getCategoryId(category);
+      if (categoryId) {
+        formData.append("category_id", categoryId);
+      }
+      
+      formData.append("condition", getConditionId(condition));
+
+      // Add photos using files[index] format (same as create page)
+      // In edit mode, only send new files (existing images are kept on server)
+      const newImages = images.filter(img => img.file && img.file instanceof File);
+      
+      if (!isEditMode && newImages.length === 0) {
+        alert("Please add at least one photo");
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // In edit mode, we can have existing images without files
+      // Only append new files to FormData
+      newImages.forEach((img, index) => {
+        formData.append(`files[${index}]`, img.file);
+      });
+
+      // Static/default fields - use default values from API structure if empty
+      formData.append("description", description.trim() || "");
+      formData.append("availability", getAvailabilityId(availability) || 1);
+      formData.append("sku", sku.trim() || "");
+      // Use location from logged-in user's profile
+      formData.append("country_id", countryId);
+      formData.append("state_id", stateId);
+      formData.append("city_id", cityId);
+      // Meetup preferences - default to 1 (Yes) as per API structure
+      formData.append("public_meetup", meetupPreferences.publicMeetup ? 1 : 0);
+      formData.append("door_pickup", meetupPreferences.doorPickup ? 1 : 0);
+      formData.append("door_dropoff", meetupPreferences.doorDropoff ? 1 : 0);
+      formData.append("hide_from_friends", hideFromFriends ? 1 : 0);
+      formData.append("status", 1);
+
+      // Add dates with defaults from API structure
+      const today = new Date();
+      const publishedDate = formatDate(today.toISOString().split('T')[0]) || "2025-11-01";
+      const unpublishedDate = formatDate("2025-11-05");
+      
+      formData.append("published_at", publishedDate);
+      formData.append("unpublished_at", unpublishedDate);
+
+      // Add tags - empty string if not provided
+      formData.append("tags", productTags.trim() || "");
+
+      // Debug: Log FormData contents
+      console.log("=== User Profile Location ===");
+      console.log("countryId from profile:", countryId);
+      console.log("stateId from profile:", stateId);
+      console.log("cityId from profile:", cityId);
+      console.log("profileData:", profileData);
+      console.log("profile?.client:", profile?.client);
+      
+      console.log("=== FormData being sent ===");
+      const formDataObj = {};
+      for (let pair of formData.entries()) {
+        const key = pair[0];
+        const value = pair[1];
+        if (value instanceof File) {
+          formDataObj[key] = `File: ${value.name} (${value.size} bytes)`;
+        } else {
+          formDataObj[key] = value;
+        }
+        console.log(`${key}:`, value instanceof File ? `File: ${value.name} (${value.size} bytes)` : value);
+      }
+      console.log("=== FormData Object ===", formDataObj);
+      console.log("=== Full FormData ===", formData);
+
+      // Make API call - create or update based on mode
+      let response;
+      if (isEditMode) {
+        // Update existing listing
+        response = await api.post(`/sale_post/update/${editId}`, formData).catch(async (error) => {
+          // Try PUT method if POST fails
+          if (error.response?.status === 404 || error.response?.status === 405) {
+            return await api.put(`/sale_post/${editId}`, formData);
+          }
+          throw error;
+        });
+        console.log('Update response', response);
+      } else {
+        // Create new listing
+        response = await api.post("/sale_post/store", formData);
+        console.log('Create response', response);
+      }
+
+      if (response.data) {
+        // Success - redirect to seller listings
+        alert(isEditMode ? "Listing updated successfully!" : "Listing created successfully!");
+        router.push("/marketplace/selling/listings");
+      }
+    } catch (error) {
+      console.error(`Error ${isEditMode ? 'updating' : 'creating'} listing:`, error);
+      alert(error?.response?.data?.message || `Failed to ${isEditMode ? 'update' : 'create'} listing. Please try again.`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const seller = useMemo(() => ({
     name: `${profile?.client?.fname || ""} ${profile?.client?.last_name || ""}`.trim() || "Seller",
@@ -83,6 +338,18 @@ export default function CreateListingPage() {
       ? `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${profile?.client?.image?.startsWith('/') ? '' : '/'}${profile?.client?.image}`
       : "/common-avator.jpg",
   }), [profile]);
+
+  // Show loading state while fetching listing data in edit mode
+  if (loadingListing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading listing...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen">
@@ -94,7 +361,7 @@ export default function CreateListingPage() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <div className="text-xs text-gray-500 mb-1">Marketplace</div>
-                <div className="text-xl font-bold text-gray-900">Item for sale</div>
+                <div className="text-xl font-bold text-gray-900">{isEditMode ? "Edit listing" : "Item for sale"}</div>
               </div>
               <button className="text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 px-4 py-1.5 rounded-lg font-medium">
                 Save draft
@@ -117,7 +384,7 @@ export default function CreateListingPage() {
             {/* Photos Section */}
             <div className="mb-4" onDrop={onDrop} onDragOver={(e) => e.preventDefault()}>
               <div className="text-xs text-gray-500 mb-3">
-                Photos • {images.length} / 10 - You can add up to 10 photos.
+                Photos • {images.length} / 10 - You can add up to 10 photos. <span className="text-red-500">*Required</span>
               </div>
 
               {images.length === 0 ? (
@@ -222,13 +489,17 @@ export default function CreateListingPage() {
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23374151%22%20d%3D%22M6%209L1%204h10z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_12px_center] bg-no-repeat"
+                  disabled={loadingCategories}
+                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23374151%22%20d%3D%22M6%209L1%204h10z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_12px_center] bg-no-repeat disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
-                  <option value="" className="text-gray-400">Category</option>
-                  <option value="vehicles">Vehicles</option>
-                  <option value="property_rentals">Property Rentals</option>
-                  <option value="apparel">Apparel</option>
-                  <option value="electronics">Electronics</option>
+                  <option value="" className="text-gray-400">
+                    {loadingCategories ? "Loading categories..." : "Category"}
+                  </option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id.toString()}>
+                      {cat.name || cat.title || cat.category_name || `Category ${cat.id}`}
+                    </option>
+                  ))}
                 </select>
 
                 <select
@@ -466,14 +737,16 @@ export default function CreateListingPage() {
                 <div className="h-1 flex-1 bg-gray-200 rounded-full"></div>
               </div>
               <button
-                disabled={!canProceed}
+                type="button"
+                onClick={handleSubmit}
+                disabled={!canProceed || isSubmitting}
                 className={`w-full h-12 rounded-lg text-sm font-semibold transition-colors ${
-                  canProceed
+                  canProceed && !isSubmitting
                     ? "bg-blue-600 text-white hover:bg-blue-700"
                     : "bg-gray-200 text-gray-500 cursor-not-allowed"
                 }`}
               >
-                Next
+                {isSubmitting ? (isEditMode ? "Updating..." : "Creating...") : (isEditMode ? "Update" : "Next")}
               </button>
             </div>
           </div>
@@ -574,14 +847,20 @@ export default function CreateListingPage() {
                     )}
 
                     {/* Category */}
-                    {category && (
-                      <div className="mb-2">
-                        <span className="text-sm text-gray-600 font-medium">Category:</span>
-                        <span className="text-sm text-gray-900 ml-2 capitalize">
-                          {category === "property_rentals" ? "Property Rentals" : category}
-                        </span>
-                      </div>
-                    )}
+                    {category && (() => {
+                      const selectedCategory = categories.find(cat => cat.id.toString() === category);
+                      const categoryName = selectedCategory 
+                        ? (selectedCategory.name || selectedCategory.title || selectedCategory.category_name || `Category ${selectedCategory.id}`)
+                        : category;
+                      return (
+                        <div className="mb-2">
+                          <span className="text-sm text-gray-600 font-medium">Category:</span>
+                          <span className="text-sm text-gray-900 ml-2 capitalize">
+                            {categoryName}
+                          </span>
+                        </div>
+                      );
+                    })()}
 
                     {/* Availability */}
                     {availability && (
