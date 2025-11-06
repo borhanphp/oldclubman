@@ -18,11 +18,15 @@ import {
   FaShoppingBag,
   FaBars,
   FaTimes,
+  FaUser,
+  FaIdCard,
+  FaHome,
 } from "react-icons/fa";
 import { logout } from "@/utility";
 import { useDispatch, useSelector } from "react-redux";
 import { getMyProfile } from "@/views/settings/store";
 import PostsSearch from "./PostsSearch";
+import { CiHome } from "react-icons/ci";
 
 const SocialNavbar = () => {
   const { profile } = useSelector(({ settings }) => settings);
@@ -38,7 +42,7 @@ const SocialNavbar = () => {
   }, []);
   return (
    <>
-    <nav className="sticky top-0 z-10 px-4 md:px-10 flex justify-between items-center bg-white p-2 shadow-sm">
+    <nav className="sticky top-0 z-10 px-4 md:px-10 flex items-center bg-white p-2 shadow-sm border-b border-gray-200">
       {/* Left section: Logo and Search */}
       <div className="flex items-center flex-1 md:flex-none">
         <Link href="/user/gathering" className="flex items-center">
@@ -47,39 +51,44 @@ const SocialNavbar = () => {
           </div>
         </Link>
         {/* Search - Hidden on mobile, shown on tablet+ */}
-        <div className="hidden md:flex flex-1 items-center justify-center ml-4">
+        <div className="hidden md:flex flex-1 items-center justify-center ml-4 max-w-md">
           <PostsSearch />
         </div>
       </div>
 
-      {/* Right section: Menu items - Hidden on mobile, shown on desktop */}
-      <div className="hidden md:flex items-center">
+      {/* Center section: Menu items - Hidden on mobile, shown on desktop */}
+      <div className="hidden md:flex items-center justify-center flex-1 gap-4">
         {/* MARKETPLACE Link */}
-        <div className="relative mx-2 mr-5">
-          <Link href="/marketplace" className="flex items-center cursor-pointer">
-            <FaShoppingBag className="text-gray-600 mr-2" />
-            <span className="text-gray-600 font-medium">MARKETPLACE</span>
+        <div className="relative">
+          <Link href="/user/gathering" className="flex items-center cursor-pointer p-3 rounded-md  hover:bg-gray-300 transition-colors">
+            <FaHome className="text-gray-600" size={26} />
+          </Link>
+        </div>
+
+        <div className="relative">
+          <Link href="/marketplace" className="flex items-center cursor-pointer p-3 rounded-md  hover:bg-gray-300 transition-colors">
+            <FaShoppingBag className="text-gray-600" size={25} />
           </Link>
         </div>
 
         {/* ACCOUNT Dropdown */}
-        <div 
-          className="relative mx-2 mr-5"
+        {/* <div 
+          className="relative"
           onMouseEnter={() => setShowDropdown(true)}
           onMouseLeave={() => setShowDropdown(false)}
         >
-          <div className="dropdown-menu flex items-center cursor-pointer">
-            <span className="text-gray-600 text-[15px] font-medium mr-1">ACCOUNT</span>
+          <div className="dropdown-menu flex items-center cursor-pointer p-3 rounded-md bg-gray-200 hover:bg-gray-300 transition-colors">
+            <FaUser className="text-gray-600" size={16} />
             <FaChevronDown 
-              size={10} 
-              className={`text-gray-500 text-xs transition-transform ${showDropdown ? 'rotate-180' : ''}`} 
+              size={8} 
+              className={`text-gray-500 ml-1 transition-transform ${showDropdown ? 'rotate-180' : ''}`} 
             />
           </div>
 
           {showDropdown && (
-            <div className="absolute -left-10 pt-5 mt-0 w-48 bg-white rounded-md shadow-lg py-1 z-30">
+            <div className="absolute left-0 pt-2 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-30">
               <Link
-                href={`/user/user-profile/${profile?.client?.id}`}
+                href={`/${profile?.client?.username}`}
                 className="flex items-center px-4 py-2 text-[15px] font-medium text-gray-700 hover:bg-gray-100"
               >
                 <span>Profile</span>
@@ -105,24 +114,25 @@ const SocialNavbar = () => {
               </Link>
             </div>
           )}
-        </div>
+        </div> */}
 
         {/* CARD Dropdown */}
-        <div 
-          className="relative mx-2 mr-5"
-          onMouseEnter={() => setShowCardDropdown(true)}
-          onMouseLeave={() => setShowCardDropdown(false)}
+        <Link
+        href="/user/nfc" 
+          className="relative"
+          // onMouseEnter={() => setShowCardDropdown(true)}
+          // onMouseLeave={() => setShowCardDropdown(false)}
         >
-          <div className="dropdown-menu flex items-center cursor-pointer">
-            <span className="text-gray-600 font-medium mr-1">CARD</span>
-            <FaChevronDown 
-              size={10} 
-              className={`text-gray-500 text-xs transition-transform ${showCardDropdown ? 'rotate-180' : ''}`} 
-            />
+          <div className="dropdown-menu flex items-center cursor-pointer p-3 rounded-md hover:bg-gray-300 transition-colors">
+            <FaIdCard className="text-gray-600" size={25} />
+            {/* <FaChevronDown 
+              size={8} 
+              className={`text-gray-500 ml-1 transition-transform ${showCardDropdown ? 'rotate-180' : ''}`} 
+            /> */}
           </div>
 
-          {showCardDropdown && (
-            <div className="absolute pt-5 -left-10 w-48 bg-white rounded-md shadow-lg py-1 z-30">
+          {/* {showCardDropdown && (
+            <div className="absolute left-0 pt-2 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-30">
               <Link
                 href="/user/nfc"
                 className="flex items-center px-4 py-2 text-[15px] font-medium text-gray-700 hover:bg-gray-100"
@@ -130,25 +140,25 @@ const SocialNavbar = () => {
                 <span>NFC CARD</span>
               </Link>
             </div>
-          )}
-        </div>
+          )} */}
+        </Link>
 
         {/* SHIPPING Dropdown */}
-        <div 
-          className="relative mx-2 mr-5"
+        {/* <div 
+          className="relative"
           onMouseEnter={() => setShowShippingDropdown(true)}
           onMouseLeave={() => setShowShippingDropdown(false)}
         >
-          <div className="dropdown-menu flex items-center cursor-pointer">
-            <span className="text-gray-600 font-medium mr-1">SHIPPING</span>
+          <div className="dropdown-menu flex items-center cursor-pointer p-3 rounded-md bg-gray-200 hover:bg-gray-300 transition-colors">
+            <FaShippingFast className="text-gray-600" size={16} />
             <FaChevronDown 
-              size={10} 
-              className={`text-gray-500 text-xs transition-transform ${showShippingDropdown ? 'rotate-180' : ''}`} 
+              size={8} 
+              className={`text-gray-500 ml-1 transition-transform ${showShippingDropdown ? 'rotate-180' : ''}`} 
             />
           </div>
 
           {showShippingDropdown && (
-            <div className="absolute pt-5 -left-10 w-48 bg-white rounded-md shadow-lg py-1 z-30">
+            <div className="absolute left-0 pt-2 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-30">
               <Link
                 href="#"
                 className="flex items-center px-4 py-2 text-[15px] font-medium text-gray-700 hover:bg-gray-100"
@@ -165,8 +175,11 @@ const SocialNavbar = () => {
               </Link>
             </div>
           )}
-        </div>
+        </div> */}
+      </div>
 
+      {/* Right section: Icons - Hidden on mobile, shown on desktop */}
+      <div className="hidden md:flex items-center">
         {/* Messages Icon with Dropdown */}
         <div className="relative mr-2 p-3 rounded-md group bg-gray-200">
           <Link
@@ -178,14 +191,14 @@ const SocialNavbar = () => {
         </div>
 
         {/* Settings Icon*/}
-        <div className="relative mr-2 p-3 rounded-md group bg-gray-200">
+        {/* <div className="relative mr-2 p-3 rounded-md group bg-gray-200">
           <Link
             href="/user/account-settings"
             className="icon-button text-gray-600 hover:text-black cursor-pointer"
           >
             <FaCog size={14} />
           </Link>
-        </div>
+        </div> */}
 
         {/* Notifications Icon with Dropdown */}
         <div className="relative mr-2 p-3 rounded-md group bg-gray-200">
