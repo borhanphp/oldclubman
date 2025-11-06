@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSelector } from "react-redux";
@@ -8,8 +8,7 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { FaCamera, FaGlobe, FaTrash, FaMobileAlt, FaMapMarkerAlt, FaChevronUp, FaChevronDown, FaLock } from "react-icons/fa";
 import api from "@/helpers/axios";
 
-
-export default function CreateListingPage() {
+function CreateListingContent() {
   const { profile, profileData } = useSelector(({ settings }) => settings);
   const router = useRouter();
   const params = useParams();
@@ -949,4 +948,18 @@ export default function CreateListingPage() {
   );
 }
 
+export default function CreateListingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <CreateListingContent />
+    </Suspense>
+  );
+}
 
