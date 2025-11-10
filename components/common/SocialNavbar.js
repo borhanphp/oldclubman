@@ -21,6 +21,7 @@ import {
   FaUser,
   FaIdCard,
   FaHome,
+  FaWallet,
 } from "react-icons/fa";
 import { logout } from "@/utility";
 import { useDispatch, useSelector } from "react-redux";
@@ -68,6 +69,12 @@ const SocialNavbar = () => {
         <div className="relative">
           <Link href="/marketplace" className="flex items-center cursor-pointer p-3 rounded-md  hover:bg-gray-300 transition-colors">
             <FaShoppingBag className="text-gray-600" size={25} />
+          </Link>
+        </div>
+
+        <div className="relative">
+          <Link href="/user/wallet" className="flex items-center cursor-pointer p-3 rounded-md  hover:bg-gray-300 transition-colors">
+            <FaWallet className="text-gray-600" size={25} />
           </Link>
         </div>
 

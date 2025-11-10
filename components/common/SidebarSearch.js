@@ -631,7 +631,7 @@ const SidebarSearch = () => {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <Link href={`/user/user-profile/${result?.id}`}>
+                      <Link href={`/${result?.username}`}>
                         <div 
                           className="font-medium text-gray-900 text-sm hover:underline truncate"
                         >

@@ -5,7 +5,7 @@ import nfc from "@/views/nfc/store";
 import gathering from "@/views/gathering/store";
 import chat from "@/views/message/store";
 import search from "@/views/search/store";
-
+import wallet from "@/views/wallet/store";
 
 
 
@@ -16,7 +16,8 @@ const rootReducer = {
     nfc,
     gathering,
     chat,
-    search
+    search,
+    wallet
 }
 
 export default rootReducer;
