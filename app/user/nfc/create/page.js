@@ -1,12 +1,12 @@
-import CommonLayout from '@/components/common/CommonLayout'
+import NFCLayout from '@/components/nfc/NFCLayout'
 import NfcForm from '@/views/nfc/form'
 import React from 'react'
 
 const page = () => {
   return (
-    <CommonLayout>
+    <NFCLayout>
         <NfcForm/>
-    </CommonLayout>
+    </NFCLayout>
   )
 }
 

@@ -123,19 +123,14 @@ const SocialNavbar = () => {
           )}
         </div> */}
 
-        {/* CARD Dropdown */}
+        {/* CARD - NFC Cards */}
         <Link
         href="/user/nfc" 
           className="relative"
-          // onMouseEnter={() => setShowCardDropdown(true)}
-          // onMouseLeave={() => setShowCardDropdown(false)}
+          title="NFC Cards"
         >
-          <div className="dropdown-menu flex items-center cursor-pointer p-3 rounded-md hover:bg-gray-300 transition-colors">
+          <div className="dropdown-menu flex items-center cursor-pointer p-3 rounded-md hover:bg-gray-300 transition-colors gap-1">
             <FaIdCard className="text-gray-600" size={25} />
-            {/* <FaChevronDown 
-              size={8} 
-              className={`text-gray-500 ml-1 transition-transform ${showCardDropdown ? 'rotate-180' : ''}`} 
-            /> */}
           </div>
 
           {/* {showCardDropdown && (

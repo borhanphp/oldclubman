@@ -1,106 +1,98 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
-import { FaEllipsisH, FaVideo, FaGlobe, FaComment, FaPlus, FaUserFriends } from 'react-icons/fa';
-import FeedHeader from '@/components/common/FeedHeader';
-import PostModal from '@/components/custom/PostModal';
+import { FaPlus, FaIdCard, FaCreditCard, FaChartLine } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
-import { getMyNfc, getNfcById } from './store';
-import moment from 'moment';
-import Intro from '@/components/common/Intro';
-import FollowSuggestion from '@/components/common/FollowSuggestion';
-import CardClassic from './nfc-cards/CardClassic';
-import CardModern from './nfc-cards/CardModern';
-import CardSleek from './nfc-cards/CardSleek';
-import CardFlat from './nfc-cards/CardFlat';
-import FeedLayout from '@/components/common/FeedLayout';
+import { getMyNfc } from './store';
+import NFCCardGrid from '@/components/nfc/NFCCardGrid';
 
 const NfcContent = () => {
-  const {nfcData, loading} = useSelector(({nfc}) => nfc);
-  const {isPostModalOpen} = useSelector(({gathering}) => gathering);
-
+  const { nfcData, loading } = useSelector(({ nfc }) => nfc);
   const dispatch = useDispatch();
-  
+
   useEffect(() => {
     dispatch(getMyNfc());
-  }, [])
-  
+  }, [dispatch]);
 
-
+  const nfcCards = nfcData?.nfc_cards?.data || [];
+  const totalCards = nfcCards.length;
 
   return (
-    <FeedLayout>
-    <div className="gathering-content">
-   
-      
-      {/* Content Area - 3 Column Layout */}
-      <div className="content-area py-3">
-        <div className="mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-            {/* Left Sidebar - INTRO */}
-            <div className="md:col-span-4">
-             <Intro/>
-             <FollowSuggestion/>
+    <div className="min-h-screen">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="flex flex-col md:flex-row items-center justify-between">
+            <div className="mb-6 md:mb-0">
+              <h1 className="text-4xl font-bold mb-2">My NFC Cards</h1>
+              <p className="text-blue-100 text-lg">
+                Manage and share your digital business cards
+              </p>
             </div>
-            
-            {/* Center Content - LIST OF GATHERINGS */}
-            <div className="md:col-span-8">
-              <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-semibold">LIST OF NFC CARD</h3>
-                  <Link href="/user/nfc/create" className="text-blue-500 cursor-pointer bg-gray-100 p-2 rounded-full">
-                    <FaPlus />
-                  </Link>
-                </div>
-                
-                {/* NFC Card */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-4">
-                  {nfcData?.nfc_cards?.data?.map((card, index) => {
-                    const fullCard = {
-                      ...card, 
-                      ...card.nfc_info, 
-                      ...card.nfc_design,
-                      display_nfc_color: card?.card_design?.color,
-                      profilePhotoUrl: process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + card?.nfc_info?.image,
-                      logoUrl: process.env.NEXT_PUBLIC_CARD_FILE_PATH + card?.card_design?.logo,
+            <Link
+              href="/user/nfc/create"
+              className="inline-flex items-center space-x-2 bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:shadow-xl transition-all"
+            >
+              <FaPlus />
+              <span>Create New Card</span>
+            </Link>
+          </div>
 
-                    }
-
-                    return(
-                      <Link href={`/user/nfc/preview/${card.id}`} key={index}>
-                        {+card?.card_design?.design_card_id === 1 ?
-                        <CardClassic basicNfcData={fullCard}/>
-                        :
-                        +card?.card_design?.design_card_id === 2 ?
-                        <CardModern basicNfcData={fullCard}/>
-                        :
-                        +card?.card_design?.design_card_id === 3 ?
-                        <CardSleek basicNfcData={fullCard}/>
-                        :
-                        <CardFlat basicNfcData={fullCard}/>
-                      }
-                      </Link>
-                    )
-                  })}
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-blue-100 text-sm mb-1">Total Cards</p>
+                  <p className="text-3xl font-bold">{totalCards}</p>
                 </div>
-                
-                {/* Add more cards here if needed */}
+                <div className="bg-white/20 p-4 rounded-lg">
+                  <FaIdCard className="text-3xl" />
+                </div>
               </div>
-              
-             
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-blue-100 text-sm mb-1">Active Cards</p>
+                  <p className="text-3xl font-bold">{totalCards}</p>
+                </div>
+                <div className="bg-white/20 p-4 rounded-lg">
+                  <FaCreditCard className="text-3xl" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-blue-100 text-sm mb-1">Total Shares</p>
+                  <p className="text-3xl font-bold">0</p>
+                </div>
+                <div className="bg-white/20 p-4 rounded-lg">
+                  <FaChartLine className="text-3xl" />
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-     
+      {/* Cards Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Your Digital Cards</h2>
+          <p className="text-gray-600">
+            Click on any card to view details, edit, or share with others
+          </p>
+        </div>
 
-      {/* Post Modal */}
-      {isPostModalOpen && <PostModal/>}
+        <NFCCardGrid nfcCards={nfcCards} loading={loading} />
+      </div>
     </div>
-    </FeedLayout>
   );
 };
 
-export default NfcContent; 
+export default NfcContent;

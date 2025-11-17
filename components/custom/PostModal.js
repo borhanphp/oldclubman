@@ -28,6 +28,7 @@ const PostModal = () => {
   const [selectedBackground, setSelectedBackground] = useState(/\/post_background\/.+/.test(basicPostData?.background_url) ? basicPostData?.background_url : null);
   const [backgroundScrollIndex, setBackgroundScrollIndex] = useState(0);
   const [isVisibleBg, setIsVisibleBg] = useState(true);
+  const [showBackgroundOptions, setShowBackgroundOptions] = useState(false);
 
   // Route / Check-in state
   const [showRoute, setShowRoute] = useState(false);
@@ -236,36 +237,6 @@ const PostModal = () => {
     setPlaceSearchQuery(place.place_name);
     setPlaceSearchResults([]);
     setShowPlaceSearch(false);
-    
-    // Add marker to map if map is initialized
-    if (routeMapRef.current) {
-      // Remove existing check-in marker
-      if (routeMarkersRef.current.checkin) {
-        routeMapRef.current.removeLayer(routeMarkersRef.current.checkin);
-      }
-      
-      // Add new check-in marker
-      const L = window.L;
-      const marker = L.marker([place.lat, place.lng], {
-        icon: L.icon({
-          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-          iconSize: [25, 41],
-          iconAnchor: [12, 41],
-          popupAnchor: [1, -34],
-          shadowSize: [41, 41]
-        })
-      }).addTo(routeMapRef.current);
-      
-      marker.bindPopup(`<b>${place.place_name}</b>`).openPopup();
-      routeMarkersRef.current.checkin = marker;
-      
-      // Center map on selected location
-      routeMapRef.current.setView([place.lat, place.lng], 15);
-    }
-    
-    // Close modal after selecting (optional - remove if you want to keep it open)
-    // setShowLocationModal(false);
   };
 
   const drawRouteLine = (from, to) => {
@@ -304,12 +275,11 @@ const PostModal = () => {
 
 
   useEffect(() => {
-    // Create a separate ref for main modal map if needed, or reuse the same one
-    const mainModalMapContainer = document.getElementById('checkin-map-container');
-    const shouldInitMainMap = !showLocationModal && (checkInLocation || routeDestination) && mainModalMapContainer;
+    // Initialize map when location modal is open OR when location is selected in main modal
+    const shouldShowMap = showLocationModal || (!showLocationModal && (checkInLocation || routeDestination));
     
-    if (!showLocationModal && !shouldInitMainMap) {
-      // Clean up map when modal closes and no location is selected
+    if (!shouldShowMap) {
+      // Clean up map when not needed
       if (routeMapRef.current) {
         try {
           routeMapRef.current.remove();
@@ -332,17 +302,39 @@ const PostModal = () => {
     let retryTimeoutId = null;
     
     const initMap = () => {
-      const container = showLocationModal 
-        ? routeMapContainerRef.current 
-        : mainModalMapContainer;
+      const container = routeMapContainerRef.current;
+      
+      console.log('Attempting to init map...', {
+        showLocationModal,
+        hasContainer: !!container,
+        containerWidth: container?.offsetWidth,
+        containerHeight: container?.offsetHeight,
+        hasMapRef: !!routeMapRef.current,
+        checkInLocation,
+        routeDestination
+      });
       
       if (!container) {
-        console.log('Container not found');
+        console.log('Container not found, retrying...');
+        setTimeout(() => initMap(), 200);
         return;
       }
       
-      if (routeMapRef.current || container.offsetWidth === 0 || container.offsetHeight === 0) {
-        console.log('Map already initialized or container has no dimensions');
+      // Check if container has dimensions
+      if (container.offsetWidth === 0 || container.offsetHeight === 0) {
+        console.log('Container has no dimensions, retrying...');
+        setTimeout(() => initMap(), 200);
+        return;
+      }
+      
+      // If map already exists, just update it
+      if (routeMapRef.current) {
+        console.log('Map already initialized, updating...');
+        try {
+          routeMapRef.current.invalidateSize();
+        } catch (e) {
+          console.error('Error invalidating map size:', e);
+        }
         return;
       }
       
@@ -379,9 +371,15 @@ const PostModal = () => {
 
           routeMapRef.current = mapInstance;
           
+          console.log('Map initialized successfully', {
+            hasMap: !!mapInstance,
+            containerSize: { width: container.offsetWidth, height: container.offsetHeight }
+          });
+          
           setTimeout(() => {
             if (mapInstance) {
               mapInstance.invalidateSize();
+              console.log('Map size invalidated');
             }
           }, 100);
   
@@ -521,18 +519,34 @@ const PostModal = () => {
       });
     };
     
+    // Give the modal time to render before initializing map
+    let secondRetryId = null;
+    
     timeoutId = setTimeout(() => {
+      console.log('Starting map initialization...');
       initMap();
+      
+      // Multiple retries to ensure map loads
       retryTimeoutId = setTimeout(() => {
         if (!routeMapRef.current) {
+          console.log('First retry: map initialization...');
           initMap();
         }
-      }, 500);
-    }, 500);
+      }, 400);
+      
+      // Second retry
+      secondRetryId = setTimeout(() => {
+        if (!routeMapRef.current) {
+          console.log('Second retry: map initialization...');
+          initMap();
+        }
+      }, 1000);
+    }, 200);
     
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
       if (retryTimeoutId) clearTimeout(retryTimeoutId);
+      if (secondRetryId) clearTimeout(secondRetryId);
       
       const mapToRemove = routeMapRef.current || mapInstance;
       if (mapToRemove && mapToRemove._container) {
@@ -546,16 +560,85 @@ const PostModal = () => {
       routeMapRef.current = null;
       mapInstance = null;
       
-      const container = showLocationModal 
-        ? routeMapContainerRef.current 
-        : mainModalMapContainer;
-      if (container) {
-        container._leaflet_id = null;
-        container.innerHTML = '';
+      if (routeMapContainerRef.current) {
+        routeMapContainerRef.current._leaflet_id = null;
+        routeMapContainerRef.current.innerHTML = '';
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showLocationModal, checkInMode, checkInLocation, routeDestination]);
+
+  // Force map update when location is selected
+  useEffect(() => {
+    if (!routeMapRef.current) return;
+    
+    const L = window.L;
+    if (!L) return;
+
+    console.log('Updating map markers...', { checkInLocation, routeDestination });
+
+    // Update markers when location changes
+    if (checkInLocation) {
+      // Remove existing checkin marker
+      if (routeMarkersRef.current.checkin && routeMapRef.current) {
+        routeMapRef.current.removeLayer(routeMarkersRef.current.checkin);
+        routeMarkersRef.current.checkin = null;
+      }
+
+      // Add new checkin marker
+      if (routeMapRef.current) {
+        const marker = L.marker([checkInLocation.lat, checkInLocation.lng], {
+          icon: L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+          })
+        }).addTo(routeMapRef.current);
+        
+        marker.bindPopup(`<b>${checkInLocation.place_name}</b>`);
+        if (showLocationModal) {
+          marker.openPopup();
+        }
+        routeMarkersRef.current.checkin = marker;
+        
+        // Center map on location
+        routeMapRef.current.setView([checkInLocation.lat, checkInLocation.lng], 15);
+      }
+    }
+
+    if (routeDestination) {
+      // Remove existing destination marker
+      if (routeMarkersRef.current.destination && routeMapRef.current) {
+        routeMapRef.current.removeLayer(routeMarkersRef.current.destination);
+        routeMarkersRef.current.destination = null;
+      }
+
+      // Add new destination marker
+      if (routeMapRef.current) {
+        const marker = L.marker([routeDestination.lat, routeDestination.lng], {
+          icon: L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+          })
+        }).addTo(routeMapRef.current);
+        
+        marker.bindPopup(`<b>${routeDestination.place_name}</b>`);
+        routeMarkersRef.current.destination = marker;
+      }
+    }
+
+    // Draw route line if both exist
+    if (checkInLocation && routeDestination && routeMapRef.current) {
+      drawRouteLine(checkInLocation, routeDestination);
+    }
+  }, [checkInLocation, routeDestination, showLocationModal]);
 
   const handleBackgroundSelect = (background) => {
    
@@ -839,6 +922,11 @@ const PostModal = () => {
   const handleFilesChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
     if (selectedFiles.length > 0) {
+      // Clear background when images are uploaded
+      if (selectedBackground) {
+        handleBackgroundClear();
+      }
+      
       dispatch(bindPostData({
         ...basicPostData, 
         files: [...(basicPostData.files || []), ...selectedFiles]
@@ -864,6 +952,11 @@ const PostModal = () => {
     e.stopPropagation();
     
     if (e.dataTransfer.files.length > 0) {
+      // Clear background when images are dropped
+      if (selectedBackground) {
+        handleBackgroundClear();
+      }
+      
       const droppedFiles = Array.from(e.dataTransfer.files);
       dispatch(bindPostData({
         ...basicPostData,
@@ -1060,9 +1153,9 @@ const PostModal = () => {
   
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/30">
-      <div className="bg-white backdrop-blur-md rounded-lg w-full max-w-lg mx-4 shadow-xl flex flex-col relative overflow-hidden" style={{ height: '600px', maxHeight: '90vh' }}>
+      <div className="bg-white rounded-2xl w-full max-w-lg mx-4 shadow-2xl flex flex-col relative overflow-hidden" style={{ height: '600px', maxHeight: '90vh' }}>
         {/* Header */}
-        <div className="flex justify-center border-b border-b-gray-300 p-4 relative flex-shrink-0">
+        <div className="flex justify-center border-b border-gray-200 p-4 relative flex-shrink-0">
           <div className="flex items-center justify-between w-full">
             {showLocationModal && (
               <button
@@ -1072,26 +1165,19 @@ const PostModal = () => {
                 <FaChevronLeft size={20} />
               </button>
             )}
-            <h2 className="text-xl font-semibold flex-1 text-center">
+            <h2 className="text-2xl font-bold flex-1 text-center text-gray-900">
               {showLocationModal 
                 ? (checkInMode === 'checkin' ? 'Check in at a place' : 'Add destination')
                 : (id ? "Edit Post" : "Create post")}
-
-
             </h2>
-            <div>
-
             <button
               onClick={() => {
                 close();
               }}
-              className="text-gray-500 bg-gray-200 p-2 rounded-full cursor-pointer hover:text-gray-700"
+              className="text-gray-500 bg-gray-200 hover:bg-gray-300 p-2 rounded-full cursor-pointer transition-colors"
             >
               <FaTimes size={20} />
             </button>
-
-            </div>
-           
           </div>
         </div>
 
@@ -1105,100 +1191,66 @@ const PostModal = () => {
             style={{ zIndex: showLocationModal ? 0 : 2 }}
           >
             <div className="p-4 overflow-y-auto flex-1">
-              <div className="flex items-start mb-4">
-            <div className="w-10 h-10 rounded-full overflow-hidden bg-blue-400 flex items-center justify-center text-white mr-3 flex-shrink-0">
-              <img
-                src={
-                  profile?.client?.image
-                    ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
+              {/* User Profile Section */}
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 rounded-full overflow-hidden bg-blue-400 flex items-center justify-center text-white mr-3 flex-shrink-0">
+                  <img
+                    src={
                       profile?.client?.image
-                    : "/common-avator.jpg"
-                }
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = "/common-avator.jpg";
-                }}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="flex-1">
-              <div className='flex items-center gap-5'>
-              <div className="font-semibold text-gray-900">
-                {profile?.client?.fname + " " + profile?.client?.last_name}
-              </div>
-              <div className="flex items-center gap-2">
-                <div 
-                  className={`flex items-center cursor-pointer px-2 py-1 rounded-md transition-colors ${
-                    checkInLocation ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'
-                  }`}
-                  onClick={() => {
-                    setCheckInMode('checkin');
-                    setShowLocationModal(true);
-                  }} 
-                >
-                  <LuMapPinCheckInside size={15} className='text-red-600 mr-1'/>
-                  <span className="text-sm">Check in</span>
+                        ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + profile?.client?.image
+                        : "/common-avator.jpg"
+                    }
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "/common-avator.jpg";
+                    }}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-                <div 
-                  className={`flex items-center cursor-pointer px-2 py-1 rounded-md transition-colors ${
-                    routeDestination ? 'bg-green-100 text-green-700' : 'hover:bg-gray-100'
-                  }`}
-                  onClick={() => {
-                    setCheckInMode('destination');
-                    setShowLocationModal(true);
-                  }} 
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  <span className="text-sm">Destination</span>
-                </div>
-              </div>
-              </div>
+                <div className="flex-1">
+                  <div className="font-semibold text-gray-900 text-base">
+                    {profile?.client?.fname + " " + profile?.client?.last_name}
+                  </div>
+                  <div className="relative mt-1">
+                    <button
+                      onClick={() => setShowPrivacyDropdown(!showPrivacyDropdown)}
+                      className="flex items-center text-sm font-medium bg-gray-200 px-3 py-1 rounded-md cursor-pointer hover:bg-gray-300 transition-colors"
+                    >
+                      {basicPostData?.privacy_mode === "public" ? (
+                        <>
+                          <FaGlobe size={12} className="mr-1" />
+                          <span>Public</span>
+                        </>
+                      ) : (
+                        <>
+                          <FaLock size={12} className="mr-1" />
+                          <span>Private</span>
+                        </>
+                      )}
+                      <FaCaretDown className="ml-1" />
+                    </button>
 
-              <div className="flex items-center mt-1">
-                <div className="relative">
-                  <button
-                    onClick={() => setShowPrivacyDropdown(!showPrivacyDropdown)}
-                    className="flex items-center font-[500] text-[13px] bg-gray-200 px-2 py-1 rounded-md cursor-pointer hover:bg-gray-300 transition-colors"
-                  >
-                    {basicPostData?.privacy_mode === "public" ? (
-                      <>
-                        <FaGlobe size={12} className="mr-1" />
-                        <span>Public</span>
-                      </>
-                    ) : (
-                      <>
-                        <FaLock size={12} className="mr-1" />
-                        <span>Private</span>
-                      </>
+                    {showPrivacyDropdown && (
+                      <div className="absolute left-0 mt-1 bg-white shadow-lg rounded-lg z-10 w-40 overflow-hidden border border-gray-200">
+                        <button
+                          onClick={() => handlePrivacyChange("public")}
+                          className="flex items-center w-full px-4 py-2 text-sm hover:bg-gray-50 transition-colors"
+                        >
+                          <FaGlobe className="mr-2" />
+                          <span>Public</span>
+                        </button>
+                        <button
+                          onClick={() => handlePrivacyChange("private")}
+                          className="flex items-center w-full px-4 py-2 text-sm hover:bg-gray-50 transition-colors"
+                        >
+                          <FaLock className="mr-2" />
+                          <span>Private</span>
+                        </button>
+                      </div>
                     )}
-                    <FaCaretDown className="ml-1" />
-                  </button>
-
-                  {showPrivacyDropdown && (
-                    <div className="absolute left-0 mt-1 bg-white shadow-md rounded-md z-10 w-36 overflow-hidden border">
-                      <button
-                        onClick={() => handlePrivacyChange("public")}
-                        className="flex items-center w-full px-3 py-2 text-sm hover:bg-gray-100"
-                      >
-                        <FaGlobe className="mr-2" />
-                        <span>Public</span>
-                      </button>
-                      <button
-                        onClick={() => handlePrivacyChange("private")}
-                        className="flex items-center w-full px-3 py-2 text-sm hover:bg-gray-100"
-                      >
-                        <FaLock className="mr-2" />
-                        <span>Private</span>
-                      </button>
-                    </div>
-                  )}
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
           <div className="flex-1 mb-4">
             {plainMessageLength > 280 ? (
               <div className="flex items-center gap-2 mb-2">
@@ -1275,7 +1327,7 @@ const PostModal = () => {
                     <span
                       aria-hidden="true"
                       className="pointer-events-none absolute left-30 top-10 text-white/70"
-                    >{`What's on your mind, ${profile?.client?.fname}?`}</span>
+                    >{`What's on your mind, ${profile?.client?.fname}? Post anything!`}</span>
                   )}
                   <div
                     ref={messageEditorRef}
@@ -1296,7 +1348,7 @@ const PostModal = () => {
                   <span
                     aria-hidden="true"
                     className="pointer-events-none absolute left-4 top-4 text-gray-400"
-                  >{`What's on your mind, ${profile?.client?.fname}?`}</span>
+                  >{`What's on your mind, ${profile?.client?.fname}? Post anything!`}</span>
                 )}
                 <div
                   ref={messageEditorRef}
@@ -1314,146 +1366,59 @@ const PostModal = () => {
           </div>
 
          
-
-          {/* Background Selection Row */}
-          {(!checkInLocation && !routeDestination) && 
-          <div className="mb-1">
-            <div className="flex items-center space-x-2 overflow-x-auto py-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-              {/* Left Arrow */}
-              {backgroundScrollIndex > 0 && (
-                <button
-                  onClick={() => scrollBackgrounds("left")}
-                  className="flex-shrink-0 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
-                >
-                  <FaChevronLeft size={12} className="text-gray-600" />
-                </button>
-              )}
-
-              {/* White Background Option */}
-              <div
-                onClick={handleBackgroundClear}
-                className={`flex-shrink-0 w-8 h-8 rounded-md border-2 transition-all duration-200 hover:scale-110 bg-white cursor-pointer ${
-                  selectedBackground?.id === "white"
-                    ? "border-white scale-110 shadow-lg"
-                    : "border-gray-300"
-                }`}
-                title="White"
-              />
-
-              {/* Background Swatches */}
-              {isVisibleBg &&
-                visibleBackgrounds?.map((bg) => (
-                  <img
-                    key={bg.id}
-                    src={bg?.image?.url}
-                    onClick={() => handleBackgroundSelect(bg)}
-                    className={`flex-shrink-0 w-8 h-8 rounded-md border-2 transition-all duration-200 hover:scale-110 ${
-                      selectedBackground?.id === bg.id
-                        ? "border-white scale-110 shadow-lg"
-                        : "border-gray-300"
-                    }`}
-                    title={bg.name}
-                  />
+          {/* Image/Video Previews - Show only when files are uploaded */}
+          {filePreviews?.length > 0 && (
+            <div className="mb-4">
+              <div className="grid grid-cols-2 gap-3">
+                {filePreviews?.map((preview) => (
+                  <div key={preview.id} className="relative rounded-lg overflow-hidden">
+                    {preview?.file?.type.startsWith("video/") ? (
+                      <video
+                        controls
+                        className="w-full h-48 object-cover"
+                      >
+                        <source src={preview?.src} />
+                      </video>
+                    ) : (
+                      <img
+                        src={preview?.src}
+                        alt="Upload preview"
+                        className="w-full h-48 object-cover"
+                      />
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveFile(preview.id);
+                      }}
+                      className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 transition-colors"
+                    >
+                      <FaTimes size={14} />
+                    </button>
+                  </div>
                 ))}
-
-              {/* Right Arrow */}
-              {backgroundScrollIndex < backgroundOptions.length - 8 && (
-                <button
-                  onClick={() => scrollBackgrounds("right")}
-                  className="flex-shrink-0 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
-                >
-                  <FaChevronRight size={12} className="text-gray-600" />
-                </button>
-              )}
-            </div>
-          </div>}
-
-         
-          {(!selectedBackground && !checkInLocation && !routeDestination) && (
-            <div className="">
-              <p
-                className={`text-gray-500 mb-2 text-center cursor-pointer ${
-                  !isShowImageSection ? "border py-2 pl-2 rounded-md" : ""
-                }`}
-                onClick={() => {
-                  setIsShowImageSection(!isShowImageSection);
-                }}
-              >
-                Upload Photos/Videos
-              </p>
-              {isShowImageSection && (
-                <div
-                  className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer bg-white/50 hover:bg-white/70 transition"
-                  onClick={() => fileInputRef.current?.click()}
-                  onDrop={handleDrop}
-                  onDragOver={handleDragOver}
-                >
-                  {filePreviews?.length > 0 ? (
-                    <div>
-                      <div className="grid grid-cols-2 gap-3 mb-3">
-                        {filePreviews?.map((preview) => (
-                          <div key={preview.id} className="relative">
-                            {preview?.file?.type.startsWith("video/") ? (
-                              <video
-                                controls
-                                className="h-32 w-full object-cover rounded"
-                              >
-                                <source src={preview?.src} />
-                              </video>
-                            ) : (
-                              <img
-                                src={preview?.src}
-                                alt="Upload preview"
-                                className="h-32 w-full object-cover rounded"
-                              />
-                            )}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRemoveFile(preview.id);
-                              }}
-                              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1"
-                            >
-                              <FaTimes size={16} />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                      <p className="text-blue-500 text-sm mt-2">
-                        Add more files
-                      </p>
-                    </div>
-                  ) : (
-                    <div>
-                      <div className="flex justify-center mb-2">
-                        <div className="w-16 h-16 bg-gray-200 rounded-md flex items-center justify-center">
-                          <FaImage className="text-gray-400 text-3xl" />
-                        </div>
-                      </div>
-                      <p className="text-gray-500">
-                        Drag here or click to upload photos/videos.
-                      </p>
-                    </div>
-                  )}
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFilesChange}
-                    accept="image/*,video/*"
-                    className="hidden"
-                    multiple
-                  />
-                </div>
-              )}
+              </div>
             </div>
           )}
+          
+          {/* Hidden File Input */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFilesChange}
+            accept="image/*,video/*"
+            className="hidden"
+            multiple
+          />
 
-          {(checkInLocation || routeDestination) && (
-            <div className="">
+         
+
+          {(!showLocationModal && (checkInLocation || routeDestination)) && (
+            <div className="mb-3">
               <div
                 ref={routeMapContainerRef}
                 id="checkin-map-container"
-                className="w-full rounded-md border border-gray-200"
+                className="w-full rounded-md border border-gray-200 bg-gray-100"
                 style={{ 
                   height: '384px', 
                   width: '100%', 
@@ -1465,16 +1430,166 @@ const PostModal = () => {
           )}
             </div>
 
-          
+
+{/* Background Selection - Button on Left */}
+          <div className='ms-4'>
+           {(!checkInLocation && !routeDestination && filePreviews?.length === 0) && (
+            <div className="mb-3">
+              <div className="flex items-center space-x-2">
+                {/* Toggle Button on Left */}
+                <button
+                  onClick={() => setShowBackgroundOptions(!showBackgroundOptions)}
+                  className="flex-shrink-0 w-9 h-9 bg-gray-200 rounded-md flex items-center justify-center hover:bg-gray-300 transition-colors"
+                  title="Background options"
+                >
+                  {showBackgroundOptions ? 
+                  <FaChevronLeft size={14} className="text-gray-600" />
+                :
+                <FaChevronRight size={14} className="text-gray-600" />}
+                  </button>
+
+                {/* Background Options Bar - Only show when toggled */}
+                {showBackgroundOptions && (
+                  <div className="flex items-center space-x-1 flex-1  rounded-xl">
+                    {/* Left Arrow */}
+                    {backgroundScrollIndex > 0 && (
+                      <button
+                        onClick={() => scrollBackgrounds("left")}
+                        className="flex-shrink-0 w-9 h-9  rounded-lg flex items-center justify-center hover:bg-gray-300 transition-colors"
+                      >
+                        <FaChevronLeft size={14} className="text-gray-600" />
+                      </button>
+                    )}
+
+                    {/* Background Swatches */}
+                    <div className="flex items-center space-x-2 flex-1 overflow-hidden">
+                      {isVisibleBg &&
+                        visibleBackgrounds?.map((bg) => (
+                          <button
+                            key={bg.id}
+                            onClick={() => {
+                              handleBackgroundSelect(bg);
+                              setShowBackgroundOptions(false);
+                            }}
+                            className={`flex-shrink-0 w-8 h-8 rounded-md border-3 overflow-hidden transition-all duration-200 hover:scale-105 ${
+                              selectedBackground?.id === bg.id
+                                ? "border-blue-500 ring-2 ring-blue-400 scale-105"
+                                : "border-transparent"
+                            }`}
+                            style={{
+                              backgroundImage: `url(${bg?.image?.url})`,
+                              backgroundSize: 'cover',
+                              backgroundPosition: 'center'
+                            }}
+                            title={bg.name}
+                          />
+                        ))}
+                    </div>
+
+                    {/* Right Arrow */}
+                    {backgroundScrollIndex < backgroundOptions.length - 8 && (
+                      <button
+                        onClick={() => scrollBackgrounds("right")}
+                        className="flex-shrink-0 w-9 h-9  rounded-lg flex items-center justify-center hover:bg-gray-300 transition-colors"
+                      >
+                        <FaChevronRight size={14} className="text-gray-600" />
+                      </button>
+                    )}
+
+                    {/* Clear Background */}
+                    {selectedBackground && selectedBackground?.id !== "white" && (
+                      <button
+                        onClick={() => {
+                          handleBackgroundClear();
+                          setShowBackgroundOptions(false);
+                        }}
+                        className="flex-shrink-0 w-9 h-9 bg-white border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors"
+                        title="Clear background"
+                      >
+                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          </div>
+            {/* Add to your post Section */}
+            <div className="px-4 pb-2 flex-shrink-0">
+              <div className="border border-gray-300 rounded-lg p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-900 font-medium text-sm">Add to your post</span>
+                  <div className="flex items-center gap-1">
+                    {/* Photo/Video */}
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                      title="Photo/Video"
+                    >
+                      <svg className="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                    
+                    {/* Tag People */}
+                    {/* <button
+                      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                      title="Tag people"
+                    >
+                      <svg className="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                      </svg>
+                    </button> */}
+                    
+                    {/* Product/Feeling */}
+                    {/* <button
+                      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                      title="Feeling/Activity"
+                    >
+                      <svg className="w-6 h-6 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+                      </svg>
+                    </button> */}
+                    
+                    {/* Check-in/Location */}
+                    <button
+                      onClick={() => {
+                        setCheckInMode('checkin');
+                        setShowLocationModal(true);
+                      }}
+                      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                      title="Check in"
+                    >
+                      <svg className="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                    
+                    {/* More options */}
+                    {/* <button
+                      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                      title="More"
+                    >
+                      <svg className="w-6 h-6 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                      </svg>
+                    </button> */}
+                  </div>
+                </div>
+              </div>
+            </div>
             
-            {/* Post Button */}
-            <div className="px-4 pb-4 flex-shrink-0 border-t border-gray-200">
+            {/* Next Button */}
+            <div className="px-4 pb-4 flex-shrink-0">
               <button
                 onClick={handlePost}
-                className={`px-4 py-2 w-full rounded-md transition font-medium ${
+                className={`px-4 py-3 w-full rounded-lg transition font-semibold text-base ${
                   loading ||
                   (plainMessageLength === 0 && !basicPostData?.files?.length && !checkInLocation && !routeDestination)
-                    ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                     : "bg-blue-500 text-white hover:bg-blue-600 cursor-pointer"
                 }`}
                 disabled={
@@ -1563,6 +1678,26 @@ const PostModal = () => {
                         )}
                       </div>
                       
+                      {/* Set Destination Button - After Check-in */}
+                      {(checkInMode === 'checkin' && checkInLocation && !routeDestination) && (
+                        <div className="mb-3">
+                          <button 
+                            className='w-full border py-3 border-green-400 cursor-pointer bg-green-200 hover:bg-green-300 font-semibold text-base rounded-md transition-colors flex items-center justify-center gap-2' 
+                            onClick={() => {
+                              setCheckInMode("destination");
+                              setPlaceSearchQuery('');
+                              setPlaceSearchResults([]);
+                            }}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            Set Destination
+                          </button>
+                        </div>
+                      )}
+                      
                       {/* Selected Location Display */}
                       {((checkInMode === 'checkin' && checkInLocation) || (checkInMode === 'destination' && routeDestination)) && (
                         <div className={`mb-3 p-3 rounded-md border ${
@@ -1631,6 +1766,7 @@ const PostModal = () => {
                       </div>
                      
                     </div>
+
                   </>
                 ) : (
                   <div className="text-center text-gray-500 py-8">
@@ -1639,9 +1775,20 @@ const PostModal = () => {
                 )}
             </div>
 
-            {(checkInMode === 'checkin' && checkInLocation && !routeDestination)  && <button className='border py-3 border-green-400 cursor-pointer bg-green-200 hover:bg-green-300 font-bold text-[18px] ' onClick={() => {setCheckInMode("destination")}}>Set Destination</button>}
-
-
+            {/* Fixed Done Button at Bottom */}
+            {((checkInMode === 'checkin' && checkInLocation) || (checkInMode === 'destination' && routeDestination)) && (
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200">
+                <button
+                  onClick={() => setShowLocationModal(false)}
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Done
+                </button>
+              </div>
+            )}
         </div>
         )}
       </div>

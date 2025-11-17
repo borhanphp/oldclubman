@@ -173,20 +173,20 @@ export default function YourListingsPage() {
                 <FaTags className="w-4 h-4" />
                 <span className="text-sm">Your listings</span>
               </Link>
-              <button className="w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors text-gray-700">
+              {/* <button className="w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors text-gray-700">
                 <FaBullhorn className="w-4 h-4" />
                 <span className="text-sm">Announcements</span>
               </button>
               <button className="w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors text-gray-700">
                 <FaChartLine className="w-4 h-4" />
                 <span className="text-sm">Insights</span>
-              </button>
-              <button className="w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors text-gray-700">
+              </button> */}
+              {/* <button className="w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors text-gray-700">
                 <div className="w-6 h-6 rounded-full overflow-hidden">
                   <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
                 </div>
                 <span className="text-sm">Marketplace profile</span>
-              </button>
+              </button> */}
             </nav>
 
             <button className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors mb-6">
@@ -242,7 +242,7 @@ export default function YourListingsPage() {
         {/* Main Content */}
         <main className="flex-1 min-w-0">
           {/* Meta Verified Banner */}
-          {showBanner && (
+          {/* {showBanner && (
             <div className="bg-blue-50 border-b border-blue-100 px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
@@ -265,7 +265,7 @@ export default function YourListingsPage() {
                 </svg>
               </button>
             </div>
-          )}
+          )} */}
 
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
@@ -446,13 +446,13 @@ export default function YourListingsPage() {
                 </button>
               </div>
             </div>
-            <div className="border-t border-gray-200 pt-6">
+            {/* <div className="border-t border-gray-200 pt-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">Need help?</h3>
               <button className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium">
                 <FaList className="w-4 h-4" />
                 <span>See all help topics</span>
               </button>
-            </div>
+            </div> */}
           </div>
         </aside>
       </div>

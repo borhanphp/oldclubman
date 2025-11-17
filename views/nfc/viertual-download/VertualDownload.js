@@ -1,13 +1,12 @@
 "use client";
-import FeedHeader from "@/components/common/FeedHeader";
 import React, { useEffect, useState, useRef } from "react";
-import { FaBullhorn, FaDownload } from "react-icons/fa";
+import { FaBullhorn, FaDownload, FaImage } from "react-icons/fa";
 import { QRCodeSVG } from "qrcode.react";
 import { useDispatch, useSelector } from "react-redux";
 import { getMyNfc, getNfcById, getVertualBackground } from "../store";
 import html2canvas from "html2canvas";
 import domtoimage from 'dom-to-image-more';
-import FeedLayout from "@/components/common/FeedLayout";
+import Link from "next/link";
 
 const featuredBackgrounds = [
   "/path/to/bg1.jpg",
@@ -91,9 +90,30 @@ const VertualDownload = () => {
   };
 
   return (
-    <FeedLayout>
+    <div className="min-h-screen">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="flex flex-col md:flex-row items-center justify-between">
+            <div className="mb-6 md:mb-0">
+              <h1 className="text-4xl font-bold mb-2">Virtual Backgrounds</h1>
+              <p className="text-blue-100 text-lg">
+                Download your NFC card as a virtual background for video calls
+              </p>
+            </div>
+            <Link
+              href="/user/nfc"
+              className="inline-flex items-center space-x-2 bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:shadow-xl transition-all"
+            >
+              <span>Back to Cards</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+
       {/* Main content */}
-      <div className="flex flex-row gap-8 px-8 py-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="flex flex-col lg:flex-row gap-8">
         <div className="grid grid-cols-10 gap-4">
           {nfcData?.nfc_cards?.data?.map((card, index) => {
             const fullCard = {
@@ -318,8 +338,9 @@ const VertualDownload = () => {
                 </div>
             )
         })}
+        </div>
       </div>
-    </FeedLayout>
+    </div>
   );
 };
 

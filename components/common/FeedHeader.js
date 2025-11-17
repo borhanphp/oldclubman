@@ -7,6 +7,7 @@ import {
   FaMegaphone,
   FaUserTie,
   FaCamera,
+  FaIdCard,
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { useParams, usePathname } from "next/navigation";
@@ -55,10 +56,59 @@ function FeedHeader({
   const [selectedCoverImage, setSelectedCoverImage] = useState(null);
   const [coverImagePreview, setCoverImagePreview] = useState(null);
   const [coverImageLoading, setCoverImageLoading] = useState(false);
+  const coverImageRef = React.useRef(null);
 
   useEffect(() => {
     dispatch(getMyProfile());
   }, [dispatch]);
+
+  // Extract dominant colors from cover image
+  const extractColorsFromImage = (imgElement) => {
+    try {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = imgElement.width;
+      canvas.height = imgElement.height;
+      ctx.drawImage(imgElement, 0, 0, canvas.width, canvas.height);
+      
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      const colorMap = {};
+      
+      // Sample pixels (every 10th pixel for performance)
+      for (let i = 0; i < data.length; i += 40) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const key = `${r},${g},${b}`;
+        colorMap[key] = (colorMap[key] || 0) + 1;
+      }
+      
+      // Get top 3 most common colors
+      const sortedColors = Object.entries(colorMap)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([rgb]) => {
+          const [r, g, b] = rgb.split(',').map(Number);
+          return `rgb(${r}, ${g}, ${b})`;
+        });
+      
+      return sortedColors;
+    } catch (error) {
+      console.error('Error extracting colors:', error);
+      return ['rgb(212, 167, 154)', 'rgb(155, 117, 109)', 'rgb(107, 79, 73)'];
+    }
+  };
+
+  const handleCoverImageLoad = (e) => {
+    const colors = extractColorsFromImage(e.target);
+    if (colors && colors.length >= 3) {
+      // Dispatch custom event with extracted colors
+      window.dispatchEvent(new CustomEvent('coverColorsExtracted', { 
+        detail: { colors } 
+      }));
+    }
+  };
 
   const isMyProfile = Number(data?.client?.id) === Number(profile?.client?.id);
   const isLinkActive = (path) => {
@@ -815,6 +865,7 @@ function FeedHeader({
         <div className="absolute inset-0 w-full">
           <Image
           alt="oldclubman"
+            ref={coverImageRef}
             width={1920}
             height={1080}
             src={
@@ -824,10 +875,12 @@ function FeedHeader({
                 : "/oldman-bg.jpg"
             }
             className="w-full h-full object-cover"
+            onLoad={handleCoverImageLoad}
             onError={(e) => {
               e.target.onerror = null;
               e.target.src = "/oldman-bg.jpg";
             }}
+            crossOrigin="anonymous"
           />
         </div>
         
@@ -1040,13 +1093,14 @@ function FeedHeader({
           <div className="flex">
             <Link
               href="/user/nfc"
-              className={`px-6 py-3 font-medium ${
+              className={`px-6 py-3 font-medium flex items-center gap-2 ${
                 isLinkActive("/user/nfc")
                   ? "text-blue-500 border-b-2 border-blue-500"
                   : "text-gray-600"
               }`}
             >
-              NFC
+              <FaIdCard />
+              <span>NFC</span>
             </Link>
             <Link
               href={`/${isMyProfile ? profile?.client?.username : params.username}/about`}

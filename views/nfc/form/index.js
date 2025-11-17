@@ -4,8 +4,6 @@ import React, { useState, useRef, useContext, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { SocialIcon } from "react-social-icons";
-import FeedHeader from "@/components/common/FeedHeader";
-import Intro from "@/components/common/Intro";
 import { useDispatch, useSelector } from "react-redux";
 import {
   bindNfcData,
@@ -22,8 +20,6 @@ import CardClassic from "../nfc-cards/CardClassic";
 import CardModern from "../nfc-cards/CardModern";
 import CardFlat from "../nfc-cards/CardFlat";
 import CardSleek from "../nfc-cards/CardSleek";
-import FeedLayout from "@/components/common/FeedLayout";
-
 const NfcForm = () => {
   const { basicNfcData, fields } = useSelector(({ nfc }) => nfc);
   const router = useRouter();
@@ -106,17 +102,33 @@ const NfcForm = () => {
   };
 
   return (
-  <FeedLayout>
-      <div className="content-area">
-      <div className="mx-auto">
-        <div className="mx-auto rounded-lg shadow-sm overflow-hidden pt-3">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-            {/* Left Sidebar - INTRO */}
-            <div className="md:col-span-3">
-              <Intro />
+    <div className="min-h-screen">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="flex flex-col md:flex-row items-center justify-between">
+            <div className="mb-6 md:mb-0">
+              <h1 className="text-4xl font-bold mb-2">{basicNfcData?.id ? 'Edit NFC Card' : 'Create NFC Card'}</h1>
+              <p className="text-blue-100 text-lg">
+                Design and customize your digital business card
+              </p>
             </div>
+            <Link
+              href="/user/nfc"
+              className="inline-flex items-center space-x-2 bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:shadow-xl transition-all"
+            >
+              <span>Back to Cards</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6">
             {/* Center Content */}
-            <div className="md:col-span-9 bg-white">
+            <div className="lg:col-span-12 bg-white">
               <div className="flex flex-col md:flex-row w-full">
                 {/* Preview Card on the left */}
                 <div className="w-full md:w-1/3 flex-shrink-0 p-5">
@@ -235,7 +247,6 @@ const NfcForm = () => {
         </div>
       </div>
     </div>
-  </FeedLayout>
   );
 };
 

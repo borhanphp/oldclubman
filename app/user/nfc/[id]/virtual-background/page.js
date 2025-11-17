@@ -1,12 +1,12 @@
-import CommonLayout from '@/components/common/CommonLayout'
+import NFCLayout from '@/components/nfc/NFCLayout'
 import VertualDownload from '@/views/nfc/viertual-download/VertualDownload'
 import React from 'react'
 
 const page = () => {
   return (
-    <CommonLayout>
+    <NFCLayout>
   <VertualDownload/>
-  </CommonLayout>
+  </NFCLayout>
   )
 }
 
