@@ -440,7 +440,7 @@ const SocialNavbar = () => {
                 Account
               </div>
               <Link
-                href={`/user/user-profile/${profile?.client?.id}`}
+                href={`/${profile?.client?.username}`}
                 className="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md"
                 onClick={() => setMobileMenuOpen(false)}
               >

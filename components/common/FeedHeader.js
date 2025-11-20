@@ -73,30 +73,71 @@ function FeedHeader({
       
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
-      const colorMap = {};
+      const colorBuckets = {};
       
-      // Sample pixels (every 10th pixel for performance)
-      for (let i = 0; i < data.length; i += 40) {
+      // Helper function to quantize colors (group similar colors)
+      const quantizeColor = (value) => Math.round(value / 20) * 20;
+      
+      // Helper function to calculate color vibrancy/saturation
+      const getColorScore = (r, g, b) => {
+        const brightness = (r + g + b) / 3;
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const saturation = max === 0 ? 0 : (max - min) / max;
+        
+        // Filter out very dark colors (brightness < 30) and pure white (brightness > 250)
+        if (brightness < 30 || brightness > 250) return 0;
+        
+        // Check if it's a grayscale color (very low saturation)
+        const isGrayscale = saturation < 0.15;
+        
+        // For light images (brightness > 180), prioritize any slightly saturated colors
+        if (brightness > 180 && !isGrayscale) {
+          return saturation * 200 + brightness;
+        }
+        
+        // For medium brightness with good saturation
+        if (saturation > 0.3) {
+          return saturation * brightness * 1.5;
+        }
+        
+        // Lower priority for low saturation colors
+        return saturation * brightness * 0.5;
+      };
+      
+      // Sample pixels more densely (every 4th pixel)
+      for (let i = 0; i < data.length; i += 16) {
         const r = data[i];
         const g = data[i + 1];
         const b = data[i + 2];
-        const key = `${r},${g},${b}`;
-        colorMap[key] = (colorMap[key] || 0) + 1;
+        const score = getColorScore(r, g, b);
+        
+        // Only include colors with decent vibrancy
+        if (score > 0) {
+          // Quantize to group similar colors
+          const qr = quantizeColor(r);
+          const qg = quantizeColor(g);
+          const qb = quantizeColor(b);
+          const key = `${qr},${qg},${qb}`;
+          
+          if (!colorBuckets[key]) {
+            colorBuckets[key] = { r: qr, g: qg, b: qb, count: 0, score: 0 };
+          }
+          colorBuckets[key].count += 1;
+          colorBuckets[key].score += score;
+        }
       }
       
-      // Get top 3 most common colors
-      const sortedColors = Object.entries(colorMap)
-        .sort((a, b) => b[1] - a[1])
+      // Get top colors sorted by combined score
+      const sortedColors = Object.values(colorBuckets)
+        .sort((a, b) => (b.count * b.score) - (a.count * a.score))
         .slice(0, 3)
-        .map(([rgb]) => {
-          const [r, g, b] = rgb.split(',').map(Number);
-          return `rgb(${r}, ${g}, ${b})`;
-        });
+        .map(({ r, g, b }) => `rgb(${r}, ${g}, ${b})`);
       
-      return sortedColors;
+      return sortedColors.length >= 3 ? sortedColors : ['rgb(59, 130, 246)', 'rgb(96, 165, 250)', 'rgb(147, 197, 253)'];
     } catch (error) {
       console.error('Error extracting colors:', error);
-      return ['rgb(212, 167, 154)', 'rgb(155, 117, 109)', 'rgb(107, 79, 73)'];
+      return ['rgb(59, 130, 246)', 'rgb(96, 165, 250)', 'rgb(147, 197, 253)'];
     }
   };
 
@@ -110,7 +151,11 @@ function FeedHeader({
     }
   };
 
-  const isMyProfile = Number(data?.client?.id) === Number(profile?.client?.id);
+  
+
+  const isMyProfile = data?.client?.id === profile?.client?.id;
+  console.log('isMyProfile',isMyProfile)
+  console.log('data?.client',data?.client)
   const isLinkActive = (path) => {
     return pathname.startsWith(path);
   };
@@ -859,10 +904,10 @@ function FeedHeader({
   };
 
   return (
-    <div className="">
-      {/* Cover Photo */}
-      <div className="cover-photo rounded-t-md relative w-full h-60 overflow-hidden group">
-        <div className="absolute inset-0 w-full">
+    <div className="w-full px-0 sm:px-50 xl:px-0">
+        {/* Cover Photo */}
+        <div className="cover-photo rounded-t-md relative w-full h-60 overflow-hidden group">
+          <div className="absolute inset-0 w-full">
           <Image
           alt="oldclubman"
             ref={coverImageRef}

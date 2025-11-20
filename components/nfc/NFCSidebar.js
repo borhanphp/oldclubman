@@ -1,9 +1,9 @@
 import Link from 'next/link'
 import React, { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
-import { getMyProfile } from '../settings/store';
+import { getMyProfile } from '@/views/settings/store';
 
-const WalletSidebar = () => {
+const NFCSidebar = () => {
   const {profile} = useSelector(({settings}) => settings)
   const dispatch = useDispatch();
 
@@ -34,14 +34,14 @@ const WalletSidebar = () => {
             <div className="h-10 w-px bg-gray-200"></div>
             
             <div className="text-center relative">
-              <div className="font-bold text-lg">{profile?.followers || 0}</div>
+              <div className="font-bold text-lg">{profile?.followers && profile?.followers || 0}</div>
               <div className="text-gray-500 text-sm">Followers</div>
             </div>
             
             <div className="h-10 w-px bg-gray-200"></div>
             
             <div className="text-center">
-              <div className="font-bold text-lg">{profile?.following || 0}</div>
+              <div className="font-bold text-lg">{profile?.following && profile?.following || 0}</div>
               <div className="text-gray-500 text-sm">Following</div>
             </div>
           </div>
@@ -55,5 +55,4 @@ const WalletSidebar = () => {
   )
 }
 
-export default WalletSidebar
-
+export default NFCSidebar

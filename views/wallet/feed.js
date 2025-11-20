@@ -58,7 +58,7 @@ const WalletDashboard = () => {
 
   return (
     <div className="bg-gray-100 min-h-screen">
-      <div className="mx-auto">
+      <div className="mx-auto md:p-5 md:px-10">
         <div className="flex flex-wrap">
           <WalletSidebar />
           

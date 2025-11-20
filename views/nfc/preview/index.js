@@ -35,6 +35,7 @@ import CardFlat from "../nfc-cards/CardFlat";
 import { IoQrCodeOutline } from "react-icons/io5";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import NFCSidebar from '@/components/nfc/NFCSidebar';
 const DownloadDropdown = ({ onDownloadPDF, onDownloadQR }) => {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -189,30 +190,37 @@ const handleShareEmail = () => {
   
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="flex flex-col md:flex-row items-center justify-between">
-            <div className="mb-6 md:mb-0">
-              <h1 className="text-4xl font-bold mb-2">Preview NFC Card</h1>
-              <p className="text-blue-100 text-lg">
-                View and manage your digital business card
-              </p>
+      <div className="mx-auto md:p-5 md:px-10">
+        <div className="flex flex-wrap">
+          {/* Left Sidebar - Profile */}
+          <NFCSidebar />
+          
+          {/* Right Content */}
+          <div className="w-full lg:w-3/4">
+            {/* Hero Section */}
+            <div className="bg-gradient-to-r rounded-lg from-blue-600 to-purple-600 text-white">
+              <div className="max-w-7xl mx-auto px-2 sm:px-2 lg:px-2 py-8">
+                <div className="flex flex-col md:flex-row items-center justify-between">
+                  <div className="mb-6 md:mb-0">
+                    <h1 className="text-4xl font-bold mb-2">Preview NFC Card</h1>
+                    <p className="text-blue-100 text-lg">
+                      View and manage your digital business card
+                    </p>
+                  </div>
+                  <Link
+                    href="/user/nfc"
+                    className="inline-flex items-center space-x-2 bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:shadow-xl transition-all"
+                  >
+                    <span>All NFC Cards</span>
+                  </Link>
+                </div>
+              </div>
             </div>
-            <Link
-              href="/user/nfc"
-              className="inline-flex items-center space-x-2 bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:shadow-xl transition-all"
-            >
-              <span>All NFC Cards</span>
-            </Link>
-          </div>
-        </div>
-      </div>
 
-      {/* Main content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="bg-white rounded-lg shadow-lg">
-            <div className="p-3 sm:p-4 md:p-6">
+            {/* Main content */}
+            <div className="mt-4">
+              <div className="bg-white rounded-lg shadow-sm p-2">
+                <div className="px-2 py-8">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
                 <h2 className="text-lg sm:text-xl font-bold">PREVIEW NFC CARD</h2>
                 <Link href="/user/nfc" className="flex items-center gap-2 px-3 sm:px-4 py-2 cursor-pointer bg-blue-50 hover:text-white text-blue-600 rounded hover:bg-blue-600 transition-colors text-sm">
@@ -366,9 +374,12 @@ const handleShareEmail = () => {
                   </div>
                 </div>
               </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+      </div>
     </div>
   );
 };
