@@ -46,7 +46,7 @@ const WalletSidebar = () => {
             </div>
           </div>
           
-          <Link href={`/user/user-profile/${profile?.client?.id}`} className="w-full py-2 text-blue-500 text-center font-medium hover:bg-blue-50">
+          <Link href={`/${profile?.client?.id}`} className="w-full py-2 text-blue-500 text-center font-medium hover:bg-blue-50">
             View Profile
           </Link>
         </div>

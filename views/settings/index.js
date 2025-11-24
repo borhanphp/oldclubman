@@ -104,7 +104,7 @@ const Settings = () => {
             </div>
             
             <div className="p-4 text-center border-t">
-              <Link href={`/user/user-profile/${profile?.client?.username}`} className="text-blue-500 hover:underline">
+              <Link href={`/${profile?.client?.username}`} className="text-blue-500 hover:underline">
                 View Profile
               </Link>
             </div>

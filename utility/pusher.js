@@ -45,10 +45,19 @@ class PusherService {
             });
 
             this.pusher.connection.bind('error', (err) => {
-                console.error('Pusher connection error:', err);
-                if (err.error?.type === 'AuthError') {
-                    console.error('Pusher authentication error. Token might be expired.');
+                console.error('⚠️ Pusher connection error:', err);
+                
+                // Only handle critical errors, ignore temporary network issues
+                if (err.error?.data?.code === 4004) {
+                    console.error('❌ Pusher: Over connection limit');
+                } else if (err.error?.data?.code === 4100) {
+                    console.error('❌ Pusher: Invalid API key');
+                } else if (err.type === 'AuthError' || err.error?.type === 'AuthError') {
+                    console.error('❌ Pusher: Authentication error. Token might be expired.');
                     this.handleAuthError();
+                } else {
+                    // Log but don't act on temporary errors
+                    console.warn('⚠️ Pusher temporary error (will retry):', err.type || err);
                 }
             });
 
@@ -90,11 +99,13 @@ class PusherService {
         const channel = this.pusher.subscribe(channelName);
 
         channel.bind('pusher:subscription_succeeded', () => {
-            console.log(`Successfully subscribed to ${channelName}`);
+            console.log(`✅ Successfully subscribed to ${channelName}`);
         });
 
         channel.bind('pusher:subscription_error', (error) => {
-            if (error.type === 'AuthError') {
+            console.error(`❌ Subscription error for ${channelName}:`, error);
+            if (error.type === 'AuthError' || error.error?.type === 'AuthError') {
+                console.error('❌ Authentication failed for channel subscription');
                 this.handleAuthError();
             }
         });

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pusher Test</title>
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        #log { background: #f0f0f0; padding: 10px; margin-top: 20px; max-height: 400px; overflow-y: auto; }
+        .log-entry { margin: 5px 0; padding: 5px; border-left: 3px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>Pusher Real-Time Test</h1>
+    
+    <div>
+        <label>Conversation ID: </label>
+        <input type="text" id="conversationId" value="a4c5bd56-cc9f-438e-b6d0-28a5344c5626" style="width: 400px;">
+        <button onclick="testPusher()">Test Pusher</button>
+    </div>
+    
+    <div>
+        <label>Auth Token: </label>
+        <input type="text" id="token" placeholder="Paste your auth token here" style="width: 400px;">
+        <button onclick="saveToken()">Save Token</button>
+    </div>
+    
+    <div id="status"></div>
+    <div id="log"></div>
+    
+    <script>
+        let pusher = null;
+        let channel = null;
+        
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry ' + type;
+            entry.textContent = new Date().toLocaleTimeString() + ' - ' + message;
+            logDiv.insertBefore(entry, logDiv.firstChild);
+        }
+        
+        function saveToken() {
+            const token = document.getElementById('token').value;
+            localStorage.setItem('old_token', token);
+            log('Token saved to localStorage', 'success');
+        }
+        
+        function testPusher() {
+            const conversationId = document.getElementById('conversationId').value;
+            const token = localStorage.getItem('old_token');
+            
+            if (!token) {
+                log('No token found! Please paste your token and click Save Token', 'error');
+                return;
+            }
+            
+            log('Starting Pusher test...', 'info');
+            log('Conversation ID: ' + conversationId, 'info');
+            
+            // Initialize Pusher
+            pusher = new Pusher('6536db454316e302c142', {
+                cluster: 'us2',
+                forceTLS: true,
+                authEndpoint: 'http://localhost/old-backend/public/api/broadcasting/auth',
+                auth: {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                }
+            });
+            
+            // Connection events
+            pusher.connection.bind('connecting', () => {
+                log('Connecting to Pusher...', 'info');
+            });
+            
+            pusher.connection.bind('connected', () => {
+                log('✅ Connected to Pusher!', 'success');
+                log('Connection state: ' + pusher.connection.state, 'success');
+            });
+            
+            pusher.connection.bind('error', (err) => {
+                log('❌ Pusher error: ' + JSON.stringify(err), 'error');
+            });
+            
+            // Subscribe to channel
+            const channelName = `private-conversation.${conversationId}`;
+            log('Subscribing to channel: ' + channelName, 'info');
+            
+            channel = pusher.subscribe(channelName);
+            
+            channel.bind('pusher:subscription_succeeded', () => {
+                log('✅ Successfully subscribed to ' + channelName, 'success');
+            });
+            
+            channel.bind('pusher:subscription_error', (error) => {
+                log('❌ Subscription error: ' + JSON.stringify(error), 'error');
+            });
+            
+            // Listen for MessageSent event
+            channel.bind('MessageSent', (data) => {
+                log('🎉 MESSAGE RECEIVED!', 'success');
+                log('Data: ' + JSON.stringify(data, null, 2), 'success');
+            });
+            
+            // Listen for UserTyping event
+            channel.bind('UserTyping', (data) => {
+                log('⌨️ TYPING EVENT!', 'success');
+                log('Data: ' + JSON.stringify(data, null, 2), 'success');
+            });
+            
+            log('✅ Setup complete! Now send a message from your app and watch this log.', 'success');
+        }
+        
+        // Auto-load token if exists
+        window.onload = function() {
+            const token = localStorage.getItem('old_token');
+            if (token) {
+                document.getElementById('token').value = token;
+                log('Token loaded from localStorage', 'info');
+            }
+        };
+    </script>
+    
+    <hr>
+    <h3>Instructions:</h3>
+    <ol>
+        <li>Login to your app in another tab</li>
+        <li>Open browser console (F12)</li>
+        <li>Copy the token: <code>localStorage.getItem('old_token')</code></li>
+        <li>Paste the token above and click "Save Token"</li>
+        <li>Enter your conversation ID (or use the default)</li>
+        <li>Click "Test Pusher"</li>
+        <li>Go back to your app and send a message in that conversation</li>
+        <li>Watch the log here - you should see the message appear!</li>
+    </ol>
+</body>
+</html>
+

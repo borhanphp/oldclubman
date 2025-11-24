@@ -124,7 +124,7 @@ const SearchDropdown = () => {
                       )}
                     </div>
                     <div>
-                      <Link href={`/user/user-profile/${result?.id}`}>
+                      <Link href={`/${result?.id}`}>
                         <div onClick={() => dispatch(removeQuery())} className="flex items-center hover:underline font-semibold text-gray-900">
                           {result.fname + " " + result.last_name}
                         </div>

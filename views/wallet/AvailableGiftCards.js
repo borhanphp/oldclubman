@@ -1,227 +1,267 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { FaGift, FaCreditCard, FaPaypal, FaMobileAlt } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { getAvailableGiftCards, purchaseGiftCardWithPayment } from './store';
-import PaymentMethodSelector from '@/components/wallet/PaymentMethodSelector';
-import StripePayment from './StripePayment';
-import PayPalPayment from './PayPalPayment';
-import MobileBankingDeposit from './MobileBankingDeposit';
+import { FaGift, FaCheckCircle, FaCreditCard, FaSpinner } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import { getPaymentGateways, initiateWalletDeposit, getWalletBalance } from './store';
 
 const AvailableGiftCards = ({ onPurchaseSuccess }) => {
   const dispatch = useDispatch();
-  const { availableGiftCards, loading } = useSelector(({ wallet }) => wallet);
-  const [selectedCard, setSelectedCard] = useState(null);
-  const [paymentMethod, setPaymentMethod] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const { paymentGateways, loading } = useSelector(({ wallet }) => wallet);
+
+  const [selectedAmount, setSelectedAmount] = useState(null);
+  const [customAmount, setCustomAmount] = useState('');
+  const [selectedGateway, setSelectedGateway] = useState(null);
+  const [processing, setProcessing] = useState(false);
+
+  // Predefined gift card amounts
+  const giftCardAmounts = [
+    { value: 10, label: '$10', popular: false },
+    { value: 20, label: '$20', popular: true },
+    { value: 50, label: '$50', popular: false },
+    { value: 100, label: '$100', popular: false },
+  ];
 
   useEffect(() => {
-    dispatch(getAvailableGiftCards());
+    dispatch(getPaymentGateways());
   }, [dispatch]);
 
-  const handleCardSelect = (card) => {
-    setSelectedCard(card);
-    setPaymentMethod(null);
+  const handleAmountSelect = (amount) => {
+    setSelectedAmount(amount);
+    setCustomAmount('');
   };
 
-  const handleStripeSuccess = async (data) => {
-    setIsProcessing(true);
-    try {
-      await dispatch(purchaseGiftCardWithPayment({
-        gift_card_id: selectedCard.id,
-        payment_method: 'stripe',
-        ...data
-      })).unwrap();
-      
-      toast.success('Gift card purchased successfully!');
-      setSelectedCard(null);
-      setPaymentMethod(null);
-      if (onPurchaseSuccess) {
-        onPurchaseSuccess();
-      }
-    } catch (error) {
-      toast.error(error.message || 'Payment failed');
-    } finally {
-      setIsProcessing(false);
+  const handleCustomAmountChange = (e) => {
+    const value = e.target.value;
+    setCustomAmount(value);
+    if (value && !isNaN(value) && parseFloat(value) > 0) {
+      setSelectedAmount(parseFloat(value));
+    } else {
+      setSelectedAmount(null);
     }
   };
 
-  const handlePayPalSuccess = async (data) => {
-    setIsProcessing(true);
+  const handlePurchase = async () => {
+    if (!selectedAmount || selectedAmount < 1) {
+      toast.error('Please select or enter a valid amount (minimum $1)');
+      return;
+    }
+
+    if (!selectedGateway) {
+      toast.error('Please select a payment method');
+      return;
+    }
+
+    setProcessing(true);
+
     try {
-      await dispatch(purchaseGiftCardWithPayment({
-        gift_card_id: selectedCard.id,
-        payment_method: 'paypal',
-        ...data
+      const result = await dispatch(initiateWalletDeposit({
+        amount_dollars: selectedAmount,
+        payment_gateway_id: selectedGateway.id,
       })).unwrap();
-      
-      toast.success('Gift card purchased successfully!');
-      setSelectedCard(null);
-      setPaymentMethod(null);
-      if (onPurchaseSuccess) {
-        onPurchaseSuccess();
+
+      console.log('Payment initiated:', result);
+
+      // If there's a payment URL, redirect to it
+      if (result.payment_url) {
+        window.location.href = result.payment_url;
+      } else if (result.gateway_session_id) {
+        // Handle session-based payments (like Stripe Checkout)
+        toast.success('Redirecting to payment page...');
+        // You can integrate Stripe or other payment SDK here
+      } else {
+        // Payment initiated successfully, refresh balance
+        await dispatch(getWalletBalance());
+        toast.success('Gift card added to your wallet!');
+        if (onPurchaseSuccess) {
+          onPurchaseSuccess();
+        }
       }
     } catch (error) {
-      toast.error(error.message || 'Payment failed');
+      console.error('Purchase failed:', error);
+      // Error already handled by toast in the thunk
     } finally {
-      setIsProcessing(false);
+      setProcessing(false);
     }
   };
-
-  const handleMobileSuccess = async (data) => {
-    setIsProcessing(true);
-    try {
-      await dispatch(purchaseGiftCardWithPayment({
-        gift_card_id: selectedCard.id,
-        payment_method: 'mobile',
-        ...data
-      })).unwrap();
-      
-      toast.success('Gift card purchase request submitted. Waiting for admin verification.');
-      setSelectedCard(null);
-      setPaymentMethod(null);
-      if (onPurchaseSuccess) {
-        onPurchaseSuccess();
-      }
-    } catch (error) {
-      toast.error(error.message || 'Failed to submit purchase');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="text-center py-8">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
-      </div>
-    );
-  }
-
-  // Show demo cards even if API hasn't loaded yet (for testing)
-  const displayCards = availableGiftCards && availableGiftCards.length > 0 
-    ? availableGiftCards 
-    : [
-        { id: 1, amount: 10, description: "Perfect for small purchases" },
-        { id: 2, amount: 20, description: "Great value gift card" },
-        { id: 3, amount: 50, description: "Premium gift card option" },
-        { id: 4, amount: 100, description: "Maximum value gift card" }
-      ];
-
-  if (!displayCards || displayCards.length === 0) {
-    return (
-      <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-        <FaGift className="text-5xl text-gray-400 mx-auto mb-4" />
-        <p className="text-gray-600 mb-2">No gift cards available</p>
-        <p className="text-sm text-gray-500">Please check back later</p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
-      {!selectedCard ? (
-        <>
-          <div>
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Available Gift Cards</h2>
-            <p className="text-sm text-gray-600 mb-4">Select a gift card to purchase</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {displayCards.map((card) => (
-              <button
-                key={card.id}
-                onClick={() => handleCardSelect(card)}
-                className="bg-white border-2 border-gray-200 rounded-lg p-6 hover:border-purple-500 hover:shadow-md transition-all text-left"
-              >
-                <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg p-6 text-white text-center mb-4">
-                  <FaGift className="text-4xl mx-auto mb-3" />
-                  <p className="text-3xl font-bold mb-1">${parseFloat(card.amount || 0).toFixed(2)}</p>
-                  <p className="text-sm opacity-90">Gift Card</p>
+      {/* Amount Selection */}
+      <div>
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">Select Amount</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+          {giftCardAmounts.map((amount) => (
+            <button
+              key={amount.value}
+              onClick={() => handleAmountSelect(amount.value)}
+              className={`relative p-6 rounded-lg border-2 transition-all duration-200 ${
+                selectedAmount === amount.value && !customAmount
+                  ? 'border-purple-600 bg-purple-50'
+                  : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50'
+              }`}
+            >
+              {amount.popular && (
+                <span className="absolute top-2 right-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full">
+                  Popular
+                </span>
+              )}
+              <div className="text-center">
+                <div className="text-3xl font-bold text-gray-800 mb-1">{amount.label}</div>
+                <div className="text-sm text-gray-500">Gift Card</div>
+              </div>
+              {selectedAmount === amount.value && !customAmount && (
+                <div className="absolute bottom-2 right-2">
+                  <FaCheckCircle className="text-purple-600 text-xl" />
                 </div>
-                <div className="text-center">
-                  <p className="text-lg font-semibold text-gray-800">${parseFloat(card.amount || 0).toFixed(2)}</p>
-                  {card.description && (
-                    <p className="text-sm text-gray-500 mt-1">{card.description}</p>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Custom Amount */}
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Or enter custom amount
+          </label>
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg font-semibold">
+              $
+            </span>
+            <input
+              type="number"
+              value={customAmount}
+              onChange={handleCustomAmountChange}
+              min="1"
+              max="10000"
+              step="0.01"
+              placeholder="0.00"
+              className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg"
+            />
+          </div>
+          <p className="text-xs text-gray-500 mt-2">Minimum: $1.00 | Maximum: $10,000.00</p>
+        </div>
+      </div>
+
+      {/* Payment Gateway Selection */}
+      <div>
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">Select Payment Method</h2>
+        
+        {loading && paymentGateways.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+            <p className="text-gray-600 mt-2">Loading payment methods...</p>
+          </div>
+        ) : paymentGateways.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {paymentGateways.map((gateway) => (
+              <button
+                key={gateway.id}
+                onClick={() => setSelectedGateway(gateway)}
+                className={`p-4 rounded-lg border-2 transition-all duration-200 ${
+                  selectedGateway?.id === gateway.id
+                    ? 'border-purple-600 bg-purple-50'
+                    : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center">
+                    {gateway.logo ? (
+                      <img
+                        src={gateway.logo}
+                        alt={gateway.display_name}
+                        className="h-8 w-auto object-contain mr-3"
+                      />
+                    ) : (
+                      <FaCreditCard className="text-2xl text-gray-400 mr-3" />
+                    )}
+                    <div className="text-left">
+                      <h3 className="font-semibold text-gray-800">{gateway.display_name}</h3>
+                      {gateway.fee_percentage > 0 || gateway.fee_fixed > 0 ? (
+                        <p className="text-xs text-gray-500">
+                          Fee: {gateway.fee_percentage}%
+                          {gateway.fee_fixed > 0 && ` + $${gateway.fee_fixed}`}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-green-600">No fees</p>
+                      )}
+                    </div>
+                  </div>
+                  {selectedGateway?.id === gateway.id && (
+                    <FaCheckCircle className="text-purple-600 text-xl flex-shrink-0" />
                   )}
                 </div>
+                {gateway.description && (
+                  <p className="text-xs text-gray-600 text-left">{gateway.description}</p>
+                )}
               </button>
             ))}
           </div>
-        </>
-      ) : (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-800">Purchase Gift Card</h2>
-            <button
-              onClick={() => {
-                setSelectedCard(null);
-                setPaymentMethod(null);
-              }}
-              className="text-gray-600 hover:text-gray-800"
-            >
-              ← Back
-            </button>
+        ) : (
+          <div className="text-center py-8 bg-gray-50 rounded-lg">
+            <p className="text-gray-600">No payment methods available</p>
+            <p className="text-sm text-gray-500 mt-2">Please contact support</p>
           </div>
+        )}
+      </div>
 
-          {/* Selected Card Preview */}
-          <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg p-8 text-white text-center shadow-lg">
-            <FaGift className="text-5xl mx-auto mb-4" />
-            <p className="text-4xl font-bold mb-2">${parseFloat(selectedCard.amount || 0).toFixed(2)}</p>
-            <p className="text-sm opacity-90">Gift Card</p>
+      {/* Summary & Purchase Button */}
+      {selectedAmount && selectedGateway && (
+        <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6 border border-purple-200">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Purchase Summary</h3>
+          <div className="space-y-2 mb-4">
+            <div className="flex justify-between text-gray-700">
+              <span>Gift Card Amount:</span>
+              <span className="font-semibold">${selectedAmount.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-gray-700">
+              <span>Payment Method:</span>
+              <span className="font-semibold">{selectedGateway.display_name}</span>
+            </div>
+            {(selectedGateway.fee_percentage > 0 || selectedGateway.fee_fixed > 0) && (
+              <>
+                <div className="flex justify-between text-gray-600 text-sm">
+                  <span>Processing Fee:</span>
+                  <span>
+                    ${(
+                      (selectedAmount * selectedGateway.fee_percentage / 100) +
+                      selectedGateway.fee_fixed
+                    ).toFixed(2)}
+                  </span>
+                </div>
+                <div className="border-t border-purple-300 pt-2 mt-2">
+                  <div className="flex justify-between text-gray-800 font-bold text-lg">
+                    <span>Total:</span>
+                    <span>
+                      ${(
+                        selectedAmount +
+                        (selectedAmount * selectedGateway.fee_percentage / 100) +
+                        selectedGateway.fee_fixed
+                      ).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
-
-          {/* Payment Method Selection */}
-          {!paymentMethod ? (
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Select Payment Method</h3>
-              <PaymentMethodSelector
-                activeMethod={paymentMethod}
-                onMethodChange={setPaymentMethod}
-              />
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-800">Complete Payment</h3>
-                <button
-                  onClick={() => setPaymentMethod(null)}
-                  className="text-sm text-gray-600 hover:text-gray-800"
-                >
-                  Change Method
-                </button>
-              </div>
-
-              {paymentMethod === 'stripe' && (
-                <StripePayment
-                  amount={parseFloat(selectedCard.amount)}
-                  onSuccess={handleStripeSuccess}
-                  onError={(msg) => toast.error(msg)}
-                  loading={isProcessing}
-                />
-              )}
-
-              {paymentMethod === 'paypal' && (
-                <PayPalPayment
-                  amount={parseFloat(selectedCard.amount)}
-                  onSuccess={handlePayPalSuccess}
-                  onError={(msg) => toast.error(msg)}
-                  loading={isProcessing}
-                />
-              )}
-
-              {paymentMethod === 'mobile' && (
-                <MobileBankingDeposit
-                  amount={parseFloat(selectedCard.amount)}
-                  onSuccess={handleMobileSuccess}
-                  onError={(msg) => toast.error(msg)}
-                  loading={isProcessing}
-                />
-              )}
-            </div>
-          )}
+          <button
+            onClick={handlePurchase}
+            disabled={processing}
+            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold py-4 px-6 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          >
+            {processing ? (
+              <>
+                <FaSpinner className="animate-spin mr-2" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <FaGift className="mr-2" />
+                Complete Purchase
+              </>
+            )}
+          </button>
         </div>
       )}
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { pusherService } from '@/utility/pusher';
-import { getAllChat, getMessage, sendMessage } from '@/views/message/store';
+import { getAllChat, getMessage, sendMessage, addMessageToChat } from '@/views/message/store';
 import { getMyProfile } from '@/views/settings/store';
 import api from '@/helpers/axios';
 import toast from 'react-hot-toast';
@@ -39,8 +39,12 @@ const dispatch = useDispatch()
   // Handle new message received via Pusher
   const handleMessageReceived = useCallback((data) => {
     const activeConversationId = currentChat?.id || convarsationData?.id;
-    if (activeConversationId && Number(data.conversation_id) === Number(activeConversationId)) {
-      dispatch(getMessage({id: Number(activeConversationId)}));
+    // Compare as strings since they're UUIDs
+    if (activeConversationId && String(data.conversation_id) === String(activeConversationId)) {
+      // Add message directly instead of refetching
+      if (data.message) {
+        dispatch(addMessageToChat(data.message));
+      }
     }
   }, [currentChat?.id, convarsationData?.id, dispatch]);
 
@@ -56,7 +60,7 @@ const dispatch = useDispatch()
   // Use currentChat.id if available (from prop), otherwise use convarsationData.id (from Redux)
   const conversationId = currentChat?.id || convarsationData?.id;
   useChatPusher(
-    conversationId ? Number(conversationId) : null,
+    conversationId || null, // Don't convert UUID to Number!
     handleMessageReceived,
     // handleTyping
   );
@@ -93,17 +97,17 @@ const dispatch = useDispatch()
             return chats.find(chat => {
               if (chat.user_ids) {
                 const userIds = Array.isArray(chat.user_ids) ? chat.user_ids : [chat.user_ids];
-                if (userIds.some(id => Number(id) === Number(userId))) return true;
+                if (userIds.some(id => String(id) === String(userId))) return true;
               }
               if (chat.participants?.some(p => 
-                Number(p.id) === Number(userId) || 
-                Number(p.user_id) === Number(userId) ||
-                Number(p.client_id) === Number(userId)
+                String(p.id) === String(userId) || 
+                String(p.user_id) === String(userId) ||
+                String(p.client_id) === String(userId)
               )) return true;
               if (chat.other_user && (
-                chat.other_user.id === Number(userId) ||
-                chat.other_user.user_id === Number(userId) ||
-                chat.other_user.client_id === Number(userId)
+                String(chat.other_user.id) === String(userId) ||
+                String(chat.other_user.user_id) === String(userId) ||
+                String(chat.other_user.client_id) === String(userId)
               )) return true;
               return false;
             });
@@ -351,7 +355,9 @@ const dispatch = useDispatch()
             }
             
             // Refresh messages and chat list
-            await dispatch(getMessage({ id: Number(chatId) }));
+            if (chatId) {
+              await dispatch(getMessage({ id: chatId })); // Don't convert UUID to Number!
+            }
             await dispatch(getAllChat());
             
             // Update currentChat if it was pending
@@ -384,7 +390,7 @@ const dispatch = useDispatch()
         // If we got conversation ID, refresh messages and chat list
         if (chatId) {
           try {
-            await dispatch(getMessage({ id: Number(chatId) }));
+            await dispatch(getMessage({ id: chatId })); // Don't convert UUID to Number!
             await dispatch(getAllChat());
             
             // Update currentChat if it was pending
@@ -462,11 +468,11 @@ const dispatch = useDispatch()
           prevChat?.map((msg, index) => (
           <div
             key={index}
-            className={`flex mb-3 ${Number(msg?.user_id) === Number(profile?.client?.id) ? 'justify-end' : 'justify-start'}`}
+            className={`flex mb-3 ${String(msg?.user_id) === String(profile?.client?.id) ? 'justify-end' : 'justify-start'}`}
           >
             <div
               className={`max-w-[70%] rounded-lg px-2 py-1 ${
-                Number(msg?.user_id) === Number(profile?.client?.id)
+                String(msg?.user_id) === String(profile?.client?.id)
                   ? 'bg-blue-600 text-white rounded-br-none'
                   : 'bg-gray-200 text-gray-800 rounded-bl-none'
               }`}

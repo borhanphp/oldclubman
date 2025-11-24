@@ -8,6 +8,7 @@ const initialState = {
   transactions: [],
   giftCards: [],
   availableGiftCards: [],
+  paymentGateways: [],
   loading: false,
   error: null,
 };
@@ -341,6 +342,66 @@ export const purchaseGiftCardWithPayment = createAsyncThunk(
   }
 );
 
+// Get payment gateways
+export const getPaymentGateways = createAsyncThunk(
+  "wallet/getPaymentGateways",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get("/payment-gateways");
+      return response.data.data || [];
+    } catch (err) {
+      console.error("Failed to fetch payment gateways:", err.message);
+      return rejectWithValue(err.response?.data);
+    }
+  }
+);
+
+// Initiate wallet deposit (for gift card purchase)
+export const initiateWalletDeposit = createAsyncThunk(
+  "wallet/initiateWalletDeposit",
+  async (data, { rejectWithValue }) => {
+    try {
+      const formData = new FormData();
+      formData.append('amount_dollars', data.amount_dollars);
+      formData.append('payment_gateway_id', data.payment_gateway_id);
+      
+      const response = await axios.post("/wallet/deposit/initiate", formData);
+      
+      if (response.data.success) {
+        toast.success("Payment initiated successfully!");
+        return response.data.data;
+      } else {
+        throw new Error(response.data.message || "Failed to initiate payment");
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || err.message || "Failed to initiate deposit";
+      toast.error(errorMessage);
+      return rejectWithValue(err.response?.data);
+    }
+  }
+);
+
+// Confirm wallet deposit
+export const confirmWalletDeposit = createAsyncThunk(
+  "wallet/confirmWalletDeposit",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await axios.post("/wallet/deposit/confirm", data);
+      
+      if (response.data.success) {
+        toast.success("Deposit confirmed successfully!");
+        return response.data.data;
+      } else {
+        throw new Error(response.data.message || "Failed to confirm deposit");
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || err.message || "Failed to confirm deposit";
+      toast.error(errorMessage);
+      return rejectWithValue(err.response?.data);
+    }
+  }
+);
+
 const walletSlice = createSlice({
   name: "wallet",
   initialState,
@@ -486,6 +547,42 @@ const walletSlice = createSlice({
         state.loading = false;
       })
       .addCase(purchaseGiftCardWithPayment.rejected, (state) => {
+        state.loading = false;
+      })
+      // Get payment gateways
+      .addCase(getPaymentGateways.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(getPaymentGateways.fulfilled, (state, action) => {
+        state.loading = false;
+        state.paymentGateways = action.payload;
+      })
+      .addCase(getPaymentGateways.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Initiate wallet deposit
+      .addCase(initiateWalletDeposit.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(initiateWalletDeposit.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(initiateWalletDeposit.rejected, (state) => {
+        state.loading = false;
+      })
+      // Confirm wallet deposit
+      .addCase(confirmWalletDeposit.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(confirmWalletDeposit.fulfilled, (state, action) => {
+        state.loading = false;
+        // Update balance if returned
+        if (action.payload?.new_balance_cents) {
+          state.balance = action.payload.new_balance_cents / 100;
+        }
+      })
+      .addCase(confirmWalletDeposit.rejected, (state) => {
         state.loading = false;
       });
   },

@@ -89,7 +89,7 @@ const WalletDashboard = () => {
             </div>
 
             {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <Link
                 href="/user/wallet/gift-cards"
                 className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow border border-gray-200"
@@ -101,21 +101,6 @@ const WalletDashboard = () => {
                   </div>
                   <div className="bg-purple-100 rounded-full p-4">
                     <FaShoppingCart className="text-purple-600 text-xl" />
-                  </div>
-                </div>
-              </Link>
-
-              <Link
-                href="/user/wallet/gift-cards?tab=my-cards"
-                className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow border border-gray-200"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-600 text-sm mb-1">My</p>
-                    <p className="text-2xl font-bold text-gray-800">Gift Cards</p>
-                  </div>
-                  <div className="bg-pink-100 rounded-full p-4">
-                    <FaGift className="text-pink-600 text-xl" />
                   </div>
                 </div>
               </Link>

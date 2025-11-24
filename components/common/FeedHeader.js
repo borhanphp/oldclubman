@@ -212,7 +212,7 @@ function FeedHeader({
           // Check user_ids field
           if (chat.user_ids !== undefined && chat.user_ids !== null) {
             const userIds = Array.isArray(chat.user_ids) ? chat.user_ids : [chat.user_ids];
-            if (userIds.some(id => Number(id) === Number(userId))) {
+            if (userIds.some(id => String(id) === String(userId))) {
               console.log("Found conversation by user_ids");
               return true;
             }
@@ -221,9 +221,9 @@ function FeedHeader({
           // Check participants array
           if (chat.participants && Array.isArray(chat.participants)) {
             if (chat.participants.some(p => 
-              Number(p.id) === Number(userId) || 
-              Number(p.user_id) === Number(userId) ||
-              Number(p.client_id) === Number(userId)
+              String(p.id) === String(userId) || 
+              String(p.user_id) === String(userId) ||
+              String(p.client_id) === String(userId)
             )) {
               console.log("Found conversation by participants");
               return true;
@@ -232,9 +232,9 @@ function FeedHeader({
           
           // Check other_user for direct messages
           if ((chat.is_group === 0 || chat.is_group === false || !chat.is_group) && chat.other_user) {
-            if (chat.other_user?.id === Number(userId) || 
-                chat.other_user?.user_id === Number(userId) ||
-                chat.other_user?.client_id === Number(userId)) {
+            if (String(chat.other_user?.id) === String(userId) || 
+                String(chat.other_user?.user_id) === String(userId) ||
+                String(chat.other_user?.client_id) === String(userId)) {
               console.log("Found conversation by other_user");
               return true;
             }
@@ -375,7 +375,7 @@ function FeedHeader({
             
             if (convId) {
               console.log("Using conversation ID from error:", convId);
-              conversation = { id: Number(convId) };
+              conversation = { id: convId }; // Don't convert UUID to Number!
             } else {
               // Refresh chat list and find the existing conversation
               try {
@@ -488,7 +488,7 @@ function FeedHeader({
             
             if (convId) {
               console.log("Found conversation ID from error:", convId);
-              conversation = { id: Number(convId) };
+              conversation = { id: convId }; // Don't convert UUID to Number!
             } else {
               // Try to get conversation by querying with user ID or other methods
               try {
@@ -904,7 +904,7 @@ function FeedHeader({
   };
 
   return (
-    <div className="w-full px-0 sm:px-50 xl:px-0">
+    <div className="w-full px-0 sm:px-15 md:px-0 xl:px-0">
         {/* Cover Photo */}
         <div className="cover-photo rounded-t-md relative w-full h-60 overflow-hidden group">
           <div className="absolute inset-0 w-full">

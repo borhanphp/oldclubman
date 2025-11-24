@@ -259,7 +259,7 @@ const SocialNavbar = () => {
               </div>
 
               <Link
-                href={`/user/user-profile/${profile?.client?.id}`}
+                href={`/${profile?.client?.id}`}
                 className="block hover:text-white hover:bg-blue-700 bg-blue-100 py-[6px] mt-2 w-full text-blue-600 font-semibold text-sm text-center mx-auto mb-2"
               >
                 View profile

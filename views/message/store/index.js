@@ -38,7 +38,7 @@ export const allConversation = createAsyncThunk('chat/allConversation', async (d
   return result;
 })
 
-export const sendMessage = createAsyncThunk('chat/sendMessage', async (data) => {
+export const sendMessage = createAsyncThunk('chat/sendMessage', async (data, { rejectWithValue }) => {
   try {
     let formData = new FormData();
     
@@ -57,6 +57,15 @@ export const sendMessage = createAsyncThunk('chat/sendMessage', async (data) => 
       headers: {
         'Content-Type': 'multipart/form-data',
         'Accept': 'application/json'
+      },
+      onUploadProgress: (progressEvent) => {
+        if (progressEvent.total) {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          // Callback to update UI progress if provided
+          if (data.onProgress) {
+            data.onProgress(percentCompleted);
+          }
+        }
       }
     });
 
@@ -64,16 +73,19 @@ export const sendMessage = createAsyncThunk('chat/sendMessage', async (data) => 
       throw new Error(result.data.message || 'Failed to send message');
     }
 
-    return result.data.data;
+    // Backend returns message directly in response
+    // Handle both wrapped and unwrapped responses
+    const message = result.data.data || result.data;
+    return message;
   } catch (err) {
+    console.error('Error sending message:', err);
     errorResponse(err);
-    throw err;
+    return rejectWithValue(err.response?.data || err.message);
   }
 });
 
 export const getMessage = createAsyncThunk('chat/getMessage', async (data) => {
   try {
-    console.log("checking for getting messages work or not");
     const result = await axios.get(`chat/${data?.id}/messages`);
     return {
       messages: result.data.data,
@@ -95,11 +107,44 @@ export const chatSlice = createSlice({
     prevChat: [],
     loading: false,
     convarsationData: null,
-    error: null
+    error: null,
+    unreadCounts: {} // { conversationId: count }
   },
   reducers: {
     setCurrentConversation: (state, action) => {
       state.convarsationData = action.payload;
+    },
+    addMessageToChat: (state, action) => {
+      // Add a single message to the current chat
+      if (state.prevChat) {
+        const newMessage = action.payload;
+        
+        // Remove optimistic message if this is the real one
+        if (!newMessage._optimistic) {
+          state.prevChat = state.prevChat.filter(msg => !msg._optimistic || msg.id !== `temp-${newMessage.id}`);
+        }
+        
+        // Check if message already exists to avoid duplicates
+        const messageExists = state.prevChat.some(msg => 
+          msg.id === newMessage.id && !msg._optimistic
+        );
+        
+        if (!messageExists) {
+          state.prevChat = [...state.prevChat, newMessage];
+        }
+      }
+    },
+    incrementUnreadCount: (state, action) => {
+      const conversationId = action.payload;
+      state.unreadCounts[conversationId] = (state.unreadCounts[conversationId] || 0) + 1;
+    },
+    clearUnreadCount: (state, action) => {
+      const conversationId = action.payload;
+      state.unreadCounts[conversationId] = 0;
+    },
+    setUnreadCount: (state, action) => {
+      const { conversationId, count } = action.payload;
+      state.unreadCounts[conversationId] = count;
     }
   },
   extraReducers: (builder) => {
@@ -122,8 +167,18 @@ export const chatSlice = createSlice({
       })
       .addCase(sendMessage.fulfilled, (state, action) => {
         state.loading = false;
-        if (state.prevChat && action.payload?.message) {
-          state.prevChat.push(action.payload.message);
+        // action.payload is the message object itself
+        if (state.prevChat && action.payload) {
+          // Remove optimistic messages
+          state.prevChat = state.prevChat.filter(msg => !msg._optimistic);
+          
+          // Check if real message already exists
+          const messageExists = state.prevChat.some(msg => msg.id === action.payload.id);
+          
+          // Add the real message
+          if (!messageExists) {
+            state.prevChat = [...state.prevChat, action.payload];
+          }
         }
       })
       .addCase(getAllChat.pending, (state) => {
@@ -157,4 +212,5 @@ export const chatSlice = createSlice({
   }
 });
 
+export const { setCurrentConversation, addMessageToChat, incrementUnreadCount, clearUnreadCount, setUnreadCount } = chatSlice.actions;
 export default chatSlice.reducer;

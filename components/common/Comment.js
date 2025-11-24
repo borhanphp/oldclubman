@@ -68,7 +68,7 @@ const Comment = ({ comment, handleReplyToReply, handleModalCommentLike, isReply 
           <div className="bg-gray-100 p-3 rounded-2xl relative border border-gray-200">
             {/* Header with name and time */}
             <div className="font-medium text-sm">
-              <Link href={`/user/user-profile/${comment?.client_id}`} className="cursor-pointer hover:underline">
+              <Link href={`/${comment?.client_id}`} className="cursor-pointer hover:underline">
                 {comment?.client?.fname}
               </Link>
               <span className="text-xs text-gray-500 ml-2">
