@@ -1,7 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['images.unsplash.com', 'localhost', 'oldclubman.com'],
+    domains: [
+      'images.unsplash.com', 
+      'localhost', 
+      'oldclubman.com',
+      'test-api.oldclubman.com',  // Production API domain
+      'api.oldclubman.com',        // In case you use this too
+    ],
   },
   env: {
     NEXT_PUBLIC_PUSHER_KEY: process.env.NEXT_PUBLIC_PUSHER_KEY,

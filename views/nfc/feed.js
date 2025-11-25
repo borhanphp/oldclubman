@@ -30,7 +30,7 @@ const NfcContent = () => {
           <div className="w-full lg:w-3/4">
             {/* Hero Section */}
             <div className="bg-gradient-to-r rounded-lg from-blue-600 to-purple-600 text-white">
-              <div className="max-w-7xl mx-auto px-2 sm:px-2 lg:px-2 py-8">
+              <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-2 py-8">
                 <div className="flex flex-col md:flex-row items-center justify-between">
                   <div className="mb-6 md:mb-0">
                     <h1 className="text-4xl font-bold mb-2">My NFC Cards</h1>
