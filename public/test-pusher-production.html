@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pusher VPS Test</title>
+    <script src="https://js.pusher.com/8.3.0/pusher.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 3px 0;
+            border-bottom: 1px solid #333;
+        }
+        .config {
+            background: #f9f9f9;
+            padding: 15px;
+            border-left: 4px solid #2196F3;
+            margin: 15px 0;
+            font-family: monospace;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px 10px 0;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 15px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Pusher VPS Connection Test</h1>
+        
+        <div id="status" class="status info">
+            ⏳ Waiting for configuration...
+        </div>
+
+        <div class="config">
+            <strong>Current Configuration:</strong><br>
+            <span id="config-display">Loading...</span>
+        </div>
+
+        <label>Pusher App Key:</label>
+        <input type="text" id="pusherKey" placeholder="Enter your Pusher App Key">
+        
+        <label>Cluster:</label>
+        <input type="text" id="cluster" value="ap2" placeholder="e.g., ap2, us2">
+        
+        <label>API URL (for auth):</label>
+        <input type="text" id="apiUrl" placeholder="https://test-api.oldclubman.com/api">
+        
+        <label>Your Auth Token:</label>
+        <input type="text" id="authToken" placeholder="Paste your Bearer token">
+        
+        <button onclick="testConnection()">🚀 Test Connection</button>
+        <button onclick="clearLogs()">🗑️ Clear Logs</button>
+        
+        <div class="log" id="log">
+            <div class="log-entry">📝 Logs will appear here...</div>
+        </div>
+    </div>
+
+    <script>
+        let pusher = null;
+        
+        // Load from localStorage if available
+        window.onload = function() {
+            const savedToken = localStorage.getItem('old_token');
+            if (savedToken) {
+                document.getElementById('authToken').value = savedToken;
+                log('✅ Loaded token from localStorage');
+            }
+            
+            // Try to load from environment
+            const envKey = 'NEXT_PUBLIC_PUSHER_KEY'; // This won't work in HTML, just for reference
+            document.getElementById('apiUrl').value = 'https://test-api.oldclubman.com/api';
+            
+            updateConfigDisplay();
+        };
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLogs() {
+            document.getElementById('log').innerHTML = '<div class="log-entry">📝 Logs cleared...</div>';
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+        }
+
+        function updateConfigDisplay() {
+            const key = document.getElementById('pusherKey').value || '❌ Not set';
+            const cluster = document.getElementById('cluster').value || '❌ Not set';
+            const apiUrl = document.getElementById('apiUrl').value || '❌ Not set';
+            const token = document.getElementById('authToken').value ? '✅ Set' : '❌ Not set';
+            
+            document.getElementById('config-display').innerHTML = `
+                Key: ${key}<br>
+                Cluster: ${cluster}<br>
+                Auth Endpoint: ${apiUrl}/broadcasting/auth<br>
+                Token: ${token}
+            `;
+        }
+
+        function testConnection() {
+            clearLogs();
+            
+            const key = document.getElementById('pusherKey').value.trim();
+            const cluster = document.getElementById('cluster').value.trim();
+            const apiUrl = document.getElementById('apiUrl').value.trim();
+            const token = document.getElementById('authToken').value.trim();
+            
+            // Validate inputs
+            if (!key) {
+                updateStatus('❌ Please enter Pusher App Key', 'error');
+                log('❌ Validation failed: Missing Pusher Key', 'error');
+                return;
+            }
+            
+            if (!cluster) {
+                updateStatus('❌ Please enter Cluster', 'error');
+                log('❌ Validation failed: Missing Cluster', 'error');
+                return;
+            }
+            
+            if (!apiUrl) {
+                updateStatus('❌ Please enter API URL', 'error');
+                log('❌ Validation failed: Missing API URL', 'error');
+                return;
+            }
+            
+            if (!token) {
+                updateStatus('❌ Please enter Auth Token', 'error');
+                log('❌ Validation failed: Missing Auth Token', 'error');
+                return;
+            }
+            
+            updateConfigDisplay();
+            updateStatus('⏳ Connecting to Pusher...', 'info');
+            log('🔧 Initializing Pusher with provided configuration...');
+            
+            try {
+                // Initialize Pusher
+                pusher = new Pusher(key, {
+                    cluster: cluster,
+                    forceTLS: true,
+                    authEndpoint: `${apiUrl}/broadcasting/auth`,
+                    auth: {
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'Authorization': `Bearer ${token}`
+                        }
+                    }
+                });
+                
+                log(`✅ Pusher instance created`);
+                log(`🔑 Using Key: ${key}`);
+                log(`🌍 Cluster: ${cluster}`);
+                log(`🔐 Auth Endpoint: ${apiUrl}/broadcasting/auth`);
+                
+                // Bind connection events
+                pusher.connection.bind('connecting', () => {
+                    log('⏳ Connecting to Pusher...');
+                    updateStatus('⏳ Connecting to Pusher...', 'info');
+                });
+                
+                pusher.connection.bind('connected', () => {
+                    log('✅ Connected to Pusher successfully!');
+                    updateStatus('✅ Connected to Pusher!', 'success');
+                    log(`📊 Connection ID: ${pusher.connection.socket_id}`);
+                    log(`📊 State: ${pusher.connection.state}`);
+                    
+                    // Try subscribing to a test private channel
+                    setTimeout(() => {
+                        testPrivateChannel();
+                    }, 1000);
+                });
+                
+                pusher.connection.bind('unavailable', () => {
+                    log('❌ Connection unavailable');
+                    updateStatus('❌ Connection Unavailable', 'error');
+                });
+                
+                pusher.connection.bind('failed', () => {
+                    log('❌ Connection failed');
+                    updateStatus('❌ Connection Failed', 'error');
+                });
+                
+                pusher.connection.bind('disconnected', () => {
+                    log('⚠️ Disconnected from Pusher');
+                    updateStatus('⚠️ Disconnected', 'error');
+                });
+                
+                pusher.connection.bind('error', (err) => {
+                    log(`❌ Connection error: ${JSON.stringify(err)}`, 'error');
+                    updateStatus('❌ Connection Error - Check console', 'error');
+                    
+                    if (err.error && err.error.data) {
+                        log(`❌ Error Code: ${err.error.data.code}`, 'error');
+                        log(`❌ Error Message: ${err.error.data.message}`, 'error');
+                    }
+                });
+                
+            } catch (e) {
+                log(`❌ Exception: ${e.message}`, 'error');
+                updateStatus('❌ Failed to initialize Pusher', 'error');
+            }
+        }
+        
+        function testPrivateChannel() {
+            if (!pusher) {
+                log('❌ Pusher not initialized', 'error');
+                return;
+            }
+            
+            log('🔐 Testing private channel subscription...');
+            
+            // Test with a dummy conversation ID
+            const testChannelName = 'private-conversation.test-123';
+            log(`📡 Subscribing to: ${testChannelName}`);
+            
+            const channel = pusher.subscribe(testChannelName);
+            
+            channel.bind('pusher:subscription_succeeded', () => {
+                log(`✅ Successfully subscribed to ${testChannelName}`);
+                log('🎉 PUSHER IS WORKING CORRECTLY!');
+                updateStatus('✅ Pusher is working! Private channels can be subscribed.', 'success');
+            });
+            
+            channel.bind('pusher:subscription_error', (error) => {
+                log(`❌ Subscription error: ${JSON.stringify(error)}`, 'error');
+                updateStatus('❌ Cannot subscribe to private channels', 'error');
+                
+                if (error.type === 'AuthError') {
+                    log('❌ Authentication failed!', 'error');
+                    log('🔍 Possible causes:', 'error');
+                    log('   1. Backend /broadcasting/auth endpoint not accessible', 'error');
+                    log('   2. CORS blocking the auth request', 'error');
+                    log('   3. Invalid or expired token', 'error');
+                    log('   4. Backend not configured for Sanctum auth', 'error');
+                }
+            });
+            
+            // Test event
+            channel.bind('test-event', (data) => {
+                log(`📨 Received test event: ${JSON.stringify(data)}`);
+            });
+        }
+    </script>
+</body>
+</html>
+
