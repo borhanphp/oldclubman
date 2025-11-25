@@ -17,7 +17,9 @@ const ChatBox = ({ user, currentChat, onClose }) => {
 const dispatch = useDispatch()
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [filePreview, setFilePreview] = useState(null);
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
   // Initialize Pusher service when component mounts
@@ -35,6 +37,15 @@ const dispatch = useDispatch()
     dispatch(getAllChat());
     dispatch(getMyProfile());
   }, [dispatch]);
+
+  // Load messages when conversation is opened
+  useEffect(() => {
+    const conversationId = currentChat?.id || convarsationData?.id;
+    if (conversationId) {
+      console.log('Loading messages for conversation:', conversationId);
+      dispatch(getMessage({ id: conversationId }));
+    }
+  }, [currentChat?.id, convarsationData?.id, dispatch]);
 
   // Handle new message received via Pusher
   const handleMessageReceived = useCallback((data) => {
@@ -332,12 +343,16 @@ const dispatch = useDispatch()
       // If message was already sent via alternative method, skip regular send
       if (!messageSent) {
         setIsLoading(true);
+        setUploadProgress(0);
         try {
           const chatData = {
             chatId: chatId,
-            type: selectedFile ? "file" : "text",
+            type: selectedFile ? getFileType(selectedFile) : "text",
             content: message.trim(),
-            file: selectedFile
+            file: selectedFile,
+            onProgress: (progress) => {
+              setUploadProgress(progress);
+            }
           };
 
           // Clear message input immediately for better UX
@@ -348,10 +363,7 @@ const dispatch = useDispatch()
           if (response) {
             // Clear file if exists
             if (selectedFile) {
-              setSelectedFile(null);
-              if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-              }
+              clearFile();
             }
             
             // Refresh messages and chat list
@@ -381,10 +393,7 @@ const dispatch = useDispatch()
         // Clear input and refresh
         setMessage("");
         if (selectedFile) {
-          setSelectedFile(null);
-          if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-          }
+          clearFile();
         }
         
         // If we got conversation ID, refresh messages and chat list
@@ -411,8 +420,86 @@ const dispatch = useDispatch()
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Check file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('File size must be less than 10MB');
+        return;
+      }
       setSelectedFile(file);
+      
+      // Create preview for images
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setFilePreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        setFilePreview(null);
+      }
     }
+  };
+
+  // Clear file and preview
+  const clearFile = () => {
+    setSelectedFile(null);
+    setFilePreview(null);
+    setUploadProgress(0);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Get file type from MIME type
+  const getFileType = (file) => {
+    if (!file) return 'text';
+    const mimeType = file.type;
+    if (mimeType.startsWith('image/')) return 'image';
+    if (mimeType.startsWith('video/')) return 'video';
+    if (mimeType.startsWith('audio/')) return 'audio';
+    return 'file';
+  };
+
+  // Construct file URL for display
+  const getFileUrl = (filePath) => {
+    if (!filePath) return null;
+    
+    // If already a full URL, return as is
+    if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+      return filePath;
+    }
+    
+    // Remove leading slash if present
+    const cleanPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
+    
+    // Try multiple URL construction methods
+    // Method 1: Use NEXT_PUBLIC_API_URL (backend API URL)
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    let fullUrl = `${apiUrl}/${cleanPath}`;
+    
+    // Method 2: If path starts with 'public/', use NEXT_PUBLIC_FILE_PATH
+    if (cleanPath.startsWith('public/')) {
+      const filePathBase = process.env.NEXT_PUBLIC_FILE_PATH || `${apiUrl}/`;
+      fullUrl = `${filePathBase}${cleanPath.replace('public/', '')}`;
+    }
+    
+    // Method 3: If path already includes 'uploads/', construct from base
+    if (cleanPath.includes('uploads/')) {
+      // Extract from 'uploads/' onwards
+      const uploadsPath = cleanPath.substring(cleanPath.indexOf('uploads/'));
+      const filePathBase = process.env.NEXT_PUBLIC_FILE_PATH || `${apiUrl}/`;
+      fullUrl = `${filePathBase}${uploadsPath}`;
+    }
+    
+    console.log('🔗 URL Construction:', { 
+      original: filePath, 
+      cleaned: cleanPath, 
+      final: fullUrl,
+      apiUrl,
+      filePathBase: process.env.NEXT_PUBLIC_FILE_PATH 
+    });
+    
+    return fullUrl;
   };
 
   return (
@@ -465,38 +552,120 @@ const dispatch = useDispatch()
             <p>Conversation ready. Type a message to start chatting.</p>
           </div>
         ) : (
-          prevChat?.map((msg, index) => (
-          <div
-            key={index}
-            className={`flex mb-3 ${String(msg?.user_id) === String(profile?.client?.id) ? 'justify-end' : 'justify-start'}`}
-          >
-            <div
-              className={`max-w-[70%] rounded-lg px-2 py-1 ${
-                String(msg?.user_id) === String(profile?.client?.id)
-                  ? 'bg-blue-600 text-white rounded-br-none'
-                  : 'bg-gray-200 text-gray-800 rounded-bl-none'
-              }`}
-            >
-              <p className="text-sm break-words">{msg.content}</p>
-              {/* <span className="text-[10px] block mt-1 opacity-75">
-                {moment(msg.created_at).format('hh:mm a')}
-              </span> */}
-            </div>
-          </div>
-        ))
+          prevChat?.map((msg, index) => {
+            // Parse file_name if it's a JSON string
+            let files = [];
+            if (msg.file_name) {
+              try {
+                files = typeof msg.file_name === 'string' 
+                  ? JSON.parse(msg.file_name) 
+                  : msg.file_name;
+                if (!Array.isArray(files)) files = [files];
+                console.log('Parsed files:', files);
+              } catch (e) {
+                console.error('Error parsing file_name:', e, msg.file_name);
+              }
+            }
+
+            return (
+              <div
+                key={index}
+                className={`flex mb-3 ${String(msg?.user_id) === String(profile?.client?.id) ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[70%] rounded-lg px-2 py-1 ${
+                    String(msg?.user_id) === String(profile?.client?.id)
+                      ? 'bg-blue-600 text-white rounded-br-none'
+                      : 'bg-gray-200 text-gray-800 rounded-bl-none'
+                  }`}
+                >
+                  {/* Render images and files */}
+                  {files.length > 0 && files.map((file, fileIndex) => {
+                    const fileUrl = getFileUrl(file.path);
+                    
+                    console.log('📎 File display:', { 
+                      file_name: file.file_name, 
+                      file_type: file.file_type, 
+                      path: file.path,
+                      constructed_url: fileUrl 
+                    });
+                    
+                    if (!fileUrl) return null;
+                    
+                    if (file.file_type === 'image') {
+                      return (
+                        <div key={fileIndex} className="mb-2">
+                          <img
+                            src={fileUrl}
+                            alt="Shared image"
+                            className="max-w-full max-h-48 rounded cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => window.open(fileUrl, '_blank')}
+                            onError={(e) => {
+                              console.error('❌ Image load error:', fileUrl);
+                              // Show fallback message instead of hiding
+                              e.target.outerHTML = `<div class="text-xs text-red-500 p-2 bg-red-50 rounded">⚠️ Image failed to load</div>`;
+                            }}
+                            onLoad={() => console.log('✅ Image loaded successfully:', fileUrl)}
+                          />
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <a
+                          key={fileIndex}
+                          href={fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-xs underline mb-1 hover:opacity-80 transition-opacity"
+                        >
+                          📎 {file.file_name || 'Download file'} ({file.file_type})
+                        </a>
+                      );
+                    }
+                  })}
+                  
+                  {/* Render text content */}
+                  {msg.content && (
+                    <p className="text-sm break-words">{msg.content}</p>
+                  )}
+                  
+                  {/* Timestamp */}
+                  {/* <span className="text-[10px] block mt-1 opacity-75">
+                    {moment(msg.created_at).format('hh:mm a')}
+                  </span> */}
+                </div>
+              </div>
+            );
+          })
         )}
         <div ref={messagesEndRef} />
       </div>
 
         {/* Message Input */}
         <form onSubmit={handleSendMessage} className="py-1 px-3 bg-white border-t border-gray-200 shadow-lg rounded-b-lg">
+          {/* Upload Progress Bar */}
+          {isLoading && uploadProgress > 0 && uploadProgress < 100 && (
+            <div className="mb-2">
+              <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
+                <span>Uploading...</span>
+                <span>{uploadProgress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                <div 
+                  className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                ></div>
+              </div>
+            </div>
+          )}
+          
           <div className="flex items-center space-x-2">
             <input
               type="file"
               ref={fileInputRef}
               onChange={handleFileSelect}
               className="hidden"
-              accept="image/*"
+              accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
             />
             <button
               type="button"
@@ -523,19 +692,36 @@ const dispatch = useDispatch()
             </button>
           </div>
           {selectedFile && (
-            <div className="mt-2 text-sm text-gray-600 flex items-center justify-between">
-              <span className="truncate flex-1">Selected: {selectedFile.name}</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedFile(null);
-                  if (fileInputRef.current) fileInputRef.current.value = '';
-                }}
-                className="ml-2 text-red-500 hover:text-red-700"
-                aria-label="Remove file"
-              >
-                <FaTimes className="w-3 h-3" />
-              </button>
+            <div className="mt-2">
+              {filePreview ? (
+                <div className="relative inline-block">
+                  <img 
+                    src={filePreview} 
+                    alt="Preview" 
+                    className="max-h-20 rounded-lg border border-gray-300"
+                  />
+                  <button
+                    type="button"
+                    onClick={clearFile}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-lg"
+                    aria-label="Remove file"
+                  >
+                    <FaTimes className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <div className="text-sm text-gray-600 flex items-center justify-between bg-gray-100 rounded-lg px-3 py-2">
+                  <span className="truncate flex-1">📎 {selectedFile.name}</span>
+                  <button
+                    type="button"
+                    onClick={clearFile}
+                    className="ml-2 text-red-500 hover:text-red-700"
+                    aria-label="Remove file"
+                  >
+                    <FaTimes className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </form>

@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 
 const initialState = {
   balance: 0,
+  giftCardTotalValue: 0,
   transactions: [],
   giftCards: [],
   availableGiftCards: [],
@@ -13,13 +14,17 @@ const initialState = {
   error: null,
 };
 
-// Get wallet balance
+// Get wallet balance (includes gift card total value)
 export const getWalletBalance = createAsyncThunk(
   "wallet/getWalletBalance",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.post("/wallet/balance");
-      return response.data.data?.balance || 0;
+      const response = await axios.get("/wallet/balance");
+      const data = response.data.data || {};
+      return {
+        balance: data.balance || 0,
+        giftCardTotalValue: data.gift_card_total_value || data.total_gift_cards_value || 0
+      };
     } catch (err) {
       errorResponse(err);
       return rejectWithValue(err.response?.data);
@@ -421,7 +426,8 @@ const walletSlice = createSlice({
       })
       .addCase(getWalletBalance.fulfilled, (state, action) => {
         state.loading = false;
-        state.balance = action.payload;
+        state.balance = action.payload.balance || action.payload;
+        state.giftCardTotalValue = action.payload.giftCardTotalValue || 0;
       })
       .addCase(getWalletBalance.rejected, (state, action) => {
         state.loading = false;

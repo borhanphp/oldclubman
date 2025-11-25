@@ -219,11 +219,12 @@ const MessagingContent = () => {
     }
   }, [dispatch, profile?.client?.id]);
 
-  // Handle conversation query parameter (from product page redirect)
+  // Handle conversation query parameter (from product page redirect or notification)
   useEffect(() => {
     const conversationId = searchParams?.get('conversation');
     if (conversationId && allChat && allChat.length > 0) {
-      const conversation = allChat.find(chat => chat.id === Number(conversationId));
+      // Compare as strings since conversation IDs are UUIDs
+      const conversation = allChat.find(chat => String(chat.id) === String(conversationId));
       if (conversation) {
         handleChatSelect2(conversation);
       }

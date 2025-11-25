@@ -12,19 +12,12 @@ class PusherService {
 
         const token = localStorage.getItem('old_token');
         if (!token) {
-            console.error('❌ Pusher: No authentication token found');
+            console.error('No authentication token found');
             return;
         }
 
         // Set default API URL to match Laravel's URL
         const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-        
-        console.log('🔧 Pusher Configuration:', {
-            key: process.env.NEXT_PUBLIC_PUSHER_KEY ? '✅ Set' : '❌ Missing',
-            cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'us2',
-            authEndpoint: `${apiUrl}/broadcasting/auth`,
-            apiUrl: apiUrl || '❌ Missing'
-        });
         
         this.options = {
             cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'us2',
@@ -40,9 +33,7 @@ class PusherService {
         };
 
         try {
-            const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY || '6536db454316e302c142';
-            console.log('🔑 Using Pusher Key:', pusherKey);
-            this.pusher = new Pusher(pusherKey, this.options);
+            this.pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '6536db454316e302c142', this.options);
 
             this.pusher.connection.bind('connecting', () => {
                 console.log('Connecting to Pusher...');
@@ -149,3 +140,4 @@ class PusherService {
 }
 
 export const pusherService = new PusherService();
+export default pusherService;

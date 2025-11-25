@@ -6,6 +6,7 @@ import gathering from "@/views/gathering/store";
 import chat from "@/views/message/store";
 import search from "@/views/search/store";
 import wallet from "@/views/wallet/store";
+import notification from "@/views/notification/store";
 
 
 
@@ -17,7 +18,8 @@ const rootReducer = {
     gathering,
     chat,
     search,
-    wallet
+    wallet,
+    notification
 }
 
 export default rootReducer;

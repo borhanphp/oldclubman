@@ -26,21 +26,84 @@ import {
 import { logout } from "@/utility";
 import { useDispatch, useSelector } from "react-redux";
 import { getMyProfile } from "@/views/settings/store";
+import { getUnreadCount, addNotification } from "@/views/notification/store";
 import PostsSearch from "./PostsSearch";
 import { CiHome } from "react-icons/ci";
+import NotificationDropdown from "@/components/notification/NotificationDropdown";
+import { pusherService } from "@/utility/pusher";
 
 const SocialNavbar = () => {
   const { profile } = useSelector(({ settings }) => settings);
+  const { unreadCount } = useSelector(({ notification }) => notification);
   const dispatch = useDispatch();
   const [openProfileDropdown, setOpenProfileDropdown] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showCardDropdown, setShowCardDropdown] = useState(false);
   const [showShippingDropdown, setShowShippingDropdown] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
 
   useEffect(() => {
     dispatch(getMyProfile());
+    dispatch(getUnreadCount());
   }, []);
+
+  // Subscribe to real-time notifications via Pusher
+  useEffect(() => {
+    if (profile?.client?.id) {
+      // Initialize Pusher if not already initialized
+      if (!pusherService.pusher) {
+        pusherService.initialize();
+      }
+
+      // Wait a bit for Pusher to initialize
+      const timer = setTimeout(() => {
+        if (!pusherService.pusher) {
+          console.warn('Pusher not initialized, skipping notification subscription');
+          return;
+        }
+
+        const channelName = `private-notifications.${profile.client.id}`;
+        console.log(`🔔 Subscribing to ${channelName}`);
+        
+        try {
+          const channel = pusherService.pusher.subscribe(channelName);
+
+          channel.bind('NotificationReceived', (data) => {
+            console.log('🔔 New notification received:', data);
+            if (data.notification) {
+              dispatch(addNotification(data.notification));
+              
+              // Show browser notification if permitted
+              if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(data.notification.title, {
+                  body: data.notification.message,
+                  icon: data.notification.actor?.avatar ? 
+                    `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${data.notification.actor.avatar}` : 
+                    '/common-avator.jpg',
+                  tag: data.notification.id,
+                });
+              }
+            }
+          });
+
+          // Cleanup function
+          return () => {
+            if (channel) {
+              channel.unbind_all();
+              if (pusherService.pusher) {
+                pusherService.pusher.unsubscribe(channelName);
+              }
+            }
+          };
+        } catch (error) {
+          console.error('Error subscribing to notifications:', error);
+        }
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [profile?.client?.id, dispatch]);
   return (
    <>
     <nav className="sticky top-0 z-10 px-4 md:px-10 flex items-center bg-white p-2 shadow-sm border-b border-gray-200">
@@ -203,11 +266,27 @@ const SocialNavbar = () => {
         </div> */}
 
         {/* Notifications Icon with Dropdown */}
-        <div className="relative mr-2 p-3 rounded-md group bg-gray-200">
-          <div className="icon-button text-gray-600 hover:text-black cursor-pointer relative">
-            <FaBell size={14} />
-            <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+        <div className="relative mr-2">
+          <div 
+            className="p-3 rounded-md group bg-gray-200 cursor-pointer"
+            onClick={() => setShowNotificationDropdown(!showNotificationDropdown)}
+          >
+            <div className="icon-button text-gray-600 hover:text-black relative">
+              <FaBell size={14} />
+              {unreadCount > 0 && (
+                <>
+                  <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                </>
+              )}
+            </div>
           </div>
+          <NotificationDropdown 
+            isOpen={showNotificationDropdown} 
+            onClose={() => setShowNotificationDropdown(false)} 
+          />
         </div>
 
         {/* User Profile Icon with Dropdown - Click based */}
@@ -342,9 +421,19 @@ const SocialNavbar = () => {
         </Link>
 
         {/* Notifications Icon - Mobile */}
-        <div className="p-2 rounded-md bg-gray-200 text-gray-600 relative">
+        <div 
+          className="p-2 rounded-md bg-gray-200 text-gray-600 relative cursor-pointer"
+          onClick={() => setShowNotificationDropdown(!showNotificationDropdown)}
+        >
           <FaBell size={16} />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+          {unreadCount > 0 && (
+            <>
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            </>
+          )}
         </div>
 
         {/* Hamburger Menu Button */}

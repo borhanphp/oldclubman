@@ -4,28 +4,25 @@ import React, { useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useDispatch, useSelector } from 'react-redux';
 import { FaGift, FaHistory, FaShoppingCart, FaArrowRight } from 'react-icons/fa';
-import { getMyGiftCards, getTransactions } from './store';
+import { getMyGiftCards, getTransactions, getWalletBalance } from './store';
 import WalletSidebar from './WalletSidebar';
 import StatusBadge from '@/components/wallet/StatusBadge';
 
 const WalletDashboard = () => {
   const dispatch = useDispatch();
-  const { giftCards, transactions, loading } = useSelector(({ wallet }) => wallet);
+  const { giftCards, transactions, loading, giftCardTotalValue } = useSelector(({ wallet }) => wallet);
 
-  // Calculate total gift card value
-  const totalGiftCardValue = useMemo(() => {
-    if (!giftCards || giftCards.length === 0) return 0;
-    return giftCards
-      .filter(card => card.status === 'active')
-      .reduce((total, card) => total + parseFloat(card.amount || 0), 0);
-  }, [giftCards]);
+  // Use gift card total value from API
+  const totalGiftCardValue = giftCardTotalValue || 0;
 
   useEffect(() => {
+    dispatch(getWalletBalance());
     dispatch(getMyGiftCards());
     dispatch(getTransactions({ limit: 5 }));
   }, [dispatch]);
 
   const handleRefresh = () => {
+    dispatch(getWalletBalance());
     dispatch(getMyGiftCards());
     dispatch(getTransactions({ limit: 5 }));
   };
