@@ -5,13 +5,17 @@ import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { FaUser, FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 import toast from 'react-hot-toast';
-import { transferBalance, getWalletBalance } from './store';
+import GiftCardSummary from '@/components/wallet/GiftCardSummary';
+import WalletSidebar from './WalletSidebar';
+import TransferOTPVerification from '@/components/wallet/TransferOTPVerification';
+import { transferBalance, getWalletBalance, getMyGiftCards } from './store';
 import api from '@/helpers/axios';
 
 const TransferForm = () => {
   const router = useRouter();
   const dispatch = useDispatch();
   const { balance } = useSelector(({ wallet }) => wallet);
+  const walletBalance = typeof balance === 'number' ? balance : parseFloat(balance) || 0;
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -20,10 +24,12 @@ const TransferForm = () => {
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showOTP, setShowOTP] = useState(false);
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
     dispatch(getWalletBalance());
+    dispatch(getMyGiftCards());
   }, [dispatch]);
 
   useEffect(() => {
@@ -35,8 +41,8 @@ const TransferForm = () => {
 
       setSearching(true);
       try {
-        const response = await api.get(`/client/search?q=${encodeURIComponent(searchQuery)}`);
-        setSearchResults(response.data.data || []);
+        const response = await api.get(`/client/search_by_people?search=${encodeURIComponent(searchQuery)}`);
+        setSearchResults(response.data.data?.follow_connections || []);
       } catch (error) {
         console.error('Search error:', error);
         setSearchResults([]);
@@ -52,9 +58,9 @@ const TransferForm = () => {
   const validateAmount = (value) => {
     const numValue = parseFloat(value);
     if (isNaN(numValue) || numValue < 1) {
-      return 'Minimum transfer amount is $1';
+      return 'Minimum amount is $1';
     }
-    if (numValue > balance) {
+    if (numValue > walletBalance) {
       return 'Insufficient balance';
     }
     return null;
@@ -99,41 +105,60 @@ const TransferForm = () => {
     setLoading(true);
     try {
       await dispatch(transferBalance({
-        recipient_id: selectedUser.id,
-        amount: parseFloat(amount),
-        message: message.trim() || null
+        receiver_identifier: selectedUser.id,
+        amount_dollars: parseFloat(amount),
+        description: message.trim() || null
       })).unwrap();
 
-      await dispatch(getWalletBalance());
-      toast.success('Transfer completed successfully!');
-      router.push('/user/wallet');
+      // Close confirmation modal and show OTP modal
+      setShowConfirm(false);
+      setShowOTP(true);
     } catch (error) {
-      toast.error(error.message || 'Transfer failed');
+      toast.error(error.message || 'Failed to send gift card');
     } finally {
       setLoading(false);
-      setShowConfirm(false);
     }
   };
 
-  const newBalance = balance - parseFloat(amount || 0);
+  const handleOTPSuccess = () => {
+    setShowOTP(false);
+    router.push('/user/wallet');
+  };
+
+  const handleOTPCancel = () => {
+    setShowOTP(false);
+    // Reset form
+    setSelectedUser(null);
+    setSearchQuery('');
+    setAmount('');
+    setMessage('');
+  };
+
+  const newBalance = walletBalance - parseFloat(amount || 0);
 
   return (
     <div className="bg-gray-100 min-h-screen">
-      <div className="mx-auto max-w-4xl">
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center mb-6">
-            <button
+      <div className="mx-auto md:p-5 md:px-10">
+        <div className="flex flex-wrap">
+          <WalletSidebar />
+          
+          <div className="w-full lg:w-3/4">
+            <GiftCardSummary />
+            
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center mb-6">
+                <button
               onClick={() => router.back()}
               className="text-blue-500 mr-4 hover:text-blue-600"
             >
               <FaArrowLeft className="text-xl" />
             </button>
-            <h1 className="text-2xl font-bold text-gray-800">Transfer Balance</h1>
+            <h1 className="text-2xl font-bold text-gray-800">Send Gift Card</h1>
           </div>
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <p className="text-sm text-blue-800">
-              <strong>Available Balance:</strong> ${balance?.toFixed(2) || '0.00'}
+              <strong>Available Balance:</strong> ${walletBalance.toFixed(2)}
             </p>
           </div>
 
@@ -253,7 +278,7 @@ const TransferForm = () => {
                 maxLength={500}
                 rows={3}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Add a note for this transfer..."
+                placeholder="Add a note for this gift card..."
               />
               <p className="text-xs text-gray-500 mt-1">
                 {message.length}/500 characters
@@ -274,7 +299,7 @@ const TransferForm = () => {
           {showConfirm && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">Confirm Transfer</h3>
+                <h3 className="text-xl font-bold text-gray-800 mb-4">Confirm Gift Card</h3>
                 
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between">
@@ -296,7 +321,7 @@ const TransferForm = () => {
                   <div className="border-t pt-3 mt-3">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Current Balance:</span>
-                      <span className="font-medium">${balance?.toFixed(2) || '0.00'}</span>
+                      <span className="font-medium">${walletBalance.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between mt-2">
                       <span className="text-gray-600">New Balance:</span>
@@ -318,12 +343,22 @@ const TransferForm = () => {
                     disabled={loading}
                     className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg disabled:opacity-50"
                   >
-                    {loading ? 'Processing...' : 'Confirm Transfer'}
+                    {loading ? 'Processing...' : 'Confirm Send'}
                   </button>
                 </div>
               </div>
             </div>
           )}
+
+          {/* OTP Verification Modal */}
+          {showOTP && (
+            <TransferOTPVerification
+              onSuccess={handleOTPSuccess}
+              onCancel={handleOTPCancel}
+            />
+          )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

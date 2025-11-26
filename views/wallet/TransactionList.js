@@ -29,9 +29,8 @@ const TransactionList = () => {
 
   const filters = [
     { id: 'all', label: 'All' },
-    { id: 'deposit', label: 'Deposits' },
-    { id: 'withdrawal', label: 'Withdrawals' },
-    { id: 'transfer', label: 'Transfers' },
+    { id: 'withdrawal', label: 'Transfer Requests' },
+    { id: 'transfer', label: 'Gift Card Sends' },
     { id: 'gift_card_purchase', label: 'Gift Card Purchases' },
     { id: 'gift_card_received', label: 'Gift Cards Received' }
   ];

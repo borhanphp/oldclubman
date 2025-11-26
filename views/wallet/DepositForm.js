@@ -9,11 +9,14 @@ import PaymentMethodSelector from '@/components/wallet/PaymentMethodSelector';
 import StripePayment from './StripePayment';
 import PayPalPayment from './PayPalPayment';
 import MobileBankingDeposit from './MobileBankingDeposit';
+import GiftCardSummary from '@/components/wallet/GiftCardSummary';
+import WalletSidebar from './WalletSidebar';
 import {
   initiateStripeDeposit,
   initiatePayPalDeposit,
   submitMobileDeposit,
-  getWalletBalance
+  getWalletBalance,
+  getMyGiftCards
 } from './store';
 
 const DepositForm = () => {
@@ -24,10 +27,14 @@ const DepositForm = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
+  useEffect(() => {
+    dispatch(getMyGiftCards());
+  }, [dispatch]);
+
   const validateAmount = (value) => {
     const numValue = parseFloat(value);
     if (isNaN(numValue) || numValue < 1) {
-      return 'Minimum deposit amount is $1';
+      return 'Minimum amount is $1';
     }
     return null;
   };
@@ -48,7 +55,7 @@ const DepositForm = () => {
       })).unwrap();
       
       await dispatch(getWalletBalance());
-      toast.success('Deposit successful!');
+      toast.success('Gift card purchased successfully!');
       router.push('/user/wallet');
     } catch (error) {
       toast.error(error.message || 'Payment failed');
@@ -66,7 +73,7 @@ const DepositForm = () => {
       })).unwrap();
       
       await dispatch(getWalletBalance());
-      toast.success('Deposit successful!');
+      toast.success('Gift card purchased successfully!');
       router.push('/user/wallet');
     } catch (error) {
       toast.error(error.message || 'Payment failed');
@@ -85,7 +92,7 @@ const DepositForm = () => {
       
       router.push('/user/wallet');
     } catch (error) {
-      toast.error(error.message || 'Failed to submit deposit');
+      toast.error(error.message || 'Failed to purchase gift card');
     } finally {
       setLoading(false);
     }
@@ -97,16 +104,22 @@ const DepositForm = () => {
 
   return (
     <div className="bg-gray-100 min-h-screen">
-      <div className="mx-auto max-w-4xl">
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center mb-6">
-            <button
+      <div className="mx-auto md:p-5 md:px-10">
+        <div className="flex flex-wrap">
+          <WalletSidebar />
+          
+          <div className="w-full lg:w-3/4">
+            <GiftCardSummary />
+            
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center mb-6">
+                <button
               onClick={() => router.back()}
               className="text-blue-500 mr-4 hover:text-blue-600"
             >
               <FaArrowLeft className="text-xl" />
             </button>
-            <h1 className="text-2xl font-bold text-gray-800">Add Money to Wallet</h1>
+            <h1 className="text-2xl font-bold text-gray-800">Purchase Gift Cards</h1>
           </div>
 
           <div className="mb-6">
@@ -132,7 +145,7 @@ const DepositForm = () => {
             {errors.amount && (
               <p className="text-red-500 text-xs mt-1">{errors.amount}</p>
             )}
-            <p className="text-xs text-gray-500 mt-1">Minimum deposit: $1.00</p>
+            <p className="text-xs text-gray-500 mt-1">Minimum amount: $1.00</p>
           </div>
 
           <PaymentMethodSelector
@@ -167,6 +180,8 @@ const DepositForm = () => {
                 loading={loading}
               />
             )}
+          </div>
+            </div>
           </div>
         </div>
       </div>

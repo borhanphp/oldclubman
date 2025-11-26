@@ -10,6 +10,8 @@ const initialState = {
   giftCards: [],
   availableGiftCards: [],
   paymentGateways: [],
+  pendingPurchase: null, // Stores pending purchase data for OTP verification
+  pendingTransfer: null, // Stores pending transfer data for OTP verification
   loading: false,
   error: null,
 };
@@ -20,12 +22,36 @@ export const getWalletBalance = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await axios.get("/wallet/balance");
+      console.log('🔍 Wallet Balance API Response:', response.data);
       const data = response.data.data || {};
-      return {
-        balance: data.balance || 0,
-        giftCardTotalValue: data.gift_card_total_value || data.total_gift_cards_value || 0
+      console.log('📊 Extracted data:', data);
+      
+      // Extract balance - can be balance_cents, balance_dollars, or balance
+      let balanceValue = 0;
+      if (data.balance_cents !== undefined) {
+        balanceValue = data.balance_cents / 100; // Convert cents to dollars
+        console.log('💰 Converted from cents:', data.balance_cents, '→', balanceValue);
+      } else if (data.balance_dollars !== undefined) {
+        balanceValue = parseFloat(data.balance_dollars);
+        console.log('💰 Used balance_dollars:', balanceValue);
+      } else if (data.balance !== undefined) {
+        balanceValue = parseFloat(data.balance);
+        console.log('💰 Used balance:', balanceValue);
+      }
+      
+      // Gift card total value is the same as balance (wallet balance = gift card value)
+      const giftCardValue = data.gift_card_total_value || data.total_gift_cards_value || balanceValue;
+      console.log('🎁 Gift Card Value:', giftCardValue);
+      
+      const result = {
+        balance: balanceValue,
+        giftCardTotalValue: giftCardValue
       };
+      console.log('✅ Final result being returned:', result);
+      
+      return result;
     } catch (err) {
+      console.error('❌ Get Wallet Balance Error:', err);
       errorResponse(err);
       return rejectWithValue(err.response?.data);
     }
@@ -160,40 +186,132 @@ export const createWithdrawalRequest = createAsyncThunk(
   async (data, { rejectWithValue }) => {
     try {
       const response = await axios.post("/wallet/withdraw", data);
-      toast.success("Withdrawal request submitted successfully");
+      toast.success("Transfer request submitted successfully");
       return response.data.data;
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to create withdrawal request");
+      toast.error(err.response?.data?.message || "Failed to create transfer request");
       return rejectWithValue(err.response?.data);
     }
   }
 );
 
-// Transfer balance
+// Transfer balance - Step 1: Initiate transfer (send gift card)
 export const transferBalance = createAsyncThunk(
   "wallet/transferBalance",
   async (data, { rejectWithValue }) => {
     try {
-      const response = await axios.post("/wallet/transfer", data);
-      toast.success("Balance transferred successfully");
+      const response = await axios.post("/wallet/transfer/initiate", data);
+      toast.success("OTP sent! Please verify to complete the transfer.");
       return response.data.data;
     } catch (err) {
-      toast.error(err.response?.data?.message || "Transfer failed");
+      toast.error(err.response?.data?.message || "Failed to initiate transfer");
       return rejectWithValue(err.response?.data);
     }
   }
 );
 
-// Purchase gift card
-export const purchaseGiftCard = createAsyncThunk(
-  "wallet/purchaseGiftCard",
+// Transfer balance - Step 2: Verify OTP and complete
+export const verifyTransferOTP = createAsyncThunk(
+  "wallet/verifyTransferOTP",
   async (data, { rejectWithValue }) => {
     try {
-      const response = await axios.post("/wallet/gift-cards/purchase", data);
-      toast.success("Gift card purchased successfully");
+      const response = await axios.post("/wallet/transfer/verify-otp", {
+        transfer_request_id: data.transfer_request_id,
+        otp_code: data.otp_code
+      });
+      toast.success("Gift card sent successfully!");
       return response.data.data;
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to purchase gift card");
+      toast.error(err.response?.data?.message || "Failed to complete transfer");
+      return rejectWithValue(err.response?.data);
+    }
+  }
+);
+
+// Resend OTP for transfer
+export const resendTransferOTP = createAsyncThunk(
+  "wallet/resendTransferOTP",
+  async (transfer_request_id, { rejectWithValue }) => {
+    try {
+      const response = await axios.post("/wallet/transfer/resend-otp", {
+        transfer_request_id
+      });
+      toast.success("OTP resent successfully");
+      return response.data.data;
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to resend OTP");
+      return rejectWithValue(err.response?.data);
+    }
+  }
+);
+
+// Cancel transfer request
+export const cancelTransferRequest = createAsyncThunk(
+  "wallet/cancelTransferRequest",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(`/wallet/transfer/${data.transfer_request_id}/request-cancel`, {
+        reason: data.reason
+      });
+      toast.success("Transfer request cancelled successfully");
+      return response.data.data;
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to cancel transfer request");
+      return rejectWithValue(err.response?.data);
+    }
+  }
+);
+
+// Purchase gift card - Step 1: Initiate purchase (sends OTP)
+export const initiateGiftCardPurchase = createAsyncThunk(
+  "wallet/initiateGiftCardPurchase",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await axios.post("/wallet/purchase/initiate", {
+        product_type: "gift_card",
+        product_id: data.gift_card_id,
+        quantity: data.quantity || 1,
+        notes: data.notes || null
+      });
+      toast.success("OTP sent! Please check your email/SMS");
+      return response.data.data;
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to initiate gift card purchase");
+      return rejectWithValue(err.response?.data);
+    }
+  }
+);
+
+// Purchase gift card - Step 2: Verify OTP and complete
+export const verifyGiftCardPurchase = createAsyncThunk(
+  "wallet/verifyGiftCardPurchase",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await axios.post("/wallet/purchase/verify-otp", {
+        purchase_request_id: data.purchase_request_id,
+        otp_code: data.otp_code
+      });
+      toast.success("Gift card purchased successfully!");
+      return response.data.data;
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to complete gift card purchase");
+      return rejectWithValue(err.response?.data);
+    }
+  }
+);
+
+// Resend OTP for gift card purchase
+export const resendGiftCardOTP = createAsyncThunk(
+  "wallet/resendGiftCardOTP",
+  async (purchase_request_id, { rejectWithValue }) => {
+    try {
+      const response = await axios.post("/wallet/purchase/resend-otp", {
+        purchase_request_id
+      });
+      toast.success("OTP resent successfully");
+      return response.data.data;
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to resend OTP");
       return rejectWithValue(err.response?.data);
     }
   }
@@ -245,17 +363,27 @@ const DEMO_MY_GIFT_CARDS = [
   }
 ];
 
-// Get user's gift cards
+// Get user's gift cards (from purchase history)
 export const getMyGiftCards = createAsyncThunk(
   "wallet/getMyGiftCards",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.get("/wallet/gift-cards/my-cards");
-      // If API returns data, use it; otherwise use demo data for testing
-      const cards = response.data.data || [];
-      return cards.length > 0 ? cards : DEMO_MY_GIFT_CARDS;
+      const response = await axios.get("/wallet/purchase/history?product_type=gift_card");
+      // Extract completed purchases
+      const purchases = response.data.data?.data || [];
+      const giftCards = purchases
+        .filter(p => p.status === 'completed')
+        .map(p => ({
+          id: p.id,
+          code: p.product_details?.code || `GC-${p.id.slice(0, 8)}`,
+          amount: p.total_amount_cents / 100,
+          status: 'issued',
+          design: 'default',
+          created_at: p.created_at,
+          description: p.notes || `Gift Card - $${(p.total_amount_cents / 100).toFixed(2)}`
+        }));
+      return giftCards.length > 0 ? giftCards : DEMO_MY_GIFT_CARDS;
     } catch (err) {
-      // For development/testing, return demo data if API fails
       console.warn("API call failed, using demo gift cards:", err.message);
       return DEMO_MY_GIFT_CARDS;
     }
@@ -425,9 +553,11 @@ const walletSlice = createSlice({
         state.loading = true;
       })
       .addCase(getWalletBalance.fulfilled, (state, action) => {
+        console.log('🔄 getWalletBalance.fulfilled - action.payload:', action.payload);
         state.loading = false;
         state.balance = action.payload.balance || action.payload;
         state.giftCardTotalValue = action.payload.giftCardTotalValue || 0;
+        console.log('✅ Redux state updated - balance:', state.balance, 'giftCardTotalValue:', state.giftCardTotalValue);
       })
       .addCase(getWalletBalance.rejected, (state, action) => {
         state.loading = false;
@@ -485,30 +615,93 @@ const walletSlice = createSlice({
       .addCase(createWithdrawalRequest.rejected, (state) => {
         state.loading = false;
       })
-      // Transfer
+      // Transfer - Initiate
       .addCase(transferBalance.pending, (state) => {
         state.loading = true;
       })
       .addCase(transferBalance.fulfilled, (state, action) => {
         state.loading = false;
-        if (action.payload?.balance !== undefined) {
-          state.balance = action.payload.balance;
-        }
+        state.pendingTransfer = action.payload; // Store pending transfer data for OTP verification
       })
       .addCase(transferBalance.rejected, (state) => {
         state.loading = false;
       })
-      // Purchase gift card
-      .addCase(purchaseGiftCard.pending, (state) => {
+      // Transfer - Verify OTP
+      .addCase(verifyTransferOTP.pending, (state) => {
         state.loading = true;
       })
-      .addCase(purchaseGiftCard.fulfilled, (state, action) => {
+      .addCase(verifyTransferOTP.fulfilled, (state, action) => {
         state.loading = false;
-        if (action.payload?.balance !== undefined) {
-          state.balance = action.payload.balance;
+        state.pendingTransfer = null; // Clear pending transfer
+        if (action.payload?.new_balance_cents !== undefined) {
+          state.balance = action.payload.new_balance_cents / 100;
         }
       })
-      .addCase(purchaseGiftCard.rejected, (state) => {
+      .addCase(verifyTransferOTP.rejected, (state) => {
+        state.loading = false;
+      })
+      // Transfer - Resend OTP
+      .addCase(resendTransferOTP.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(resendTransferOTP.fulfilled, (state, action) => {
+        state.loading = false;
+        if (state.pendingTransfer) {
+          state.pendingTransfer.otp_id = action.payload.otp_id;
+          state.pendingTransfer.otp_expires_at = action.payload.otp_expires_at;
+        }
+      })
+      .addCase(resendTransferOTP.rejected, (state) => {
+        state.loading = false;
+      })
+      // Cancel transfer request
+      .addCase(cancelTransferRequest.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(cancelTransferRequest.fulfilled, (state) => {
+        state.loading = false;
+        state.pendingTransfer = null; // Clear pending transfer
+      })
+      .addCase(cancelTransferRequest.rejected, (state) => {
+        state.loading = false;
+      })
+      // Initiate gift card purchase
+      .addCase(initiateGiftCardPurchase.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(initiateGiftCardPurchase.fulfilled, (state, action) => {
+        state.loading = false;
+        state.pendingPurchase = action.payload; // Store pending purchase data for OTP verification
+      })
+      .addCase(initiateGiftCardPurchase.rejected, (state) => {
+        state.loading = false;
+      })
+      // Verify gift card purchase
+      .addCase(verifyGiftCardPurchase.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(verifyGiftCardPurchase.fulfilled, (state, action) => {
+        state.loading = false;
+        state.pendingPurchase = null; // Clear pending purchase
+        if (action.payload?.new_balance_cents !== undefined) {
+          state.balance = action.payload.new_balance_cents / 100;
+        }
+      })
+      .addCase(verifyGiftCardPurchase.rejected, (state) => {
+        state.loading = false;
+      })
+      // Resend OTP
+      .addCase(resendGiftCardOTP.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(resendGiftCardOTP.fulfilled, (state, action) => {
+        state.loading = false;
+        if (state.pendingPurchase) {
+          state.pendingPurchase.otp_id = action.payload.otp_id;
+          state.pendingPurchase.otp_expires_at = action.payload.otp_expires_at;
+        }
+      })
+      .addCase(resendGiftCardOTP.rejected, (state) => {
         state.loading = false;
       })
       // Gift card

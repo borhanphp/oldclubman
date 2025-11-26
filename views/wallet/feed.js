@@ -7,6 +7,7 @@ import { FaGift, FaHistory, FaShoppingCart, FaArrowRight } from 'react-icons/fa'
 import { getMyGiftCards, getTransactions, getWalletBalance } from './store';
 import WalletSidebar from './WalletSidebar';
 import StatusBadge from '@/components/wallet/StatusBadge';
+import GiftCardSummary from '@/components/wallet/GiftCardSummary';
 
 const WalletDashboard = () => {
   const dispatch = useDispatch();
@@ -60,63 +61,8 @@ const WalletDashboard = () => {
           <WalletSidebar />
           
           <div className="w-full lg:w-3/4">
-            <div className="mb-6">
-              <div className="bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg shadow-lg p-6 text-white">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-purple-100 text-sm font-medium mb-1">Total Gift Card Value</p>
-                    <div className="flex items-baseline">
-                      <span className="text-4xl font-bold">${totalGiftCardValue.toFixed(2)}</span>
-                      <span className="text-xl ml-1 text-purple-100">USD</span>
-                    </div>
-                    <p className="text-sm text-purple-100 mt-2">
-                      {giftCards?.filter(c => c.status === 'active').length || 0} Active Gift Cards
-                    </p>
-                  </div>
-                  <button
-                    onClick={handleRefresh}
-                    disabled={loading}
-                    className="bg-white/20 hover:bg-white/30 rounded-full p-3 transition-colors disabled:opacity-50"
-                    title="Refresh"
-                  >
-                    <FaGift className={`text-2xl ${loading ? 'animate-pulse' : ''}`} />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <Link
-                href="/user/wallet/gift-cards"
-                className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow border border-gray-200"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-600 text-sm mb-1">Purchase</p>
-                    <p className="text-2xl font-bold text-gray-800">Gift Cards</p>
-                  </div>
-                  <div className="bg-purple-100 rounded-full p-4">
-                    <FaShoppingCart className="text-purple-600 text-xl" />
-                  </div>
-                </div>
-              </Link>
-
-              <Link
-                href="/user/wallet/transactions"
-                className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow border border-gray-200"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-600 text-sm mb-1">Transaction</p>
-                    <p className="text-2xl font-bold text-gray-800">History</p>
-                  </div>
-                  <div className="bg-blue-100 rounded-full p-4">
-                    <FaHistory className="text-blue-600 text-xl" />
-                  </div>
-                </div>
-              </Link>
-            </div>
+            {/* Gift Card Summary Component */}
+            <GiftCardSummary />
 
             {/* Recent Transactions */}
             <div className="bg-white rounded-lg shadow-sm p-6">
@@ -176,10 +122,10 @@ const WalletDashboard = () => {
                 <div className="text-center py-8 text-gray-500">
                   <p>No transactions yet</p>
                   <Link
-                    href="/user/wallet/deposit"
+                    href="/user/wallet/gift-cards"
                     className="text-blue-500 hover:text-blue-600 mt-2 inline-block"
                   >
-                    Make your first deposit
+                    Purchase your first gift card
                   </Link>
                 </div>
               )}

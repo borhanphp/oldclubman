@@ -4,15 +4,18 @@ import CommonLayout from '@/components/common/CommonLayout';
 import React, { Suspense } from 'react';
 import AvailableGiftCards from '@/views/wallet/AvailableGiftCards';
 import WalletSidebar from '@/views/wallet/WalletSidebar';
+import GiftCardSummary from '@/components/wallet/GiftCardSummary';
 
 function GiftCardsContent() {
   return (
     <div className="bg-gray-100 min-h-screen">
-      <div className="mx-auto">
+      <div className="mx-auto md:p-5 md:px-10">
         <div className="flex flex-wrap">
           <WalletSidebar />
           
           <div className="w-full lg:w-3/4">
+            <GiftCardSummary />
+            
             <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
               <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-gray-800">Purchase Gift Cards</h1>

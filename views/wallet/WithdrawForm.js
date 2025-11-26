@@ -5,12 +5,15 @@ import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { FaArrowLeft, FaMobileAlt, FaUniversity } from 'react-icons/fa';
 import toast from 'react-hot-toast';
-import { createWithdrawalRequest, getWalletBalance } from './store';
+import GiftCardSummary from '@/components/wallet/GiftCardSummary';
+import WalletSidebar from './WalletSidebar';
+import { createWithdrawalRequest, getWalletBalance, getMyGiftCards } from './store';
 
 const WithdrawForm = () => {
   const router = useRouter();
   const dispatch = useDispatch();
   const { balance } = useSelector(({ wallet }) => wallet);
+  const walletBalance = typeof balance === 'number' ? balance : parseFloat(balance) || 0;
   const [withdrawalMethod, setWithdrawalMethod] = useState('bank');
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
@@ -38,14 +41,15 @@ const WithdrawForm = () => {
 
   useEffect(() => {
     dispatch(getWalletBalance());
+    dispatch(getMyGiftCards());
   }, [dispatch]);
 
   const validateAmount = (value) => {
     const numValue = parseFloat(value);
     if (isNaN(numValue) || numValue < 10) {
-      return 'Minimum withdrawal amount is $10';
+      return 'Minimum amount is $10';
     }
-    if (numValue > balance) {
+    if (numValue > walletBalance) {
       return 'Insufficient balance';
     }
     return null;
@@ -124,7 +128,7 @@ const WithdrawForm = () => {
       await dispatch(createWithdrawalRequest(withdrawalData)).unwrap();
       router.push('/user/wallet');
     } catch (error) {
-      toast.error(error.message || 'Failed to create withdrawal request');
+      toast.error(error.message || 'Failed to create transfer request');
     } finally {
       setLoading(false);
     }
@@ -132,30 +136,36 @@ const WithdrawForm = () => {
 
   return (
     <div className="bg-gray-100 min-h-screen">
-      <div className="mx-auto max-w-4xl">
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center mb-6">
-            <button
+      <div className="mx-auto md:p-5 md:px-10">
+        <div className="flex flex-wrap">
+          <WalletSidebar />
+          
+          <div className="w-full lg:w-3/4">
+            <GiftCardSummary />
+            
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center mb-6">
+                <button
               onClick={() => router.back()}
               className="text-blue-500 mr-4 hover:text-blue-600"
             >
               <FaArrowLeft className="text-xl" />
             </button>
-            <h1 className="text-2xl font-bold text-gray-800">Withdraw Money</h1>
+            <h1 className="text-2xl font-bold text-gray-800">Transfer Request</h1>
           </div>
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <p className="text-sm text-blue-800">
-              <strong>Available Balance:</strong> ${balance?.toFixed(2) || '0.00'}
+              <strong>Available Balance:</strong> ${walletBalance.toFixed(2)}
             </p>
             <p className="text-xs text-blue-700 mt-1">
-              Withdrawal requests are subject to admin approval and may take 2-5 business days to process.
+              Transfer requests are subject to admin approval and may take 2-5 business days to process.
             </p>
           </div>
 
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Withdrawal Amount (USD) <span className="text-red-500">*</span>
+              Amount (USD) <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">$</span>
@@ -177,10 +187,10 @@ const WithdrawForm = () => {
             {errors.amount && (
               <p className="text-red-500 text-xs mt-1">{errors.amount}</p>
             )}
-            <p className="text-xs text-gray-500 mt-1">Minimum withdrawal: $10.00</p>
+            <p className="text-xs text-gray-500 mt-1">Minimum amount: $10.00</p>
           </div>
 
-          {/* Withdrawal Method Selector */}
+          {/* Transfer Method Selector */}
           <div className="grid grid-cols-2 gap-4 mb-6">
             <button
               type="button"
@@ -418,10 +428,12 @@ const WithdrawForm = () => {
                 disabled={loading}
                 className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Submitting Request...' : 'Submit Withdrawal Request'}
+                {loading ? 'Submitting Request...' : 'Submit Transfer Request'}
               </button>
             </div>
           </form>
+            </div>
+          </div>
         </div>
       </div>
     </div>
