@@ -871,7 +871,7 @@ function FeedHeader({
         
         // Create a post about the cover photo change
         const postFormData = new FormData();
-        postFormData.append("message", "changed cover photo");
+        postFormData.append("message", "");
         postFormData.append("privacy_mode", "public");
         
         // Add the cover image to the post
