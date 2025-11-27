@@ -1,10 +1,7 @@
-"use client"
-
-import {  getMyProfile } from "@/views/settings/store";
-import Link from "next/link";
-import React, { useEffect } from "react";
-import { FaEllipsisH } from "react-icons/fa";
-import { useDispatch, useSelector } from "react-redux";
+import Link from 'next/link'
+import React, { useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux';
+import { getMyProfile } from '@/views/settings/store';
 
 const Intro = () => {
   const {profile} = useSelector(({settings}) => settings)
@@ -15,40 +12,47 @@ const Intro = () => {
   }, [dispatch])
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
-      <div className="flex justify-between items-center mb-3">
-        <h3 className="text-lg font-semibold">INTRO</h3>
-        <Link href="/user/account-settings" className="text-blue-500 p-1 rounded">
-          <FaEllipsisH />
-        </Link>
-      </div>
-
-      <div className="text-center">
-        <div>
-        {profile?.client?.profile_overview}
-        </div>
-        <div>
-        {profile?.client?.tagline}
-        </div>
-      </div>
-      <div className="text-center py-4">
-        <div className="stats flex justify-between px-8 mb-4">
-          <div className="text-center">
-            <div className="font-semibold">{profile?.post?.total || 0}</div>
-            <div className="text-sm text-gray-500">Post</div>
+    <div className="">
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="flex flex-col items-center pt-6">
+          <div className="w-20 h-20 rounded-full overflow-hidden bg-blue-100 mb-5">
+            <img 
+            src={profile?.client?.image ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + profile?.client?.image : "/common-avator.jpg"}
+            alt="Profile" className="w-full h-full object-cover" />
           </div>
-          <div className="text-center">
-            <div className="font-semibold">{profile.followers && profile.followers || 0}</div>
-            <div className="text-sm text-gray-500">Followers</div>
+          
+          <h2 className="text-xl font-bold mb-5">
+          {profile?.client ? profile?.client?.fname + " " + profile?.client?.last_name : "Loading..."}
+          </h2>
+          
+          <div className="flex justify-between items-center w-full px-8 border-b border-b-gray-100 pb-5">
+            <div className="text-center">
+              <div className="font-bold text-lg">{profile?.post?.total || 0}</div>
+              <div className="text-gray-500 text-sm">Post</div>
+            </div>
+            
+            <div className="h-10 w-px bg-gray-200"></div>
+            
+            <div className="text-center relative">
+              <div className="font-bold text-lg">{profile?.followers && profile?.followers || 0}</div>
+              <div className="text-gray-500 text-sm">Followers</div>
+            </div>
+            
+            <div className="h-10 w-px bg-gray-200"></div>
+            
+            <div className="text-center">
+              <div className="font-bold text-lg">{profile?.following && profile?.following || 0}</div>
+              <div className="text-gray-500 text-sm">Following</div>
+            </div>
           </div>
-          <div className="text-center">
-            <div className="font-semibold">{profile.following && profile.following || 0}</div>
-            <div className="text-sm text-gray-500">Following</div>
-          </div>
+          
+          <Link href={`/${profile?.client?.id}`} className="w-full py-2 text-blue-500 text-center font-medium hover:bg-blue-50">
+            View Profile
+          </Link>
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Intro;
+export default Intro

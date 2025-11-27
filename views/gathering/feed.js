@@ -12,6 +12,7 @@ import CreatePostBox from "@/components/common/CreatePostBox";
 import PostList from '@/components/common/PostList';
 import SearchResults from '@/components/common/SearchResults';
 import FeedLayout from '@/components/common/FeedLayout';
+import HomeLayout from '@/components/common/HomeLayout';
 
 
 
@@ -221,27 +222,25 @@ const GatheringContent = () => {
 
 
   return (
-    <FeedLayout>
+    <HomeLayout>
       {/* Content Area - Responsive 3 Column Layout */}
       <div className="about-content">
-        <div className="mx-auto pt-3">
+        <div className="mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
             {/* Left Sidebar - Hidden on mobile, visible on large screens */}
-            <div className="hidden lg:block lg:col-span-4">
-              {/* Who to Follow Widget */}
+            {/* <div className="hidden lg:block lg:col-span-4">
               <FollowSuggestion/>
               
-              {/* Upcoming Birthday Widget */}
               <div className="bg-white rounded-lg shadow-sm p-4">
                 <h3 className="text-lg font-semibold mb-3">Upcoming Birthday</h3>
                 <p className="text-gray-500 text-sm">
                   No online followers have a birthday today.
                 </p>
               </div>
-            </div>
+            </div> */}
             
             {/* Center Content / Feed - Full width on mobile, 6 cols on large screens */}
-            <div className="col-span-1 lg:col-span-8">
+            <div className="col-span-1 lg:col-span-12">
               {/* Mobile-only Who to Follow Widget */}
               {/* <div className="hidden md:block mb-4">
                 <FollowSuggestion/>
@@ -284,7 +283,7 @@ const GatheringContent = () => {
       {/* Post Modal */}
       {isPostModalOpen && <PostModal />}
       
-    </FeedLayout>
+    </HomeLayout>
   );
 };
 
