@@ -175,7 +175,7 @@ export const getUserFollowing = createAsyncThunk( 'settings/getUserFollowing', a
 } )
 
 export const getFollowSuggestions = createAsyncThunk( 'settings/getFollowSuggestions', async (page = 1) => {
-  const result = axios.get( `/client/random_people/10?page=${page}` )
+  const result = axios.get( `/client/random_people/5?page=${page}` )
   .then((res) => {
       console.log('📄 API Response for FollowSuggestions', res.data.data.follow_connections);
       const resData = res.data.data?.follow_connections?.data;
