@@ -4,16 +4,23 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { FaLock, FaSpinner, FaTimes } from 'react-icons/fa';
 import toast from 'react-hot-toast';
-import { verifyTransferOTP, resendTransferOTP, cancelTransferRequest, getWalletBalance } from '@/views/wallet/store';
+import { verifyTransferOTP, resendTransferOTP, cancelTransferRequest, getTransferDetails, getWalletBalance } from '@/views/wallet/store';
 
 const TransferOTPVerification = ({ onSuccess, onCancel }) => {
   const dispatch = useDispatch();
-  const { pendingTransfer, loading } = useSelector(({ wallet }) => wallet);
+  const { pendingTransfer, transferDetails, loading } = useSelector(({ wallet }) => wallet);
   
   const [otpCode, setOtpCode] = useState('');
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
+
+  // Fetch transfer details when component mounts
+  useEffect(() => {
+    if (pendingTransfer?.transfer_request_id) {
+      dispatch(getTransferDetails(pendingTransfer.transfer_request_id));
+    }
+  }, [pendingTransfer?.transfer_request_id, dispatch]);
 
   useEffect(() => {
     if (!pendingTransfer) return;
@@ -108,16 +115,41 @@ const TransferOTPVerification = ({ onSuccess, onCancel }) => {
         <div className="bg-blue-50 rounded-lg p-4 mb-6">
           <div className="flex justify-between text-sm text-gray-600 mb-1">
             <span>Recipient:</span>
-            <span className="font-semibold text-gray-800">{pendingTransfer.receiver_name || 'N/A'}</span>
+            <span className="font-semibold text-gray-800">
+              {transferDetails?.receiver?.name || pendingTransfer.receiver_name || 'N/A'}
+            </span>
           </div>
+          {transferDetails?.receiver?.username && (
+            <div className="flex justify-between text-sm text-gray-600 mb-1">
+              <span>Username:</span>
+              <span className="text-gray-700">@{transferDetails.receiver.username}</span>
+            </div>
+          )}
           <div className="flex justify-between text-sm text-gray-600 mb-1">
             <span>Amount:</span>
-            <span className="font-bold text-blue-600 text-lg">${pendingTransfer.amount_dollars}</span>
+            <span className="font-bold text-blue-600 text-lg">
+              ${transferDetails?.amount_dollars || pendingTransfer.amount_dollars}
+            </span>
           </div>
-          {pendingTransfer.description && (
+          {transferDetails?.status && (
+            <div className="flex justify-between text-sm text-gray-600 mb-1">
+              <span>Status:</span>
+              <span className={`font-semibold capitalize ${
+                transferDetails.status === 'pending' ? 'text-yellow-600' :
+                transferDetails.status === 'completed' ? 'text-green-600' :
+                transferDetails.status === 'cancelled' ? 'text-red-600' :
+                'text-gray-600'
+              }`}>
+                {transferDetails.status}
+              </span>
+            </div>
+          )}
+          {(transferDetails?.description || pendingTransfer.description) && (
             <div className="text-sm text-gray-600 mt-2 pt-2 border-t border-blue-200">
               <span className="block mb-1">Note:</span>
-              <p className="text-gray-800 text-xs italic">{pendingTransfer.description}</p>
+              <p className="text-gray-800 text-xs italic">
+                {transferDetails?.description || pendingTransfer.description}
+              </p>
             </div>
           )}
         </div>

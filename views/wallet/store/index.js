@@ -7,13 +7,21 @@ const initialState = {
   balance: 0,
   giftCardTotalValue: 0,
   transactions: [],
+  depositHistory: [],
   giftCards: [],
   availableGiftCards: [],
   paymentGateways: [],
   pendingPurchase: null, // Stores pending purchase data for OTP verification
   pendingTransfer: null, // Stores pending transfer data for OTP verification
+  transferDetails: null, // Stores transfer details
   loading: false,
   error: null,
+  historyPagination: {
+    currentPage: 1,
+    totalPages: 1,
+    hasMore: false,
+    total: 0,
+  },
 };
 
 // Get wallet balance (includes gift card total value)
@@ -59,69 +67,22 @@ export const getWalletBalance = createAsyncThunk(
 );
 
 // Demo transactions for testing
-const DEMO_TRANSACTIONS = [
-  {
-    id: 1,
-    type: "gift_card_purchase",
-    amount: 50,
-    status: "completed",
-    payment_method: "stripe",
-    reference_id: "TXN-2024-001",
-    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: 2,
-    type: "gift_card_purchase",
-    amount: 20,
-    status: "completed",
-    payment_method: "paypal",
-    reference_id: "TXN-2024-002",
-    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: 3,
-    type: "gift_card_transfer",
-    amount: 10,
-    status: "completed",
-    payment_method: null,
-    reference_id: "TXN-2024-003",
-    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    recipient_name: "John Doe"
-  },
-  {
-    id: 4,
-    type: "gift_card_received",
-    amount: 25,
-    status: "completed",
-    payment_method: null,
-    reference_id: "TXN-2024-004",
-    created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-    sender_name: "Jane Smith"
-  },
-  {
-    id: 5,
-    type: "gift_card_purchase",
-    amount: 100,
-    status: "pending",
-    payment_method: "mobile",
-    reference_id: "TXN-2024-005",
-    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
-  }
-];
-
-// Get transactions
+// Get transactions (legacy endpoint - keeping for backward compatibility)
 export const getTransactions = createAsyncThunk(
   "wallet/getTransactions",
   async (params = {}, { rejectWithValue }) => {
     try {
       const response = await axios.get("/wallet/transactions", { params });
-      // If API returns data, use it; otherwise use demo data for testing
       const transactions = response.data.data || [];
-      return transactions.length > 0 ? transactions : DEMO_TRANSACTIONS;
+      
+      // Transform to consistent format
+      return transactions.map(transaction => ({
+        ...transaction,
+        amount: transaction.amount_cents ? transaction.amount_cents / 100 : transaction.amount,
+      }));
     } catch (err) {
-      // For development/testing, return demo data if API fails
-      console.warn("API call failed, using demo transactions:", err.message);
-      return DEMO_TRANSACTIONS;
+      console.error("Failed to fetch transactions:", err.message);
+      return rejectWithValue(err.response?.data || { message: err.message });
     }
   }
 );
@@ -257,6 +218,72 @@ export const cancelTransferRequest = createAsyncThunk(
       return response.data.data;
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to cancel transfer request");
+      return rejectWithValue(err.response?.data);
+    }
+  }
+);
+
+// Get transfer details
+export const getTransferDetails = createAsyncThunk(
+  "wallet/getTransferDetails",
+  async (transfer_request_id, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`/wallet/transfer/${transfer_request_id}`);
+      return response.data.data;
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to fetch transfer details");
+      return rejectWithValue(err.response?.data);
+    }
+  }
+);
+
+// Get deposit/transaction history
+export const getDepositHistory = createAsyncThunk(
+  "wallet/getDepositHistory",
+  async (params = {}, { rejectWithValue }) => {
+    try {
+      const { page = 1, limit = 20, type = null } = params;
+      let url = `/wallet/deposit/history?page=${page}&limit=${limit}`;
+      
+      if (type) {
+        url += `&type=${type}`;
+      }
+      
+      const response = await axios.get(url);
+      console.log('📜 Deposit History API Response:', response.data);
+      
+      // Transform the data to match our UI expectations
+      const apiData = response.data.data;
+      const transformedData = apiData.data.map(transaction => ({
+        id: transaction.id,
+        type: transaction.transaction_type,
+        amount: transaction.amount_cents / 100, // Convert cents to dollars
+        amount_cents: transaction.amount_cents,
+        currency: transaction.currency,
+        status: transaction.status,
+        payment_method: transaction.metadata?.card_brand || transaction.metadata?.card_type || 'Unknown',
+        reference_id: transaction.payment_reference,
+        transaction_id: transaction.id,
+        description: transaction.description,
+        balance_before: transaction.balance_before_cents / 100,
+        balance_after: transaction.balance_after_cents / 100,
+        admin_notes: transaction.admin_notes,
+        created_at: transaction.created_at,
+        updated_at: transaction.updated_at,
+        metadata: transaction.metadata
+      }));
+
+      return {
+        data: transformedData,
+        current_page: apiData.current_page,
+        last_page: apiData.last_page,
+        total: apiData.total,
+        per_page: apiData.per_page,
+        from: apiData.from,
+        to: apiData.to
+      };
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to fetch transaction history");
       return rejectWithValue(err.response?.data);
     }
   }
@@ -663,6 +690,52 @@ const walletSlice = createSlice({
         state.pendingTransfer = null; // Clear pending transfer
       })
       .addCase(cancelTransferRequest.rejected, (state) => {
+        state.loading = false;
+      })
+      // Get transfer details
+      .addCase(getTransferDetails.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(getTransferDetails.fulfilled, (state, action) => {
+        state.loading = false;
+        state.transferDetails = action.payload;
+      })
+      .addCase(getTransferDetails.rejected, (state) => {
+        state.loading = false;
+        state.transferDetails = null;
+      })
+      // Get deposit history
+      .addCase(getDepositHistory.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(getDepositHistory.fulfilled, (state, action) => {
+        state.loading = false;
+        const { data, current_page, last_page, total, per_page, from, to } = action.payload;
+        
+        console.log('💾 Storing deposit history:', { 
+          dataLength: data?.length, 
+          currentPage: current_page, 
+          lastPage: last_page,
+          total 
+        });
+        
+        // If it's page 1, replace the data, otherwise append
+        if (current_page === 1) {
+          state.depositHistory = data || [];
+        } else {
+          state.depositHistory = [...state.depositHistory, ...(data || [])];
+        }
+        
+        state.historyPagination = {
+          currentPage: current_page || 1,
+          totalPages: last_page || 1,
+          hasMore: current_page < last_page,
+          total: total || 0,
+          from: from || 0,
+          to: to || 0,
+        };
+      })
+      .addCase(getDepositHistory.rejected, (state) => {
         state.loading = false;
       })
       // Initiate gift card purchase

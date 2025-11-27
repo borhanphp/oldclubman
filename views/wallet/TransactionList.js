@@ -3,29 +3,31 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { FaPlus, FaArrowDown, FaArrowRight, FaGift, FaHistory, FaSearch, FaDownload, FaTimes } from 'react-icons/fa';
-import { getTransactions } from './store';
+import { getDepositHistory } from './store';
 import StatusBadge from '@/components/wallet/StatusBadge';
 
 const TransactionList = () => {
   const dispatch = useDispatch();
-  const { transactions, loading } = useSelector(({ wallet }) => wallet);
+  const { depositHistory, loading, historyPagination } = useSelector(({ wallet }) => wallet);
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [selectedTransaction, setSelectedTransaction] = useState(null);
 
+  // Fetch deposit history from the API
   useEffect(() => {
-    const filters = {};
+    const params = {
+      page: 1,
+      limit: 20,
+    };
+    
     if (activeFilter !== 'all') {
-      filters.type = activeFilter;
+      params.type = activeFilter;
     }
-    if (dateFrom) filters.date_from = dateFrom;
-    if (dateTo) filters.date_to = dateTo;
-    if (searchQuery) filters.search = searchQuery;
 
-    dispatch(getTransactions(filters));
-  }, [dispatch, activeFilter, dateFrom, dateTo, searchQuery]);
+    dispatch(getDepositHistory(params));
+  }, [dispatch, activeFilter]);
 
   const filters = [
     { id: 'all', label: 'All' },
@@ -69,7 +71,10 @@ const TransactionList = () => {
     return `${sign}$${Math.abs(numAmount).toFixed(2)}`;
   };
 
-  const filteredTransactions = transactions?.filter(t => {
+  // Use deposit history from API (primary source)
+  const allTransactions = depositHistory || [];
+
+  const filteredTransactions = allTransactions.filter(t => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       return (
@@ -220,6 +225,27 @@ const TransactionList = () => {
           </div>
         )}
       </div>
+
+      {/* Load More Button */}
+      {historyPagination.hasMore && !loading && (
+        <div className="mt-4 text-center">
+          <button
+            onClick={() => {
+              dispatch(getDepositHistory({
+                page: historyPagination.currentPage + 1,
+                limit: 20,
+                type: activeFilter !== 'all' ? activeFilter : null
+              }));
+            }}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+          >
+            Load More Transactions
+          </button>
+          <p className="text-xs text-gray-500 mt-2">
+            Showing {depositHistory.length} of {historyPagination.total} transactions
+          </p>
+        </div>
+      )}
 
       {/* Transaction Details Modal */}
       {selectedTransaction && (
