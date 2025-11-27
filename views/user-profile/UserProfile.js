@@ -41,7 +41,7 @@ const UserProfile = () => {
   const dispatch = useDispatch();
   const params = useParams();
 
-  const isMyProfile = Number(params?.id) === Number(profileData?.id);
+  const isMyProfile = params?.username === profileData?.username || params?.username === profile?.client?.username;
   
   // State for edit bio modal
   const [isEditBioOpen, setIsEditBioOpen] = useState(false);
@@ -124,11 +124,11 @@ const UserProfile = () => {
       // Save to backend
       dispatch(storeProfileSetting(updatedProfileData)).then((res) => {
         toast.success("Successfully Updated");
-        dispatch(getUserProfile(params?.id));
+        dispatch(getUserProfileByUsername(params?.username));
       });
   }
 
-  const userData = params?.id ? userProfileData?.client : profile?.client;
+  const userData = params?.username ? userProfileData?.client : profile?.client;
   const categoryData = userData?.metas?.filter(dd => dd.meta_key === "PROFILE")[0]?.meta_value;
   let profileDataShow = [];
   try {
@@ -401,7 +401,7 @@ console.log(userData)
 
             {/* Center Content - PROFILE INFO */}
             <div className="md:col-span-7">
-            {+profileData?.id === +params?.id && ( <CreatePostBox /> )}
+            {isMyProfile && ( <CreatePostBox /> )}
 
               {/* Post */}
               <PostList postsData={userProfileData?.post} />

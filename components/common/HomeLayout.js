@@ -6,6 +6,7 @@ import ContactsList from "./ContactsList";
 import SidebarSearch from "./SidebarSearch";
 import SearchResults from "./SearchResults";
 import Intro from "./Intro";
+import FollowSuggestion from "./FollowSuggestion";
 
 const HomeLayout = ({ children, showMsgBtn, showFriends, userProfile }) => {
   const { query, results } = useSelector((state) => state.search);
@@ -52,19 +53,26 @@ const HomeLayout = ({ children, showMsgBtn, showFriends, userProfile }) => {
             </div>
             <div className="grid grid-cols-11">
               
-              <div className="col-span-2 hidden pt-4 md:block sticky top-0 h-screen overflow-y-auto">
+              <div className="col-span-2 hidden pt-2 md:block sticky top-0 h-screen overflow-y-auto">
                 {/* Left sidebar - Search box */}
                 {/* <SidebarSearch /> */}
                 <Intro/>
+
+                <div className="mt-2">
+                <FollowSuggestion/>
+                </div>
                
               </div>
-              <div className="col-span-11 md:col-span-7 overflow-y-auto p-0 md:p-4">
+            
+              <div className="col-span-11 md:col-span-7 overflow-y-auto p-0 md:p-2">
                 {children}
               </div>
               <div className="col-span-2 hidden md:block sticky top-0 h-screen">
-                <ContactsList />
+              <SidebarSearch />
+              <ContactsList />
                 
               </div>
+              
             </div>
           </>
         )}

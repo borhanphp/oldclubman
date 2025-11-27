@@ -90,7 +90,7 @@ const CommentModal = ({
             </div>
             <div>
               <Link
-                href={`/${basicPostData?.client?.id}`}
+                href={`/${basicPostData?.client?.username || basicPostData?.client?.id}`}
                 className="cursor-pointer hover:underline"
               >
                 <div className="font-semibold">
@@ -294,7 +294,7 @@ const CommentModal = ({
                   <div className="bg-gray-100 p-3 rounded-2xl relative border border-gray-200">
                     <div className="font-medium text-sm">
                       <Link
-                        href={`/${c?.client_id}`}
+                        href={`/${c?.client_comment?.username || c?.client_id}`}
                         className="cursor-pointer hover:underline"
                       >
                         {c?.client_comment?.fname +
@@ -556,7 +556,7 @@ const CommentModal = ({
                         <div className="bg-gray-50 w-full p-2 rounded-2xl border border-gray-200 flex flex-col">
                           <span className="font-medium text-xs">
                             <Link
-                              href={`/${reply?.client_id}`}
+                              href={`/${reply?.client_comment?.username || reply?.client_id}`}
                               className="cursor-pointer hover:underline"
                             >
                               {reply?.client_comment?.fname +

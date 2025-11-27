@@ -10,7 +10,7 @@ import {
 } from "react-icons/fa";
 import FeedHeader from "@/components/common/FeedHeader";
 import { useDispatch, useSelector } from "react-redux";
-import { followTo, getMyProfile, getUserFollowers, getUserFollowing, getUserProfile, unFollowTo } from "../settings/store";
+import { followTo, getMyProfile, getUserFollowers, getUserFollowing, getUserProfile, getUserProfileByUsername, unFollowTo } from "../settings/store";
 import { useParams } from "next/navigation";
 import FeedLayout from "@/components/common/FeedLayout";
 
@@ -23,17 +23,19 @@ const FriendsList = () => {
   useEffect(() => {
     // Initial profile load
     dispatch(getMyProfile());
-    dispatch(getUserProfile(params?.id));
-  }, [dispatch, params?.id]);
+    dispatch(getUserProfileByUsername(params?.username));
+  }, [dispatch, params?.username]);
 
   useEffect(() => {
-    // Handle tab changes
-    if (activeTab === 'followers') {
-      dispatch(getUserFollowers(params?.id));
-    } else if (activeTab === 'following') {
-      dispatch(getUserFollowing(params?.id));
+    // Handle tab changes - wait for userProfileData to load first
+    if (userProfileData?.client?.id) {
+      if (activeTab === 'followers') {
+        dispatch(getUserFollowers(userProfileData.client.id));
+      } else if (activeTab === 'following') {
+        dispatch(getUserFollowing(userProfileData.client.id));
+      }
     }
-  }, [activeTab, params?.id, dispatch]);
+  }, [activeTab, userProfileData?.client?.id, dispatch]);
 
   const tabs = [
     { id: 'followers', label: 'Followers' },

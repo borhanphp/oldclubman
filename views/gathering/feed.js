@@ -227,17 +227,7 @@ const GatheringContent = () => {
       <div className="about-content">
         <div className="mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            {/* Left Sidebar - Hidden on mobile, visible on large screens */}
-            {/* <div className="hidden lg:block lg:col-span-4">
-              <FollowSuggestion/>
-              
-              <div className="bg-white rounded-lg shadow-sm p-4">
-                <h3 className="text-lg font-semibold mb-3">Upcoming Birthday</h3>
-                <p className="text-gray-500 text-sm">
-                  No online followers have a birthday today.
-                </p>
-              </div>
-            </div> */}
+           
             
             {/* Center Content / Feed - Full width on mobile, 6 cols on large screens */}
             <div className="col-span-1 lg:col-span-12">

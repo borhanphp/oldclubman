@@ -1458,14 +1458,15 @@ const handleMentionDetect = async (e, inputKey) => {
     // Add proper styling to H1 elements
     cleanedText = cleanedText.replace(/<h1([^>]*)>/gi, '<h1$1 style="font-size: 1.5em; font-weight: bold; color: inherit; display: block; margin: 0.5em 0; line-height: 1.2;">');
     
-    // Handle the clean [Name](id) format
-    const fullFormatRegex = /\[(.+?)\]\((\d+)\)/g;
+    // Handle the clean [Name](id) or [Name](username) format
+    // Updated to support both numeric IDs and alphanumeric usernames
+    const fullFormatRegex = /\[(.+?)\]\(([a-zA-Z0-9_]+)\)/g;
     
     const elements = [];
     let lastIndex = 0;
     let match;
     
-    // Handle full format mentions [Name](id) and make them clickable
+    // Handle full format mentions [Name](id/username) and make them clickable
     while ((match = fullFormatRegex.exec(cleanedText)) !== null) {
       const start = match.index;
       const [full, name, id] = match;
@@ -1630,14 +1631,15 @@ const handleMentionDetect = async (e, inputKey) => {
     // Sanitize HTML to only allow safe formatting tags
     cleanedText = sanitizeHTML(cleanedText);
     
-    // Handle the clean [Name](id) format
-    const fullFormatRegex = /\[(.+?)\]\((\d+)\)/g;
+    // Handle the clean [Name](id) or [Name](username) format
+    // Updated to support both numeric IDs and alphanumeric usernames
+    const fullFormatRegex = /\[(.+?)\]\(([a-zA-Z0-9_]+)\)/g;
     
     const elements = [];
     let lastIndex = 0;
     let match;
     
-    // Handle full format mentions [Name](id) and make them clickable
+    // Handle full format mentions [Name](id/username) and make them clickable
     while ((match = fullFormatRegex.exec(cleanedText)) !== null) {
       const start = match.index;
       const [full, name, id] = match;
