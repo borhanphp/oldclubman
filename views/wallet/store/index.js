@@ -263,11 +263,14 @@ export const getDepositHistory = createAsyncThunk(
         status: transaction.status,
         payment_method: transaction.metadata?.card_brand || transaction.metadata?.card_type || 'Unknown',
         reference_id: transaction.payment_reference,
+        payment_reference: transaction.payment_reference,
         transaction_id: transaction.id,
         description: transaction.description,
         balance_before: transaction.balance_before_cents / 100,
         balance_after: transaction.balance_after_cents / 100,
         admin_notes: transaction.admin_notes,
+        wallet_id: transaction.wallet_id,
+        payment_gateway_id: transaction.payment_gateway_id,
         created_at: transaction.created_at,
         updated_at: transaction.updated_at,
         metadata: transaction.metadata
@@ -284,6 +287,31 @@ export const getDepositHistory = createAsyncThunk(
       };
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to fetch transaction history");
+      return rejectWithValue(err.response?.data);
+    }
+  }
+);
+
+// Manual deposit confirmation
+export const confirmDepositManually = createAsyncThunk(
+  "wallet/confirmDepositManually",
+  async (data, { rejectWithValue }) => {
+    try {
+      const formData = new FormData();
+      formData.append('gateway_transaction_id', data.gateway_transaction_id);
+      formData.append('payment_gateway_id', data.payment_gateway_id);
+      formData.append('wallet_id', data.wallet_id);
+
+      const response = await axios.post("/wallet/deposit/confirm", formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      toast.success(response.data.message || "Deposit confirmed successfully");
+      return response.data;
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to confirm deposit");
       return rejectWithValue(err.response?.data);
     }
   }
@@ -736,6 +764,17 @@ const walletSlice = createSlice({
         };
       })
       .addCase(getDepositHistory.rejected, (state) => {
+        state.loading = false;
+      })
+      // Manual deposit confirmation
+      .addCase(confirmDepositManually.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(confirmDepositManually.fulfilled, (state, action) => {
+        state.loading = false;
+        // Optionally refresh the deposit history after confirmation
+      })
+      .addCase(confirmDepositManually.rejected, (state) => {
         state.loading = false;
       })
       // Initiate gift card purchase

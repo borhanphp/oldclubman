@@ -13,11 +13,11 @@ const HomeLayout = ({ children, showMsgBtn, showFriends, userProfile }) => {
   const isAdvancedMode = query === "Advanced Search";
   const showAdvancedOnly =
     isAdvancedMode && Array.isArray(results) && results.length > 0;
-  
+
   const [bgColors, setBgColors] = useState({
-    top: 'rgb(212, 167, 154)',
-    middle: 'rgb(155, 117, 109)',
-    bottom: 'rgb(107, 79, 73)'
+    top: "rgb(212, 167, 154)",
+    middle: "rgb(155, 117, 109)",
+    bottom: "rgb(107, 79, 73)",
   });
 
   useEffect(() => {
@@ -27,57 +27,41 @@ const HomeLayout = ({ children, showMsgBtn, showFriends, userProfile }) => {
         setBgColors({
           top: colors[0],
           middle: colors[0],
-          bottom: colors[2]
+          bottom: colors[2],
         });
       }
     };
 
-    window.addEventListener('coverColorsExtracted', handleColorExtraction);
-    return () => window.removeEventListener('coverColorsExtracted', handleColorExtraction);
+    window.addEventListener("coverColorsExtracted", handleColorExtraction);
+    return () =>
+      window.removeEventListener("coverColorsExtracted", handleColorExtraction);
   }, []);
 
   return (
-    <div className="grid grid-cols-11 min-h-screen p-4 gap-4">
-      <div className="col-span-11 md:col-span-11 overflow-y-auto">
-        {showAdvancedOnly ? (
-          <SearchResults />
-        ) : (
-          <>
-            <div 
-              className="relative border-b transition-all duration-500"
-              style={{
-                background: `linear-gradient(to bottom, ${bgColors.top} 0%, ${bgColors.middle} 30%, rgba(255, 255, 255, 0.7) 70%, #EFF2F6 100%)`,
-                borderColor: '#EFF2F6'
-              }}
-            >
+    <>
+      <div className="min-h-screen">
+        <div className="mx-auto md:p-5 md:px-10">
+          <div className="flex flex-wrap">
+            {/* Left Sidebar - Profile */}
+            <div className="hidden lg:block lg:w-1/4 lg:mb-0 lg:pr-6">
+              <Intro />
+              <div className="mt-2">
+                <FollowSuggestion />
+              </div>
             </div>
-            <div className="grid grid-cols-11">
-              
-              <div className="col-span-2 hidden pt-2 md:block sticky top-0 h-screen overflow-y-auto">
-                {/* Left sidebar - Search box */}
-                {/* <SidebarSearch /> */}
-                <Intro/>
 
-                <div className="mt-2">
-                <FollowSuggestion/>
-                </div>
-               
-              </div>
-            
-              <div className="col-span-11 md:col-span-7 overflow-y-auto p-0 md:p-2">
-                {children}
-              </div>
-              <div className="col-span-2 hidden md:block sticky top-0 h-screen">
+            {/* Center Content */}
+            <div className="w-full lg:w-2/4">{children}</div>
+
+            {/* Right Sidebar - Search & Contacts */}
+            <div className="hidden lg:block lg:w-1/4 lg:mb-0 lg:pr-6">
               <SidebarSearch />
               <ContactsList />
-                
-              </div>
-              
             </div>
-          </>
-        )}
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

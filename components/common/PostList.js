@@ -2836,8 +2836,8 @@ const handleMentionDetect = async (e, inputKey) => {
   // show reactions counts and reactions
   const showingReactionsIcon = (item, index) => {
     return(
-      <span role="img" aria-label="surprised" className="text-xl">
-            <span key={index} className="inline-block">
+      <span key={index} role="img" aria-label="surprised" className="text-xl">
+            <span className="inline-block">
               <ReactImage
                 reactLink="/like.png"
                 reactType="like"
@@ -4448,7 +4448,7 @@ const reactionsImages = (item) => {
                           <div className="absolute -bottom-2 right-3 flex items-center gap-1 bg-white rounded-full px-1.5 py-0.5 shadow-sm border border-gray-200">
                             <div className="flex -space-x-1">
                               {c.reactions.slice(0, 2).map((reaction, idx) => (
-                                <span key={idx} className="inline-flex">{showingReactionsIcon(reaction, idx)}</span>
+                                showingReactionsIcon(reaction, idx)
                               ))}
                             </div>
                             <span className="text-[10px] text-gray-600">{c.reactions.length}</span>

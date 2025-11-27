@@ -2,18 +2,19 @@
 
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { FaPlus, FaArrowDown, FaArrowRight, FaGift, FaHistory, FaSearch, FaDownload, FaTimes } from 'react-icons/fa';
-import { getDepositHistory } from './store';
+import { FaPlus, FaArrowDown, FaArrowRight, FaGift, FaHistory, FaSearch, FaDownload, FaTimes, FaCheckCircle } from 'react-icons/fa';
+import { getDepositHistory, confirmDepositManually } from './store';
 import StatusBadge from '@/components/wallet/StatusBadge';
 
 const TransactionList = () => {
   const dispatch = useDispatch();
-  const { depositHistory, loading, historyPagination } = useSelector(({ wallet }) => wallet);
+  const { depositHistory, loading, historyPagination, balance } = useSelector(({ wallet }) => wallet);
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [verifyingTransaction, setVerifyingTransaction] = useState(null);
 
   // Fetch deposit history from the API
   useEffect(() => {
@@ -108,6 +109,36 @@ const TransactionList = () => {
     window.URL.revokeObjectURL(url);
   };
 
+  const handleManualVerification = async () => {
+    if (!verifyingTransaction) {
+      alert('No transaction selected');
+      return;
+    }
+
+    const data = {
+      gateway_transaction_id: verifyingTransaction.reference_id || verifyingTransaction.payment_reference,
+      payment_gateway_id: verifyingTransaction.payment_gateway_id || verifyingTransaction.metadata?.payment_gateway_id,
+      wallet_id: verifyingTransaction.wallet_id || verifyingTransaction.metadata?.wallet_id
+    };
+
+    if (!data.gateway_transaction_id || !data.payment_gateway_id || !data.wallet_id) {
+      alert('Missing required transaction information');
+      return;
+    }
+
+    await dispatch(confirmDepositManually(data));
+    
+    // Reset and close modal
+    setVerifyingTransaction(null);
+    
+    // Refresh transaction history
+    dispatch(getDepositHistory({ page: 1, limit: 20 }));
+  };
+
+  const handleOpenVerificationModal = (transaction) => {
+    setVerifyingTransaction(transaction);
+  };
+
   return (
     <div className="space-y-6">
       {/* Filters */}
@@ -178,11 +209,13 @@ const TransactionList = () => {
             {filteredTransactions.map((transaction) => (
               <div
                 key={transaction.id}
-                onClick={() => setSelectedTransaction(transaction)}
-                className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                className="p-4 hover:bg-gray-50 transition-colors"
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
+                  <div 
+                    className="flex items-center space-x-4 flex-1 cursor-pointer"
+                    onClick={() => setSelectedTransaction(transaction)}
+                  >
                     <div className="text-2xl">
                       {getTransactionIcon(transaction.type)}
                     </div>
@@ -200,7 +233,18 @@ const TransactionList = () => {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-3">
+                    {/* TODO: Later hide for non-pending deposits - Remove condition temporarily for testing */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenVerificationModal(transaction);
+                      }}
+                      className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg flex items-center space-x-1 transition-colors"
+                    >
+                      <FaCheckCircle className="text-xs" />
+                      <span>Verify</span>
+                    </button>
                     <StatusBadge status={transaction.status} />
                     <div className="text-right">
                       <p
@@ -314,6 +358,94 @@ const TransactionList = () => {
                   </p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manual Verification Modal */}
+      {verifyingTransaction && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-800">Manual Deposit Verification</h3>
+              <button
+                onClick={() => setVerifyingTransaction(null)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Gateway Transaction ID
+                </label>
+                <div className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg font-mono text-sm text-gray-700">
+                  {verifyingTransaction.reference_id || verifyingTransaction.payment_reference || 'N/A'}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Payment Gateway ID
+                </label>
+                <div className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg font-mono text-sm text-gray-700">
+                  {verifyingTransaction.payment_gateway_id || verifyingTransaction.metadata?.payment_gateway_id || 'N/A'}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Wallet ID
+                </label>
+                <div className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg font-mono text-sm text-gray-700">
+                  {verifyingTransaction.wallet_id || verifyingTransaction.metadata?.wallet_id || 'N/A'}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Amount
+                </label>
+                <div className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm font-bold text-green-600">
+                  {formatAmount(verifyingTransaction.amount, verifyingTransaction.type)}
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Note:</strong> This will manually confirm a pending deposit transaction. 
+                  Please ensure all the IDs are correct before submitting.
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={handleManualVerification}
+                  disabled={loading}
+                  className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold rounded-lg transition-colors flex items-center justify-center space-x-2"
+                >
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      <span>Confirming...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FaCheckCircle />
+                      <span>Confirm Deposit</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setVerifyingTransaction(null)}
+                  className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>

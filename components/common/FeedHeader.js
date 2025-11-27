@@ -4,11 +4,15 @@ import {
   FaEllipsisH,
   FaBookmark,
   FaEdit,
-  FaMegaphone,
+  FaBullhorn,
   FaUserTie,
   FaCamera,
   FaIdCard,
+  FaInfoCircle,
+  FaUsers,
+  FaCog,
 } from "react-icons/fa";
+import { IoMdMore } from "react-icons/io";
 import toast from "react-hot-toast";
 import { useParams, usePathname } from "next/navigation";
 import {
@@ -46,6 +50,7 @@ function FeedHeader({
   const params = useParams();
   const dispatch = useDispatch();
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showNavDropdown, setShowNavDropdown] = useState(false);
   const [showChatBox, setShowChatBox] = useState(false);
   const [currentChat, setCurrentChat] = useState(false);
   const [showEditPhotoModal, setShowEditPhotoModal] = useState(false);
@@ -1132,73 +1137,111 @@ function FeedHeader({
       </div>
       )}
 
-      {/* Navigation Tabs */}
+      {/* Navigation Menu - Three Dot Dropdown */}
       <div className="data-nav rounded-b-md bg-white border-t border-b border-gray-200">
         <div className="mx-auto">
-          <div className="flex">
-            <Link
-              href="/user/nfc"
-              className={`px-6 py-3 font-medium flex items-center gap-2 ${
-                isLinkActive("/user/nfc")
-                  ? "text-blue-500 border-b-2 border-blue-500"
-                  : "text-gray-600"
-              }`}
-            >
-              <FaIdCard />
-              <span>NFC</span>
-            </Link>
-            <Link
-              href={`/${isMyProfile ? profile?.client?.username : params.username}/about`}
-              className={`px-6 py-3 font-medium ${
-                isLinkActive("/user/about")
-                  ? "text-blue-500 border-b-2 border-blue-500"
-                  : "text-gray-600"
-              }`}
-            >
-              ABOUT
-            </Link>
-            <Link
-              href="/user/gathering"
-              className={`px-6 py-3 font-medium ${
-                isLinkActive("/user/gathering")
-                  ? "text-blue-500 border-b-2 border-blue-500"
-                  : "text-gray-600"
-              }`}
-            >
-              GATHERING
-            </Link>
-            {(userProfile || friendsTab) && (
-             <>
-              <Link
-                href={`/${
-                  userProfile ? params?.username : profile?.client?.username
-                }/friends`}
-                className={`px-6 py-3 font-medium ${
-                  isLinkActive(
-                    `/${
-                      params?.id || profile?.client?.id
-                    }/friends`
-                  )
-                    ? "text-blue-500 border-b-2 border-blue-500"
-                    : "text-gray-600"
-                }`}
+          <div className="flex justify-end items-center px-4 py-2">
+            <div className="relative">
+              <button
+                className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                onClick={() => setShowNavDropdown(!showNavDropdown)}
+                aria-label="Navigation menu"
               >
-                FOLLOWERS
-              </Link>
-                <Link
-                href={`/user/account-settings`}
-                className={`px-6 py-3 font-medium ${
-                  isLinkActive(
-                    `/user/account-settings`
-                  )
-                    ? "text-blue-500 border-b-2 border-blue-500"
-                    : "text-gray-600"
-                }`}
-              >
-                SETTINGS
-              </Link>
-             </>
-            )}
+                <FaEllipsisH className="text-xl" />
+              </button>
+
+              {showNavDropdown && (
+                <>
+                  {/* Backdrop to close dropdown when clicking outside */}
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowNavDropdown(false)}
+                  />
+                  
+                  {/* Dropdown Menu */}
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
+                    <div className="py-2">
+                      <Link
+                        href="/user/nfc"
+                        className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100 transition-colors ${
+                          isLinkActive("/user/nfc")
+                            ? "text-blue-600 bg-blue-50"
+                            : "text-gray-700"
+                        }`}
+                        onClick={() => setShowNavDropdown(false)}
+                      >
+                        <FaIdCard className="text-lg" />
+                        <span className="font-medium">NFC</span>
+                      </Link>
+
+                      <Link
+                        href={`/${isMyProfile ? profile?.client?.username : params.username}/about`}
+                        className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100 transition-colors ${
+                          isLinkActive("/user/about") || isLinkActive(`/${params.username}/about`)
+                            ? "text-blue-600 bg-blue-50"
+                            : "text-gray-700"
+                        }`}
+                        onClick={() => setShowNavDropdown(false)}
+                      >
+                        <FaInfoCircle className="text-lg" />
+                        <span className="font-medium">About</span>
+                      </Link>
+
+                      <Link
+                        href="/user/gathering"
+                        className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100 transition-colors ${
+                          isLinkActive("/user/gathering")
+                            ? "text-blue-600 bg-blue-50"
+                            : "text-gray-700"
+                        }`}
+                        onClick={() => setShowNavDropdown(false)}
+                      >
+                        <FaBullhorn className="text-lg" />
+                        <span className="font-medium">Gathering</span>
+                      </Link>
+
+                      {(userProfile || friendsTab) && (
+                        <>
+                          <div className="border-t border-gray-200 my-2"></div>
+                          
+                          <Link
+                            href={`/${
+                              userProfile ? params?.username : profile?.client?.username
+                            }/friends`}
+                            className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100 transition-colors ${
+                              isLinkActive(
+                                `/${
+                                  params?.username || params?.id || profile?.client?.username || profile?.client?.id
+                                }/friends`
+                              )
+                                ? "text-blue-600 bg-blue-50"
+                                : "text-gray-700"
+                            }`}
+                            onClick={() => setShowNavDropdown(false)}
+                          >
+                            <FaUsers className="text-lg" />
+                            <span className="font-medium">Followers</span>
+                          </Link>
+
+                          <Link
+                            href="/user/account-settings"
+                            className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100 transition-colors ${
+                              isLinkActive("/user/account-settings")
+                                ? "text-blue-600 bg-blue-50"
+                                : "text-gray-700"
+                            }`}
+                            onClick={() => setShowNavDropdown(false)}
+                          >
+                            <FaCog className="text-lg" />
+                            <span className="font-medium">Settings</span>
+                          </Link>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
