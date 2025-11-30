@@ -12,7 +12,6 @@ const Intro = () => {
   }, [dispatch])
 
   return (
-    // <div className="w-full lg:w-1/4 mb-1 lg:mb-0 lg:pr-6">
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="flex flex-col items-center pt-6">
           <div className="w-20 h-20 rounded-full overflow-hidden bg-blue-100 mb-5">
@@ -51,7 +50,7 @@ const Intro = () => {
           </Link>
         </div>
       </div>
-    // </div>
+   
   )
 }
 

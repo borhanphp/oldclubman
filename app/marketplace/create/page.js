@@ -55,6 +55,9 @@ function CreateListingContent() {
   const [loadingCategories, setLoadingCategories] = useState(false);
   const fileInputRef = useRef(null);
 
+  console.log('category',category)
+  console.log('categories',categories)
+
   const onFilesSelected = useCallback((files) => {
     const lim = 10 - images.length;
     const slice = Array.from(files || []).slice(0, lim);
@@ -229,8 +232,8 @@ function CreateListingContent() {
       formData.append("price", price);
       
       const categoryId = getCategoryId(category);
-      if (categoryId) {
-        formData.append("category_id", categoryId);
+      if (category) {
+        formData.append("category_id", category);
       }
       
       formData.append("condition", getConditionId(condition));
@@ -256,9 +259,9 @@ function CreateListingContent() {
       formData.append("availability", getAvailabilityId(availability) || 1);
       formData.append("sku", sku.trim() || "");
       // Use location from logged-in user's profile
-      formData.append("country_id", countryId);
-      formData.append("state_id", stateId);
-      formData.append("city_id", cityId);
+      formData.append("country_id", category);
+      formData.append("state_id", category);
+      formData.append("city_id", category);
       // Meetup preferences - default to 1 (Yes) as per API structure
       formData.append("public_meetup", meetupPreferences.publicMeetup ? 1 : 0);
       formData.append("door_pickup", meetupPreferences.doorPickup ? 1 : 0);
@@ -549,8 +552,8 @@ function CreateListingContent() {
                   <option value="" className="text-gray-400">
                     {loadingCategories ? "Loading categories..." : "Category"}
                   </option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id.toString()}>
+                  {categories?.map((cat) => (
+                    <option key={cat.id} value={cat?.id}>
                       {cat.name || cat.title || cat.category_name || `Category ${cat.id}`}
                     </option>
                   ))}
