@@ -136,7 +136,7 @@ export const unFollowTo = createAsyncThunk( 'settings/unFollowTo', async ( id) =
 } )
 
 export const saveContact = createAsyncThunk( 'settings/saveContact', async ( id) => {
-  const result = axios.post( `/public/nfc/card/save_contact/${id}`)
+  const result = axios.get( `/public/nfc/card/save_contact/${id}`)
   .then((res) => {
       const resData = res.data.data;
       return resData;
