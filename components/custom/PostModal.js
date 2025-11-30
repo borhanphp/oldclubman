@@ -50,6 +50,20 @@ const PostModal = () => {
   const [showPlaceSearch, setShowPlaceSearch] = useState(false);
   const placeSearchTimeoutRef = useRef(null);
 
+  // Travel state (separate from check-in)
+  const [travelFrom, setTravelFrom] = useState(null); // { place_name, lat, lng, address }
+  const [travelTo, setTravelTo] = useState(null); // { place_name, lat, lng, address }
+  const [travelFromQuery, setTravelFromQuery] = useState('');
+  const [travelToQuery, setTravelToQuery] = useState('');
+  const [travelFromResults, setTravelFromResults] = useState([]);
+  const [travelToResults, setTravelToResults] = useState([]);
+  const [isSearchingTravelFrom, setIsSearchingTravelFrom] = useState(false);
+  const [isSearchingTravelTo, setIsSearchingTravelTo] = useState(false);
+  const [showTravelFromSearch, setShowTravelFromSearch] = useState(false);
+  const [showTravelToSearch, setShowTravelToSearch] = useState(false);
+  const travelFromTimeoutRef = useRef(null);
+  const travelToTimeoutRef = useRef(null);
+
   const params = useParams();
 
   const isBackgroundActive = useMemo(() => {
@@ -113,6 +127,14 @@ const PostModal = () => {
       routeMapRef.current.removeLayer(routeMarkersRef.current.checkin);
       routeMarkersRef.current.checkin = null;
     }
+    if (routeMarkersRef.current.travelFrom && routeMapRef.current) {
+      routeMapRef.current.removeLayer(routeMarkersRef.current.travelFrom);
+      routeMarkersRef.current.travelFrom = null;
+    }
+    if (routeMarkersRef.current.travelTo && routeMapRef.current) {
+      routeMapRef.current.removeLayer(routeMarkersRef.current.travelTo);
+      routeMarkersRef.current.travelTo = null;
+    }
     if (routeLineRef.current && routeMapRef.current) {
       routeMapRef.current.removeLayer(routeLineRef.current);
       routeLineRef.current = null;
@@ -120,6 +142,8 @@ const PostModal = () => {
     setRouteOrigin(null);
     setRouteDestination(null);
     setCheckInLocation(null);
+    setTravelFrom(null);
+    setTravelTo(null);
   };
 
   const resetCheckIn = () => {
@@ -213,6 +237,162 @@ const PostModal = () => {
     };
   }, [placeSearchQuery]);
 
+  // Search for travel from places
+  const searchTravelFromPlaces = async (query) => {
+    if (!query || query.trim().length < 3) {
+      setTravelFromResults([]);
+      return;
+    }
+
+    setIsSearchingTravelFrom(true);
+    try {
+      const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+      
+      if (googleApiKey) {
+        const response = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${googleApiKey}&limit=5`
+        );
+        const data = await response.json();
+        
+        if (data.status === 'OK' && data.results) {
+          const results = data.results.map((place) => ({
+            place_name: place.formatted_address,
+            lat: place.geometry.location.lat,
+            lng: place.geometry.location.lng,
+            address: place.formatted_address,
+            type: place.types[0] || '',
+            place_id: place.place_id || null,
+            place_rank: 0,
+            name: place.address_components[0]?.short_name || place.formatted_address.split(',')[0] || ''
+          }));
+          setTravelFromResults(results);
+        } else {
+          setTravelFromResults([]);
+        }
+      } else {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`
+        );
+        const data = await response.json();
+        
+        const results = data.map((place) => ({
+          place_name: place.display_name,
+          lat: parseFloat(place.lat),
+          lng: parseFloat(place.lon),
+          address: place.display_name,
+          type: place.type,
+          osm_id: place.osm_id
+        }));
+        
+        setTravelFromResults(results);
+      }
+    } catch (error) {
+      console.error('Error searching travel from places:', error);
+      setTravelFromResults([]);
+    } finally {
+      setIsSearchingTravelFrom(false);
+    }
+  };
+
+  // Search for travel to places
+  const searchTravelToPlaces = async (query) => {
+    if (!query || query.trim().length < 3) {
+      setTravelToResults([]);
+      return;
+    }
+
+    setIsSearchingTravelTo(true);
+    try {
+      const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+      
+      if (googleApiKey) {
+        const response = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${googleApiKey}&limit=5`
+        );
+        const data = await response.json();
+        
+        if (data.status === 'OK' && data.results) {
+          const results = data.results.map((place) => ({
+            place_name: place.formatted_address,
+            lat: place.geometry.location.lat,
+            lng: place.geometry.location.lng,
+            address: place.formatted_address,
+            type: place.types[0] || '',
+            place_id: place.place_id || null,
+            place_rank: 0,
+            name: place.address_components[0]?.short_name || place.formatted_address.split(',')[0] || ''
+          }));
+          setTravelToResults(results);
+        } else {
+          setTravelToResults([]);
+        }
+      } else {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`
+        );
+        const data = await response.json();
+        
+        const results = data.map((place) => ({
+          place_name: place.display_name,
+          lat: parseFloat(place.lat),
+          lng: parseFloat(place.lon),
+          address: place.display_name,
+          type: place.type,
+          osm_id: place.osm_id
+        }));
+        
+        setTravelToResults(results);
+      }
+    } catch (error) {
+      console.error('Error searching travel to places:', error);
+      setTravelToResults([]);
+    } finally {
+      setIsSearchingTravelTo(false);
+    }
+  };
+
+  // Handle travel from search with debounce
+  useEffect(() => {
+    if (travelFromTimeoutRef.current) {
+      clearTimeout(travelFromTimeoutRef.current);
+    }
+
+    if (travelFromQuery.trim().length >= 3) {
+      travelFromTimeoutRef.current = setTimeout(() => {
+        searchTravelFromPlaces(travelFromQuery);
+      }, 500);
+    } else {
+      setTravelFromResults([]);
+    }
+
+    return () => {
+      if (travelFromTimeoutRef.current) {
+        clearTimeout(travelFromTimeoutRef.current);
+      }
+    };
+  }, [travelFromQuery]);
+
+  // Handle travel to search with debounce
+  useEffect(() => {
+    if (travelToTimeoutRef.current) {
+      clearTimeout(travelToTimeoutRef.current);
+    }
+
+    if (travelToQuery.trim().length >= 3) {
+      travelToTimeoutRef.current = setTimeout(() => {
+        searchTravelToPlaces(travelToQuery);
+      }, 500);
+    } else {
+      setTravelToResults([]);
+    }
+
+    return () => {
+      if (travelToTimeoutRef.current) {
+        clearTimeout(travelToTimeoutRef.current);
+      }
+    };
+  }, [travelToQuery]);
+
   // Close place search dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -226,6 +406,23 @@ const PostModal = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showPlaceSearch]);
+
+  // Close travel search dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showTravelFromSearch && !event.target.closest('.travel-from-search-container')) {
+        setShowTravelFromSearch(false);
+      }
+      if (showTravelToSearch && !event.target.closest('.travel-to-search-container')) {
+        setShowTravelToSearch(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showTravelFromSearch, showTravelToSearch]);
 
   // Select a place from search results
   const selectPlace = (place) => {
@@ -276,7 +473,7 @@ const PostModal = () => {
 
   useEffect(() => {
     // Initialize map when location modal is open OR when location is selected in main modal
-    const shouldShowMap = showLocationModal || (!showLocationModal && (checkInLocation || routeDestination));
+    const shouldShowMap = showLocationModal || (!showLocationModal && (checkInLocation || routeDestination || travelFrom || travelTo));
     
     if (!shouldShowMap) {
       // Clean up map when not needed
@@ -413,17 +610,61 @@ const PostModal = () => {
             marker.bindPopup(`<b>${routeDestination.place_name}</b>`);
             routeMarkersRef.current.destination = marker;
           }
+
+          // Add markers for travel locations
+          if (travelFrom) {
+            const marker = L.marker([travelFrom.lat, travelFrom.lng], {
+              icon: L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+              })
+            }).addTo(mapInstance);
+            marker.bindPopup(`<b>Traveling From: ${travelFrom.place_name}</b>`);
+            routeMarkersRef.current.travelFrom = marker;
+          }
+
+          if (travelTo) {
+            const marker = L.marker([travelTo.lat, travelTo.lng], {
+              icon: L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+              })
+            }).addTo(mapInstance);
+            marker.bindPopup(`<b>Traveling To: ${travelTo.place_name}</b>`);
+            routeMarkersRef.current.travelTo = marker;
+          }
   
           // Draw route line if both locations exist
           if (checkInLocation && routeDestination) {
             drawRouteLine(checkInLocation, routeDestination);
           }
+
+          // Draw travel route line if both travel locations exist
+          if (travelFrom && travelTo) {
+            if (routeLineRef.current) {
+              mapInstance.removeLayer(routeLineRef.current);
+            }
+            routeLineRef.current = L.polyline([
+              [travelFrom.lat, travelFrom.lng],
+              [travelTo.lat, travelTo.lng]
+            ], { color: '#8b5cf6', weight: 4, opacity: 0.7 }).addTo(mapInstance);
+          }
   
           // Fit bounds to show all markers
-          if (checkInLocation || routeDestination) {
+          if (checkInLocation || routeDestination || travelFrom || travelTo) {
             const bounds = [];
             if (checkInLocation) bounds.push([checkInLocation.lat, checkInLocation.lng]);
             if (routeDestination) bounds.push([routeDestination.lat, routeDestination.lng]);
+            if (travelFrom) bounds.push([travelFrom.lat, travelFrom.lng]);
+            if (travelTo) bounds.push([travelTo.lat, travelTo.lng]);
             if (bounds.length > 0) {
               mapInstance.fitBounds(bounds, { padding: [50, 50] });
             }
@@ -431,7 +672,7 @@ const PostModal = () => {
   
           // Only allow click interactions in location modal
           if (showLocationModal) {
-            if (checkInMode === 'checkin' || checkInMode === 'destination') {
+            if (checkInMode === 'checkin' || checkInMode === 'destination' || checkInMode === 'travel') {
               mapInstance.on('click', (e) => {
                 const { latlng } = e;
                 const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -566,7 +807,7 @@ const PostModal = () => {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showLocationModal, checkInMode, checkInLocation, routeDestination]);
+  }, [showLocationModal, checkInMode, checkInLocation, routeDestination, travelFrom, travelTo]);
 
   // Force map update when location is selected
   useEffect(() => {
@@ -638,7 +879,74 @@ const PostModal = () => {
     if (checkInLocation && routeDestination && routeMapRef.current) {
       drawRouteLine(checkInLocation, routeDestination);
     }
-  }, [checkInLocation, routeDestination, showLocationModal]);
+
+    // Update travel markers
+    if (travelFrom) {
+      if (routeMarkersRef.current.travelFrom && routeMapRef.current) {
+        routeMapRef.current.removeLayer(routeMarkersRef.current.travelFrom);
+        routeMarkersRef.current.travelFrom = null;
+      }
+
+      if (routeMapRef.current) {
+        const marker = L.marker([travelFrom.lat, travelFrom.lng], {
+          icon: L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+          })
+        }).addTo(routeMapRef.current);
+        
+        marker.bindPopup(`<b>Traveling From: ${travelFrom.place_name}</b>`);
+        if (showLocationModal) {
+          marker.openPopup();
+        }
+        routeMarkersRef.current.travelFrom = marker;
+      }
+    }
+
+    if (travelTo) {
+      if (routeMarkersRef.current.travelTo && routeMapRef.current) {
+        routeMapRef.current.removeLayer(routeMarkersRef.current.travelTo);
+        routeMarkersRef.current.travelTo = null;
+      }
+
+      if (routeMapRef.current) {
+        const marker = L.marker([travelTo.lat, travelTo.lng], {
+          icon: L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+          })
+        }).addTo(routeMapRef.current);
+        
+        marker.bindPopup(`<b>Traveling To: ${travelTo.place_name}</b>`);
+        routeMarkersRef.current.travelTo = marker;
+      }
+    }
+
+    // Draw travel route line if both exist
+    if (travelFrom && travelTo && routeMapRef.current) {
+      if (routeLineRef.current) {
+        routeMapRef.current.removeLayer(routeLineRef.current);
+      }
+      routeLineRef.current = L.polyline([
+        [travelFrom.lat, travelFrom.lng],
+        [travelTo.lat, travelTo.lng]
+      ], { color: '#8b5cf6', weight: 4, opacity: 0.7 }).addTo(routeMapRef.current);
+      
+      // Fit bounds to show both travel markers
+      routeMapRef.current.fitBounds([
+        [travelFrom.lat, travelFrom.lng],
+        [travelTo.lat, travelTo.lng]
+      ], { padding: [50, 50] });
+    }
+  }, [checkInLocation, routeDestination, travelFrom, travelTo, showLocationModal]);
 
   const handleBackgroundSelect = (background) => {
    
@@ -1042,33 +1350,35 @@ const PostModal = () => {
       // Build post_locations array
       const postLocations = [];
 
-      // Add check-in location (post_type: 1)
-      if (checkInLocation) {
+      // Add check-in location OR traveling from (both use post_type: 1)
+      const fromLocation = checkInLocation || travelFrom;
+      if (fromLocation) {
         postLocations.push({
           post_type: 1,
-          place_name: checkInLocation.place_name || '',
-          lat: checkInLocation.lat,
-          lon: checkInLocation.lng, // API uses 'lon' not 'lng'
-          address: checkInLocation.address || checkInLocation.place_name || '',
-          type: checkInLocation.type || '',
-          place_id: checkInLocation.osm_id || checkInLocation.place_id || null,
-          place_rank: checkInLocation.place_rank || 0,
-          name: checkInLocation.name || checkInLocation.place_name.split(',')[0] || ''
+          place_name: fromLocation.place_name || '',
+          lat: fromLocation.lat,
+          lon: fromLocation.lng, // API uses 'lon' not 'lng'
+          address: fromLocation.address || fromLocation.place_name || '',
+          type: fromLocation.type || '',
+          place_id: fromLocation.osm_id || fromLocation.place_id || null,
+          place_rank: fromLocation.place_rank || 0,
+          name: fromLocation.name || fromLocation.place_name.split(',')[0] || ''
         });
       }
 
-      // Add destination location (post_type: 2)
-      if (routeDestination) {
+      // Add destination location OR traveling to (both use post_type: 2)
+      const toLocation = routeDestination || travelTo;
+      if (toLocation) {
         postLocations.push({
           post_type: 2,
-          place_name: routeDestination.place_name || '',
-          lat: routeDestination.lat,
-          lon: routeDestination.lng, // API uses 'lon' not 'lng'
-          address: routeDestination.address || routeDestination.place_name || '',
-          type: routeDestination.type || '',
-          place_id: routeDestination.osm_id || routeDestination.place_id || null,
-          place_rank: routeDestination.place_rank || 0,
-          name: routeDestination.name || routeDestination.place_name.split(',')[0] || ''
+          place_name: toLocation.place_name || '',
+          lat: toLocation.lat,
+          lon: toLocation.lng, // API uses 'lon' not 'lng'
+          address: toLocation.address || toLocation.place_name || '',
+          type: toLocation.type || '',
+          place_id: toLocation.osm_id || toLocation.place_id || null,
+          place_rank: toLocation.place_rank || 0,
+          name: toLocation.name || toLocation.place_name.split(',')[0] || ''
         });
       }
 
@@ -1121,6 +1431,12 @@ const PostModal = () => {
           setCheckInLocation(null);
           setPlaceSearchQuery('');
           setPlaceSearchResults([]);
+          setTravelFrom(null);
+          setTravelTo(null);
+          setTravelFromQuery('');
+          setTravelToQuery('');
+          setTravelFromResults([]);
+          setTravelToResults([]);
           resetRoute();
           resetCheckIn();
           dispatch(setPostModalOpen(false));
@@ -1147,6 +1463,12 @@ const PostModal = () => {
     setCheckInLocation(null);
     setPlaceSearchQuery('');
     setPlaceSearchResults([]);
+    setTravelFrom(null);
+    setTravelTo(null);
+    setTravelFromQuery('');
+    setTravelToQuery('');
+    setTravelFromResults([]);
+    setTravelToResults([]);
     resetRoute();
     resetCheckIn();
    }
@@ -1167,7 +1489,7 @@ const PostModal = () => {
             )}
             <h2 className="text-2xl font-bold flex-1 text-center text-gray-900">
               {showLocationModal 
-                ? (checkInMode === 'checkin' ? 'Check in at a place' : 'Add destination')
+                ? (checkInMode === 'checkin' ? 'Check in at a place' : checkInMode === 'destination' ? 'Add destination' : 'Add travel route')
                 : (id ? "Edit Post" : "Create post")}
             </h2>
             <button
@@ -1413,7 +1735,7 @@ const PostModal = () => {
 
          
 
-          {(!showLocationModal && (checkInLocation || routeDestination)) && (
+          {(!showLocationModal && (checkInLocation || routeDestination || travelFrom || travelTo)) && (
             <div className="mb-3">
               <div
                 ref={routeMapContainerRef}
@@ -1568,6 +1890,20 @@ const PostModal = () => {
                       </svg>
                     </button>
                     
+                    {/* Travel Route */}
+                    <button
+                      onClick={() => {
+                        setCheckInMode('travel');
+                        setShowLocationModal(true);
+                      }}
+                      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                      title="Add travel route"
+                    >
+                      <svg className="w-6 h-6 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                      </svg>
+                    </button>
+                    
                     {/* More options */}
                     {/* <button
                       className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -1588,13 +1924,13 @@ const PostModal = () => {
                 onClick={handlePost}
                 className={`px-4 py-3 w-full rounded-lg transition font-semibold text-base ${
                   loading ||
-                  (plainMessageLength === 0 && !basicPostData?.files?.length && !checkInLocation && !routeDestination)
+                  (plainMessageLength === 0 && !basicPostData?.files?.length && !checkInLocation && !routeDestination && !travelFrom && !travelTo)
                     ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                     : "bg-blue-500 text-white hover:bg-blue-600 cursor-pointer"
                 }`}
                 disabled={
                   loading ||
-                  (plainMessageLength === 0 && !basicPostData?.files?.length && !checkInLocation && !routeDestination)
+                  (plainMessageLength === 0 && !basicPostData?.files?.length && !checkInLocation && !routeDestination && !travelFrom && !travelTo)
                 }
               >
                 {loading ? "Posting..." : "Post"}
@@ -1619,7 +1955,7 @@ const PostModal = () => {
                   <FaChevronLeft size={18} />
                 </button>
                 <h3 className="text-lg font-semibold text-gray-900">
-                  {checkInMode === 'checkin' ? 'Check in at a place' : 'Add Destination'}
+                  {checkInMode === 'checkin' ? 'Check in at a place' : checkInMode === 'destination' ? 'Add Destination' : 'Add Travel Route'}
                 </h3>
               </div>
               <button
@@ -1633,7 +1969,185 @@ const PostModal = () => {
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-4" style={{ flex: 1, minHeight: 0, overflowY: 'auto', backgroundColor: '#f9fafb' }}>
                
-                {(checkInMode === 'checkin' || checkInMode === 'destination') ? (
+                {checkInMode === 'travel' ? (
+                  <>
+                    {/* Travel Mode UI */}
+                    <div className="mb-4">
+                      {/* Traveling From Search */}
+                      <div className="relative mb-4 travel-from-search-container">
+                        {/* <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Traveling From
+                        </label> */}
+                        <input
+                          type="text"
+                          placeholder="Your current location"
+                          value={travelFromQuery}
+                          onChange={(e) => {
+                            setTravelFromQuery(e.target.value);
+                            setShowTravelFromSearch(true);
+                          }}
+                          onFocus={() => setShowTravelFromSearch(true)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        />
+                        
+                        {/* Travel From Search Results */}
+                        {showTravelFromSearch && travelFromResults?.length > 0 && (
+                          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                            {isSearchingTravelFrom && (
+                              <div className="px-3 py-2 text-sm text-gray-500">Searching...</div>
+                            )}
+                            {travelFromResults?.map((place, index) => (
+                              <div
+                                key={index}
+                                onClick={() => {
+                                  setTravelFrom(place);
+                                  setTravelFromQuery(place.place_name);
+                                  setTravelFromResults([]);
+                                  setShowTravelFromSearch(false);
+                                }}
+                                className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                              >
+                                <div className="text-sm font-medium text-gray-900">
+                                  {place.place_name.split(',')[0]}
+                                </div>
+                                <div className="text-xs text-gray-500 truncate">
+                                  {place.place_name}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Selected Travel From */}
+                      {travelFrom && (
+                        <div className="mb-4 p-3 rounded-md border bg-blue-50 border-blue-200">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start flex-1">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-gray-900">
+                                  From: {travelFrom.place_name.split(',')[0]}
+                                </div>
+                                <div className="text-xs text-gray-600 mt-1">
+                                  {travelFrom.place_name}
+                                </div>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setTravelFrom(null);
+                                setTravelFromQuery('');
+                              }}
+                              className="text-gray-500 hover:text-gray-700 ml-2"
+                            >
+                              <FaTimes size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Traveling To Search */}
+                      <div className="relative mb-4 travel-to-search-container">
+                        {/* <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Traveling To
+                        </label> */}
+                        <input
+                          type="text"
+                          placeholder="Your next destination"
+                          value={travelToQuery}
+                          onChange={(e) => {
+                            setTravelToQuery(e.target.value);
+                            setShowTravelToSearch(true);
+                          }}
+                          onFocus={() => setShowTravelToSearch(true)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        />
+                        
+                        {/* Travel To Search Results */}
+                        {showTravelToSearch && travelToResults?.length > 0 && (
+                          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                            {isSearchingTravelTo && (
+                              <div className="px-3 py-2 text-sm text-gray-500">Searching...</div>
+                            )}
+                            {travelToResults?.map((place, index) => (
+                              <div
+                                key={index}
+                                onClick={() => {
+                                  setTravelTo(place);
+                                  setTravelToQuery(place.place_name);
+                                  setTravelToResults([]);
+                                  setShowTravelToSearch(false);
+                                }}
+                                className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                              >
+                                <div className="text-sm font-medium text-gray-900">
+                                  {place.place_name.split(',')[0]}
+                                </div>
+                                <div className="text-xs text-gray-500 truncate">
+                                  {place.place_name}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Selected Travel To */}
+                      {travelTo && (
+                        <div className="mb-4 p-3 rounded-md border bg-purple-50 border-purple-200">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start flex-1">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-gray-900">
+                                  To: {travelTo.place_name.split(',')[0]}
+                                </div>
+                                <div className="text-xs text-gray-600 mt-1">
+                                  {travelTo.place_name}
+                                </div>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setTravelTo(null);
+                                setTravelToQuery('');
+                              }}
+                              className="text-gray-500 hover:text-gray-700 ml-2"
+                            >
+                              <FaTimes size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Map for Travel */}
+                    <div className="mb-4">
+                      <div
+                        ref={checkInMode === 'travel' ? routeMapContainerRef : null}
+                        id="travel-map-container"
+                        className="w-full rounded-md border border-gray-200"
+                        style={{ height: '384px', width: '100%', position: 'relative', zIndex: 0 }}
+                      />
+                      <div className="mt-2 text-xs text-gray-600">
+                        {!travelFrom && !travelTo
+                          ? "Search for locations above or click on the map to set your travel route."
+                          : travelFrom && !travelTo
+                            ? "Now select your destination."
+                            : travelFrom && travelTo
+                              ? `Route: ${travelFrom.place_name.split(',')[0]} → ${travelTo.place_name.split(',')[0]}`
+                              : "Search for a starting location."}
+                      </div>
+                    </div>
+                  </>
+                ) : (checkInMode === 'checkin' || checkInMode === 'destination') ? (
                   <>
                     <div className="mb-4">
                       {/* Place Search */}
@@ -1679,7 +2193,7 @@ const PostModal = () => {
                       </div>
                       
                       {/* Set Destination Button - After Check-in */}
-                      {(checkInMode === 'checkin' && checkInLocation && !routeDestination) && (
+                      {/* {(checkInMode === 'checkin' && checkInLocation && !routeDestination) && (
                         <div className="mb-3">
                           <button 
                             className='w-full border py-3 border-green-400 cursor-pointer bg-green-200 hover:bg-green-300 font-semibold text-base rounded-md transition-colors flex items-center justify-center gap-2' 
@@ -1696,7 +2210,7 @@ const PostModal = () => {
                             Set Destination
                           </button>
                         </div>
-                      )}
+                      )} */}
                       
                       {/* Selected Location Display */}
                       {((checkInMode === 'checkin' && checkInLocation) || (checkInMode === 'destination' && routeDestination)) && (
@@ -1776,7 +2290,7 @@ const PostModal = () => {
             </div>
 
             {/* Fixed Done Button at Bottom */}
-            {((checkInMode === 'checkin' && checkInLocation) || (checkInMode === 'destination' && routeDestination)) && (
+            {((checkInMode === 'checkin' && checkInLocation) || (checkInMode === 'destination' && routeDestination) || (checkInMode === 'travel' && travelFrom && travelTo)) && (
               <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200">
                 <button
                   onClick={() => setShowLocationModal(false)}

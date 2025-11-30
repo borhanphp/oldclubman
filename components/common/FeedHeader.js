@@ -159,8 +159,8 @@ function FeedHeader({
   
 
   const isMyProfile = data?.client?.id === profile?.client?.id;
-  console.log('isMyProfile',isMyProfile)
-  console.log('data?.client',data?.client)
+  // console.log('isMyProfile',isMyProfile)
+  // console.log('data?.client',data?.client)
   const isLinkActive = (path) => {
     return pathname.startsWith(path);
   };
