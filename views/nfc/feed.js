@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { getMyNfc } from './store';
 import NFCCardGrid from '@/components/nfc/NFCCardGrid';
 import NFCSidebar from '@/components/nfc/NFCSidebar';
+import Intro from '@/components/common/Intro';
 
 const NfcContent = () => {
   const { nfcData, loading } = useSelector(({ nfc }) => nfc);
@@ -24,7 +25,8 @@ const NfcContent = () => {
       <div className="mx-auto md:p-5 md:px-10">
         <div className="flex flex-wrap">
           {/* Left Sidebar - Profile */}
-          <NFCSidebar />
+          <div className="w-full lg:w-1/4 mb-1 lg:mb-0 lg:pr-6"> <Intro /></div>
+         
           
           {/* Right Content - Existing NFC Design */}
           <div className="w-full lg:w-3/4">

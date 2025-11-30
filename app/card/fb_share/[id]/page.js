@@ -23,19 +23,22 @@ const FbShare = () => {
   return (
     <div className="w-full max-w-xs mx-auto">
       {basicNfcDataPublic?.design_card_id === 1 ?
-                        <CardClassic basicNfcData={basicNfcDataPublic}/>
-                        :
-                        basicNfcDataPublic?.design_card_id === 2 ?
-                        <CardModern basicNfcData={basicNfcDataPublic}/>
-                        :
-                        basicNfcDataPublic?.design_card_id === 3 ?
-                        <CardSleek basicNfcData={basicNfcDataPublic}/>
-                        :
-                        <CardFlat basicNfcData={basicNfcDataPublic}/>
-                      }
+        <CardClassic basicNfcData={basicNfcDataPublic}/>
+        :
+        basicNfcDataPublic?.design_card_id === 2 ?
+        <CardModern basicNfcData={basicNfcDataPublic}/>
+        :
+        basicNfcDataPublic?.design_card_id === 3 ?
+        <CardSleek basicNfcData={basicNfcDataPublic}/>
+        :
+        <CardFlat basicNfcData={basicNfcDataPublic}/>
+      }
     <div className='border w-auto bg-blue-600 text-white p-2 rounded-md cursor-pointer mt-1 text-[18px] text-center' 
     onClick={() => {handleSaveContact()}}
-    >Save Contact</div>
+    >
+      <a href={`${process.env.NEXT_PUBLIC_API_URL}/public/nfc/card/save_contact/${params?.id}`}>Save Contact</a>
+      </div>
+    
   </div>
   )
 }
