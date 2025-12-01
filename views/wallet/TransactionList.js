@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { FaPlus, FaArrowDown, FaArrowRight, FaGift, FaHistory, FaSearch, FaDownload, FaTimes, FaCheckCircle } from 'react-icons/fa';
-import { getDepositHistory, confirmDepositManually } from './store';
+import { getDepositHistory, confirmDepositManually, getWalletBalance } from './store';
 import StatusBadge from '@/components/wallet/StatusBadge';
 
 const TransactionList = () => {
@@ -128,6 +128,9 @@ const TransactionList = () => {
 
     await dispatch(confirmDepositManually(data));
     
+    // Refresh wallet balance after successful confirmation
+    await dispatch(getWalletBalance());
+    
     // Reset and close modal
     setVerifyingTransaction(null);
     
@@ -234,17 +237,19 @@ const TransactionList = () => {
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    {/* TODO: Later hide for non-pending deposits - Remove condition temporarily for testing */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenVerificationModal(transaction);
-                      }}
-                      className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg flex items-center space-x-1 transition-colors"
-                    >
-                      <FaCheckCircle className="text-xs" />
-                      <span>Verify</span>
-                    </button>
+                    {/* Show verify button only for pending deposit transactions */}
+                    {transaction.type === 'deposit' && transaction.status === 'pending' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenVerificationModal(transaction);
+                        }}
+                        className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg flex items-center space-x-1 transition-colors"
+                      >
+                        <FaCheckCircle className="text-xs" />
+                        <span>Verify</span>
+                      </button>
+                    )}
                     <StatusBadge status={transaction.status} />
                     <div className="text-right">
                       <p

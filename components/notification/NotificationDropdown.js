@@ -12,7 +12,7 @@ import {
   markAllAsRead,
   deleteNotification,
 } from "@/views/notification/store";
-import { FaTrash, FaCheck, FaCheckDouble, FaHeart, FaComment, FaShare, FaCommentAlt } from "react-icons/fa";
+import { FaTrash, FaCheck, FaCheckDouble, FaHeart, FaComment, FaShare, FaCommentAlt, FaGift, FaMoneyBillWave } from "react-icons/fa";
 
 const NotificationDropdown = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
@@ -76,6 +76,14 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
         return <FaShare className="text-green-500" />;
       case "message":
         return <FaCommentAlt className="text-purple-500" />;
+      case "gift_card":
+      case "gift_card_received":
+        return <FaGift className="text-pink-500" />;
+      case "wallet":
+      case "wallet_transaction":
+      case "deposit":
+      case "withdrawal":
+        return <FaMoneyBillWave className="text-green-500" />;
       default:
         return <FaCheck className="text-gray-500" />;
     }
