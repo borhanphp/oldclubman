@@ -8,10 +8,10 @@ import OldSelect from "@/components/custom/OldSelect";
 import api from "@/helpers/axios";
 import errorResponse from "@/utility";
 import { useDispatch, useSelector } from "react-redux";
-import { bindProfileData, getMyProfile, storeBsicInformation, saveEducation, saveWork } from "../store";
+import { bindProfileData, getMyProfile, storeBsicInformation, saveEducation, saveWork, getUserProfileByUsername } from "../store";
 
 const BasicInformation = () => {
-  const { profileData, loading } = useSelector(({ settings }) => settings);
+  const { profileData, loading, profile } = useSelector(({ settings }) => settings);
   const dispatch = useDispatch();
 
   const {
@@ -26,6 +26,8 @@ const BasicInformation = () => {
     nationality,
     phone_code,
     contact_no,
+    contact_no_code,
+    cell_number_code,
     id_no_type,
     id_no,
     address_line_1,
@@ -54,8 +56,10 @@ const BasicInformation = () => {
   console.log('profileData from basick form',profileData)
 
   const [countries, setCountries] = useState([]);
+  const [countryCodes, setCountryCodes] = useState([]);
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
+  const [loadingCountryCodes, setLoadingCountryCodes] = useState(false);
   
   // Education form state
   const [educationFormData, setEducationFormData] = useState({
@@ -80,7 +84,14 @@ const BasicInformation = () => {
   useEffect(() => {
     dispatch(getMyProfile());
     fetchCountries();
-  }, []);
+  }, [dispatch]);
+
+  // Fetch profile by username once we have it from state
+  useEffect(() => {
+    if (profile?.client?.username) {
+      dispatch(getUserProfileByUsername(profile.client.username));
+    }
+  }, [profile?.client?.username, dispatch]);
 
   const fetchCountries = async () => {
     try {
@@ -93,9 +104,54 @@ const BasicInformation = () => {
           label: country.name,
         }));
         setCountries(countryOptions);
+
+        // Create country code options with phone codes and sort alphabetically
+        const countryCodeOptions = response.data.data
+          .filter((country) => country.phonecode) // Filter out countries without phone codes
+          .map((country) => ({
+            id: country.id, // Unique ID for key
+            value: `+${country.phonecode}`,
+            label: `${country.name} (+${country.phonecode})`,
+            code: `+${country.phonecode}`,
+            name: country.name, // Keep name for sorting
+          }))
+          .sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically by country name
+        setCountryCodes(countryCodeOptions);
       }
     } catch (error) {
       errorResponse(error);
+    }
+  };
+
+  const handleCountryCodeFocus = async () => {
+    // If country codes are already loaded, don't fetch again
+    if (countryCodes.length > 0 && !loadingCountryCodes) {
+      return;
+    }
+
+    setLoadingCountryCodes(true);
+    try {
+      const response = await api.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/location/country`
+      );
+      if (response.data && response.data.data) {
+        // Create country code options with phone codes and sort alphabetically
+        const countryCodeOptions = response.data.data
+          .filter((country) => country.phonecode) // Filter out countries without phone codes
+          .map((country) => ({
+            id: country.id, // Unique ID for key
+            value: `+${country.phonecode}`,
+            label: `${country.name} (+${country.phonecode})`,
+            code: `+${country.phonecode}`,
+            name: country.name, // Keep name for sorting
+          }))
+          .sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically by country name
+        setCountryCodes(countryCodeOptions);
+      }
+    } catch (error) {
+      errorResponse(error);
+    } finally {
+      setLoadingCountryCodes(false);
     }
   };
 
@@ -755,39 +811,70 @@ const BasicInformation = () => {
             />
           </div>
 
-          {/* <div>
-            <OldInput
-              label="Country Code"
-              type="text"
-              name="phone_code"
-              value={phone_code}
-              onChange={handleInputChange}
-              placeholder=""
-              className="w-full"
-            />
-          </div> */}
           <div>
-            <OldInput
-              label="Phone"
-              type="text"
-              name="contact_no"
-              value={contact_no}
-              onChange={handleInputChange}
-              placeholder="+880"
-              className="w-full"
-            />
+            <label className="block text-sm font-medium text-gray-600 mb-2">Phone</label>
+            <div className="flex gap-2">
+              <div className="w-1/3">
+                <select
+                  name="contact_no_code"
+                  value={contact_no_code}
+                  onChange={handleInputChange}
+                  onFocus={handleCountryCodeFocus}
+                  onClick={handleCountryCodeFocus}
+                  className="w-full border border-slate-200 rounded-md px-[1rem] py-[0.3rem] focus:border-[#155DFC] focus:outline-none"
+                >
+                  <option value="">{loadingCountryCodes ? "Loading..." : "Code"}</option>
+                  {countryCodes.map((country) => (
+                    <option key={country.id} value={country.value}>
+                      {country.value}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1">
+                <input
+                  type="text"
+                  name="contact_no"
+                  value={contact_no}
+                  onChange={handleInputChange}
+                  placeholder="1234567890"
+                  className="w-full border border-slate-200 rounded-md px-[1rem] py-[0.3rem] focus:border-[#155DFC] focus:outline-none"
+                />
+              </div>
+            </div>
           </div>
 
           <div>
-            <OldInput
-              label="Cell"
-              type="text"
-              name="cell_number"
-              value={cell_number}
-              onChange={handleInputChange}
-              placeholder=""
-              className="w-full"
-            />
+            <label className="block text-sm font-medium text-gray-600 mb-2">Cell</label>
+            <div className="flex gap-2">
+              <div className="w-1/3">
+                <select
+                  name="cell_number_code"
+                  value={cell_number_code}
+                  onChange={handleInputChange}
+                  onFocus={handleCountryCodeFocus}
+                  onClick={handleCountryCodeFocus}
+                  className="w-full border border-slate-200 rounded-md px-[1rem] py-[0.3rem] focus:border-[#155DFC] focus:outline-none"
+                >
+                  <option value="">{loadingCountryCodes ? "Loading..." : "Code"}</option>
+                  {countryCodes.map((country) => (
+                    <option key={country.id} value={country.value}>
+                      {country.value}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1">
+                <input
+                  type="text"
+                  name="cell_number"
+                  value={cell_number}
+                  onChange={handleInputChange}
+                  placeholder="1234567890"
+                  className="w-full border border-slate-200 rounded-md px-[1rem] py-[0.3rem] focus:border-[#155DFC] focus:outline-none"
+                />
+              </div>
+            </div>
           </div>
 
           <div>
