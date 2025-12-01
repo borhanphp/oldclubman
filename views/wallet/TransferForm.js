@@ -251,6 +251,7 @@ const TransferForm = () => {
                   type="number"
                   value={amount}
                   onChange={handleAmountChange}
+                  onWheel={(e) => e.target.blur()}
                   min="1"
                   max={balance}
                   step="0.01"

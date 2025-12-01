@@ -61,6 +61,7 @@ const GiftCardCreator = ({ onPurchase, balance, loading }) => {
             type="number"
             value={amount}
             onChange={handleAmountChange}
+            onWheel={(e) => e.target.blur()}
             min="1"
             max="200"
             step="0.01"

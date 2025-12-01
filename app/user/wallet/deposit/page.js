@@ -2,13 +2,13 @@
 
 import CommonLayout from '@/components/common/CommonLayout';
 import DepositForm from '@/views/wallet/DepositForm';
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import toast from 'react-hot-toast';
 import { getWalletBalance } from '@/views/wallet/store';
 
-export default function DepositPage() {
+function DepositContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const dispatch = useDispatch();
@@ -58,9 +58,15 @@ export default function DepositPage() {
     }
   }, [searchParams, router, dispatch]);
 
+  return <DepositForm />;
+}
+
+export default function DepositPage() {
   return (
     <CommonLayout>
-      <DepositForm />
+      <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+        <DepositContent />
+      </Suspense>
     </CommonLayout>
   );
 }

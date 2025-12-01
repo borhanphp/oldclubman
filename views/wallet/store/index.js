@@ -13,6 +13,7 @@ const initialState = {
   paymentGateways: [],
   pendingPurchase: null, // Stores pending purchase data for OTP verification
   pendingTransfer: null, // Stores pending transfer data for OTP verification
+  pendingWithdrawal: null, // Stores pending withdrawal data for OTP verification
   transferDetails: null, // Stores transfer details
   loading: false,
   error: null,
@@ -146,11 +147,46 @@ export const createWithdrawalRequest = createAsyncThunk(
   "wallet/createWithdrawalRequest",
   async (data, { rejectWithValue }) => {
     try {
-      const response = await axios.post("/wallet/withdraw", data);
-      toast.success("Transfer request submitted successfully");
+      const response = await axios.post("/wallet/withdrawal/initiate", data);
+      toast.success("OTP sent! Please verify to complete the request.");
       return response.data.data;
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to create transfer request");
+      return rejectWithValue(err.response?.data);
+    }
+  }
+);
+
+// Verify withdrawal OTP
+export const verifyWithdrawalOTP = createAsyncThunk(
+  "wallet/verifyWithdrawalOTP",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await axios.post("/wallet/withdrawal/verify-otp", {
+        withdrawal_request_id: data.withdrawal_request_id,
+        otp_code: data.otp_code
+      });
+      toast.success("Transfer request submitted successfully!");
+      return response.data.data;
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to verify OTP");
+      return rejectWithValue(err.response?.data);
+    }
+  }
+);
+
+// Resend OTP for withdrawal
+export const resendWithdrawalOTP = createAsyncThunk(
+  "wallet/resendWithdrawalOTP",
+  async (withdrawal_request_id, { rejectWithValue }) => {
+    try {
+      const response = await axios.post("/wallet/withdrawal/resend-otp", {
+        withdrawal_request_id
+      });
+      toast.success("OTP resent successfully");
+      return response.data.data;
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to resend OTP");
       return rejectWithValue(err.response?.data);
     }
   }
@@ -664,10 +700,36 @@ const walletSlice = createSlice({
       .addCase(createWithdrawalRequest.pending, (state) => {
         state.loading = true;
       })
-      .addCase(createWithdrawalRequest.fulfilled, (state) => {
+      .addCase(createWithdrawalRequest.fulfilled, (state, action) => {
         state.loading = false;
+        state.pendingWithdrawal = action.payload; // Store pending withdrawal for OTP
       })
       .addCase(createWithdrawalRequest.rejected, (state) => {
+        state.loading = false;
+      })
+      // Withdrawal OTP
+      .addCase(verifyWithdrawalOTP.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(verifyWithdrawalOTP.fulfilled, (state) => {
+        state.loading = false;
+        state.pendingWithdrawal = null;
+      })
+      .addCase(verifyWithdrawalOTP.rejected, (state) => {
+        state.loading = false;
+      })
+      // Withdrawal Resend OTP
+      .addCase(resendWithdrawalOTP.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(resendWithdrawalOTP.fulfilled, (state, action) => {
+        state.loading = false;
+        if (state.pendingWithdrawal) {
+          state.pendingWithdrawal.otp_id = action.payload.otp_id;
+          state.pendingWithdrawal.otp_expires_at = action.payload.otp_expires_at;
+        }
+      })
+      .addCase(resendWithdrawalOTP.rejected, (state) => {
         state.loading = false;
       })
       // Transfer - Initiate

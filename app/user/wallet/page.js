@@ -2,13 +2,13 @@
 
 import CommonLayout from '@/components/common/CommonLayout';
 import WalletDashboard from '@/views/wallet/feed';
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import toast from 'react-hot-toast';
 import { getWalletBalance } from '@/views/wallet/store';
 
-export default function WalletPage() {
+function WalletContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const dispatch = useDispatch();
@@ -59,10 +59,18 @@ export default function WalletPage() {
   }, [searchParams, router, dispatch]);
 
   return (
+    <div className="wallet-page">
+      <WalletDashboard />
+    </div>
+  );
+}
+
+export default function WalletPage() {
+  return (
     <CommonLayout>
-      <div className="wallet-page">
-        <WalletDashboard />
-      </div>
+      <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+        <WalletContent />
+      </Suspense>
     </CommonLayout>
   );
 }

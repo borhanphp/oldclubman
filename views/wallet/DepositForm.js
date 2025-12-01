@@ -132,6 +132,7 @@ const DepositForm = () => {
                 type="number"
                 value={amount}
                 onChange={handleAmountChange}
+                onWheel={(e) => e.target.blur()}
                 min="1"
                 step="0.01"
                 className={`w-full pl-8 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 text-lg ${

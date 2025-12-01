@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { FaArrowLeft, FaMobileAlt, FaUniversity } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import GiftCardSummary from '@/components/wallet/GiftCardSummary';
+import WithdrawalOTPVerification from '@/components/wallet/WithdrawalOTPVerification';
 import WalletSidebar from './WalletSidebar';
 import { createWithdrawalRequest, getWalletBalance, getMyGiftCards } from './store';
 
@@ -17,6 +18,7 @@ const WithdrawForm = () => {
   const [withdrawalMethod, setWithdrawalMethod] = useState('bank');
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showOTP, setShowOTP] = useState(false);
   const [errors, setErrors] = useState({});
 
   // Bank transfer fields
@@ -109,29 +111,43 @@ const WithdrawForm = () => {
     setLoading(true);
     try {
       const withdrawalData = {
-        amount: parseFloat(amount),
-        method: withdrawalMethod,
+        amount_dollars: parseFloat(amount),
+        account_type: withdrawalMethod === 'bank' ? 'bank' : 'mobile_wallet',
         ...(withdrawalMethod === 'bank' ? {
-          account_holder_name: accountHolderName,
-          account_number: accountNumber,
+          bank_account_name: accountHolderName,
+          bank_account_number: accountNumber,
           bank_name: bankName,
-          routing_number: routingNumber,
-          swift_code: swiftCode || null,
-          account_type: accountType
+          bank_routing_number: routingNumber,
+          bank_swift_code: swiftCode || null,
         } : {
-          provider,
-          account_number: mobileAccountNumber,
-          account_holder_name: mobileAccountHolderName
+          mobile_wallet_provider: provider,
+          mobile_wallet_number: mobileAccountNumber,
+          mobile_wallet_account_name: mobileAccountHolderName
         })
       };
 
-      await dispatch(createWithdrawalRequest(withdrawalData)).unwrap();
-      router.push('/user/wallet');
+      const result = await dispatch(createWithdrawalRequest(withdrawalData)).unwrap();
+      
+      if (result?.withdrawal_request_id) {
+        setShowOTP(true);
+      } else {
+        // Fallback if no ID returned (shouldn't happen with correct API)
+        router.push('/user/wallet');
+      }
     } catch (error) {
       toast.error(error.message || 'Failed to create transfer request');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOTPSuccess = () => {
+    setShowOTP(false);
+    router.push('/user/wallet');
+  };
+
+  const handleOTPCancel = () => {
+    setShowOTP(false);
   };
 
   return (
@@ -173,6 +189,7 @@ const WithdrawForm = () => {
                 type="number"
                 value={amount}
                 onChange={handleAmountChange}
+                onWheel={(e) => e.target.blur()}
                 min="10"
                 max={balance}
                 step="0.01"
@@ -242,6 +259,14 @@ const WithdrawForm = () => {
               </div>
             </button>
           </div>
+
+          {/* OTP Verification Modal */}
+          {showOTP && (
+            <WithdrawalOTPVerification
+              onSuccess={handleOTPSuccess}
+              onCancel={handleOTPCancel}
+            />
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {withdrawalMethod === 'bank' ? (

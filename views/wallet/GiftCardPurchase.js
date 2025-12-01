@@ -155,6 +155,7 @@ const GiftCardPurchase = () => {
                     type="number"
                     value={customAmount}
                     onChange={handleCustomAmountChange}
+                    onWheel={(e) => e.target.blur()}
                     min="1"
                     max="10000"
                     step="0.01"
