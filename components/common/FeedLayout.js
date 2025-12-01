@@ -42,17 +42,17 @@ const FeedLayout = ({ children, showMsgBtn, showFriends, userProfile }) => {
         ) : (
           <>
             <div 
-              className="relative border-b transition-all duration-500"
+              className="relative transition-all duration-500"
               style={{
-                background: `linear-gradient(to bottom, ${bgColors.top} 0%, ${bgColors.middle} 30%, rgba(255, 255, 255, 0.7) 70%, #EFF2F6 100%)`,
+                background: `linear-gradient(to bottom, ${bgColors.top} 0%, ${bgColors.middle} 30%, rgba(255, 255, 255, 0.7) 70%, #FFFFFF 100%)`,
                 borderColor: '#EFF2F6'
               }}
             >
              <div 
                className="md:px-60 relative"
-               style={{
-                 boxShadow: 'inset 20px 0 20px -20px rgba(0,0,0,0.2), inset -20px 0 20px -20px rgba(0,0,0,0.2)'
-               }}
+              //  style={{
+              //    boxShadow: 'inset 20px 0 20px -20px rgba(0,0,0,0.2), inset -20px 0 20px -20px rgba(0,0,0,0.2)'
+              //  }}
              >
              <FeedHeader
                 showMsgBtn={showMsgBtn}

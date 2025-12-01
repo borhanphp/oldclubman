@@ -909,9 +909,10 @@ function FeedHeader({
   };
 
   return (
-    <div className="w-full px-0 sm:px-15 md:px-0 xl:px-0">
+    // <div className="w-full px-0 sm:px-15 md:px-0 xl:px-0">
+    <div className="w-full max-w-7xl mx-auto">
         {/* Cover Photo */}
-        <div className="cover-photo rounded-t-md relative w-full h-60 overflow-hidden group">
+        <div className="cover-photo rounded-md relative w-full h-100 overflow-hidden group">
           <div className="absolute inset-0 w-full">
           <Image
           alt="oldclubman"
