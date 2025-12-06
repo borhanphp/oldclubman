@@ -324,13 +324,13 @@ const ListingGrid = ({ items, loading }) => {
     <div className="flex-1">
       <h2 className="text-xl font-semibold mb-3">Today&apos;s picks</h2>
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {Array.from({ length: 9 }).map((_, i) => (
             <div key={i} className="h-72 rounded-lg bg-gray-100 animate-pulse" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-5 gap-3">
           {items.map((it) => (
             <ListingCard key={it.id} item={it} />
           ))}

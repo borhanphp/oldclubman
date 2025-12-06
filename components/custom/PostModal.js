@@ -548,23 +548,11 @@ const PostModal = () => {
           
           mapInstance = L.map(container).setView([23.8103, 90.4125], 5);
 
-          // Replace OpenStreetMap tiles with Google Maps tiles
-          const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-
-          if (googleApiKey) {
-            // Use Google Maps tiles with Leaflet
-            L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-              maxZoom: 20,
-              subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-              attribution: '© Google Maps'
-            }).addTo(mapInstance);
-          } else {
-            // Fallback to OpenStreetMap if no API key
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-              attribution: '&copy; OpenStreetMap contributors',
-              maxZoom: 19
-            }).addTo(mapInstance);
-          }
+          // Use OpenStreetMap tiles (free, no API key required)
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+          }).addTo(mapInstance);
 
           routeMapRef.current = mapInstance;
           

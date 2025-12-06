@@ -250,23 +250,12 @@ const PostList = ({ postsData }) => {
         minZoom: MIN_ZOOM
       });
       
-      // Use Google Maps tiles if API key is available
-      const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-      
-      if (googleApiKey) {
-        // Use Google Maps tiles with Leaflet
-        L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-          maxZoom: MAX_ZOOM,
-          subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-          attribution: '© Google Maps'
-        }).addTo(map);
-      } else {
-        // Fallback to OpenStreetMap if no API key
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; OpenStreetMap contributors',
-          maxZoom: MAX_ZOOM
-        }).addTo(map);
-      }
+      // Use OpenStreetMap tiles (free, no API key required)
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: MAX_ZOOM,
+        minZoom: MIN_ZOOM
+      }).addTo(map);
       
       mapInstances.current[postId] = map;
       

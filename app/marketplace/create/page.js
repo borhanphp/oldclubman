@@ -809,275 +809,98 @@ function CreateListingContent() {
           </div>
         </aside>
 
-        {/* Preview Section - Professional Card Design */}
-        <div className="flex-1 flex justify-center items-start p-6">
-          <div className="flex flex-col max-w-[70%] w-full max-h-[800px] bg-white shadow-xl rounded-2xl overflow-hidden">
+        {/* Preview Section - Simple Card Design */}
+        <div className="flex-1 flex justify-center items-start p-6 bg-gray-50">
+          <div className="w-full max-w-2xl bg-white rounded-lg shadow-sm overflow-hidden">
             {/* Preview Header */}
-            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900">Live Preview</h3>
-                  <p className="text-xs text-gray-600 mt-0.5">See how your listing will appear</p>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <FaGlobe className="text-blue-500" />
-                  <span>Public View</span>
-                </div>
-              </div>
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-800">Preview</h3>
             </div>
             
-            <div className="flex flex-1 min-h-0 max-h-[720px]">
+            <div className="flex">
               {/* Left Preview Area - Image Gallery */}
-              <section className="flex-1 min-w-0 flex flex-col min-h-0 bg-gray-50">
-                <div className="bg-gray-900 flex-1 relative overflow-hidden min-h-0">
+              <section className="flex-1 flex flex-col bg-gray-100 min-h-[500px]">
+                <div className="flex-1 relative overflow-hidden bg-gray-200">
                   {images.length === 0 ? (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-                      <div className="text-center max-w-md px-8">
-                        <div className="w-20 h-20 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
-                          <FaCamera className="text-blue-500 text-3xl" />
-                        </div>
-                        <div className="text-2xl font-bold text-gray-900 mb-3">Your Listing Preview</div>
-                        <div className="text-sm text-gray-600 leading-relaxed">
-                          Upload photos and fill in the details to see how your listing will appear to buyers on the Marketplace.
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center px-8">
+                        <div className="text-xl font-semibold text-gray-600 mb-2">Your listing preview</div>
+                        <div className="text-sm text-gray-500">
+                          As you create your listing, you can preview<br />
+                          how it will appear to others on Marketplace.
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <>
-                      <div className="relative w-full h-full bg-black">
-                        <Image 
-                          src={images[selectedImageIndex]?.url || images[0]?.url} 
-                          alt="preview" 
-                          fill 
-                          sizes="60vw" 
-                          className="object-contain"
-                          priority
-                        />
-                      </div>
-                      
-                      {/* Image Navigation Indicators */}
-                      {images.length > 1 && (
-                        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-                          {images.map((_, idx) => (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() => setSelectedImageIndex(idx)}
-                              className={`w-2 h-2 rounded-full transition-all ${
-                                idx === selectedImageIndex 
-                                  ? 'bg-white w-8' 
-                                  : 'bg-white/50 hover:bg-white/75'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </>
+                    <div className="relative w-full h-full bg-white">
+                      <Image 
+                        src={images[selectedImageIndex]?.url || images[0]?.url} 
+                        alt="preview" 
+                        fill 
+                        sizes="50vw" 
+                        className="object-contain"
+                        priority
+                      />
+                    </div>
                   )}
                 </div>
-                
-                {/* Image Thumbnails */}
-                {images.length > 1 && (
-                  <div className="p-3 bg-white border-t border-gray-200">
-                    <div className="flex gap-2 overflow-x-auto">
-                      {images.map((img, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => setSelectedImageIndex(idx)}
-                          className={`relative w-16 h-16 rounded-lg overflow-hidden shrink-0 transition-all ${
-                            idx === selectedImageIndex 
-                              ? 'ring-2 ring-blue-500 scale-105' 
-                              : 'opacity-60 hover:opacity-100'
-                          }`}
-                        >
-                          <Image 
-                            src={img.url} 
-                            alt={`thumbnail ${idx + 1}`} 
-                            fill 
-                            sizes="64px"
-                            className="object-cover"
-                          />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </section>
 
               {/* Right Details Preview Column */}
-              <aside className="w-[400px] shrink-0 border-l border-gray-100 flex flex-col min-h-0 bg-white">
-                <div className="flex-1 p-6 flex flex-col overflow-y-auto min-h-0 max-h-[670px] custom-scrollbar">
+              <aside className="w-[380px] shrink-0 border-l border-gray-200 flex flex-col bg-white">
+                <div className="flex-1 p-6 flex flex-col overflow-y-auto">
                   {/* Title */}
-                  <h1 className="text-3xl font-bold text-gray-900 mb-3 leading-tight">{title || "Your Product Title"}</h1>
+                  <h1 className="text-2xl font-bold text-gray-700 mb-1">{title || "Title"}</h1>
                   
                   {/* Price */}
-                  <div className="text-3xl font-bold text-blue-600 mb-1">{price ? `৳${price}` : "৳0.00"}</div>
+                  <div className="text-xl font-semibold text-gray-600 mb-2">{price ? `Price` : "Price"}</div>
                   
                   {/* Location and Time */}
-                  <div className="flex items-center gap-2 text-sm text-gray-500 mb-4 pb-4 border-b border-gray-100">
-                    <FaMapMarkerAlt className="text-gray-400" />
-                    <span>{location || "Singapore"}</span>
-                    <span className="text-gray-300">•</span>
-                    <span>Just now</span>
+                  <div className="text-sm text-gray-500 mb-6">
+                    Listed a few seconds ago in {location || "চট্টগ্রাম"}
                   </div>
-
-                  {/* Meetup Preferences */}
-                  {(meetupPreferences.publicMeetup || meetupPreferences.doorPickup || meetupPreferences.doorDropoff) && (
-                    <div className="mb-5 p-4 bg-green-50 rounded-lg border border-green-100">
-                      <div className="text-xs font-semibold text-green-800 mb-2 uppercase tracking-wide">Available Options</div>
-                      <div className="flex flex-col gap-2">
-                        {meetupPreferences.publicMeetup && (
-                          <div className="flex items-center gap-2 text-sm text-gray-700">
-                            <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
-                              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            </div>
-                            <span className="font-medium">Public meetup available</span>
-                          </div>
-                        )}
-                        {(meetupPreferences.doorPickup || meetupPreferences.doorDropoff) && (
-                          <div className="flex items-center gap-2 text-sm text-gray-700">
-                            <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
-                              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            </div>
-                            <span className="font-medium">Door pickup or dropoff</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
 
                   {/* Details Section */}
-                  <div className="mb-5">
-                    <div className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <span>Product Details</span>
-                      <div className="h-px flex-1 bg-gray-200"></div>
+                  <div className="mb-6">
+                    <h3 className="text-base font-semibold text-gray-700 mb-3">Details</h3>
+                    <div className="text-sm text-gray-500">
+                      {description || "Description will appear here."}
                     </div>
-                    
-                    <div className="space-y-3">
-                      {/* Condition */}
-                      {condition && (
-                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <span className="text-sm text-gray-600 font-medium">Condition</span>
-                          <span className="text-sm text-gray-900 font-semibold capitalize">
-                            {condition === "like_new" ? "Like New" : condition === "for_parts" ? "For parts" : condition}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Category */}
-                      {category && (() => {
-                        const selectedCategory = categories.find(cat => cat.id.toString() === category);
-                        const categoryName = selectedCategory 
-                          ? (selectedCategory.name || selectedCategory.title || selectedCategory.category_name || `Category ${selectedCategory.id}`)
-                          : category;
-                        return (
-                          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <span className="text-sm text-gray-600 font-medium">Category</span>
-                            <span className="text-sm text-gray-900 font-semibold capitalize">
-                              {categoryName}
-                            </span>
-                          </div>
-                        );
-                      })()}
-
-                      {/* Availability */}
-                      {availability && (
-                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <span className="text-sm text-gray-600 font-medium">Availability</span>
-                          <span className={`text-sm font-semibold capitalize ${
-                            availability === "in_stock" ? "text-green-600" : 
-                            availability === "out_of_stock" ? "text-red-600" : 
-                            "text-orange-600"
-                          }`}>
-                            {availability === "in_stock" ? "In Stock" : availability === "out_of_stock" ? "Out of Stock" : availability === "available_soon" ? "Available Soon" : availability}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Description */}
-                    {description && (
-                      <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                        <div className="text-sm font-semibold text-gray-900 mb-2">Description</div>
-                        <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                          {description}
-                        </div>
-                      </div>
-                    )}
-
-                    {!condition && !category && !availability && !description && (
-                      <div className="text-sm text-gray-400 text-center py-8">Fill in product details to see them here</div>
-                    )}
                   </div>
 
-                  {/* Tags Section */}
-                  {productTags && (
-                    <div className="mb-5">
-                      <div className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-                        <span>Tags</span>
-                        <div className="h-px flex-1 bg-gray-200"></div>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {productTags.split(',').filter(tag => tag.trim()).map((tag, idx) => (
-                          <span
-                            key={idx}
-                            className="inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 text-xs font-medium rounded-full hover:bg-blue-100 transition-colors"
-                          >
-                            #{tag.trim()}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Seller Information - Pushed to bottom */}
-                  <div className="border-t-2 border-gray-100 pt-5 mt-auto">
-                    <div className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <span>Seller Information</span>
-                      <div className="h-px flex-1 bg-gray-200"></div>
+                  {/* Seller Information */}
+                  <div className="border-t border-gray-200 pt-6 mt-auto">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-base font-semibold text-gray-700">Seller information</h3>
+                      <button className="text-sm text-blue-600 hover:underline" type="button">
+                        Seller details
+                      </button>
                     </div>
                     
-                    <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl mb-4">
-                      <div className="flex items-center gap-4 mb-3">
-                        <div className="w-14 h-14 rounded-full overflow-hidden shrink-0 bg-gray-200 ring-2 ring-white shadow-md">
-                          <img 
-                            src={seller.image} 
-                            alt={seller.name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = "/common-avator.jpg";
-                            }}
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <div className="text-base font-bold text-gray-900">{seller.name}</div>
-                          <button 
-                            className="text-xs text-blue-600 hover:text-blue-700 font-medium hover:underline" 
-                            type="button"
-                          >
-                            View seller profile →
-                          </button>
-                        </div>
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 bg-gray-200">
+                        <img 
+                          src={seller.image} 
+                          alt={seller.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "/common-avator.jpg";
+                          }}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-semibold text-gray-900">{seller.name}</div>
                       </div>
                     </div>
 
                     {/* Message Button */}
                     <button
                       disabled
-                      className="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl text-sm font-bold shadow-md opacity-50 cursor-not-allowed flex items-center justify-center gap-2"
+                      className="w-full py-2.5 px-4 bg-gray-200 text-gray-500 rounded-md text-sm font-semibold cursor-not-allowed"
                       type="button"
                     >
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
-                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
-                      </svg>
-                      Send Message
+                      Message
                     </button>
                   </div>
                 </div>

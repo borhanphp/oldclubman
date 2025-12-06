@@ -627,20 +627,12 @@ const MessagingContent = () => {
   // Get image URL with proper path
   const getImageUrl = (imagePath) => {
     if (!imagePath) return '/common-avator.jpg';
-    if (imagePath.startsWith('http')) return imagePath;
     
-    // Chat files are stored in uploads/chat/, not uploads/client/
-    // So we need to use the base API URL without the /client/ part
-    if (imagePath.includes('uploads/chat/')) {
-      // Extract base URL from API URL (remove /api at the end)
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL.replace('/api', '');
-      const fullUrl = `${baseUrl}/${imagePath}`;
-      console.log('🖼️ Chat file URL:', fullUrl);
-      return fullUrl;
-    }
+    // Remove /api from API URL and construct file URL
+    const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '');
+    const fullUrl = `${apiUrl}/${imagePath}`;
     
-    // For client images (profiles, etc)
-    const fullUrl = `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}/${imagePath}`;
+    console.log('🖼️ Image URL:', { original: imagePath, final: fullUrl });
     return fullUrl;
   };
 
@@ -726,13 +718,25 @@ const MessagingContent = () => {
     const messageContent = newMessage.trim();
     const fileToSend = selectedFile;
 
+    // Determine message type based on file
+    let optimisticMessageType = 'text';
+    if (selectedFile) {
+      if (selectedFile.type.startsWith('image/')) {
+        optimisticMessageType = 'image';
+      } else if (selectedFile.type.startsWith('video/')) {
+        optimisticMessageType = 'video';
+      } else {
+        optimisticMessageType = 'file';
+      }
+    }
+
     // Create optimistic message for instant display
     const optimisticMessage = {
       id: `temp-${Date.now()}`,
       content: messageContent,
       user_id: profile?.client?.id,
       conversation_id: convarsationData.id,
-      type: selectedFile ? 'file' : 'text',
+      type: optimisticMessageType,
       created_at: new Date().toISOString(),
       user: {
         id: profile?.client?.id,
@@ -762,9 +766,22 @@ const MessagingContent = () => {
     });
 
     try {
+      // Determine file type: image, video, or file
+      let messageType = "text";
+      if (selectedFile) {
+        // Check if it's an image
+        if (selectedFile.type.startsWith('image/')) {
+          messageType = "image";
+        } else if (selectedFile.type.startsWith('video/')) {
+          messageType = "video";
+        } else {
+          messageType = "file";
+        }
+      }
+
       const chatData = {
         chatId: convarsationData.id,
-        type: selectedFile ? "file" : "text",
+        type: messageType,
         content: messageContent,
         file: selectedFile,
         onProgress: (progress) => {
@@ -883,26 +900,17 @@ const MessagingContent = () => {
   // Download file
   const handleFileDownload = async (fileUrl, fileName) => {
     try {
-      const response = await fetch(fileUrl, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('old_token')}`
-        }
-      });
-      
-      if (!response.ok) throw new Error('Download failed');
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      // Try direct download first (works for same-origin or CORS-enabled files)
       const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
+      link.href = fileUrl;
+      link.download = fileName || 'download';
+      link.target = '_blank';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading file:', error);
-      alert('Failed to download file');
+      toast.error('Failed to download file. Please try opening in a new tab.');
     }
   };
 
@@ -1295,9 +1303,9 @@ const MessagingContent = () => {
                       // Parse file information
                       const fileInfo = parseMessageFile(message);
                       
-                      // Debug logging for file messages
-                      if (message.type === 'file') {
-                        console.log('📎 File message:', {
+                      // Debug logging for file/image/video messages
+                      if (message.type === 'file' || message.type === 'image' || message.type === 'video') {
+                        console.log('📎 File/Image/Video message:', {
                           id: message.id,
                           type: message.type,
                           file_name: message.file_name,
@@ -1311,16 +1319,16 @@ const MessagingContent = () => {
                         key={message.id} 
                         className={`flex items-end ${isCurrentUser ? 'justify-end' : 'justify-start'} ${isSameUser ? 'mt-1' : 'mt-4'}`}
                       >
-                        {/* Only render message bubble if there's content or file */}
-                        {(message.content || (message.type === 'file' && fileInfo)) && (
+                        {/* Only render message bubble if there's content or file/image/video */}
+                        {(message.content || ((message.type === 'file' || message.type === 'image' || message.type === 'video') && fileInfo)) && (
                         <div className={`max-w-[75%] md:max-w-sm lg:max-w-lg ${
                           isCurrentUser 
                             ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl rounded-br-md shadow-md' 
                             : 'bg-white border border-gray-200 rounded-2xl rounded-bl-md shadow-sm'
                         } p-3 md:p-3.5 hover:shadow-lg transition-all duration-200`}>
-                          {message.type === 'file' && fileInfo && (
+                          {(message.type === 'file' || message.type === 'image' || message.type === 'video') && fileInfo && (
                             <div className="mb-2">
-                              {isImageFile(fileInfo.name) ? (
+                              {message.type === 'image' || isImageFile(fileInfo.name) ? (
                                 // Image preview
                                 <div 
                                   className="rounded-xl overflow-hidden mb-2 shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
@@ -1335,6 +1343,20 @@ const MessagingContent = () => {
                                       e.target.onerror = null;
                                     }}
                                   />
+                                </div>
+                              ) : message.type === 'video' ? (
+                                // Video preview
+                                <div className="rounded-xl overflow-hidden mb-2 shadow-sm">
+                                  <video 
+                                    src={getImageUrl(fileInfo.path)}
+                                    controls
+                                    className="w-full h-auto max-h-64 object-cover"
+                                    onError={(e) => {
+                                      console.error('❌ Video load error:', getImageUrl(fileInfo.path));
+                                    }}
+                                  >
+                                    Your browser does not support the video tag.
+                                  </video>
                                 </div>
                               ) : (
                                 // File attachment

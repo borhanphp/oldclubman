@@ -22,6 +22,8 @@ const dispatch = useDispatch()
   const [filePreview, setFilePreview] = useState(null);
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const [displayUser, setDisplayUser] = useState(user);
+  const lastLoadedConversationId = useRef(null);
   // Initialize Pusher service when component mounts
   useEffect(() => {
     pusherService.initialize();
@@ -29,6 +31,41 @@ const dispatch = useDispatch()
       pusherService.disconnect();
     };
   }, []);
+
+  // Determine the correct user to display
+  useEffect(() => {
+    if (currentChat && profile?.client?.id) {
+      // Get the other user (not the current logged-in user)
+      let otherUser = null;
+      
+      if (currentChat.users && Array.isArray(currentChat.users) && currentChat.users.length > 0) {
+        // Find the user that is NOT the current user
+        otherUser = currentChat.users.find(u => String(u.id) !== String(profile.client.id));
+      }
+      
+      // Fallback: check other_user field
+      if (!otherUser && currentChat.other_user) {
+        otherUser = currentChat.other_user;
+      }
+      
+      // Fallback: check participants array
+      if (!otherUser && currentChat.participants && Array.isArray(currentChat.participants)) {
+        otherUser = currentChat.participants.find(p => 
+          String(p.id) !== String(profile.client.id) || 
+          String(p.user_id) !== String(profile.client.id)
+        );
+      }
+      
+      // Fallback: check if user prop is different from current user
+      if (!otherUser && user && String(user.id) !== String(profile.client.id)) {
+        otherUser = user;
+      }
+      
+      setDisplayUser(otherUser || user);
+    } else {
+      setDisplayUser(user);
+    }
+  }, [currentChat, user, profile?.client?.id]);
 
   // Don't prevent body scroll - allow it to be a floating chat box
 
@@ -41,11 +78,14 @@ const dispatch = useDispatch()
   // Load messages when conversation is opened
   useEffect(() => {
     const conversationId = currentChat?.id || convarsationData?.id;
-    if (conversationId) {
+    
+    // Only load if conversation ID changed and is valid
+    if (conversationId && conversationId !== lastLoadedConversationId.current) {
       console.log('Loading messages for conversation:', conversationId);
+      lastLoadedConversationId.current = conversationId;
       dispatch(getMessage({ id: conversationId }));
     }
-  }, [currentChat?.id, convarsationData?.id, dispatch]);
+  }, [currentChat?.id, convarsationData?.id]);
 
   // Handle new message received via Pusher
   const handleMessageReceived = useCallback((data) => {
@@ -465,39 +505,31 @@ const dispatch = useDispatch()
     if (!filePath) return null;
     
     // If already a full URL, return as is
-    if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
-      return filePath;
-    }
+    // if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+    //   return filePath;
+    // }
     
     // Remove leading slash if present
-    const cleanPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
+    // const cleanPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
     
     // Try multiple URL construction methods
     // Method 1: Use NEXT_PUBLIC_API_URL (backend API URL)
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-    let fullUrl = `${apiUrl}/${cleanPath}`;
+    const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '');
+    let fullUrl = `${apiUrl}/${filePath}`;
     
     // Method 2: If path starts with 'public/', use NEXT_PUBLIC_FILE_PATH
-    if (cleanPath.startsWith('public/')) {
-      const filePathBase = process.env.NEXT_PUBLIC_FILE_PATH || `${apiUrl}/`;
-      fullUrl = `${filePathBase}${cleanPath.replace('public/', '')}`;
-    }
+    // if (cleanPath.startsWith('public/')) {
+    //   const filePathBase = process.env.NEXT_PUBLIC_FILE_PATH || `${apiUrl}/`;
+    //   fullUrl = `${filePathBase}${cleanPath.replace('public/', '')}`;
+    // }
     
     // Method 3: If path already includes 'uploads/', construct from base
-    if (cleanPath.includes('uploads/')) {
-      // Extract from 'uploads/' onwards
-      const uploadsPath = cleanPath.substring(cleanPath.indexOf('uploads/'));
-      const filePathBase = process.env.NEXT_PUBLIC_FILE_PATH || `${apiUrl}/`;
-      fullUrl = `${filePathBase}${uploadsPath}`;
-    }
-    
-    console.log('🔗 URL Construction:', { 
-      original: filePath, 
-      cleaned: cleanPath, 
-      final: fullUrl,
-      apiUrl,
-      filePathBase: process.env.NEXT_PUBLIC_FILE_PATH 
-    });
+    // if (cleanPath.includes('uploads/')) {
+    //   // Extract from 'uploads/' onwards
+    //   const uploadsPath = process.env.NEXT_PUBLIC_FILE_PATH ;
+    //   const filePathBase = process.env.NEXT_PUBLIC_FILE_PATH || `${apiUrl}/`;
+    //   fullUrl = `${filePathBase}${uploadsPath}`;
+    // }
     
     return fullUrl;
   };
@@ -517,8 +549,8 @@ const dispatch = useDispatch()
           <div className="flex items-center space-x-2 flex-1 min-w-0">
             <div className="w-8 h-8 rounded-full overflow-hidden bg-white flex-shrink-0">
               <img
-                src={user?.image ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + user?.image : "/common-avator.jpg"}
-                alt={user?.fname}
+                src={displayUser?.image ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + displayUser?.image : "/common-avator.jpg"}
+                alt={displayUser?.fname}
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   e.target.onerror = null;
@@ -528,7 +560,7 @@ const dispatch = useDispatch()
             </div>
             <div className="flex flex-col gap-0 flex-1 min-w-0">
               <p className="text-white font-medium text-sm leading-tight truncate">
-                {currentChat ? currentChat?.name : user?.fname ? `${user.fname} ${user.last_name || ''}`.trim() : "Oldclubman User"}
+                {displayUser?.fname ? `${displayUser.fname} ${displayUser.last_name || ''}`.trim() : "Oldclubman User"}
               </p>
               <span className="text-xs text-green-300 leading-tight flex items-center gap-1">
                 <span className="inline-block w-1.5 h-1.5 bg-green-400 rounded-full"></span>
