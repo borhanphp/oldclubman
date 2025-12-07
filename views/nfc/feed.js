@@ -22,10 +22,10 @@ const NfcContent = () => {
 
   return (
     <div className="min-h-screen">
-      <div className="mx-auto md:p-5 md:px-10">
+      <div className="mx-auto md:p-2 md:px-5">
         <div className="flex flex-wrap">
           {/* Left Sidebar - Profile */}
-          <div className="w-full lg:w-1/4 mb-1 lg:mb-0 lg:pr-6"> <Intro /></div>
+          <div className="w-full lg:w-1/4 mb-1 lg:mb-0 lg:pr-2"> <Intro /></div>
          
           
           {/* Right Content - Existing NFC Design */}

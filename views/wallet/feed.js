@@ -56,7 +56,7 @@ const WalletDashboard = () => {
 
   return (
     <div className="bg-gray-100 min-h-screen">
-      <div className="mx-auto md:p-5 md:px-10">
+      <div className="mx-auto md:p-2 md:px-5">
         <div className="flex flex-wrap">
           <WalletSidebar />
           
@@ -65,7 +65,7 @@ const WalletDashboard = () => {
             <GiftCardSummary />
 
             {/* Recent Transactions */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="bg-white rounded-lg shadow-sm p-2">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-gray-800">Recent Transactions</h2>
                 <Link

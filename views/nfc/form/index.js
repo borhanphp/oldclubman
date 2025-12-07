@@ -105,7 +105,7 @@ const NfcForm = () => {
 
   return (
     <div className="min-h-screen">
-      <div className="mx-auto md:p-5 md:px-10">
+      <div className="mx-auto md:p-2 md:px-5">
         <div className="flex flex-wrap">
           {/* Left Sidebar - Profile */}
           <NFCSidebar />

@@ -355,7 +355,7 @@ function CreateListingContent() {
 
   const ProfileSidebar = () => {
     return (
-      <div className="w-full lg:w-1/4 mb-1 lg:mb-0 lg:pr-6">
+      <div className="w-full lg:w-1/4 mb-1 lg:mb-0 lg:pr-2">
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="flex flex-col items-center pt-6">
             <div className="w-20 h-20 rounded-full overflow-hidden bg-blue-100 mb-5">
@@ -402,7 +402,7 @@ function CreateListingContent() {
 
   return (
     <div className="bg-gray-100 min-h-screen">
-      <div className="mx-auto md:p-5 md:px-10">
+      <div className="mx-auto md:p-2 md:px-5">
         <div className="flex flex-wrap">
           {/* Profile Sidebar */}
           <ProfileSidebar />

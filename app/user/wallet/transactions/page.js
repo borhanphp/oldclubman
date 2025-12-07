@@ -10,7 +10,7 @@ export default function TransactionsPage() {
   return (
     <CommonLayout>
       <div className="bg-gray-100 min-h-screen">
-        <div className="mx-auto md:p-5 md:px-10">
+        <div className="mx-auto md:p-2 md:px-5">
           <div className="flex flex-wrap">
             <WalletSidebar />
             

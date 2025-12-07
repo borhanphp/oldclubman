@@ -17,7 +17,7 @@ const CreatePostBox = () => {
   }, []);
 
   return(
-    <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
+    <div className="bg-white rounded-lg shadow-sm p-4 mb-2">
     <div className="flex items-center mb-3">
       <div className="w-8 h-8 rounded-full bg-red-400 flex items-center justify-center text-white mr-3 overflow-hidden">
       <img 

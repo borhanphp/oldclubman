@@ -322,15 +322,15 @@ const ListingCard = ({ item }) => {
 const ListingGrid = ({ items, loading }) => {
   return (
     <div className="flex-1">
-      <h2 className="text-xl font-semibold mb-3">Today&apos;s picks</h2>
+      <h2 className="text-xl font-semibold mb-2">Today&apos;s picks</h2>
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {Array.from({ length: 9 }).map((_, i) => (
             <div key={i} className="h-72 rounded-lg bg-gray-100 animate-pulse" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {items.map((it) => (
             <ListingCard key={it.id} item={it} />
           ))}
@@ -439,11 +439,11 @@ export default function MarketplacePage() {
   return (
     <div className="bg-gray-100 min-h-screen">
       
-      <div className="mx-auto md:p-5 md:px-10">
+      <div className="mx-auto md:p-2 md:px-5">
         <div className="flex flex-wrap">
           {/* Profile Sidebar - Left Side */}
           {/* <ProfileSidebar profile={profile} /> */}
-          <div className="w-full lg:w-1/4 mb-1 lg:mb-0 lg:pr-6">
+          <div className="w-full lg:w-1/4 mb-1 lg:mb-0 lg:pr-2">
           <Intro/>
           </div>
           {/* Main Content - Right Side */}

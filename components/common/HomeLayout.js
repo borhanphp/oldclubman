@@ -40,10 +40,10 @@ const HomeLayout = ({ children, showMsgBtn, showFriends, userProfile }) => {
   return (
     <>
       <div className="min-h-screen">
-        <div className="mx-auto md:p-5 md:px-10">
+        <div className="mx-auto md:p-2 md:px-5">
           <div className="flex flex-wrap">
             {/* Left Sidebar - Profile */}
-            <div className="hidden lg:block lg:w-1/4 lg:mb-0 lg:pr-6">
+            <div className="hidden lg:block lg:w-1/4 lg:mb-0 lg:pr-2">
               <Intro />
               <div className="mt-2">
                 <FollowSuggestion />

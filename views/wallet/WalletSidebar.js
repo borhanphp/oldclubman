@@ -25,7 +25,7 @@ const WalletSidebar = () => {
 
   return (
    <>
-     <div className="w-full lg:w-1/4 mb-6 lg:mb-0 lg:pr-6">
+     <div className="w-full lg:w-1/4 mb-6 lg:mb-0 lg:pr-2">
       <Intro/>
 
       {/* Wallet Menu */}
