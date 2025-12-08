@@ -8,6 +8,7 @@ import html2canvas from "html2canvas";
 import domtoimage from 'dom-to-image-more';
 import Link from "next/link";
 import NFCSidebar from '@/components/nfc/NFCSidebar';
+import BodyLayout from "@/components/common/BodyLayout";
 
 const featuredBackgrounds = [
   "/path/to/bg1.jpg",
@@ -91,8 +92,7 @@ const VertualDownload = () => {
   };
 
   return (
-    <div className="min-h-screen">
-      <div className="mx-auto md:p-5 md:px-10">
+    <BodyLayout>
         <div className="flex flex-wrap">
           {/* Left Sidebar - Profile */}
           <NFCSidebar />
@@ -354,8 +354,7 @@ const VertualDownload = () => {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </BodyLayout>
   );
 };
 

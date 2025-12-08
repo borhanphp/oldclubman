@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from 'react-redux';
 import { getMyProfile } from '@/views/settings/store';
 import Intro from "@/components/common/Intro";
+import BodyLayout from "@/components/common/BodyLayout";
 
 const categories = [
   { key: "vehicles", label: "Vehicles", icon: <FaBoxes /> },
@@ -437,9 +438,7 @@ export default function MarketplacePage() {
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen">
-      
-      <div className="mx-auto md:p-2 md:px-5">
+      <BodyLayout>
         <div className="flex flex-wrap">
           {/* Profile Sidebar - Left Side */}
           {/* <ProfileSidebar profile={profile} /> */}
@@ -470,8 +469,7 @@ export default function MarketplacePage() {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+        </BodyLayout>
   );
 }
 

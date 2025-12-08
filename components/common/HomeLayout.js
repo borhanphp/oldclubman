@@ -7,6 +7,7 @@ import SidebarSearch from "./SidebarSearch";
 import SearchResults from "./SearchResults";
 import Intro from "./Intro";
 import FollowSuggestion from "./FollowSuggestion";
+import BodyLayout from "./BodyLayout";
 
 const HomeLayout = ({ children, showMsgBtn, showFriends, userProfile }) => {
   const { query, results } = useSelector((state) => state.search);
@@ -39,8 +40,7 @@ const HomeLayout = ({ children, showMsgBtn, showFriends, userProfile }) => {
 
   return (
     <>
-      <div className="min-h-screen">
-        <div className="mx-auto md:p-2 md:px-5">
+     <BodyLayout>
           <div className="flex flex-wrap">
             {/* Left Sidebar - Profile */}
             <div className="hidden lg:block lg:w-1/4 lg:mb-0 lg:pr-2">
@@ -59,8 +59,7 @@ const HomeLayout = ({ children, showMsgBtn, showFriends, userProfile }) => {
               <ContactsList />
             </div>
           </div>
-        </div>
-      </div>
+          </BodyLayout>
     </>
   );
 };

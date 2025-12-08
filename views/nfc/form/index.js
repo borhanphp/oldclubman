@@ -21,6 +21,7 @@ import CardModern from "../nfc-cards/CardModern";
 import CardFlat from "../nfc-cards/CardFlat";
 import CardSleek from "../nfc-cards/CardSleek";
 import NFCSidebar from '@/components/nfc/NFCSidebar';
+import BodyLayout from "@/components/common/BodyLayout";
 
 const NfcForm = () => {
   const { basicNfcData, fields } = useSelector(({ nfc }) => nfc);
@@ -104,8 +105,7 @@ const NfcForm = () => {
   };
 
   return (
-    <div className="min-h-screen">
-      <div className="mx-auto md:p-2 md:px-5">
+    <BodyLayout>
         <div className="flex flex-wrap">
           {/* Left Sidebar - Profile */}
           <NFCSidebar />
@@ -261,8 +261,7 @@ const NfcForm = () => {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+        </BodyLayout>
   );
 };
 

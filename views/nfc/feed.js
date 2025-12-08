@@ -8,6 +8,7 @@ import { getMyNfc } from './store';
 import NFCCardGrid from '@/components/nfc/NFCCardGrid';
 import NFCSidebar from '@/components/nfc/NFCSidebar';
 import Intro from '@/components/common/Intro';
+import BodyLayout from '@/components/common/BodyLayout';
 
 const NfcContent = () => {
   const { nfcData, loading } = useSelector(({ nfc }) => nfc);
@@ -21,8 +22,7 @@ const NfcContent = () => {
   const totalCards = nfcCards.length;
 
   return (
-    <div className="min-h-screen">
-      <div className="mx-auto md:p-2 md:px-5">
+      <BodyLayout>
         <div className="flex flex-wrap">
           {/* Left Sidebar - Profile */}
           <div className="w-full lg:w-1/4 mb-1 lg:mb-0 lg:pr-2"> <Intro /></div>
@@ -113,8 +113,7 @@ const NfcContent = () => {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </BodyLayout>
   );
 };
 

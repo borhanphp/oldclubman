@@ -8,6 +8,7 @@ import { getMyGiftCards, getTransactions, getWalletBalance } from './store';
 import WalletSidebar from './WalletSidebar';
 import StatusBadge from '@/components/wallet/StatusBadge';
 import GiftCardSummary from '@/components/wallet/GiftCardSummary';
+import BodyLayout from '@/components/common/BodyLayout';
 
 const WalletDashboard = () => {
   const dispatch = useDispatch();
@@ -55,8 +56,7 @@ const WalletDashboard = () => {
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen">
-      <div className="mx-auto md:p-2 md:px-5">
+    <BodyLayout>
         <div className="flex flex-wrap">
           <WalletSidebar />
           
@@ -132,8 +132,7 @@ const WalletDashboard = () => {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </BodyLayout>
   );
 };
 

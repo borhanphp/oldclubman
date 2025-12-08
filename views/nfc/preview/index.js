@@ -36,6 +36,7 @@ import { IoQrCodeOutline } from "react-icons/io5";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import NFCSidebar from '@/components/nfc/NFCSidebar';
+import BodyLayout from "@/components/common/BodyLayout";
 const DownloadDropdown = ({ onDownloadPDF, onDownloadQR }) => {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -189,8 +190,7 @@ const handleShareEmail = () => {
 };
   
   return (
-    <div className="min-h-screen">
-      <div className="mx-auto md:p-5 md:px-10">
+    <BodyLayout>
         <div className="flex flex-wrap">
           {/* Left Sidebar - Profile */}
           <NFCSidebar />
@@ -379,8 +379,7 @@ const handleShareEmail = () => {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </BodyLayout>
   );
 };
 
