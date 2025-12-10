@@ -51,38 +51,32 @@ const SocialNavbar = () => {
   // Subscribe to real-time notifications via Pusher
   useEffect(() => {
     if (profile?.client?.id) {
-      // Initialize Pusher if not already initialized
-      if (!pusherService.pusher) {
-        pusherService.initialize();
-      }
+      // Initialize pusherService if not already initialized
+      pusherService.initialize();
 
-      // Wait a bit for Pusher to initialize
+      // Wait a bit for service to initialize
       const timer = setTimeout(() => {
-        if (!pusherService.pusher) {
-          console.warn('Pusher not initialized, skipping notification subscription');
-          return;
-        }
-
         const channelName = `private-notifications.${profile.client.id}`;
         console.log(`🔔 Subscribing to ${channelName}`);
         
         try {
-          const channel = pusherService.pusher.subscribe(channelName);
-
-          channel.bind('NotificationReceived', (data) => {
-            console.log('🔔 New notification received:', data);
-            if (data.notification) {
-              dispatch(addNotification(data.notification));
-              
-              // Show browser notification if permitted
-              if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification(data.notification.title, {
-                  body: data.notification.message,
-                  icon: data.notification.actor?.avatar ? 
-                    `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${data.notification.actor.avatar}` : 
-                    '/common-avator.jpg',
-                  tag: data.notification.id,
-                });
+          // Use pusherService wrapper method instead of direct access
+          const channel = pusherService.subscribeToChannel(channelName, {
+            'NotificationReceived': (data) => {
+              console.log('🔔 New notification received:', data);
+              if (data.notification) {
+                dispatch(addNotification(data.notification));
+                
+                // Show browser notification if permitted
+                if ('Notification' in window && Notification.permission === 'granted') {
+                  new Notification(data.notification.title, {
+                    body: data.notification.message,
+                    icon: data.notification.actor?.avatar ? 
+                      `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${data.notification.actor.avatar}` : 
+                      '/common-avator.jpg',
+                    tag: data.notification.id,
+                  });
+                }
               }
             }
           });
@@ -90,10 +84,7 @@ const SocialNavbar = () => {
           // Cleanup function
           return () => {
             if (channel) {
-              channel.unbind_all();
-              if (pusherService.pusher) {
-                pusherService.pusher.unsubscribe(channelName);
-              }
+              pusherService.unsubscribeFromChannel(channelName);
             }
           };
         } catch (error) {

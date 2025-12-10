@@ -1,14 +1,21 @@
+import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
+
+// Required by Laravel Echo
+if (typeof window !== 'undefined') {
+    window.Pusher = Pusher;
+}
 
 class PusherService {
     constructor() {
-        this.pusher = null;
+        this.echo = null;
+        this.pusher = null; // Keep for backward compatibility with direct access
         this.channels = new Map();
         this.options = null;
     }
 
     initialize() {
-        if (this.pusher) return;
+        if (this.echo) return;
 
         const token = localStorage.getItem('old_token');
         if (!token) {
@@ -20,27 +27,31 @@ class PusherService {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL;
         
         this.options = {
+            broadcaster: 'pusher',
+            key: process.env.NEXT_PUBLIC_PUSHER_KEY || '6536db454316e302c142',
             cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'us2',
             forceTLS: true,
             authEndpoint: `${apiUrl}/broadcasting/auth`,
             auth: {
                 headers: {
                     'Accept': 'application/json',
-                    'Content-Type': 'application/x-www-form-urlencoded',
                     'Authorization': `Bearer ${token}`
                 }
             }
         };
 
         try {
-            this.pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '6536db454316e302c142', this.options);
+            this.echo = new Echo(this.options);
+            
+            // Store the underlying Pusher instance for backward compatibility
+            this.pusher = this.echo.connector.pusher;
 
             this.pusher.connection.bind('connecting', () => {
-                console.log('Connecting to Pusher...');
+                console.log('🔌 Connecting to Pusher...');
             });
 
             this.pusher.connection.bind('connected', () => {
-                console.log('Connected to Pusher');
+                console.log('✅ Connected to Pusher');
                 console.log('Connection state:', this.pusher.connection.state);
             });
 
@@ -62,11 +73,11 @@ class PusherService {
             });
 
             this.pusher.connection.bind('disconnected', () => {
-                console.log('Disconnected from Pusher');
+                console.log('❌ Disconnected from Pusher');
             });
 
         } catch (error) {
-            console.error('Error initializing Pusher:', error);
+            console.error('Error initializing Pusher/Echo:', error);
         }
     }
 
@@ -76,7 +87,7 @@ class PusherService {
 
     subscribeToChannel(channelName, events = {}) {
         if (!this.pusher) {
-            console.error('Pusher not initialized');
+            console.error('Pusher/Echo not initialized');
             return null;
         }
 
@@ -92,12 +103,14 @@ class PusherService {
         }
 
         // Update auth headers with current token
-        if (this.options?.auth?.headers) {
-            this.options.auth.headers.Authorization = `Bearer ${token}`;
+        if (this.echo?.connector?.options?.auth?.headers) {
+            this.echo.connector.options.auth.headers.Authorization = `Bearer ${token}`;
         }
 
+        // Use underlying Pusher to subscribe (same as old behavior)
         const channel = this.pusher.subscribe(channelName);
 
+        // Bind subscription events
         channel.bind('pusher:subscription_succeeded', () => {
             console.log(`✅ Successfully subscribed to ${channelName}`);
         });
@@ -110,7 +123,7 @@ class PusherService {
             }
         });
 
-        // Bind custom events
+        // Bind custom events using Pusher's bind method (exact same as old code)
         Object.entries(events).forEach(([event, callback]) => {
             console.log(`Binding event ${event} to channel ${channelName}`);
             channel.bind(event, callback);
@@ -124,16 +137,19 @@ class PusherService {
         if (!this.pusher || !this.channels.has(channelName)) return;
 
         console.log(`Unsubscribing from channel: ${channelName}`);
+        
+        // Use underlying Pusher to unsubscribe (same as old behavior)
         this.pusher.unsubscribe(channelName);
         this.channels.delete(channelName);
     }
 
     disconnect() {
-        if (!this.pusher) return;
+        if (!this.echo) return;
 
-        console.log('Disconnecting Pusher');
+        console.log('Disconnecting Pusher/Echo');
         this.channels.clear();
-        this.pusher.disconnect();
+        this.echo.disconnect();
+        this.echo = null;
         this.pusher = null;
         this.options = null;
     }
