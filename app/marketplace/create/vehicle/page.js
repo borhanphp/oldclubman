@@ -25,7 +25,10 @@ export default function CreateVehicleListingPage() {
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [title, setTitle] = useState("");
+<<<<<<< HEAD
  
+=======
+>>>>>>> bb5b3d6f8180148046f365e311c660550636068a
   const [loading, setLoading] = useState(false);
 
   // Get location from profile
@@ -73,6 +76,7 @@ export default function CreateVehicleListingPage() {
   // Vehicle types
   const vehicleTypes = [
     { value: "", label: "Vehicle type" },
+<<<<<<< HEAD
     { value: "1", label: "Car" },
     { value: "2", label: "Truck" },
     { value: "3", label: "Motorcycle" },
@@ -95,6 +99,15 @@ export default function CreateVehicleListingPage() {
     { value: "1", label: "In Stock" },
     { value: "2", label: "Available to Order" },
     { value: "3", label: "Out of Stock" }
+=======
+    { value: "car", label: "Car" },
+    { value: "truck", label: "Truck" },
+    { value: "motorcycle", label: "Motorcycle" },
+    { value: "suv", label: "SUV" },
+    { value: "van", label: "Van" },
+    { value: "bus", label: "Bus" },
+    { value: "other", label: "Other" }
+>>>>>>> bb5b3d6f8180148046f365e311c660550636068a
   ];
 
   // Handle image upload
@@ -141,6 +154,7 @@ export default function CreateVehicleListingPage() {
       formData.append("title", title);
       formData.append("price", price);
       formData.append("description", description);
+<<<<<<< HEAD
      
       formData.append("type", "2");
       
@@ -160,6 +174,32 @@ export default function CreateVehicleListingPage() {
       });
 
       const response = await api.post("/sale_post/store", formData, {
+=======
+      formData.append("category_id", "1"); // Default category
+      formData.append("condition", "1"); // Default to "New"
+      formData.append("availability", "1"); // In stock
+      formData.append("country_id", countryId);
+      formData.append("state_id", stateId);
+      formData.append("city_id", cityId);
+      
+      // Vehicle-specific fields as tags
+      const vehicleDetails = {
+        vehicle_type: vehicleType,
+        year: year,
+        make: make,
+        model: model
+      };
+      formData.append("product_tags", JSON.stringify(vehicleDetails));
+
+      // Add images
+      images.forEach((img, index) => {
+        if (img.file) {
+          formData.append(`images[${index}]`, img.file);
+        }
+      });
+
+      const response = await api.post("/sale_post", formData, {
+>>>>>>> bb5b3d6f8180148046f365e311c660550636068a
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -406,8 +446,11 @@ export default function CreateVehicleListingPage() {
                     />
                   </div>
 
+<<<<<<< HEAD
                
 
+=======
+>>>>>>> bb5b3d6f8180148046f365e311c660550636068a
                   {/* Disclaimer */}
                   <div className="text-xs text-gray-500 mb-6">
                     Marketplace items are public and can be seen by anyone on or off Facebook. Items like animals, drugs, weapons, counterfeits, and other items that violate our{" "}
