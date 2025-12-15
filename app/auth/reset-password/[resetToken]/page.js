@@ -28,7 +28,7 @@ const ResetPasswordPage = () => {
     setLoading(true);
     
     try {
-      const response = await axios.post(`/client/reset-password/${params?.resetToken}`, {
+      const response = await axios.post(`/client/reset-password/${params?.resettoken}`, {
         email,
         password,
         password_confirmation: confirmPassword
