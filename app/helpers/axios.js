@@ -14,7 +14,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     // Get token from cookies
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('old_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
