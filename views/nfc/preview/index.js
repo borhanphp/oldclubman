@@ -37,6 +37,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import NFCSidebar from '@/components/nfc/NFCSidebar';
 import BodyLayout from "@/components/common/BodyLayout";
+import api from "@/helpers/axios";
 const DownloadDropdown = ({ onDownloadPDF, onDownloadQR }) => {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -87,12 +88,25 @@ const NfcDetails = () => {
   console.log('basicNfcData afasdf', basicNfcData)
 
   const [activeTab, setActiveTab] = useState("code");
+  const [designOptions, setDesignOptions] = useState([]);
   const cardRef = useRef(null);
   const qrRef = useRef(null);
 
   useEffect(() => {
-    dispatch(getNfcById(params?.id))
-  }, [])
+    dispatch(getNfcById(params?.id));
+    fetchDesignOptions();
+  }, []);
+
+  const fetchDesignOptions = async () => {
+    try {
+      const response = await api.get("/nfc/design");
+      if (response.data && response.data.data && response.data.data.nfc_design) {
+        setDesignOptions(response.data.data.nfc_design);
+      }
+    } catch (error) {
+      console.error("Error fetching design options:", error);
+    }
+  };
 
 
 const handleNfcEdit = () => {
@@ -263,17 +277,23 @@ const handleShareEmail = () => {
                   className="bg-white rounded-lg border border-gray-100 p-4 flex flex-col items-center relative w-full max-w-md mx-auto lg:mx-0 lg:w-1/2"
                 >
                   {/* Card Content */}
-                  {+basicNfcData?.design_card_id === 1 ?
-                    <CardClassic basicNfcData={basicNfcData}/>
-                    :
-                    +basicNfcData?.design_card_id === 2 ?
-                    <CardModern basicNfcData={basicNfcData}/>
-                    :
-                    +basicNfcData?.design_card_id === 3 ?
-                    <CardSleek basicNfcData={basicNfcData}/>
-                    :
-                    <CardFlat basicNfcData={basicNfcData}/>
-                  }
+                  {(() => {
+                    const selectedDesign = designOptions.find(d => d.id === basicNfcData?.design_card_id);
+                    const designLabel = selectedDesign?.design_name?.toLowerCase() || 'classic';
+                    
+                    switch(designLabel) {
+                      case 'classic':
+                        return <CardClassic basicNfcData={basicNfcData} />;
+                      case 'modern':
+                        return <CardModern basicNfcData={basicNfcData} />;
+                      case 'sleek':
+                        return <CardSleek basicNfcData={basicNfcData} />;
+                      case 'flat':
+                        return <CardFlat basicNfcData={basicNfcData} />;
+                      default:
+                        return <CardClassic basicNfcData={basicNfcData} />;
+                    }
+                  })()}
                 </div>
                 {/* Right: QR and Send Card */}
                 <div className="bg-white rounded-lg border border-gray-100 p-4 flex flex-col items-center w-full max-w-md mx-auto lg:mx-0 lg:w-1/2 mt-6 lg:mt-0">

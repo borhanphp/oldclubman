@@ -22,21 +22,17 @@ import CardFlat from "../nfc-cards/CardFlat";
 import CardSleek from "../nfc-cards/CardSleek";
 import NFCSidebar from '@/components/nfc/NFCSidebar';
 import BodyLayout from "@/components/common/BodyLayout";
+import api from "@/helpers/axios";
 
 const NfcForm = () => {
   const { basicNfcData, fields } = useSelector(({ nfc }) => nfc);
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("Display");
   const [loading, setLoading] = useState(false);
+  const [designOptions, setDesignOptions] = useState([]);
   const dispatch = useDispatch();
 
   const tabs = ["Display", "Information", "Fields", "Card"];
-  const designOptions = [
-    { id: 1, label: "Classic" },
-    { id: 2, label: "Modern" },
-    { id: 3, label: "Sleek" },
-    { id: 4, label: "Flat" },
-  ];
   const colorOptions = [
     "#ff0000",
     "#00ffff",
@@ -50,7 +46,37 @@ const NfcForm = () => {
 
   useEffect(() => {
     dispatch(getNfcField());
+    fetchDesignOptions();
   }, []);
+
+  const fetchDesignOptions = async () => {
+    try {
+      const response = await api.get("/nfc/design");
+      if (response.data && response.data.data && response.data.data.nfc_design) {
+        const designs = response.data.data.nfc_design
+          .map((design) => ({
+            id: design.id, // UUID from database
+            label: design.design_name, // "Classic", "Modern", "Flat", "Sleek"
+            template_id: design.template_id // 1, 2, 3, 4
+          }))
+          .sort((a, b) => a.template_id - b.template_id); // Sort by template_id
+        
+        setDesignOptions(designs);
+        
+        // Set default design to Classic (template_id 1) for new cards
+        if (designs.length > 0 && !basicNfcData.id) {
+          const classicDesign = designs.find(d => d.template_id === 1) || designs[0];
+          if (basicNfcData.design_card_id === 1 || basicNfcData.design_card_id === null || !basicNfcData.design_card_id) {
+            dispatch(bindNfcData({ ...basicNfcData, design_card_id: classicDesign.id }));
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching design options:", error);
+      toast.error("Failed to load design options");
+      setDesignOptions([]);
+    }
+  };
 
   const handleInfoChange = (e) => {
     const { name, value } = e.target;
@@ -143,18 +169,23 @@ const NfcForm = () => {
               <div className="flex flex-col md:flex-row w-full">
                 {/* Preview Card on the left */}
                 <div className="w-full md:w-1/3 flex-shrink-0 p-5">
-                  {+basicNfcData.design_card_id === 1 && (
-                    <CardClassic basicNfcData={basicNfcData} />
-                  )}
-                  {+basicNfcData.design_card_id === 2 && (
-                    <CardModern basicNfcData={basicNfcData} />
-                  )}
-                  {+basicNfcData.design_card_id === 3 && (
-                    <CardSleek basicNfcData={basicNfcData} />
-                  )}
-                  {+basicNfcData.design_card_id === 4 && (
-                    <CardFlat basicNfcData={basicNfcData} />
-                  )}
+                  {(() => {
+                    const selectedDesign = designOptions.find(d => d.id === basicNfcData.design_card_id);
+                    const designLabel = selectedDesign?.label?.toLowerCase() || 'classic';
+                    
+                    switch(designLabel) {
+                      case 'classic':
+                        return <CardClassic basicNfcData={basicNfcData} />;
+                      case 'modern':
+                        return <CardModern basicNfcData={basicNfcData} />;
+                      case 'sleek':
+                        return <CardSleek basicNfcData={basicNfcData} />;
+                      case 'flat':
+                        return <CardFlat basicNfcData={basicNfcData} />;
+                      default:
+                        return <CardClassic basicNfcData={basicNfcData} />;
+                    }
+                  })()}
                 </div>
                 {/* Tabs and content on the right */}
                 <div className="w-full md:w-2/3">

@@ -50,7 +50,9 @@ const Display = ({ designOptions, colorOptions }) => {
     {/* Design */}
     <h3 className="text-md font-semibold mb-3">Design</h3>
     <div className="flex gap-6 mb-8">
-      {designOptions?.map(design => (
+      {designOptions?.map((design) => {
+        const designLabel = design.label?.toLowerCase();
+        return (
         <div
           key={design.id}
           onClick={() => handleDesignChange(design.id)}
@@ -58,7 +60,7 @@ const Display = ({ designOptions, colorOptions }) => {
         >
           <div className={`w-16 h-16 rounded-2xl bg-white shadow flex items-end justify-center relative border-2 ${basicNfcData.design_card_id === design.id ? 'border-gray-200' : 'border-transparent'}`}>
             {/* Example SVGs for design backgrounds */}
-            {design.id === 1 && (
+            {designLabel === 'classic' && (
               <svg viewBox="0 0 72 72" focusable="false" class="chakra-icon chakra-icon css-5nx6ny">
                 <g clip-path="url(#clip0_1931_53838)">
                     <path class="svg-color" fill="#000000" d="M0 -24H72V54H0V-24Z">
@@ -72,7 +74,7 @@ const Display = ({ designOptions, colorOptions }) => {
                 </defs>
               </svg>
             )}
-            {design.id === 2 && (
+            {designLabel === 'modern' && (
               <svg viewBox="0 0 72 72" focusable="false" class="chakra-icon chakra-icon css-5nx6ny">
                 <g clip-path="url(#clip0_805_62524)">
                     <rect fill="white" height="72" rx="16" width="72"></rect>
@@ -96,7 +98,7 @@ const Display = ({ designOptions, colorOptions }) => {
                 </defs>
               </svg>
             )}
-            {design.id === 3 && (
+            {designLabel === 'sleek' && (
               <svg viewBox="0 0 72 72" focusable="false" class="chakra-icon chakra-icon css-5nx6ny">
                 <g clip-path="url(#a)">
                     <rect fill="#F5F5F5" height="72" rx="16" width="72"></rect>
@@ -110,7 +112,7 @@ const Display = ({ designOptions, colorOptions }) => {
                 </defs>
               </svg>
             )}
-            {design.id === 4 && (
+            {designLabel === 'flat' && (
               <svg viewBox="0 0 72 72" focusable="false" class="chakra-icon chakra-icon css-5nx6ny">
                 <g clip-path="url(#a)">
                     <rect fill="white" height="72" rx="16" width="72"></rect>
@@ -134,7 +136,7 @@ const Display = ({ designOptions, colorOptions }) => {
           </div>
           <span className={`mt-2 text-xs ${basicNfcData.design_card_id === design.id ? 'text-blue-600 font-semibold' : 'text-gray-700'}`}>{design.label}</span>
         </div>
-      ))}
+      )})}
     </div>
     {/* Color */}
     <h3 className="text-md font-semibold mb-3">Color</h3>

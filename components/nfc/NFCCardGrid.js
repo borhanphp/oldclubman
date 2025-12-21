@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { FaEye, FaEdit, FaCopy, FaTrash, FaShareAlt, FaQrcode } from 'react-icons/fa';
 import CardClassic from '@/views/nfc/nfc-cards/CardClassic';
@@ -8,9 +8,26 @@ import CardModern from '@/views/nfc/nfc-cards/CardModern';
 import CardSleek from '@/views/nfc/nfc-cards/CardSleek';
 import CardFlat from '@/views/nfc/nfc-cards/CardFlat';
 import toast from 'react-hot-toast';
+import api from '@/helpers/axios';
 
 const NFCCardGrid = ({ nfcCards, loading }) => {
   const [copiedId, setCopiedId] = useState(null);
+  const [designOptions, setDesignOptions] = useState([]);
+
+  useEffect(() => {
+    fetchDesignOptions();
+  }, []);
+
+  const fetchDesignOptions = async () => {
+    try {
+      const response = await api.get("/nfc/design");
+      if (response.data && response.data.data && response.data.data.nfc_design) {
+        setDesignOptions(response.data.data.nfc_design);
+      }
+    } catch (error) {
+      console.error("Error fetching design options:", error);
+    }
+  };
 
   const handleCopyUrl = (id) => {
     const url = `${window.location.origin}/card/fb_share/${id}`;
@@ -74,10 +91,23 @@ const NFCCardGrid = ({ nfcCards, loading }) => {
             <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 p-6">
               <Link href={`/user/nfc/preview/${card.id}`}>
                 <div className="transform transition-transform group-hover:scale-105">
-                  {+card?.card_design?.design_card_id === 1 && <CardClassic basicNfcData={fullCard} />}
-                  {+card?.card_design?.design_card_id === 2 && <CardModern basicNfcData={fullCard} />}
-                  {+card?.card_design?.design_card_id === 3 && <CardSleek basicNfcData={fullCard} />}
-                  {+card?.card_design?.design_card_id === 4 && <CardFlat basicNfcData={fullCard} />}
+                  {(() => {
+                    const selectedDesign = designOptions.find(d => d.id === card?.card_design?.design_card_id);
+                    const designLabel = selectedDesign?.design_name?.toLowerCase() || 'classic';
+                    
+                    switch(designLabel) {
+                      case 'classic':
+                        return <CardClassic basicNfcData={fullCard} />;
+                      case 'modern':
+                        return <CardModern basicNfcData={fullCard} />;
+                      case 'sleek':
+                        return <CardSleek basicNfcData={fullCard} />;
+                      case 'flat':
+                        return <CardFlat basicNfcData={fullCard} />;
+                      default:
+                        return <CardClassic basicNfcData={fullCard} />;
+                    }
+                  })()}
                 </div>
               </Link>
             </div>

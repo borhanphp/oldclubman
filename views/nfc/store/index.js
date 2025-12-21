@@ -8,7 +8,7 @@ export const initialNfcData = {
   card_type: 1,
   first_name: '', 
   middle_name: '', 
-  design_card_id: 1,
+  design_card_id: null, // Will be set from API
   display_nfc_color: "#ff00f",
   last_name: '', 
   suffix: '',
