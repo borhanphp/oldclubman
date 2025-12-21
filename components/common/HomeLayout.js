@@ -40,23 +40,52 @@ const HomeLayout = ({ children, showMsgBtn, showFriends, userProfile }) => {
 
   return (
     <>
+     <style jsx>{`
+       .sidebar-scroll::-webkit-scrollbar {
+         width: 6px;
+       }
+       .sidebar-scroll::-webkit-scrollbar-track {
+         background: transparent;
+       }
+       .sidebar-scroll::-webkit-scrollbar-thumb {
+         background: transparent;
+         border-radius: 10px;
+       }
+       .sidebar-scroll:hover::-webkit-scrollbar-thumb {
+         background: #CBD5E0;
+       }
+       .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+         background: #94A3B8;
+       }
+       .sidebar-scroll {
+         scrollbar-width: thin;
+         scrollbar-color: transparent transparent;
+       }
+       .sidebar-scroll:hover {
+         scrollbar-color: #CBD5E0 #F7FAFC;
+       }
+     `}</style>
      <BodyLayout>
           <div className="flex flex-wrap">
-            {/* Left Sidebar - Profile */}
+            {/* Left Sidebar - Profile - Sticky */}
             <div className="hidden lg:block lg:w-1/4 lg:mb-0 lg:pr-2">
-              <Intro />
-              <div className="mt-2">
-                <FollowSuggestion />
+              <div className="sidebar-scroll sticky top-20 max-h-[calc(100vh-5rem)] overflow-y-auto">
+                <Intro />
+                <div className="mt-2">
+                  <FollowSuggestion />
+                </div>
               </div>
             </div>
 
-            {/* Center Content */}
+            {/* Center Content - Scrollable */}
             <div className="w-full lg:w-2/4">{children}</div>
 
-            {/* Right Sidebar - Search & Contacts */}
+            {/* Right Sidebar - Search & Contacts - Sticky */}
             <div className="hidden lg:block lg:w-1/4 lg:mb-0 lg:pr-6">
-              <SidebarSearch />
-              <ContactsList />
+              <div className="sidebar-scroll sticky top-20 max-h-[calc(100vh-5rem)] overflow-y-auto">
+                <SidebarSearch />
+                <ContactsList />
+              </div>
             </div>
           </div>
           </BodyLayout>

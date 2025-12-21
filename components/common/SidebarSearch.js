@@ -9,47 +9,18 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { FaSearch, FaEllipsisV, FaMapMarkerAlt, FaHeart, FaGraduationCap, FaUsers, FaTint, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 
+// General people search API
 const searchApi = async (query) => {
   const response = await api.get(`/client/search_by_people?search=${query}`);
   console.log('response of search', response);
   return response.data.data.follow_connections;
 };
 
-// Advanced search APIs
-const searchBloodDonors = async (filters) => {
-  const response = await api.get(`/client/advance_search_profile?city=${filters.city}&country=${filters.country}&blood_type=${filters.bloodType}`);
-  return response.data.data;
-};
-
-const searchByLocation = async (filters) => {
-  const response = await api.get(`/client/advance_search_profile?city=${filters.city}&country=${filters.country}&radius=${filters.radius}`);
-  return response.data.data;
-};
-
-const searchCommunity = async (filters) => {
-  const response = await api.get(`/client/advance_search_profile?city=${filters.city}&country=${filters.country}&community=${filters.community}`);
-  return response.data.data;
-};
-
-const searchNearby = async (filters) => {
-  const response = await api.get(`/client/advance_search_profile?radius=${filters.radius}`);
-  return response.data.data;
-};
-
-const searchSchoolFriends = async (filters) => {
-  const response = await api.get(`/client/advance_search_profile?school=${filters.school}&city=${filters.city}`);
-  return response.data.data;
-};
-
-const searchSingles = async (filters) => {
-  const response = await api.get(`/client/advance_search_profile?city=${filters.city}&country=${filters.country}&min_age=${filters.ageRange.min}&max_age=${filters.ageRange.max}&community=${filters.community}`);
-  return response.data.data;
-};
-
 // Advanced search profile API
 const advanceSearchProfile = async (filters) => {
   const params = new URLSearchParams();
   
+  // Add parameters only if they exist and are not empty
   if (filters.state_id) params.append('state_id', filters.state_id);
   if (filters.city_id) params.append('city_id', filters.city_id);
   if (filters.country_id) params.append('country_id', filters.country_id);
@@ -58,11 +29,16 @@ const advanceSearchProfile = async (filters) => {
   if (filters.community) params.append('community', filters.community);
   if (filters.is_single) params.append('is_single', filters.is_single);
   
-  // Build query string and keep '+' visible for blood_group
+  // Build query string
   let queryString = params.toString();
+  
+  // Keep '+' sign visible for blood_group (A+, B+, AB+, O+)
   if (filters.blood_group && filters.blood_group.includes('+')) {
-    queryString = queryString.replace(/blood_group=([^&]+)/, (m) => m.replace(/%2B/g, '+'));
+    queryString = queryString.replace(/%2B/g, '+');
   }
+  
+  console.log('Advanced Search API:', `/client/advance_search_profile?${queryString}`);
+  
   const response = await api.get(`/client/advance_search_profile?${queryString}`);
   return response?.data?.data?.search_results || [];
 };
@@ -179,63 +155,67 @@ const SidebarSearch = () => {
     try {
       let searchResults = [];
       
-      // Use the new advance search API for advance category
-      if (searchCategory === 'advance') {
-        searchResults = await advanceSearchProfile(advancedFilters);
-        dispatch(setSearchQuery('Advanced Search'));
-      } else {
-        switch (searchCategory) {
-          case 'singles': {
-            // Only is_single filter
-            const params = { is_single: 'yes' };
-            searchResults = await advanceSearchProfile(params);
-            dispatch(setSearchQuery('Advanced Search'));
+      switch (searchCategory) {
+        case 'singles': {
+          // Singles search - is_single parameter
+          const params = { is_single: 'yes' };
+          searchResults = await advanceSearchProfile(params);
+          dispatch(setSearchQuery('Singles Search'));
+          break;
+        }
+        case 'blood_donors': {
+          if (!advancedFilters.blood_group) {
+            searchResults = [];
+            dispatch(setSearchQuery('Blood Donors Search'));
             break;
           }
-          case 'blood_donors': {
-            if (!advancedFilters.blood_group) {
-              // Wait for user to choose a group; don't call yet
-              searchResults = [];
-              break;
-            }
-            // Only blood_group filter
-            const params = { blood_group: advancedFilters?.blood_group };
-            searchResults = await advanceSearchProfile(params);
-            dispatch(setSearchQuery('Advanced Search'));
+          // Blood donors - send actual blood type like A+, B+, etc.
+          const params = { blood_group: advancedFilters.blood_group };
+          searchResults = await advanceSearchProfile(params);
+          dispatch(setSearchQuery(`Blood Donors (${advancedFilters.blood_group})`));
+          break;
+        }
+        case 'location': {
+          if (!advancedFilters.country_id || !advancedFilters.state_id || !advancedFilters.city_id) {
+            searchResults = [];
+            dispatch(setSearchQuery('Location Search'));
             break;
           }
-          case 'location': {
-            if (!advancedFilters.country_id || !advancedFilters.state_id || !advancedFilters.city_id) {
-              searchResults = [];
-              break;
-            }
-            const params = {
-              country_id: advancedFilters.country_id,
-              state_id: advancedFilters.state_id,
-              city_id: advancedFilters.city_id
-            };
-            searchResults = await advanceSearchProfile(params);
-            dispatch(setSearchQuery('Advanced Search'));
-            break;
-          }
-          case 'school': {
-            // Only school filter
-            const params = { school: 'yes' };
-            searchResults = await advanceSearchProfile(params);
-            dispatch(setSearchQuery('Advanced Search'));
-            break;
-          }
-          case 'community': {
-            // Only community filter
-            const params = { community: 'yes' };
-            searchResults = await advanceSearchProfile(params);
-            dispatch(setSearchQuery('Advanced Search'));
-            break;
-          }
-          default: {
-            // Fallback to basic search for other categories
-            searchResults = await searchApi(query);
-          }
+          // Location search - country_id, state_id, city_id
+          const params = {
+            country_id: advancedFilters.country_id,
+            state_id: advancedFilters.state_id,
+            city_id: advancedFilters.city_id
+          };
+          searchResults = await advanceSearchProfile(params);
+          dispatch(setSearchQuery('Location Search'));
+          break;
+        }
+        case 'school': {
+          // School friends - school: yes
+          const params = { school: 'yes' };
+          searchResults = await advanceSearchProfile(params);
+          dispatch(setSearchQuery('School Friends Search'));
+          break;
+        }
+        case 'community': {
+          // Community - if user entered community name, use it; otherwise send 'yes'
+          const params = { 
+            community: advancedFilters.community || 'yes' 
+          };
+          searchResults = await advanceSearchProfile(params);
+          dispatch(setSearchQuery('Community Search'));
+          break;
+        }
+        case 'advance': {
+          // Advanced search with all filters
+          searchResults = await advanceSearchProfile(advancedFilters);
+          dispatch(setSearchQuery('Advanced Search'));
+          break;
+        }
+        default: {
+          // Fallback to basic search
+          searchResults = await searchApi(query);
         }
       }
       
@@ -293,304 +273,250 @@ const SidebarSearch = () => {
   }, [pathname, dispatch]);
 
   return (
-    <div className="p-4 hidden md:block border-b border-gray-200 relative" ref={dropdownRef}>
+    <div className="p-4 ml-2 hidden md:block border-b border-gray-200 relative bg-white rounded-md" ref={dropdownRef}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold text-gray-800">
-          {showAdvancedSearch ? 'Advanced Search' : 'People'}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold text-gray-900">
+          {showAdvancedSearch ? 'Advanced Search' : 'Search People'}
         </h2>
-        <button
-          onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
-          className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 text-sm"
-        >
-          <span>Advanced</span>
-          {showAdvancedSearch ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />}
-        </button>
-        
-        {query && (
+        <div className="flex items-center gap-2">
+          {query && (
+            <button
+              onClick={() => {
+                dispatch(setSearchResults([]));
+                dispatch(removeQuery());
+              }}
+              className="px-3 py-1.5 text-xs font-medium text-red-600 hover:text-white hover:bg-red-600 border border-red-600 rounded-lg transition-all duration-200"
+            >
+              Clear
+            </button>
+          )}
           <button
-            onClick={() => {
-              dispatch(setSearchResults([]));
-              dispatch(removeQuery());
-            }}
-            className="text-red-600 hover:text-red-800 text-sm"
+            onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
+            className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
+              showAdvancedSearch 
+                ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+            }`}
           >
-            Clear Search
+            <span className="font-semibold">Advanced</span>
+            {showAdvancedSearch ? <FaChevronUp size={10} /> : <FaChevronDown size={10} />}
           </button>
-        )}
+        </div>
       </div>
 
       {/* Advanced Search Options */}
       {showAdvancedSearch && (
-        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-          <div className="grid grid-cols-2 gap-2 mb-3">
-            <button
-              onClick={() => setSearchCategory('blood_donors')}
-              className={`flex items-center space-x-2 p-2 rounded-md text-sm ${
-                searchCategory === 'blood_donors' ? 'bg-red-100 text-red-700' : 'bg-white text-gray-700'
-              }`}
-            >
-              <FaTint size={14} />
-              <span>Blood Donors</span>
-            </button>
-            <button
-              onClick={() => setSearchCategory('location')}
-              className={`flex items-center space-x-2 p-2 rounded-md text-sm ${
-                searchCategory === 'location' ? 'bg-blue-100 text-blue-700' : 'bg-white text-gray-700'
-              }`}
-            >
-              <FaMapMarkerAlt size={14} />
-              <span>By Location</span>
-            </button>
-            <button
-              onClick={() => setSearchCategory('community')}
-              className={`flex items-center space-x-2 p-2 rounded-md text-sm ${
-                searchCategory === 'community' ? 'bg-green-100 text-green-700' : 'bg-white text-gray-700'
-              }`}
-            >
-              <FaUsers size={14} />
-              <span>Community</span>
-            </button>
-            
-            <button
-              onClick={() => setSearchCategory('school')}
-              className={`flex items-center space-x-2 p-2 rounded-md text-sm ${
-                searchCategory === 'school' ? 'bg-yellow-100 text-yellow-700' : 'bg-white text-gray-700'
-              }`}
-            >
-              <FaGraduationCap size={14} />
-              <span>School Friends</span>
-            </button>
-            <button
-              onClick={() => setSearchCategory('singles')}
-              className={`flex items-center space-x-2 p-2 rounded-md text-sm ${
-                searchCategory === 'singles' ? 'bg-pink-100 text-pink-700' : 'bg-white text-gray-700'
-              }`}
-            >
-              <FaHeart size={14} />
-              <span>Singles</span>
-            </button>
-           
+        <div className="mb-4 p-4 bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl border border-gray-200 shadow-sm">
+          {/* Category Selector */}
+          <div className="mb-4">
+            <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+              Search Category
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setSearchCategory('blood_donors')}
+                className={`flex items-center justify-center gap-2 p-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  searchCategory === 'blood_donors' 
+                    ? 'bg-red-500 text-white shadow-lg shadow-red-200 scale-105' 
+                    : 'bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 border border-gray-200'
+                }`}
+              >
+                <FaTint size={16} />
+                <span>Blood Donors</span>
+              </button>
+              <button
+                onClick={() => setSearchCategory('location')}
+                className={`flex items-center justify-center gap-2 p-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  searchCategory === 'location' 
+                    ? 'bg-blue-500 text-white shadow-lg shadow-blue-200 scale-105' 
+                    : 'bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 border border-gray-200'
+                }`}
+              >
+                <FaMapMarkerAlt size={16} />
+                <span>By Location</span>
+              </button>
+              <button
+                onClick={() => setSearchCategory('community')}
+                className={`flex items-center justify-center gap-2 p-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  searchCategory === 'community' 
+                    ? 'bg-green-500 text-white shadow-lg shadow-green-200 scale-105' 
+                    : 'bg-white text-gray-700 hover:bg-green-50 hover:text-green-600 border border-gray-200'
+                }`}
+              >
+                <FaUsers size={16} />
+                <span>Community</span>
+              </button>
+              <button
+                onClick={() => setSearchCategory('school')}
+                className={`flex items-center justify-center gap-2 p-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  searchCategory === 'school' 
+                    ? 'bg-yellow-500 text-white shadow-lg shadow-yellow-200 scale-105' 
+                    : 'bg-white text-gray-700 hover:bg-yellow-50 hover:text-yellow-600 border border-gray-200'
+                }`}
+              >
+                <FaGraduationCap size={16} />
+                <span>School Friends</span>
+              </button>
+              <button
+                onClick={() => setSearchCategory('singles')}
+                className={`flex items-center justify-center gap-2 p-3 rounded-lg text-sm font-medium transition-all duration-200 col-span-2 ${
+                  searchCategory === 'singles' 
+                    ? 'bg-pink-500 text-white shadow-lg shadow-pink-200 scale-105' 
+                    : 'bg-white text-gray-700 hover:bg-pink-50 hover:text-pink-600 border border-gray-200'
+                }`}
+              >
+                <FaHeart size={16} />
+                <span>Singles</span>
+              </button>
+            </div>
           </div>
 
           {/* Dynamic Filter Fields */}
-          <div className="space-y-2">
-            {/* {(searchCategory === 'location' || searchCategory === 'community' || searchCategory === 'singles') && (
-              <>
-                <input
-                  type="text"
-                  placeholder="City"
-                  value={advancedFilters.city}
-                  onChange={(e) => setAdvancedFilters({...advancedFilters, city: e.target.value})}
-                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                />
-                <input
-                  type="text"
-                  placeholder="Country"
-                  value={advancedFilters.country}
-                  onChange={(e) => setAdvancedFilters({...advancedFilters, country: e.target.value})}
-                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                />
-              </>
-            )} */}
+          <div className="space-y-3">
 
             {searchCategory === 'blood_donors' && (
-              <select
-                value={advancedFilters.blood_group}
-                onChange={(e) => setAdvancedFilters({...advancedFilters, blood_group: e.target.value})}
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-              >
-                <option value="">Select Blood Type</option>
-                <option value="A+">A+</option>
-                <option value="A-">A-</option>
-                <option value="B+">B+</option>
-                <option value="B-">B-</option>
-                <option value="AB+">AB+</option>
-                <option value="AB-">AB-</option>
-                <option value="O+">O+</option>
-                <option value="O-">O-</option>
-              </select>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-2">
+                  Blood Type <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={advancedFilters.blood_group}
+                  onChange={(e) => setAdvancedFilters({...advancedFilters, blood_group: e.target.value})}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+                >
+                  <option value="">Select Blood Type</option>
+                  <option value="A+">A+ (Positive)</option>
+                  <option value="A-">A- (Negative)</option>
+                  <option value="B+">B+ (Positive)</option>
+                  <option value="B-">B- (Negative)</option>
+                  <option value="AB+">AB+ (Positive)</option>
+                  <option value="AB-">AB- (Negative)</option>
+                  <option value="O+">O+ (Positive)</option>
+                  <option value="O-">O- (Negative)</option>
+                </select>
+              </div>
             )}
 
             {searchCategory === 'community' && (
-              <input
-                type="text"
-                placeholder="Community Name"
-                value={advancedFilters.community}
-                onChange={(e) => setAdvancedFilters({...advancedFilters, community: e.target.value})}
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-              />
+              <div className="flex items-start gap-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
+                <FaUsers className="text-green-600 mt-0.5 flex-shrink-0" size={16} />
+                <div>
+                  <p className="text-sm font-medium text-green-900">Community Search</p>
+                  <p className="text-xs text-green-700 mt-1">Find people in your community network</p>
+                </div>
+              </div>
             )}
 
-            {/* No extra inputs for School Friends; it triggers school=yes */}
-
-            {/* {searchCategory === 'singles' && (
-              <>
-                <div className="flex space-x-2">
-                  <input
-                    type="number"
-                    placeholder="Min Age"
-                    value={advancedFilters.ageRange.min}
-                    onChange={(e) => setAdvancedFilters({...advancedFilters, ageRange: {...advancedFilters.ageRange, min: parseInt(e.target.value)}})}
-                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Max Age"
-                    value={advancedFilters.ageRange.max}
-                    onChange={(e) => setAdvancedFilters({...advancedFilters, ageRange: {...advancedFilters.ageRange, max: parseInt(e.target.value)}})}
-                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                  />
+            {searchCategory === 'school' && (
+              <div className="flex items-start gap-3 p-3 bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-lg">
+                <FaGraduationCap className="text-yellow-600 mt-0.5 flex-shrink-0" size={16} />
+                <div>
+                  <p className="text-sm font-medium text-yellow-900">School Friends</p>
+                  <p className="text-xs text-yellow-700 mt-1">Find people who went to the same school as you</p>
                 </div>
-                <input
-                  type="text"
-                  placeholder="Community/Area"
-                  value={advancedFilters.community}
-                  onChange={(e) => setAdvancedFilters({...advancedFilters, community: e.target.value})}
-                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                />
-              </>
-            )} */}
-
-         
-
-            {searchCategory === 'advance' && (
-              <>
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="number"
-                    placeholder="State ID"
-                    value={advancedFilters.state_id}
-                    onChange={(e) => setAdvancedFilters({...advancedFilters, state_id: e.target.value})}
-                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                  />
-                  <input
-                    type="number"
-                    placeholder="City ID"
-                    value={advancedFilters.city_id}
-                    onChange={(e) => setAdvancedFilters({...advancedFilters, city_id: e.target.value})}
-                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                  />
-                </div>
-                <input
-                  type="number"
-                  placeholder="Country ID"
-                  value={advancedFilters.country_id}
-                  onChange={(e) => setAdvancedFilters({...advancedFilters, country_id: e.target.value})}
-                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                />
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="text"
-                    placeholder="School (yes/no)"
-                    value={advancedFilters.school}
-                    onChange={(e) => setAdvancedFilters({...advancedFilters, school: e.target.value})}
-                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Blood Group (yes/no)"
-                    value={advancedFilters.blood_group}
-                    onChange={(e) => setAdvancedFilters({...advancedFilters, blood_group: e.target.value})}
-                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                  />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Community (yes/no)"
-                  value={advancedFilters.community}
-                  onChange={(e) => setAdvancedFilters({...advancedFilters, community: e.target.value})}
-                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                />
-              </>
+              </div>
             )}
+
+            {searchCategory === 'singles' && (
+              <div className="flex items-start gap-3 p-3 bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-200 rounded-lg">
+                <FaHeart className="text-pink-600 mt-0.5 flex-shrink-0" size={16} />
+                <div>
+                  <p className="text-sm font-medium text-pink-900">Singles Search</p>
+                  <p className="text-xs text-pink-700 mt-1">Find single people looking for relationships</p>
+                </div>
+              </div>
+            )}
+
+
 
             {searchCategory === 'location' && (
-              <>
-                <select
-                  value={advancedFilters.country_id}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setAdvancedFilters({ ...advancedFilters, country_id: val, state_id: '', city_id: '' });
-                    if (val) fetchStates(val);
-                  }}
-                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                >
-                  <option value="">Select Country</option>
-                  {locationCountries.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-                <select
-                  value={advancedFilters.state_id}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setAdvancedFilters({ ...advancedFilters, state_id: val, city_id: '' });
-                    if (val) fetchCities(val);
-                  }}
-                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                  disabled={!advancedFilters.country_id}
-                >
-                  <option value="">Select State</option>
-                  {locationStates.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-                <select
-                  value={advancedFilters.city_id}
-                  onChange={(e) => setAdvancedFilters({ ...advancedFilters, city_id: e.target.value })}
-                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                  disabled={!advancedFilters.state_id}
-                >
-                  <option value="">Select City</option>
-                  {locationCities.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-2">
+                    Country <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={advancedFilters.country_id}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setAdvancedFilters({ ...advancedFilters, country_id: val, state_id: '', city_id: '' });
+                      if (val) fetchStates(val);
+                    }}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  >
+                    <option value="">Select Country</option>
+                    {locationCountries.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-2">
+                    State/Province <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={advancedFilters.state_id}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setAdvancedFilters({ ...advancedFilters, state_id: val, city_id: '' });
+                      if (val) fetchCities(val);
+                    }}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    disabled={!advancedFilters.country_id}
+                  >
+                    <option value="">Select State</option>
+                    {locationStates.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-2">
+                    City <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={advancedFilters.city_id}
+                    onChange={(e) => setAdvancedFilters({ ...advancedFilters, city_id: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    disabled={!advancedFilters.state_id}
+                  >
+                    <option value="">Select City</option>
+                    {locationCities.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             )}
 
             <button
               onClick={handleAdvancedSearch}
-              className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 text-sm font-medium"
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3.5 px-6 rounded-lg text-sm font-semibold shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
             >
-              Search {searchCategory.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+              <FaSearch size={14} />
+              <span>
+                {searchCategory === 'blood_donors' ? 'Search Blood Donors' :
+                 searchCategory === 'location' ? 'Search By Location' :
+                 searchCategory === 'community' ? 'Search Community' :
+                 searchCategory === 'school' ? 'Search School Friends' :
+                 searchCategory === 'singles' ? 'Search Singles' :
+                 'Search'}
+              </span>
             </button>
-            
-          
-            
-            {searchCategory === 'advance' && (
-              <button
-                onClick={() => {
-                  // Set example values based on the provided API URL
-                  setAdvancedFilters({
-                    ...advancedFilters,
-                    state_id: '4',
-                    city_id: '1',
-                    country_id: '1',
-                    school: 'yes',
-                    blood_group: 'yes',
-                    community: 'yes'
-                  });
-                }}
-                className="w-full bg-purple-500 text-white py-2 px-4 rounded-md hover:bg-purple-600 text-sm font-medium mt-2"
-              >
-                Load Example Filters
-              </button>
-            )}
           </div>
         </div>
       )}
 
       {/* General Search Box */}
-      <div className="relative border border-gray-300 bg-white rounded-full">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
           <FaSearch className="h-4 w-4 text-gray-400" />
         </div>
         <input
           type="text"
-          placeholder="Search contacts..."
-          className="bg-white border-none outline-none w-full pl-10 pr-4 py-3 rounded-full text-sm text-gray-700 placeholder-gray-500"
+          placeholder="Search people by name..."
+          className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all shadow-sm"
           value={query}
           onChange={e => dispatch(setSearchQuery(e.target.value))}
           autoComplete="off"
@@ -598,12 +524,20 @@ const SidebarSearch = () => {
       </div>
 
       {/* Search Results Dropdown - Only show for normal search, not advanced search */}
-      {query && results.length > 0 && !showAdvancedSearch && !results.some(result => result.is_blood_donor !== undefined || result.is_spouse_need !== undefined) && query !== 'Demo Search' && query !== 'Advanced Search' && (
-        <div className="absolute left-0 right-0 mt-2 z-50 rounded-md max-h-96 overflow-y-auto">
+      {query && results.length > 0 && !showAdvancedSearch && !results.some(result => result.is_blood_donor !== undefined || result.is_spouse_need !== undefined) && query !== 'Demo Search' && !query.includes('Search') && (
+        <div className="absolute left-0 right-0 mt-2 z-50 bg-white rounded-xl shadow-2xl border border-gray-200 max-h-96 overflow-y-auto">
+          <div className="py-3 px-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+              <FaSearch className="text-blue-600" size={14} />
+              Search Results ({results.length})
+            </h3>
+          </div>
           <div className="py-2">
-            <h3 className="text-sm font-semibold mb-2 px-4 text-gray-700">Search Results</h3>
             {loading ? (
-              <div className="p-4 text-center text-gray-500 text-sm">Loading...</div>
+              <div className="p-8 text-center">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+                <p className="text-sm text-gray-500">Searching...</p>
+              </div>
             ) : (
               results?.map(result => (
                 <div
@@ -674,9 +608,15 @@ const SidebarSearch = () => {
 
       {/* No results message */}
       {query && !loading && results.length === 0 && (
-        <div className="absolute left-0 right-0 mt-2 z-50  rounded-md">
-          <div className="p-4 text-center text-gray-500 text-sm">
-            No results found for {query}
+        <div className="absolute left-0 right-0 mt-2 z-50 bg-white rounded-xl shadow-lg border border-gray-200">
+          <div className="p-6 text-center">
+            <div className="mb-3">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100">
+                <FaSearch className="text-gray-400" size={20} />
+              </div>
+            </div>
+            <p className="text-sm font-medium text-gray-900 mb-1">No results found</p>
+            <p className="text-xs text-gray-500">Try searching with different keywords</p>
           </div>
         </div>
       )}

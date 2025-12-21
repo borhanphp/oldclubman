@@ -69,19 +69,30 @@ const ContactsList = () => {
   };
 
   return (
-    <div className="h-screen hidden md:block border-l border-gray-200 flex-col overflow-hidden">
+    <div className="hidden ml-2 mt-2 rounded-md md:block border border-gray-200 flex-col overflow-hidden bg-white">
       {/* Header */}
-      <div className="p-3 border-b border-gray-200">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-gray-800">Chattings</h2>
+      <div className="p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 mb-0.5">Chattings</h2>
+            <p className="text-xs text-gray-600">
+              {filteredContacts.filter(c => c.isOnline).length} online now
+            </p>
+          </div>
           <div className="flex items-center space-x-2">
-           
+            <Link 
+              href="/messages"
+              className="p-2 hover:bg-white rounded-lg transition-all duration-200"
+              title="View all messages"
+            >
+              <FaEllipsisV className="text-gray-600" size={16} />
+            </Link>
           </div>
         </div>
         
         {/* Search Bar */}
         <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <FaSearch className="h-4 w-4 text-gray-400" />
           </div>
           <input
@@ -89,33 +100,60 @@ const ContactsList = () => {
             placeholder="Search contacts..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-700 placeholder-gray-500"
+            className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 bg-white text-gray-700 placeholder-gray-400 text-sm shadow-sm transition-all"
           />
         </div>
       </div>
 
       {/* Contacts List */}
-      <div className="flex-1 overflow-y-auto scroll-smooth" style={{
-        scrollbarWidth: 'thin',
-        scrollbarColor: '#CBD5E0 #F7FAFC'
-      }}>
-        <div className="p-2">
-          {loading ? (
-            // Loading state
-            <div className="flex flex-col items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-              <p className="text-sm text-gray-500 mt-2">Loading followers...</p>
+      <style jsx>{`
+        .contacts-scroll::-webkit-scrollbar {
+          width: 6px;
+        }
+        .contacts-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .contacts-scroll::-webkit-scrollbar-thumb {
+          background: transparent;
+          border-radius: 10px;
+        }
+        .contacts-scroll:hover::-webkit-scrollbar-thumb {
+          background: #CBD5E0;
+        }
+        .contacts-scroll::-webkit-scrollbar-thumb:hover {
+          background: #94A3B8;
+        }
+        .contacts-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: transparent transparent;
+        }
+        .contacts-scroll:hover {
+          scrollbar-color: #CBD5E0 #F7FAFC;
+        }
+      `}</style>
+      <div className="contacts-scroll max-h-[400px] overflow-y-auto scroll-smooth bg-gray-50">
+        {loading ? (
+          // Loading state
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="relative">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-6 h-6 bg-blue-600 rounded-full animate-pulse"></div>
+              </div>
             </div>
-          ) : (
-            filteredContacts.map((contact) => (
+            <p className="text-sm text-gray-600 mt-4 font-medium">Loading contacts...</p>
+          </div>
+        ) : (
+          <div className="p-3 space-y-1">
+            {filteredContacts.map((contact, index) => (
               <div 
                 key={contact.id}
-                className="flex items-center p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors group"
+                className="flex items-center p-3 bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 rounded-xl cursor-pointer transition-all duration-200 border border-transparent hover:border-blue-200 hover:shadow-md group"
                 onClick={() => handleContactClick(contact)}
               >
                 {/* Avatar with Online Status */}
                 <div className="relative flex-shrink-0 mr-3">
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200">
+                  <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 ring-2 ring-white group-hover:ring-blue-200 transition-all">
                     <img
                       src={contact.avatar}
                       alt={contact.name}
@@ -128,51 +166,53 @@ const ContactsList = () => {
                   </div>
                   {/* Online Status Indicator */}
                   {contact.isOnline && (
-                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                    <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full animate-pulse"></div>
                   )}
                 </div>
 
                 {/* Contact Info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium text-gray-900 truncate hover:text-blue-600 transition-colors">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <h3 className="text-sm font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
                       {contact.name || 'Unknown User'}
                     </h3>
                     {contact.isOnline && (
-                      <span className="text-xs text-green-600 font-medium">
+                      <span className="text-xs text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded-full">
                         Online
                       </span>
                     )}
                   </div>
                   {contact.email && (
-                    <p className="text-xs text-gray-500 truncate">
+                    <p className="text-xs text-gray-500 truncate group-hover:text-gray-700">
                       @{contact.email.split('@')[0]}
                     </p>
                   )}
                 </div>
               </div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )
 
+        }
+        
         {/* Empty State */}
         {!loading && filteredContacts.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 px-4">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+          <div className="flex flex-col items-center justify-center py-16 px-6 bg-white m-3 rounded-2xl border-2 border-dashed border-gray-200">
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mb-4 shadow-inner">
               {searchTerm ? (
-                <FaSearch className="w-6 h-6 text-gray-400" />
+                <FaSearch className="w-8 h-8 text-blue-600" />
               ) : (
-                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               )}
             </div>
-            <h3 className="text-sm font-medium text-gray-900 mb-1">
-              {searchTerm ? 'No followers found' : 'No followers yet'}
+            <h3 className="text-base font-bold text-gray-900 mb-2">
+              {searchTerm ? 'No contacts found' : 'No followers yet'}
             </h3>
-            <p className="text-xs text-gray-500 text-center">
+            <p className="text-sm text-gray-500 text-center max-w-[200px]">
               {searchTerm 
-                ? 'Try searching with a different term'
+                ? 'Try a different search term'
                 : 'When people follow you, they will appear here'
               }
             </p>
@@ -180,13 +220,7 @@ const ContactsList = () => {
         )}
       </div>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center justify-between text-xs text-gray-500">
-          <span>{filteredContacts.length} followers</span>
-          <span>{filteredContacts.filter(c => c.isOnline).length} online</span>
-        </div>
-      </div>
+     
 
       {/* Chat Box */}
       {showChatBox && currentChat && selectedUser && (
