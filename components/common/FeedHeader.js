@@ -803,7 +803,7 @@ function FeedHeader({
         
         // Create a post about the profile photo change
         const postFormData = new FormData();
-        postFormData.append("message", "changed profile photo");
+        postFormData.append("message", "");
         postFormData.append("privacy_mode", "public");
         
         // Add the profile image to the post

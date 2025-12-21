@@ -406,7 +406,7 @@ function CreateListingContent() {
       <div className="mx-auto md:p-2 md:px-5">
         <div className="flex flex-wrap">
           {/* Profile Sidebar */}
-          <ProfileSidebar />
+          {/* <ProfileSidebar /> */}
           
           {/* Main Content */}
           <div className="w-full lg:w-3/4">

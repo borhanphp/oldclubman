@@ -442,9 +442,9 @@ export default function MarketplacePage() {
         <div className="flex flex-wrap">
           {/* Profile Sidebar - Left Side */}
           {/* <ProfileSidebar profile={profile} /> */}
-          <div className="w-full lg:w-1/4 mb-1 lg:mb-0 lg:pr-2">
+          {/* <div className="w-full lg:w-1/4 mb-1 lg:mb-0 lg:pr-2">
           <Intro/>
-          </div>
+          </div> */}
           {/* Main Content - Right Side */}
           <div className="w-full lg:w-3/4">
             <div className="min-h-screen bg-gray-50 rounded-lg overflow-hidden">

@@ -4,13 +4,15 @@ import React, { useState, useRef, useEffect } from "react";
 import {
   bindProfileSettingData,
   getMyProfile,
+  getUserProfile,
+  getUserProfileByUsername,
   storeProfileSetting,
 } from "../store";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 
 const ProfileSettings = () => {
-  const { profileSettingData, loading } = useSelector(
+  const { profileSettingData, loading, profile } = useSelector(
     ({ settings }) => settings
   );
 
@@ -122,6 +124,12 @@ const ProfileSettings = () => {
       dispatch(storeProfileSetting(submittedData)).then((res) => {
         toast.success("Successfully Updated");
         dispatch(getMyProfile());
+        
+        // Reload user profile by username if available
+        const username = profileSettingData?.username || profile?.client?.username;
+        if (username) {
+          dispatch(getUserProfileByUsername(username));
+        }
       });
     } catch (error) {
       console.error("Error saving profile settings:", error);

@@ -39,7 +39,7 @@ import { CiEdit, CiUnlock } from "react-icons/ci";
 import { MdOutlineDeleteOutline } from "react-icons/md";
 import { TbMessageReport } from "react-icons/tb";
 import { useParams } from "next/navigation";
-import { getMyProfile, getUserProfile, getAllFollowers, followTo, unFollowTo } from "@/views/settings/store";
+import { getMyProfile, getUserProfile, getUserProfileByUsername, getAllFollowers, followTo, unFollowTo } from "@/views/settings/store";
 import toast from "react-hot-toast";
 import Image from "next/image";
 import CommentThread from "./CommentThread";
@@ -622,10 +622,10 @@ const setMapContainerRef = (postId, postLocations) => (element) => {
       dispatch(getPosts());
       dispatch(getPostById(postId));
       dispatch(getMyProfile());
-      if(params?.id){
-        dispatch(getUserProfile(params?.id));
+      const username = profile?.client?.username || params?.id;
+      if(username){
+        dispatch(getUserProfileByUsername(username));
       }
-
     });
   };
 
@@ -636,8 +636,9 @@ const setMapContainerRef = (postId, postLocations) => (element) => {
       dispatch(getPosts());
       dispatch(getPostById(postId));
       dispatch(getMyProfile());
-      if(params?.id){
-        dispatch(getUserProfile(params?.id));
+      const username = profile?.client?.username || params?.id;
+      if(username){
+        dispatch(getUserProfileByUsername(username));
       }
     });
   };
