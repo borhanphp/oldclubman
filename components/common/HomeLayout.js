@@ -71,7 +71,7 @@ const HomeLayout = ({ children, showMsgBtn, showFriends, userProfile }) => {
             <div className="hidden lg:block lg:w-1/4 lg:mb-0 lg:pr-2">
               <div className="sidebar-scroll sticky top-20 max-h-[calc(100vh-5rem)] overflow-y-auto">
                 <Intro />
-                <div className="mt-2">
+                <div className="mt-1">
                   <FollowSuggestion />
                 </div>
               </div>
@@ -81,7 +81,7 @@ const HomeLayout = ({ children, showMsgBtn, showFriends, userProfile }) => {
             <div className="w-full lg:w-2/4">{children}</div>
 
             {/* Right Sidebar - Search & Contacts - Sticky */}
-            <div className="hidden lg:block lg:w-1/4 lg:mb-0 lg:pr-6">
+            <div className="hidden lg:block lg:w-1/4 lg:mb-0">
               <div className="sidebar-scroll sticky top-20 max-h-[calc(100vh-5rem)] overflow-y-auto">
                 <SidebarSearch />
                 <ContactsList />
