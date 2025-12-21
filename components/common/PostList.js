@@ -229,7 +229,14 @@ const PostList = ({ postsData }) => {
     const containerId = `map-container-${postId}`;
     const container = document.getElementById(containerId);
     
-    if (!container || mapInstances.current[postId]) return;
+    if (!container) {
+      console.error('Map container not found:', containerId);
+      return;
+    }
+    
+    if (mapInstances.current[postId]) {
+      return; // Map already initialized
+    }
     
     // Clean up if container already has leaflet instance
     if (container._leaflet_id) {
@@ -238,11 +245,14 @@ const PostList = ({ postsData }) => {
     }
     
     const L = window.L;
-    if (!L) return;
+    if (!L) {
+      console.error('Leaflet library not loaded');
+      return;
+    }
     
     try {
       // Set max zoom limit to prevent excessive zooming
-      const MAX_ZOOM = 20;
+      const MAX_ZOOM = 18; // Reduced from 20 to avoid tile loading issues
       const MIN_ZOOM = 3;
       
       const map = L.map(container, {
@@ -388,8 +398,8 @@ const PostList = ({ postsData }) => {
       
       if (bounds.length > 0) {
         if (bounds.length === 1) {
-          // Limit single marker zoom to max zoom level
-          map.setView(bounds[0], Math.min(15, MAX_ZOOM));
+          // Set reasonable zoom for single marker (13 is city-level, safer than 15)
+          map.setView(bounds[0], 13);
         } else {
           // Calculate distance between points to determine appropriate zoom strategy
           const [lat1, lon1] = bounds[0];
@@ -1824,8 +1834,20 @@ const handleMentionDetect = async (e, inputKey) => {
   useEffect(() => {
     if (!showCommentsModal) {
       resetMentionState({ abortRequest: false });
+      // Cleanup modal map when modal closes
+      const modalMapId = `modal-${basicPostData?.id}`;
+      if (basicPostData?.id && mapInstances.current[modalMapId]) {
+        mapInstances.current[modalMapId].remove();
+        delete mapInstances.current[modalMapId];
+      }
+    } else if (showCommentsModal && basicPostData?.id && basicPostData?.post_location && basicPostData?.post_location.length > 0) {
+      // Initialize map when modal opens with delay to ensure DOM is ready
+      setTimeout(() => {
+        const modalMapId = `modal-${basicPostData.id}`;
+        initMapForPost(modalMapId, basicPostData.post_location);
+      }, 300);
     }
-  }, [showCommentsModal, resetMentionState]);
+  }, [showCommentsModal, resetMentionState, basicPostData]);
 
   useEffect(() => {
     return () => {
@@ -4302,6 +4324,32 @@ const reactionsImages = (item) => {
                       </div>
                     );
                   })}
+                </div>
+              )}
+
+              {/* Map for showing location data in modal */}
+              {basicPostData?.post_location && basicPostData?.post_location.length > 0 && (
+                <div className="mb-4">
+                  <div
+                    id={`map-container-modal-${basicPostData.id}`}
+                    className="w-full rounded-md border border-gray-200"
+                    style={{ height: '384px', width: '100%', position: 'relative', zIndex: 0 }}
+                  />
+                  <div className="mt-2 text-xs text-gray-600">
+                    {(() => {
+                      const checkIn = basicPostData.post_location.find(loc => loc.post_type === 1);
+                      const destination = basicPostData.post_location.find(loc => loc.post_type === 2);
+                      
+                      if (checkIn && destination) {
+                        return `Route: ${checkIn.place_name?.split(',')[0] || 'Location'} → ${destination.place_name?.split(',')[0] || 'Location'}`;
+                      } else if (checkIn) {
+                        return `Check-in: ${checkIn.place_name || 'Location'}`;
+                      } else if (destination) {
+                        return `Destination: ${destination.place_name || 'Location'}`;
+                      }
+                      return 'Location';
+                    })()}
+                  </div>
                 </div>
               )}
 
