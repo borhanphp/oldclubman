@@ -13,10 +13,8 @@ export function middleware(req) {
         return NextResponse.redirect(url);
     }
 
-    if (url.pathname === '/' && hasValidToken) {
-        url.pathname = '/user/gathering';
-        return NextResponse.redirect(url);
-    }
+    // Allow root path to load gathering page when user has valid token
+    // (No redirect needed - gathering page will be rendered at /)
     
     // Handle protected routes - redirect to login if no valid token
     if (!hasValidToken && !authPages) {
@@ -24,9 +22,9 @@ export function middleware(req) {
         return NextResponse.redirect(url);
     }
 
-    // Handle auth pages when logged in - redirect to dashboard
+    // Handle auth pages when logged in - redirect to home page
     if (hasValidToken && authPages) {
-        url.pathname = '/user/gathering';
+        url.pathname = '/';
         return NextResponse.redirect(url);
     }
 

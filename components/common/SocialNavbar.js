@@ -100,7 +100,7 @@ const SocialNavbar = () => {
     <nav className="sticky top-0 z-10 px-4 md:px-10 flex items-center bg-white p-2 shadow-sm border-b border-gray-200">
       {/* Left section: Logo and Search */}
       <div className="flex items-center flex-1 md:flex-none">
-        <Link href="/user/gathering" className="flex items-center">
+        <Link href="/" className="flex items-center">
           <div className="w-8 h-8 md:w-12 md:h-12 rounded-full overflow-hidden flex items-center justify-center mr-2">
             <img src="/oldman-logo.png" className="w-full h-full object-cover" />
           </div>
@@ -115,7 +115,7 @@ const SocialNavbar = () => {
       <div className="hidden md:flex items-center justify-center flex-1 gap-4">
         {/* MARKETPLACE Link */}
         <div className="relative">
-          <Link href="/user/gathering" className="flex items-center cursor-pointer p-3 rounded-md  hover:bg-gray-300 transition-colors">
+          <Link href="/" className="flex items-center cursor-pointer p-3 rounded-md  hover:bg-gray-300 transition-colors">
             <FaHome className="text-gray-600" size={26} />
           </Link>
         </div>

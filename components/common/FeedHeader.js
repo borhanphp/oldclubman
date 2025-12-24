@@ -1189,9 +1189,9 @@ function FeedHeader({
                       </Link>
 
                       <Link
-                        href="/user/gathering"
+                        href="/"
                         className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100 transition-colors ${
-                          isLinkActive("/user/gathering")
+                          isLinkActive("/")
                             ? "text-blue-600 bg-blue-50"
                             : "text-gray-700"
                         }`}

@@ -129,7 +129,7 @@ const Register = () => {
     } finally {
       setLoading(false)
       dispatch(handleLoginFunc({username: formData.contact_or_email, password: formData.password}));
-      router.push('/user/gathering');
+      router.push('/');
 
     }
   }

@@ -15,7 +15,7 @@ export const handleLoginFunc = createAsyncThunk(
       const access_token = await resData?.access_token || "";
        setLocal('old_token', access_token);
           Cookies.set('old_token', access_token);
-          window.location.assign("/user/gathering");
+          window.location.assign("/");
      
       return resData;
     } catch (err) {
