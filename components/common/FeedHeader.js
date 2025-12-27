@@ -22,6 +22,7 @@ import {
   getUserFollowers,
   getUserFollowing,
   getUserProfile,
+  getUserProfileByUsername,
   unFollowTo,
   bindProfileSettingData,
   storeProfileSetting,
@@ -175,7 +176,14 @@ function FeedHeader({
         ? unFollowTo({ following_id })
         : followTo({ following_id });
     dispatch(action).then((res) => {
-      dispatch(getUserProfile(params?.id));
+      // Refresh the user profile data after follow/unfollow
+      if (params?.username) {
+        dispatch(getUserProfileByUsername(params.username));
+      } else if (following_id) {
+        dispatch(getUserProfile(following_id));
+      }
+      // Also refresh my own profile to update following count
+      dispatch(getMyProfile());
     });
   };
 

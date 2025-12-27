@@ -504,32 +504,28 @@ const dispatch = useDispatch()
   const getFileUrl = (filePath) => {
     if (!filePath) return null;
     
-    // If already a full URL, return as is
-    // if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
-    //   return filePath;
-    // }
+    // If it's already a full URL (http:// or https://), return as-is
+    if (/^https?:\/\//i.test(filePath)) {
+      return filePath;
+    }
     
-    // Remove leading slash if present
-    // const cleanPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
+    // Clean up malformed paths that start with domain name or dots
+    let cleanPath = filePath;
     
-    // Try multiple URL construction methods
-    // Method 1: Use NEXT_PUBLIC_API_URL (backend API URL)
-    const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '');
-    let fullUrl = `${apiUrl}/${filePath}`;
+    // Remove leading dots and domain names (e.g., ".oldclubman.com/" or "oldclubman.com/")
+    cleanPath = cleanPath.replace(/^\.?[a-zA-Z0-9.-]+\.(com|net|org|io)(\/|$)/i, '');
     
-    // Method 2: If path starts with 'public/', use NEXT_PUBLIC_FILE_PATH
-    // if (cleanPath.startsWith('public/')) {
-    //   const filePathBase = process.env.NEXT_PUBLIC_FILE_PATH || `${apiUrl}/`;
-    //   fullUrl = `${filePathBase}${cleanPath.replace('public/', '')}`;
-    // }
+    // Remove leading /api/ if present
+    cleanPath = cleanPath.replace(/^\/api\//, '');
     
-    // Method 3: If path already includes 'uploads/', construct from base
-    // if (cleanPath.includes('uploads/')) {
-    //   // Extract from 'uploads/' onwards
-    //   const uploadsPath = process.env.NEXT_PUBLIC_FILE_PATH ;
-    //   const filePathBase = process.env.NEXT_PUBLIC_FILE_PATH || `${apiUrl}/`;
-    //   fullUrl = `${filePathBase}${uploadsPath}`;
-    // }
+    // Remove leading slashes
+    cleanPath = cleanPath.replace(/^\/+/, '');
+    
+    // Get base URL without /api suffix
+    const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/api\/?$/, '');
+    
+    // Construct final URL
+    const fullUrl = `${apiUrl}/${cleanPath}`;
     
     return fullUrl;
   };

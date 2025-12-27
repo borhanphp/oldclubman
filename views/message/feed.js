@@ -628,11 +628,30 @@ const MessagingContent = () => {
   const getImageUrl = (imagePath) => {
     if (!imagePath) return '/common-avator.jpg';
     
-    // Remove /api from API URL and construct file URL
-    const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace('/api', '');
-    const fullUrl = `${apiUrl}/${imagePath}`;
+    // If it's already a full URL (http:// or https://), return as-is
+    if (/^https?:\/\//i.test(imagePath)) {
+      return imagePath;
+    }
     
-    console.log('🖼️ Image URL:', { original: imagePath, final: fullUrl });
+    // Clean up malformed paths that start with domain name or dots
+    let cleanPath = imagePath;
+    
+    // Remove leading dots and domain names (e.g., ".oldclubman.com/" or "oldclubman.com/")
+    cleanPath = cleanPath.replace(/^\.?[a-zA-Z0-9.-]+\.(com|net|org|io)(\/|$)/i, '');
+    
+    // Remove leading /api/ if present
+    cleanPath = cleanPath.replace(/^\/api\//, '');
+    
+    // Remove leading slashes
+    cleanPath = cleanPath.replace(/^\/+/, '');
+    
+    // Get base URL without /api suffix
+    const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/api\/?$/, '');
+    
+    // Construct final URL
+    const fullUrl = `${apiUrl}/${cleanPath}`;
+    
+    console.log('🖼️ Image URL:', { original: imagePath, cleaned: cleanPath, final: fullUrl });
     return fullUrl;
   };
 

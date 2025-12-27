@@ -3310,7 +3310,7 @@ const reactionsImages = (item) => {
                       <div
                         key={fileIndex}
                         className={`overflow-hidden rounded-lg ${
-                          item.files?.length === 1 ? "max-h-96" : "h-48"
+                          item.files?.length === 1 ? "" : "h-48"
                         } bg-gray-100`}
                       >
                         {isVideo ? (
@@ -3322,7 +3322,9 @@ const reactionsImages = (item) => {
                           <Image
                             src={src}
                             alt="oldclubman"
-                            className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                            className={`w-full cursor-pointer hover:opacity-90 transition-opacity ${
+                              item.files?.length === 1 ? "h-auto" : "h-full object-cover"
+                            }`}
                             onClick={() => handleImagePreview(src, allImages, imageIndex)}
                             width={1920}
                             height={1080}
