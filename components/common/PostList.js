@@ -82,6 +82,12 @@ const PostList = ({ postsData }) => {
   const [showReactionsFor, setShowReactionsFor] = useState(null);
   const [showCommentReactionsFor, setShowCommentReactionsFor] = useState(null);
   const [commentInputs, setCommentInputs] = useState({});
+  
+  // Debug: Log commentInputs changes
+  useEffect(() => {
+    console.log('🔄 commentInputs changed:', commentInputs);
+  }, [commentInputs]);
+  
   const [commentLikes, setCommentLikes] = useState({});
   const [replyInputs, setReplyInputs] = useState({});
   const [commentReplies, setCommentReplies] = useState({});
@@ -139,23 +145,65 @@ const PostList = ({ postsData }) => {
 
   // Handle emoji selection
   const handleEmojiSelect = useCallback((emoji, inputKey) => {
+    console.log('😊 Emoji selected:', { emoji, inputKey });
+    
     if (inputKey.includes("reply")) {
-      const currentValue = modalReplyInputs[inputKey] || '';
-      setModalReplyInputs((prev) => ({
-        ...prev,
-        [inputKey]: currentValue + emoji,
-      }));
-    } else {
-      const parts = inputKey.split("-");
-      const postId = parts[parts.length - 1];
-      const currentValue = commentInputs[postId] || '';
-      setCommentInputs((prev) => ({
-        ...prev,
-        [postId]: currentValue + emoji,
-      }));
+      setModalReplyInputs((prev) => {
+        const currentValue = prev[inputKey] || '';
+        console.log('😊 Reply input - Current value:', currentValue);
+        return {
+          ...prev,
+          [inputKey]: currentValue + emoji,
+        };
+      });
+      
+      // Focus the input after emoji selection
+      setTimeout(() => {
+        const inputElement = inputRefs.current[inputKey];
+        if (inputElement) {
+          inputElement.focus();
+          // Move cursor to end
+          const length = inputElement.value.length;
+          inputElement.setSelectionRange(length, length);
+        }
+      }, 10);
+    } else if (inputKey.includes("comment")) {
+      // Handle both "post-comment-ID" and "modal-comment-ID" formats
+      // Extract postId by removing the prefix (post-comment- or modal-comment-)
+      const postId = inputKey.replace(/^(post-comment-|modal-comment-)/, '');
+      console.log('😊 Comment input - PostId:', postId, 'InputKey:', inputKey);
+      
+      setCommentInputs((prev) => {
+        const currentValue = prev[postId] || '';
+        const newValue = currentValue + emoji;
+        console.log('😊 Comment input - PostId:', postId);
+        console.log('😊 Comment input - Current:', currentValue);
+        console.log('😊 Comment input - New:', newValue);
+        console.log('😊 Comment input - Previous state:', prev);
+        const newState = {
+          ...prev,
+          [postId]: newValue,
+        };
+        console.log('😊 Comment input - New state:', newState);
+        return newState;
+      });
+      
+      // Focus the input after emoji selection
+      setTimeout(() => {
+        const inputElement = inputRefs.current[inputKey];
+        console.log('😊 Trying to focus input:', inputKey, 'Element:', inputElement);
+        if (inputElement) {
+          inputElement.focus();
+          // Move cursor to end
+          setTimeout(() => {
+            const length = inputElement.value.length;
+            inputElement.setSelectionRange(length, length);
+          }, 5);
+        }
+      }, 10);
     }
     setShowEmojiPicker(null); // Close emoji picker
-  }, [modalReplyInputs, commentInputs]);
+  }, []);
 
   // Handle emoji picker toggle
   const toggleEmojiPicker = useCallback((inputKey) => {
@@ -1447,8 +1495,8 @@ const handleMentionDetect = async (e, inputKey) => {
     
     // Clean up ALL @ symbols from mention formats
     let cleanedText = text
-      // Remove @ from @[Name](id) format
-      .replace(/@(\[.+?\]\(\d+\))/g, '$1')
+      // Remove @ from @[Name](id) format - supports numeric IDs, UUIDs, and usernames
+      .replace(/@(\[.+?\]\([a-zA-Z0-9_-]+\))/g, '$1')
       // Remove @ from standalone @Name mentions (but keep the name)
       .replace(/@([^@\s]+(?:\s[^@\s]+)*)/g, '$1');
     
@@ -1459,8 +1507,8 @@ const handleMentionDetect = async (e, inputKey) => {
     cleanedText = cleanedText.replace(/<h1([^>]*)>/gi, '<h1$1 style="font-size: 1.5em; font-weight: bold; color: inherit; display: block; margin: 0.5em 0; line-height: 1.2;">');
     
     // Handle the clean [Name](id) or [Name](username) format
-    // Updated to support both numeric IDs and alphanumeric usernames
-    const fullFormatRegex = /\[(.+?)\]\(([a-zA-Z0-9_]+)\)/g;
+    // Updated to support both numeric IDs, alphanumeric usernames, and UUIDs with hyphens
+    const fullFormatRegex = /\[(.+?)\]\(([a-zA-Z0-9_-]+)\)/g;
     
     const elements = [];
     let lastIndex = 0;
@@ -1559,72 +1607,14 @@ const handleMentionDetect = async (e, inputKey) => {
     });
   }, []);
 
-  // Render content with truncation and "See more" functionality
-  const renderContentWithTruncation = useCallback((text, postId, maxLength = 100) => {
-    if (!text) return null;
-    
-    const isExpanded = expandedPosts.has(postId);
-    
-    // Get plain text length for truncation check (remove HTML tags)
-    const plainText = text.replace(/<[^>]*>/g, '');
-    const shouldTruncate = plainText.length > maxLength && !isExpanded;
-
-   
-    
-    // If we need to truncate, truncate the original text
-    let displayText = text;
-    if (shouldTruncate) {
-      // Find a good truncation point (end of word)
-      let truncateAt = maxLength;
-      while (truncateAt > 0 && displayText[truncateAt] !== ' ' && displayText[truncateAt] !== '\n') {
-        truncateAt--;
-      }
-      if (truncateAt === 0) truncateAt = maxLength;
-      displayText = displayText.substring(0, truncateAt);
-    }
-    
-    // Use the original renderContentWithHtml function for the display text
-    const content = renderContentWithHtml(displayText);
-    
-    return (
-      <>
- 
-    {content}
-
-    {shouldTruncate && !isExpanded && (
-      <>
-        ...<span
-          onClick={() => togglePostExpansion(postId)}
-          className="inline font-semibold cursor-pointer text-sm hover:underline ml-1"
-        >
-          See more
-        </span>
-      </>
-    )}
-
-
-  {isExpanded && (
-    <button
-      onClick={() => togglePostExpansion(postId)}
-      className="text-blue-600 hover:text-blue-800 font-medium text-sm mt-1 cursor-pointer"
-    >
-      See less
-    </button>
-  )}
-</>
-
-    
-    );
-  }, [renderContentWithHtml, expandedPosts, togglePostExpansion]);
-
   // Render content with mentions and HTML formatting - optimized with useCallback
   const renderContentWithMentions = useCallback((text) => {
     if (!text) return null;
     
     // Clean up ALL @ symbols from mention formats
     let cleanedText = text
-      // Remove @ from @[Name](id) format
-      .replace(/@(\[.+?\]\(\d+\))/g, '$1')
+      // Remove @ from @[Name](id) format - supports numeric IDs, UUIDs, and usernames
+      .replace(/@(\[.+?\]\([a-zA-Z0-9_-]+\))/g, '$1')
       // Remove @ from standalone @Name mentions (but keep the name)
       .replace(/@([^@\s]+(?:\s[^@\s]+)*)/g, '$1');
     
@@ -1632,8 +1622,8 @@ const handleMentionDetect = async (e, inputKey) => {
     cleanedText = sanitizeHTML(cleanedText);
     
     // Handle the clean [Name](id) or [Name](username) format
-    // Updated to support both numeric IDs and alphanumeric usernames
-    const fullFormatRegex = /\[(.+?)\]\(([a-zA-Z0-9_]+)\)/g;
+    // Updated to support both numeric IDs, alphanumeric usernames, and UUIDs with hyphens
+    const fullFormatRegex = /\[(.+?)\]\(([a-zA-Z0-9_-]+)\)/g;
     
     const elements = [];
     let lastIndex = 0;
@@ -1715,6 +1705,58 @@ const handleMentionDetect = async (e, inputKey) => {
       />
     );
   }, [sanitizeHTML]);
+
+  // Render content with truncation and "See more" functionality (with mention support)
+  const renderContentWithTruncation = useCallback((text, postId, maxLength = 100) => {
+    if (!text) return null;
+    
+    const isExpanded = expandedPosts.has(postId);
+    
+    // Get plain text length for truncation check (remove HTML tags and mentions)
+    const plainText = text.replace(/<[^>]*>/g, '').replace(/\[.+?\]\(.+?\)/g, '');
+    const shouldTruncate = plainText.length > maxLength && !isExpanded;
+    
+    // If we need to truncate, truncate the original text
+    let displayText = text;
+    if (shouldTruncate) {
+      // Find a good truncation point (end of word)
+      let truncateAt = maxLength;
+      while (truncateAt > 0 && displayText[truncateAt] !== ' ' && displayText[truncateAt] !== '\n') {
+        truncateAt--;
+      }
+      if (truncateAt === 0) truncateAt = maxLength;
+      displayText = displayText.substring(0, truncateAt);
+    }
+    
+    // Use renderContentWithMentions to properly display mentions
+    const content = renderContentWithMentions(displayText);
+    
+    return (
+      <>
+        {content}
+
+        {shouldTruncate && !isExpanded && (
+          <>
+            ...<span
+              onClick={() => togglePostExpansion(postId)}
+              className="inline font-semibold cursor-pointer text-sm hover:underline ml-1"
+            >
+              See more
+            </span>
+          </>
+        )}
+
+        {isExpanded && (
+          <button
+            onClick={() => togglePostExpansion(postId)}
+            className="text-blue-600 hover:text-blue-800 font-medium text-sm mt-1 cursor-pointer"
+          >
+            See less
+          </button>
+        )}
+      </>
+    );
+  }, [renderContentWithMentions, expandedPosts, togglePostExpansion]);
 
   const handleEditPost = (postId) => {
     dispatch(getPostById(postId)).then(() => {
@@ -2041,7 +2083,11 @@ const handleMentionDetect = async (e, inputKey) => {
                       
                       {/* Emoji Picker */}
                       {showEmojiPicker === `reply-${commentIndex}-${reply.id}` && (
-                        <div className="emoji-picker-container absolute bottom-full right-0 mb-2 bg-white border rounded-lg shadow-xl z-50 w-80 max-h-96 overflow-hidden">
+                        <div 
+                          className="emoji-picker-container absolute bottom-full right-0 mb-2 bg-white border rounded-lg shadow-xl z-50 w-80 max-h-96 overflow-hidden"
+                          onClick={(e) => e.stopPropagation()}
+                          onMouseDown={(e) => e.stopPropagation()}
+                        >
                           {/* Category tabs */}
                           <div className="flex border-b bg-gray-50 p-2 gap-1">
                             {Object.keys(emojiCategories).map((category) => (
@@ -2065,8 +2111,16 @@ const handleMentionDetect = async (e, inputKey) => {
                               {emojiCategories[activeEmojiCategory].emojis.map((emoji, idx) => (
                                 <button
                                   key={idx}
+                                  type="button"
                                   className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-lg"
-                                  onClick={() => handleEmojiSelect(emoji, `reply-${commentIndex}-${reply.id}`)}
+                                  onMouseDown={(e) => {
+                                    e.stopPropagation();
+                                  }}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleEmojiSelect(emoji, `reply-${commentIndex}-${reply.id}`);
+                                  }}
                                   title={emoji}
                                 >
                                   {emoji}
@@ -3230,14 +3284,14 @@ const reactionsImages = (item) => {
               >
                 <div
                   className=" dark:text-white py-2 px-6 font-bold  text-sm sm:text-base md:text-[30px]  leading-relaxed  w-full  break-words  overflow-hidden  whitespace-pre-wrap text-center">
-                  {renderContentWithHtml(item?.message)}
+                  {renderContentWithMentions(item?.message)}
                 </div>
               </div>
 
               </>
               : 
               <div className="py-2  text-[12px] sm:text-base md:text-lg leading-relaxed max-w-full sm:max-w-prose break-words">
-                {renderContentWithTruncation(item?.message, item?.id, 100)}
+                {renderContentWithMentions(item?.message)}
                 </div>
               
               }
@@ -3960,7 +4014,11 @@ const reactionsImages = (item) => {
 
                       {/* Emoji picker */}
                       {showEmojiPicker === `single-reply-${item.id}-${item?.latest_comment?.id}` && (
-                        <div className="emoji-picker-container absolute left-0 top-full mt-1 bg-white border rounded-lg shadow-xl z-[9999] w-80">
+                        <div 
+                          className="emoji-picker-container absolute left-0 top-full mt-1 bg-white border rounded-lg shadow-xl z-[9999] w-80"
+                          onClick={(e) => e.stopPropagation()}
+                          onMouseDown={(e) => e.stopPropagation()}
+                        >
                           <div className="p-3">
                             {/* Emoji categories */}
                             <div className="flex gap-1 mb-2 border-b pb-2">
@@ -3984,8 +4042,16 @@ const reactionsImages = (item) => {
                               {emojiCategories[activeEmojiCategory]?.emojis.map((emoji, idx) => (
                                 <button
                                   key={idx}
+                                  type="button"
                                   className="p-1 hover:bg-gray-100 rounded text-lg"
-                                  onClick={() => handleEmojiSelect(emoji, `single-reply-${item.id}-${item?.latest_comment?.id}`)}
+                                  onMouseDown={(e) => {
+                                    e.stopPropagation();
+                                  }}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleEmojiSelect(emoji, `single-reply-${item.id}-${item?.latest_comment?.id}`);
+                                  }}
                                 >
                                   {emoji}
                                 </button>
@@ -4059,10 +4125,10 @@ const reactionsImages = (item) => {
                     value={commentInputs[item.id] || ""}
                     ref={(el) => (inputRefs.current[`post-comment-${item.id}`] = el)}
                     onChange={(e) => {
-                      setCommentInputs({
-                        ...commentInputs,
+                      setCommentInputs((prev) => ({
+                        ...prev,
                         [item.id]: e.target.value,
-                      });
+                      }));
                       handleMentionDetect(e, `post-comment-${item.id}`);
                     }}
                     onKeyDown={(e) => {
@@ -4138,7 +4204,11 @@ const reactionsImages = (item) => {
 
                   {/* Emoji picker */}
                   {showEmojiPicker === `post-comment-${item.id}` && (
-                    <div className="emoji-picker-container absolute left-0 top-full mt-1 bg-white border rounded-lg shadow-xl z-[9999] w-80">
+                    <div 
+                      className="emoji-picker-container absolute left-0 top-full mt-1 bg-white border rounded-lg shadow-xl z-[9999] w-80"
+                      onClick={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
+                    >
                       <div className="p-3">
                         {/* Emoji categories */}
                         <div className="flex gap-1 mb-2 border-b pb-2">
@@ -4162,8 +4232,17 @@ const reactionsImages = (item) => {
                           {emojiCategories[activeEmojiCategory]?.emojis.map((emoji, idx) => (
                             <button
                               key={idx}
+                              type="button"
                               className="p-1 hover:bg-gray-100 rounded text-lg"
-                              onClick={() => handleEmojiSelect(emoji, `post-comment-${item.id}`)}
+                              onMouseDown={(e) => {
+                                e.stopPropagation();
+                              }}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                console.log('🖱️ Emoji button clicked:', emoji, 'for', `post-comment-${item.id}`);
+                                handleEmojiSelect(emoji, `post-comment-${item.id}`);
+                              }}
                             >
                               {emoji}
                   </button>
@@ -4703,7 +4782,11 @@ const reactionsImages = (item) => {
                                   
                                   {/* Emoji Picker - positioned relative to emoji button */}
                                   {showEmojiPicker === `reply-${i}-${c.id}` && (
-                                    <div className="emoji-picker-container absolute bottom-full right-0 mb-2 bg-white border rounded-lg shadow-xl z-50 w-80 max-h-96 overflow-hidden">
+                                    <div 
+                                      className="emoji-picker-container absolute bottom-full right-0 mb-2 bg-white border rounded-lg shadow-xl z-50 w-80 max-h-96 overflow-hidden"
+                                      onClick={(e) => e.stopPropagation()}
+                                      onMouseDown={(e) => e.stopPropagation()}
+                                    >
                                       {/* Category tabs */}
                                       <div className="flex border-b bg-gray-50 p-2 gap-1">
                                         {Object.keys(emojiCategories).map((category) => (
@@ -4727,8 +4810,16 @@ const reactionsImages = (item) => {
                                           {emojiCategories[activeEmojiCategory].emojis.map((emoji, idx) => (
                                             <button
                                               key={idx}
+                                              type="button"
                                               className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-lg"
-                                              onClick={() => handleEmojiSelect(emoji, `reply-${i}-${c.id}`)}
+                                              onMouseDown={(e) => {
+                                                e.stopPropagation();
+                                              }}
+                                              onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                handleEmojiSelect(emoji, `reply-${i}-${c.id}`);
+                                              }}
                                               title={emoji}
                                             >
                                               {emoji}
@@ -5119,7 +5210,11 @@ const reactionsImages = (item) => {
                                         
                                         {/* Emoji Picker */}
                                         {showEmojiPicker === `reply-${i}-${reply.id}` && (
-                                          <div className="emoji-picker-container absolute bottom-full right-0 mb-2 bg-white border rounded-lg shadow-xl z-50 w-80 max-h-96 overflow-hidden">
+                                          <div 
+                                            className="emoji-picker-container absolute bottom-full right-0 mb-2 bg-white border rounded-lg shadow-xl z-50 w-80 max-h-96 overflow-hidden"
+                                            onClick={(e) => e.stopPropagation()}
+                                            onMouseDown={(e) => e.stopPropagation()}
+                                          >
                                             {/* Category tabs */}
                                             <div className="flex border-b bg-gray-50 p-2 gap-1">
                                               {Object.keys(emojiCategories).map((category) => (
@@ -5143,8 +5238,16 @@ const reactionsImages = (item) => {
                                                 {emojiCategories[activeEmojiCategory].emojis.map((emoji, idx) => (
                                                   <button
                                                     key={idx}
+                                                    type="button"
                                                     className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-lg"
-                                                    onClick={() => handleEmojiSelect(emoji, `reply-${i}-${reply.id}`)}
+                                                    onMouseDown={(e) => {
+                                                      e.stopPropagation();
+                                                    }}
+                                                    onClick={(e) => {
+                                                      e.preventDefault();
+                                                      e.stopPropagation();
+                                                      handleEmojiSelect(emoji, `reply-${i}-${reply.id}`);
+                                                    }}
                                                     title={emoji}
                                                   >
                                                     {emoji}
@@ -5303,10 +5406,10 @@ const reactionsImages = (item) => {
                     value={commentInputs[basicPostData.id] || ""}
                     ref={(el) => (inputRefs.current[`modal-comment-${basicPostData.id}`] = el)}
                     onChange={(e) => {
-                      setCommentInputs({
-                        ...commentInputs,
+                      setCommentInputs((prev) => ({
+                        ...prev,
                         [basicPostData.id]: e.target.value,
-                      });
+                      }));
                       handleMentionDetect(e, `modal-comment-${basicPostData.id}`);
                     }}
                     onKeyDown={(e) => {
@@ -5369,7 +5472,11 @@ const reactionsImages = (item) => {
 
                 {/* Emoji Picker for comment */}
                   {showEmojiPicker === `modal-comment-${basicPostData.id}` && (
-                    <div className="emoji-picker-container absolute bottom-full right-0 mb-2 bg-white border rounded-lg shadow-xl z-50 w-80 max-h-96 overflow-hidden">
+                    <div 
+                      className="emoji-picker-container absolute bottom-full right-0 mb-2 bg-white border rounded-lg shadow-xl z-50 w-80 max-h-96 overflow-hidden"
+                      onClick={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
+                    >
                       <div className="flex border-b bg-gray-50 p-2 gap-1">
                         {Object.keys(emojiCategories).map((category) => (
                           <button
@@ -5390,8 +5497,17 @@ const reactionsImages = (item) => {
                           {emojiCategories[activeEmojiCategory].emojis.map((emoji, idx) => (
                             <button
                               key={idx}
+                              type="button"
                               className="text-xl hover:bg-gray-100 rounded p-1"
-                              onClick={() => handleEmojiSelect(emoji, `modal-comment-${basicPostData.id}`)}
+                              onMouseDown={(e) => {
+                                e.stopPropagation();
+                              }}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                console.log('🖱️ Modal emoji button clicked:', emoji, 'for', `modal-comment-${basicPostData.id}`);
+                                handleEmojiSelect(emoji, `modal-comment-${basicPostData.id}`);
+                              }}
                             >
                               {emoji}
                             </button>
