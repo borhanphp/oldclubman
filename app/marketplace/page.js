@@ -21,7 +21,7 @@ const categories = [
 
 const ProfileSidebar = ({ profile }) => {
   return (
-    <Intro/>
+    <Intro />
   );
 };
 
@@ -38,6 +38,10 @@ const Sidebar = ({
 }) => {
   return (
     <aside className="w-[320px] shrink-0 bg-white border-r border-gray-200 h-screen sticky top-0 overflow-y-auto shadow-sm">
+      {/* Profile Intro */}
+      <div className="mb-2">
+        <Intro />
+      </div>
       <div className="p-5">
         {/* Header */}
         <div className="mb-6">
@@ -58,7 +62,7 @@ const Sidebar = ({
 
         {/* Primary nav */}
         <nav className="space-y-1 mb-6">
-          <button 
+          <button
             onClick={onBrowseAll}
             className="w-full text-left flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-gray-50 transition-colors group"
           >
@@ -285,15 +289,15 @@ const ListingCard = ({ item }) => {
       imageUrl = cleanBase ? `${cleanBase}/sale_post/${cleanPath}` : `/public/uploads/sale_post/${cleanPath}`;
     }
   }
-  
+
   // Format price
   const price = item.price ? `৳${parseFloat(item.price).toLocaleString()}` : "FREE";
-  
+
   // Get location from nested objects
-  const location = item.city?.name 
+  const location = item.city?.name
     ? `${item.city.name}${item.state?.name ? `, ${item.state.name}` : ''}`
     : item.state?.name || item.country?.name || "Location not specified";
-  
+
   return (
     <Link
       href={`/marketplace/listing/${item.id ?? ""}`}
@@ -410,8 +414,8 @@ export default function MarketplacePage() {
       const data = res?.data?.success && res?.data?.data?.data?.length
         ? res.data.data.data
         : res?.data?.data?.length
-        ? res.data.data
-        : [];
+          ? res.data.data
+          : [];
 
       console.log("Fetched listings with filters:", query, data);
       setItems(data);
@@ -438,38 +442,28 @@ export default function MarketplacePage() {
   };
 
   return (
-      <BodyLayout>
-        <div className="flex flex-wrap">
-          {/* Profile Sidebar - Left Side */}
-          {/* <ProfileSidebar profile={profile} /> */}
-          {/* <div className="w-full lg:w-1/4 mb-1 lg:mb-0 lg:pr-2">
-          <Intro/>
-          </div> */}
-          {/* Main Content - Right Side */}
-          <div className="w-full lg:w-3/4">
-            <div className="min-h-screen bg-gray-50 rounded-lg overflow-hidden">
-              <div className="flex">
-                <Sidebar
-                  search={search}
-                  setSearch={setSearch}
-                  onCreateListing={onCreateListing}
-                  filters={filters}
-                  setFilters={setFilters}
-                  selectedCategory={selectedCategory}
-                  setSelectedCategory={setSelectedCategory}
-                  categories={categories}
-                  onBrowseAll={handleBrowseAll}
-                />
-                <main className="flex-1">
-                  <div className="px-6 py-4">
-                    <ListingGrid items={items} loading={loading} />
-                  </div>
-                </main>
-              </div>
+    <BodyLayout>
+      <div className="min-h-screen bg-gray-50 rounded-lg overflow-hidden">
+        <div className="flex">
+          <Sidebar
+            search={search}
+            setSearch={setSearch}
+            onCreateListing={onCreateListing}
+            filters={filters}
+            setFilters={setFilters}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            categories={categories}
+            onBrowseAll={handleBrowseAll}
+          />
+          <main className="flex-1">
+            <div className="px-6 py-4">
+              <ListingGrid items={items} loading={loading} />
             </div>
-          </div>
+          </main>
         </div>
-        </BodyLayout>
+      </div>
+    </BodyLayout>
   );
 }
 

@@ -24,7 +24,7 @@ export default function CreatePropertyListingPage() {
   const [pricePerMonth, setPricePerMonth] = useState("");
   const [rentalDescription, setRentalDescription] = useState("");
   const [title, setTitle] = useState("");
-  
+
   // Advanced Details
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [squareFeet, setSquareFeet] = useState("");
@@ -35,35 +35,35 @@ export default function CreatePropertyListingPage() {
   const [heatingType, setHeatingType] = useState("");
   const [catFriendly, setCatFriendly] = useState(false);
   const [dogFriendly, setDogFriendly] = useState(false);
-  
+
   const [loading, setLoading] = useState(false);
 
   // Get location from profile
   const locationName = useMemo(() => {
-    return profileData?.city?.name || 
-           profile?.client?.city?.name || 
-           profileData?.state?.name || 
-           profile?.client?.state?.name || 
-           "Location";
+    return profileData?.city?.name ||
+      profile?.client?.city?.name ||
+      profileData?.state?.name ||
+      profile?.client?.state?.name ||
+      "Location";
   }, [profileData, profile]);
 
   const countryId = useMemo(() => {
-    return profileData?.current_country_id || 
-           profileData?.from_country_id || 
-           profile?.client?.current_country_id || 
-           profile?.client?.from_country_id || 1;
+    return profileData?.current_country_id ||
+      profileData?.from_country_id ||
+      profile?.client?.current_country_id ||
+      profile?.client?.from_country_id || 1;
   }, [profileData, profile]);
 
   const stateId = useMemo(() => {
-    return profileData?.current_state_id || 
-           profileData?.from_state_id || 
-           profile?.client?.current_state_id || 
-           profile?.client?.from_state_id || 1;
+    return profileData?.current_state_id ||
+      profileData?.from_state_id ||
+      profile?.client?.current_state_id ||
+      profile?.client?.from_state_id || 1;
   }, [profileData, profile]);
 
   const cityId = useMemo(() => {
-    return profileData?.from_city_id || 
-           profile?.client?.from_city_id || 1;
+    return profileData?.from_city_id ||
+      profile?.client?.from_city_id || 1;
   }, [profileData, profile]);
 
   useEffect(() => {
@@ -199,10 +199,10 @@ export default function CreatePropertyListingPage() {
       formData.append("title", title || `${bedrooms}BR ${bathrooms}BA ${rentalType}`);
       formData.append("price", pricePerMonth);
       formData.append("description", rentalDescription);
-    
+
       formData.append("type", "3");
-      
-      
+
+
       // Property-specific fields
       if (rentalType) formData.append("rental_type", rentalType);
       if (bedrooms) formData.append("number_of_bedrooms", bedrooms);
@@ -216,8 +216,8 @@ export default function CreatePropertyListingPage() {
       if (heatingType) formData.append("heating_type", heatingType);
       formData.append("cat_friendly", catFriendly ? "1" : "0");
       formData.append("dog_friendly", dogFriendly ? "1" : "0");
-      
-     
+
+
       // Add images
       images.forEach((img) => {
         if (img.file) {
@@ -539,14 +539,12 @@ export default function CreatePropertyListingPage() {
                       <label className="text-gray-900 font-medium">Cat friendly</label>
                       <button
                         onClick={() => setCatFriendly(!catFriendly)}
-                        className={`relative w-12 h-6 rounded-full transition-colors ${
-                          catFriendly ? "bg-blue-600" : "bg-gray-300"
-                        }`}
+                        className={`relative w-12 h-6 rounded-full transition-colors ${catFriendly ? "bg-blue-600" : "bg-gray-300"
+                          }`}
                       >
                         <span
-                          className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                            catFriendly ? "translate-x-6" : ""
-                          }`}
+                          className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${catFriendly ? "translate-x-6" : ""
+                            }`}
                         />
                       </button>
                     </div>
@@ -556,14 +554,12 @@ export default function CreatePropertyListingPage() {
                       <label className="text-gray-900 font-medium">Dog friendly</label>
                       <button
                         onClick={() => setDogFriendly(!dogFriendly)}
-                        className={`relative w-12 h-6 rounded-full transition-colors ${
-                          dogFriendly ? "bg-blue-600" : "bg-gray-300"
-                        }`}
+                        className={`relative w-12 h-6 rounded-full transition-colors ${dogFriendly ? "bg-blue-600" : "bg-gray-300"
+                          }`}
                       >
                         <span
-                          className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                            dogFriendly ? "translate-x-6" : ""
-                          }`}
+                          className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${dogFriendly ? "translate-x-6" : ""
+                            }`}
                         />
                       </button>
                     </div>
@@ -575,15 +571,14 @@ export default function CreatePropertyListingPage() {
                       <div
                         className="h-full bg-blue-600 transition-all duration-300"
                         style={{
-                          width: `${
-                            ((rentalType ? 1 : 0) +
+                          width: `${((rentalType ? 1 : 0) +
                               (images.length > 0 ? 1 : 0) +
                               (bedrooms ? 1 : 0) +
                               (bathrooms ? 1 : 0) +
                               (pricePerMonth ? 1 : 0) +
                               (rentalDescription ? 1 : 0)) *
                             16.67
-                          }%`,
+                            }%`,
                         }}
                       />
                     </div>
@@ -616,7 +611,7 @@ export default function CreatePropertyListingPage() {
                             fill
                             className="object-contain"
                           />
-                          
+
                           {/* Navigation arrows */}
                           {images.length > 1 && (
                             <>
@@ -636,7 +631,7 @@ export default function CreatePropertyListingPage() {
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                 </svg>
                               </button>
-                              
+
                               {/* Image counter */}
                               <div className="absolute bottom-4 right-4 bg-black/70 text-white px-4 py-2 rounded-full text-sm font-medium">
                                 {selectedImageIndex + 1} / {images.length}
@@ -682,95 +677,95 @@ export default function CreatePropertyListingPage() {
                             <h4 className="font-semibold text-gray-900 mb-3">
                               About this property for rent
                             </h4>
-                            
+
                             <div className="space-y-2">
-                            {/* Bedrooms & Bathrooms */}
-                            {bedrooms && (
-                              <div className="flex items-center gap-2 text-sm text-gray-700">
-                                <span>🛏️</span>
-                                <span>{bedrooms} Bedroom{bedrooms > 1 ? 's' : ''}</span>
-                              </div>
-                            )}
-                            {bathrooms && (
-                              <div className="flex items-center gap-2 text-sm text-gray-700">
-                                <span>🚿</span>
-                                <span>{bathrooms} Bathroom{bathrooms > 1 ? 's' : ''}</span>
-                              </div>
-                            )}
-                            
-                            {/* Square Feet */}
-                            {squareFeet && (
-                              <div className="flex items-center gap-2 text-sm text-gray-700">
-                                <span>📐</span>
-                                <span>{squareFeet} sq ft</span>
-                              </div>
-                            )}
-                            
-                            {/* Pet Friendly */}
-                            {catFriendly && (
-                              <div className="flex items-center gap-2 text-sm text-gray-700">
-                                <span>🐾</span>
-                                <span>Cat Friendly</span>
-                              </div>
-                            )}
-                            {dogFriendly && (
-                              <div className="flex items-center gap-2 text-sm text-gray-700">
-                                <span>🐾</span>
-                                <span>Dog Friendly</span>
-                              </div>
-                            )}
-                            
-                            {/* Heating */}
-                            {heatingType && (
-                              <div className="flex items-center gap-2 text-sm text-gray-700">
-                                <span>🔥</span>
-                                <span>{heatingTypes.find(t => t.value === heatingType)?.label} heating</span>
-                              </div>
-                            )}
-                            
-                            {/* Air Conditioning */}
-                            {airConditioningType && (
-                              <div className="flex items-center gap-2 text-sm text-gray-700">
-                                <span>❄️</span>
-                                <span>{airConditioningTypes.find(t => t.value === airConditioningType)?.label} air conditioning</span>
-                              </div>
-                            )}
-                            
-                            {/* Laundry */}
-                            {laundryType && (
-                              <div className="flex items-center gap-2 text-sm text-gray-700">
-                                <span>🧺</span>
-                                <span>{laundryTypes.find(t => t.value === laundryType)?.label} laundry</span>
-                              </div>
-                            )}
-                            
-                            {/* Parking */}
-                            {parkingType && (
-                              <div className="flex items-center gap-2 text-sm text-gray-700">
-                                <span>🚗</span>
-                                <span>{parkingTypes.find(t => t.value === parkingType)?.label} parking</span>
-                              </div>
-                            )}
-                            
-                            {/* Date Available */}
-                            {dateAvailable && (
-                              <div className="flex items-center gap-2 text-sm text-gray-700">
-                                <span>📅</span>
-                                <span>Available from {new Date(dateAvailable).toLocaleDateString()}</span>
+                              {/* Bedrooms & Bathrooms */}
+                              {bedrooms && (
+                                <div className="flex items-center gap-2 text-sm text-gray-700">
+                                  <span>🛏️</span>
+                                  <span>{bedrooms} Bedroom{bedrooms > 1 ? 's' : ''}</span>
+                                </div>
+                              )}
+                              {bathrooms && (
+                                <div className="flex items-center gap-2 text-sm text-gray-700">
+                                  <span>🚿</span>
+                                  <span>{bathrooms} Bathroom{bathrooms > 1 ? 's' : ''}</span>
+                                </div>
+                              )}
+
+                              {/* Square Feet */}
+                              {squareFeet && (
+                                <div className="flex items-center gap-2 text-sm text-gray-700">
+                                  <span>📐</span>
+                                  <span>{squareFeet} sq ft</span>
+                                </div>
+                              )}
+
+                              {/* Pet Friendly */}
+                              {catFriendly && (
+                                <div className="flex items-center gap-2 text-sm text-gray-700">
+                                  <span>🐾</span>
+                                  <span>Cat Friendly</span>
+                                </div>
+                              )}
+                              {dogFriendly && (
+                                <div className="flex items-center gap-2 text-sm text-gray-700">
+                                  <span>🐾</span>
+                                  <span>Dog Friendly</span>
+                                </div>
+                              )}
+
+                              {/* Heating */}
+                              {heatingType && (
+                                <div className="flex items-center gap-2 text-sm text-gray-700">
+                                  <span>🔥</span>
+                                  <span>{heatingTypes.find(t => t.value === heatingType)?.label} heating</span>
+                                </div>
+                              )}
+
+                              {/* Air Conditioning */}
+                              {airConditioningType && (
+                                <div className="flex items-center gap-2 text-sm text-gray-700">
+                                  <span>❄️</span>
+                                  <span>{airConditioningTypes.find(t => t.value === airConditioningType)?.label} air conditioning</span>
+                                </div>
+                              )}
+
+                              {/* Laundry */}
+                              {laundryType && (
+                                <div className="flex items-center gap-2 text-sm text-gray-700">
+                                  <span>🧺</span>
+                                  <span>{laundryTypes.find(t => t.value === laundryType)?.label} laundry</span>
+                                </div>
+                              )}
+
+                              {/* Parking */}
+                              {parkingType && (
+                                <div className="flex items-center gap-2 text-sm text-gray-700">
+                                  <span>🚗</span>
+                                  <span>{parkingTypes.find(t => t.value === parkingType)?.label} parking</span>
+                                </div>
+                              )}
+
+                              {/* Date Available */}
+                              {dateAvailable && (
+                                <div className="flex items-center gap-2 text-sm text-gray-700">
+                                  <span>📅</span>
+                                  <span>Available from {new Date(dateAvailable).toLocaleDateString()}</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Description */}
+                            {rentalDescription && (
+                              <div className="mt-4 pt-4 border-t border-gray-100">
+                                <h5 className="font-semibold text-gray-900 mb-2 text-sm">Description</h5>
+                                <p className="text-sm text-gray-600">
+                                  {rentalDescription}
+                                </p>
                               </div>
                             )}
                           </div>
-                          
-                          {/* Description */}
-                          {rentalDescription && (
-                            <div className="mt-4 pt-4 border-t border-gray-100">
-                              <h5 className="font-semibold text-gray-900 mb-2 text-sm">Description</h5>
-                              <p className="text-sm text-gray-600">
-                                {rentalDescription}
-                              </p>
-                            </div>
-                          )}
-                        </div>
                         )}
 
                         {/* Seller information */}

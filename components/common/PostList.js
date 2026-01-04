@@ -46,6 +46,7 @@ import CommentThread from "./CommentThread";
 
 import api from "@/helpers/axios";
 import { getImageUrl } from "@/utility"; // Import helper
+import PostCommentsModal from "./PostCommentsModal";
 
 const PostList = ({ postsData }) => {
   const { basicPostData } = useSelector(({ gathering }) => gathering);
@@ -117,7 +118,63 @@ const PostList = ({ postsData }) => {
 
   const profilePopupAnchorRef = useRef(null);
 
-  // Memoize emoji categories since they're static
+  // Refs for input elements (text inputs) and file inputs
+  const inputRefs = useRef({});
+  const fileInputRefs = useRef({});
+
+  // Handle clicking the photo button to trigger file input
+  const handleReplyImageClick = useCallback((inputKey) => {
+    const fileInput = fileInputRefs.current?.[inputKey];
+    if (fileInput) {
+      fileInput.click();
+    }
+  }, []);
+
+  // Handle file selection for reply/comment images
+  const handleReplyImageChange = useCallback((e, inputKey) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const newImages = files.map(file => ({
+      file,
+      preview: URL.createObjectURL(file),
+      name: file.name
+    }));
+
+    setModalReplyImages(prev => ({
+      ...prev,
+      [inputKey]: [...(prev[inputKey] || []), ...newImages]
+    }));
+
+    // Reset the input so the same file can be selected again
+    e.target.value = '';
+  }, []);
+
+  // Clear a specific image from reply/comment
+  const clearReplyImage = useCallback((inputKey, imageIndex) => {
+    setModalReplyImages(prev => {
+      const currentImages = prev[inputKey] || [];
+      const imageToRemove = currentImages[imageIndex];
+
+      // Revoke the object URL to free memory
+      if (imageToRemove?.preview) {
+        URL.revokeObjectURL(imageToRemove.preview);
+      }
+
+      const newImages = currentImages.filter((_, idx) => idx !== imageIndex);
+
+      if (newImages.length === 0) {
+        const { [inputKey]: _, ...rest } = prev;
+        return rest;
+      }
+
+      return {
+        ...prev,
+        [inputKey]: newImages
+      };
+    });
+  }, []);
+
   const emojiCategories = useMemo(() => ({
     smileys: {
       name: 'Smileys & People',
@@ -757,8 +814,6 @@ const PostList = ({ postsData }) => {
   const [mentionLoading, setMentionLoading] = useState(false);
   const [mentionPage, setMentionPage] = useState(1);
   const [mentionHasMore, setMentionHasMore] = useState(true);
-  const inputRefs = useRef({});
-  const fileInputRefs = useRef({});
   const mentionMetaRef = useRef({}); // { [inputKey]: { anchor: number } }
   const mentionDropdownRef = useRef(null);
   const mentionAbortControllerRef = useRef(null);
@@ -2372,41 +2427,7 @@ const PostList = ({ postsData }) => {
       });
   };
 
-  // Image attach handlers for reply inputs in modal
-  const handleReplyImageClick = (inputKey) => {
-    const ref = fileInputRefs.current[inputKey];
-    if (ref && ref.click) ref.click();
-  };
 
-  const handleReplyImageChange = (e, inputKey) => {
-    const files = Array.from(e?.target?.files || []);
-    if (!files.length) return;
-    const newItems = files.map((file) => ({ file, previewUrl: URL.createObjectURL(file), id: `${Date.now()}-${Math.random()}` }));
-    setModalReplyImages((prev) => ({
-      ...prev,
-      [inputKey]: [...(prev[inputKey] || []), ...newItems],
-    }));
-    const ref = fileInputRefs.current[inputKey];
-    if (ref) ref.value = "";
-  };
-
-  const clearReplyImage = (inputKey, index = null) => {
-    setModalReplyImages((prev) => {
-      const copy = { ...prev };
-      const arr = copy[inputKey] || [];
-      if (index === null) {
-        arr.forEach((img) => { if (img?.previewUrl) URL.revokeObjectURL(img.previewUrl); });
-        delete copy[inputKey];
-      } else {
-        if (arr[index]?.previewUrl) URL.revokeObjectURL(arr[index].previewUrl);
-        copy[inputKey] = arr.filter((_, i) => i !== index);
-        if (copy[inputKey].length === 0) delete copy[inputKey];
-      }
-      return copy;
-    });
-    const ref = fileInputRefs.current[inputKey];
-    if (ref) ref.value = "";
-  };
 
   // Handle reply to single comment in post list
   const handleSingleCommentReply = (postId, comment) => {
@@ -4254,1321 +4275,51 @@ const PostList = ({ postsData }) => {
 
 
 
-
-
-      {/* comment modal */}
-      {showCommentsModal && basicPostData && (
-        <div
-          className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50"
-          onClick={() => setShowCommentsModal(false)}
-        >
-          <div
-            className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden relative shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="border-b border-gray-200 flex items-center justify-between p-4 pb-2 relative">
-              <div className="absolute text-xl font-bold left-0 w-full text-center">
-                {basicPostData.client?.fname + "'"}s Post
-              </div>
-              <div className="ml-auto z-10">
-                <button
-                  className="text-3xl text-black cursor-pointer hover:text-gray-700"
-                  onClick={() => setShowCommentsModal(false)}
-                  aria-label="Close"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-            <div className="flex-1 px-6 pt-4 pb-2 overflow-y-auto">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-10 h-10 rounded-full overflow-hidden">
-                  <img
-                    src={basicPostData?.client?.image ?
-                      process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
-                      basicPostData?.client?.image : "/common-avator.jpg"
-                    }
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = "/common-avator.jpg";
-                    }}
-                  />
-                </div>
-                <div>
-                  <Link
-                    href={`/${basicPostData?.client?.username}`}
-                    className="cursor-pointer hover:underline"
-                  >
-                    <div className="font-semibold">
-                      {basicPostData?.client?.display_name || basicPostData?.client?.fname + " " + basicPostData?.client?.last_name}
-                    </div>
-                  </Link>
-                  <div className="flex gap-2 text-xs text-gray-500 font-semibold">
-                    {moment(basicPostData?.created_at).format("MMM DD") +
-                      " at " +
-                      moment(basicPostData.created_at).format("HH:MM A")}{" "}
-                    <span>•</span>
-
-                    {basicPostData.privacy_mode === "public" ? (
-                      <FaGlobeAmericas className="mt-[3px]" />
-                    ) : (
-                      <FaLock className="mt-[3px]" />
-                    )}
-                  </div>
-                </div>
-              </div>
-              {/* Post message */}
-              {/\/post_background\/.+/.test(basicPostData?.background_url) ?
-                <>
-                  <div
-                    className="relative text-white p-4 text-center text-[40px] w-full min-h-[300px] rounded-lg flex items-center justify-center bg-cover bg-center bg-no-repeat"
-                    style={{
-                      backgroundImage: `url(${basicPostData?.background_url})`,
-                    }}
-                  >
-
-                    {basicPostData?.message}
-
-
-                  </div>
-                </>
-                :
-                <div className="text-gray-800 mb-4 break-words">
-                  {renderContentWithMentions(basicPostData.message)}
-                </div>
-
-              }
-
-              {/* Post images if any */}
-              {basicPostData.files && basicPostData.files.length > 0 && (
-                <div
-                  className={`mt-3 grid cursor-pointer ${basicPostData.files.length === 1
-                    ? "grid-cols-1"
-                    : basicPostData.files.length >= 2
-                      ? "grid-cols-2"
-                      : ""
-                    } gap-2 mb-4`}
-                >
-                  {basicPostData.files.map((file, fileIndex) => {
-                    // Determine if file is a video by extension
-                    const filePath = file.file_path || file.path || file.url || file.file_url || '';
-                    const isVideo = /\.(mp4|webm|ogg|mov|avi)$/i.test(filePath);
-                    // Build robust base + prefix
-                    // Build robust base + prefix
-                    const src = getImageUrl(filePath, 'post');
-
-                    // Prepare all images for preview
-                    const allImages = (basicPostData.files || [])
-                      .filter(f => {
-                        const fPath = f.file_path || f.path || f.url || f.file_url || '';
-                        return !/\.(mp4|webm|ogg|mov|avi)$/i.test(fPath);
-                      })
-                      .map(f => {
-                        const fPath = f.file_path || f.path || f.url || f.file_url || '';
-                        return getImageUrl(fPath, 'post');
-                      });
-
-                    const imageIndex = allImages.indexOf(src);
-
-                    return (
-                      <div
-                        key={fileIndex}
-                        className={`overflow-hidden rounded-lg ${basicPostData.files.length === 1 ? "max-h-96" : "h-48"
-                          } bg-gray-100`}
-                      >
-                        {isVideo ? (
-                          <video controls className="w-full h-full object-cover">
-                            <source src={src} />
-                            Your browser does not support the video tag.
-                          </video>
-                        ) : (
-                          <img
-                            src={src}
-                            alt={`Post media ${fileIndex + 1}`}
-                            className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                            onClick={() => handleImagePreview(src, allImages, imageIndex)}
-                          />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Map for showing location data in modal */}
-              {basicPostData?.post_location && basicPostData?.post_location.length > 0 && (
-                <div className="mb-4">
-                  <div
-                    id={`map-container-modal-${basicPostData.id}`}
-                    className="w-full rounded-md border border-gray-200"
-                    style={{ height: '384px', width: '100%', position: 'relative', zIndex: 0 }}
-                  />
-                  <div className="mt-2 text-xs text-gray-600">
-                    {(() => {
-                      const checkIn = basicPostData.post_location.find(loc => loc.post_type === 1);
-                      const destination = basicPostData.post_location.find(loc => loc.post_type === 2);
-
-                      if (checkIn && destination) {
-                        return `Route: ${checkIn.place_name?.split(',')[0] || 'Location'} → ${destination.place_name?.split(',')[0] || 'Location'}`;
-                      } else if (checkIn) {
-                        return `Check-in: ${checkIn.place_name || 'Location'}`;
-                      } else if (destination) {
-                        return `Destination: ${destination.place_name || 'Location'}`;
-                      }
-                      return 'Location';
-                    })()}
-                  </div>
-                </div>
-              )}
-
-              {/* Reactions section - same as in post list */}
-              <div className="border-gray-200 border-t border-b py-2 mt-2">
-                <div className="flex items-center">
-                  <span className="mr-2">
-                    <span role="img" aria-label="surprised" className="text-xl">
-                      {basicPostData?.reactions?.length > 0 &&
-                        basicPostData?.reactions
-                          ?.slice(0, 2)
-                          .map((reaction, index) => (
-                            showingReactionsIcon(reaction, index)
-                          ))}
-                    </span>
-                  </span>
-                  <span className="text-sm">
-                    {basicPostData?.reactions?.length || 0}
-                  </span>
-                  <span className="flex items-center gap-2 ml-auto text-sm text-gray-500">
-                    {basicPostData.comments?.length || 0}{" "}
-                    <FaRegComment className="" />
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex justify-between py-1 border-gray-200 border-b mb-4">
-                <div className="flex-1 relative" data-mention-anchor="true">
-                  <div className="relative">
-                    <button
-                      className="w-full py-1 cursor-pointer text-center text-blue-500 bg-gray-100 rounded-md"
-                      onMouseEnter={() =>
-                        setShowReactionsFor(
-                          showReactionsFor === basicPostData.id ? null : basicPostData.id
-                        )
-                      }
-                      onMouseLeave={(e) => {
-                        // Check if the mouse is moving to the reactions area
-                        const relatedTarget = e.relatedTarget;
-                        if (relatedTarget && relatedTarget.closest('.reactions-container')) {
-                          return; // Don't hide if moving to reactions
-                        }
-                        setShowReactionsFor(null);
-                      }}
-                      onClick={() => {
-                        if (basicPostData.single_reaction) {
-                          handleDeleteReaction(basicPostData.id);
-                        }
-                      }}
-                    >
-                      <div className="flex items-center justify-center gap-2">
-                        {!basicPostData.single_reaction ? (
-                          <>
-                            <SlLike /> <span>Like</span>
-                          </>
-                        ) : (
-                          <span className="inline-block">
-                            {likingReactions(basicPostData?.single_reaction)}
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                    {showReactionsFor === basicPostData.id && (
-                      <div
-                        className="reactions-container"
-                        onMouseEnter={() => setShowReactionsFor(basicPostData.id)}
-                        onMouseLeave={() => setShowReactionsFor(null)}
-                      >
-                        {reactionsImages(basicPostData)}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <button
-                  onClick={() => { handleShare(basicPostData?.id) }}
-                  className="flex-1 py-1 cursor-pointer text-center text-gray-500 hover:bg-gray-100 rounded-md">
-                  <div className="flex items-center justify-center gap-2">
-                    <IoMdShareAlt /> <span>Share</span>
-                  </div>
-                </button>
-              </div>
-
-
-
-              {/* ****************************************************
-              comments start
-              ******************************************************** */}
-
-
-              {/* Comments Section */}
-              <h4 className="font-semibold mb-4 text-lg">Comments</h4>
-              {basicPostData?.comments &&
-                basicPostData?.comments?.length > 0 ? (
-                basicPostData?.comments?.map((c, i) => (
-                  <div key={i} className="mb-4 flex items-start relative">
-                    <div className="relative mr-3">
-                      <div className="w-9 h-9 rounded-full overflow-hidden">
-                        <img
-                          src={c?.client?.image ?
-                            process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
-                            c?.client?.image : "/common-avator.jpg"
-                          }
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = "/common-avator.jpg";
-                          }}
-                        />
-                      </div>
-                      {/* Thread line */}
-                      {/* <div className="absolute border h-100 left-[18px] top-[36px] bottom-0 w-px"></div> */}
-                    </div>
-                    <div className="flex-1">
-                      <div className="bg-gray-100 p-3 rounded-2xl relative border border-gray-200">
-                        <div className="font-medium text-sm">
-                          <Link
-                            href={`/${c?.username}`}
-                            className="cursor-pointer hover:underline"
-                          >
-                            {c?.client_comment?.fname +
-                              " " +
-                              c?.client_comment?.last_name}{" "}
-                          </Link>
-                          {/* <span className="text-xs text-gray-500 ml-2">
-                            {formatCompactTime(c.created_at)}
-                          </span> */}
-                        </div>
-                        <div className="text-gray-700 text-sm mt-1">
-                          {renderContentWithMentions(c.content)}
-                        </div>
-                        {/* Display comment files */}
-                        {c?.files?.length > 0 && (() => {
-                          console.log('📎 Comment files:', c.files);
-                          return (
-                            <div className="mt-2">
-                              {c.files.map((file, fileIdx) => {
-                                const filePath = file.file_path || file.path || '';
-                                console.log('📎 File path:', filePath);
-                                // Try comment folder first since these are comment files
-                                const commentImgSrc = getImageUrl(filePath, 'comment');
-                                console.log('📎 Generated URL:', commentImgSrc);
-                                return (
-                                  <img
-                                    key={fileIdx}
-                                    src={commentImgSrc}
-                                    alt="Comment attachment"
-                                    className="w-auto max-w-full max-h-48 cursor-pointer hover:opacity-90 transition-opacity rounded-lg"
-                                    onClick={() => handleImagePreview(commentImgSrc, [commentImgSrc], 0)}
-                                    onError={(e) => {
-                                      console.log('🚨 Comment image failed:', e.target.src);
-                                      // Try post folder as fallback
-                                      const postSrc = getImageUrl(filePath, 'post');
-                                      if (e.target.src !== postSrc) {
-                                        console.log('🔄 Trying post folder:', postSrc);
-                                        e.target.src = postSrc;
-                                      } else {
-                                        // Try reply folder as last resort
-                                        const replySrc = getImageUrl(filePath, 'reply');
-                                        console.log('🔄 Trying reply folder:', replySrc);
-                                        e.target.src = replySrc;
-                                      }
-                                    }}
-                                  />
-                                );
-                              })}
-                            </div>
-                          );
-                        })()}
-
-                        {/* Reaction count pill overlay */}
-                        {c?.reactions?.length > 0 && (
-                          <div className="absolute -bottom-2 right-3 flex items-center gap-1 bg-white rounded-full px-1.5 py-0.5 shadow-sm border border-gray-200">
-                            <div className="flex -space-x-1">
-                              {c.reactions.slice(0, 2).map((reaction, idx) => (
-                                showingReactionsIcon(reaction, idx)
-                              ))}
-                            </div>
-                            <span className="text-[10px] text-gray-600">{c.reactions.length}</span>
-                          </div>
-                        )}
-                      </div>
-                      {/* Actions row */}
-                      <div className="flex items-center gap-3 ml-2 text-[12px] text-gray-600 mt-1">
-                        <span className="text-gray-500">{formatCompactTime(c.created_at)}</span>
-                        <span>•</span>
-                        <button
-                          className="hover:underline relative cursor-pointer font-semibold"
-                          onClick={() => handleModalCommentLike(c)}
-                          type="button"
-                        >
-                          {!c.single_reaction ? (
-                            <>
-                              <span>Like</span>
-                            </>
-                          ) : (
-                            <span className="inline-block">
-                              {c?.single_reaction?.type === "like" && (
-                                <span className="font-semibold">
-                                  <span className="text-blue-500 text-[12px]">Like</span>
-                                </span>
-                              )}
-                              {c?.single_reaction?.type === "love" && (
-                                <span className="font-semibold">
-                                  <span className="text-red-700 text-[12px]">
-                                    Love
-                                  </span>
-                                </span>
-                              )}
-                              {c?.single_reaction?.type === "care" && (
-                                <span className="font-semibold">
-                                  <span className="text-yellow-700 text-[12px]">
-                                    Care
-                                  </span>
-                                </span>
-                              )}
-                              {c?.single_reaction?.type === "haha" && (
-                                <span className="font-semibold">
-                                  <span className="text-yellow-700 text-[12px]">
-                                    Haha
-                                  </span>
-                                </span>
-                              )}
-                              {c?.single_reaction?.type === "wow" && (
-                                <span className="font-semibold">
-                                  <span className="text-yellow-700 text-[12px]">
-                                    Wow
-                                  </span>
-                                </span>
-                              )}
-                              {c?.single_reaction?.type === "sad" && (
-                                <span className="font-semibold">
-                                  <span className="text-yellow-700 text-[12px]">
-                                    Sad
-                                  </span>
-                                </span>
-                              )}
-                              {c?.single_reaction?.type === "angry" && (
-                                <span className="font-semibold">
-                                  <span className="text-red-500 text-[12px]">
-                                    Angry
-                                  </span>
-                                </span>
-                              )}
-                            </span>
-                          )}
-                          {showCommentReactionsFor === c.id && (
-                            <div
-                              ref={commentReactionRef}
-                              className="absolute bottom-full w-50 bg-white p-2 rounded-full shadow-lg flex space-x-2 z-10"
-                            >
-                              <img
-                                src="/like.png"
-                                alt="Like"
-                                className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCommentReaction(c.id, "like");
-                                }}
-                              />
-                              <img
-                                src="/love.png"
-                                alt="Love"
-                                className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCommentReaction(c.id, "love");
-                                }}
-                              />
-                              <img
-                                src="/care.png"
-                                alt="Care"
-                                className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCommentReaction(c.id, "care");
-                                }}
-                              />
-                              <img
-                                src="/haha.png"
-                                alt="Haha"
-                                className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCommentReaction(c.id, "haha");
-                                }}
-                              />
-                              <img
-                                src="/wow.png"
-                                alt="Wow"
-                                className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCommentReaction(c.id, "wow");
-                                }}
-                              />
-                              <img
-                                src="/sad.png"
-                                alt="Sad"
-                                className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCommentReaction(c.id, "sad");
-                                }}
-                              />
-                              <img
-                                src="/angry.png"
-                                alt="Angry"
-                                className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCommentReaction(c.id, "angry");
-                                }}
-                              />
-                            </div>
-                          )}
-                        </button>
-                        <span>•</span>
-                        <button
-                          className="hover:underline cursor-pointer"
-                          onClick={() => handleReplyToReply(i, c)}
-                          type="button"
-                        >
-                          Reply
-                        </button>
-                      </div>
-                      {/* Reply input of comment */}
-                      {modalReplyInputs[`reply-${i}-${c.id}`] !== undefined && (
-                        <div className="flex items-start mt-3 ml-2">
-                          {/* User Avatar */}
-                          <img
-                            src={profile?.client?.image ?
-                              process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
-                              profile?.client?.image : "/common-avator.jpg"
-                            }
-                            className="w-8 h-8 rounded-full object-cover mr-2 flex-shrink-0"
-                            alt="Your avatar"
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = "/common-avator.jpg";
-                            }}
-                          />
-
-                          {/* Input Container */}
-                          <div className="flex-1 bg-gray-100 rounded-2xl border border-gray-200 hover:bg-gray-50 focus-within:bg-white focus-within:border-blue-500 transition-all duration-200 relative" data-mention-anchor="true">
-                            <div className="flex items-center px-3 py-2">
-                              <input
-                                type="text"
-                                className="flex-1 bg-transparent focus:outline-none text-sm placeholder-gray-500"
-                                placeholder={`Reply to ${c?.client_comment?.fname || ""}...`}
-                                value={modalReplyInputs[`reply-${i}-${c.id}`] || ""}
-                                ref={(el) => (inputRefs.current[`reply-${i}-${c.id}`] = el)}
-                                onChange={(e) => {
-                                  setModalReplyInputs((prev) => ({
-                                    ...prev,
-                                    [`reply-${i}-${c.id}`]: e.target.value,
-                                  }));
-                                  handleMentionDetect(e, `reply-${i}-${c.id}`);
-                                }
-                                }
-                                onKeyDown={(e) => {
-                                  const handled = handleMentionKeyDown(e, `reply-${i}-${c.id}`);
-                                  if (!handled && e.key === 'Enter') {
-                                    e.preventDefault();
-                                    handleReplyToReplySubmit(i, c.id);
-                                  }
-                                }}
-                              />
-
-                              {/* Facebook-style action buttons */}
-                              <div className="flex items-center gap-1 ml-2 relative">
-                                {/* Emoji button */}
-                                <div className="relative">
-                                  <button
-                                    type="button"
-                                    className={`w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700 ${showEmojiPicker === `reply-${i}-${c.id}` ? 'bg-blue-200' : ''}`}
-                                    title="Choose an emoji"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      toggleEmojiPicker(`reply-${i}-${c.id}`);
-                                    }}
-                                  >
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                                      <path d="M8 1C4.1 1 1 4.1 1 8s3.1 7 7 7 7-3.1 7-7-3.1-7-7-7zM5.5 6.5c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm5 0c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm1.5 4c-.4 1.2-1.5 2-2.8 2.1-.1 0-.1 0-.2 0-.1 0-.1 0-.2 0-1.3-.1-2.4-.9-2.8-2.1-.1-.3.1-.5.4-.5h4.8c.3 0 .5.2.4.5-.4z" />
-                                    </svg>
-                                  </button>
-
-                                  {/* Emoji Picker - positioned relative to emoji button */}
-                                  {showEmojiPicker === `reply-${i}-${c.id}` && (
-                                    <div
-                                      className="emoji-picker-container absolute bottom-full right-0 mb-2 bg-white border rounded-lg shadow-xl z-50 w-80 max-h-96 overflow-hidden"
-                                      onClick={(e) => e.stopPropagation()}
-                                      onMouseDown={(e) => e.stopPropagation()}
-                                    >
-                                      {/* Category tabs */}
-                                      <div className="flex border-b bg-gray-50 p-2 gap-1">
-                                        {Object.keys(emojiCategories).map((category) => (
-                                          <button
-                                            key={category}
-                                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${activeEmojiCategory === category
-                                              ? 'bg-blue-500 text-white'
-                                              : 'bg-white text-gray-600 hover:bg-gray-100'
-                                              }`}
-                                            onClick={() => setActiveEmojiCategory(category)}
-                                          >
-                                            {emojiCategories[category].name.split(' ')[0]}
-                                          </button>
-                                        ))}
-                                      </div>
-
-                                      {/* Emoji grid */}
-                                      <div className="p-3 max-h-64 overflow-y-auto">
-                                        <div className="grid grid-cols-8 gap-1">
-                                          {emojiCategories[activeEmojiCategory].emojis.map((emoji, idx) => (
-                                            <button
-                                              key={idx}
-                                              type="button"
-                                              className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-lg"
-                                              onMouseDown={(e) => {
-                                                e.stopPropagation();
-                                              }}
-                                              onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                handleEmojiSelect(emoji, `reply-${i}-${c.id}`);
-                                              }}
-                                              title={emoji}
-                                            >
-                                              {emoji}
-                                            </button>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Camera/Photo button */}
-                                <>
-                                  <input
-                                    type="file"
-                                    accept="image/*"
-                                    multiple
-                                    style={{ display: 'none' }}
-                                    ref={(el) => (fileInputRefs.current[`reply-${i}-${c.id}`] = el)}
-                                    onChange={(e) => handleReplyImageChange(e, `reply-${i}-${c.id}`)}
-                                  />
-                                  <button
-                                    type="button"
-                                    className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
-                                    title="Attach a photo"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      handleReplyImageClick(`reply-${i}-${c.id}`);
-                                    }}
-                                  >
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                                      <path d="M14.5 2h-13C.7 2 0 2.7 0 3.5v9c0 .8.7 1.5 1.5 1.5h13c.8 0 1.5-.7 1.5-1.5v-9c0-.8-.7-1.5-1.5-1.5zM5 4.5c.8 0 1.5.7 1.5 1.5S5.8 7.5 5 7.5 3.5 6.8 3.5 6 4.2 4.5 5 4.5zM13 12H3l2.5-3 1.5 2 3-4 3 5z" />
-                                    </svg>
-                                  </button>
-                                </>
-
-                              </div>
-                            </div>
-
-                            {/* Selected image previews (reply to comment) under input */}
-                            {Array.isArray(modalReplyImages[`reply-${i}-${c.id}`]) && modalReplyImages[`reply-${i}-${c.id}`].length > 0 && (
-                              <div className="px-3 pb-2">
-                                <div className="flex flex-wrap gap-2">
-                                  {modalReplyImages[`reply-${i}-${c.id}`].map((img, idx) => (
-                                    <div key={img.id || idx} className="inline-flex items-center gap-2 bg-white rounded-md border p-1">
-                                      <img
-                                        src={img.previewUrl}
-                                        className="w-12 h-12 object-cover rounded"
-                                        alt="preview"
-                                      />
-                                      <button
-                                        type="button"
-                                        className="text-xs text-red-600 hover:underline"
-                                        onClick={() => clearReplyImage(`reply-${i}-${c.id}`, idx)}
-                                      >
-                                        Remove
-                                      </button>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Mention dropdown */}
-                            {renderMentionDropdown(`reply-${i}-${c.id}`)}
-
-
-                          </div>
-
-                          {/* Send button - show when there's text or image */}
-                          {(modalReplyInputs[`reply-${i}-${c.id}`]?.trim() || (Array.isArray(modalReplyImages[`reply-${i}-${c.id}`]) && modalReplyImages[`reply-${i}-${c.id}`].length > 0)) && (
-                            <button
-                              className="ml-2 w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors flex-shrink-0"
-                              onClick={() => handleReplyToReplySubmit(i, c.id)}
-                              type="button"
-                              title="Send"
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                              </svg>
-                            </button>
-                          )}
-                        </div>
-                      )}
-                      {/* Display "View all replies" / "Hide replies" button if there are replies */}
-                      {(c.replies_count > 0 || c.replies?.length > 0) && (
-                        <div className="mt-2">
-                          <button
-                            onClick={() => {
-                              if (modalReplies[i]?.length > 0) {
-                                // Hide replies
-                                setModalReplies(prev => ({
-                                  ...prev,
-                                  [i]: []
-                                }));
-                              } else {
-                                // Load replies
-                                handleViewAllReplies(c.id, i);
-                              }
-                            }}
-                            className="text-gray-500 cursor-pointer text-md hover:underline flex items-center gap-1"
-                            disabled={loadingReplies[c.id]}
-                          >
-                            {loadingReplies[c.id]
-                              ? "Loading..."
-                              : modalReplies[i]?.length > 0
-                                ? "Hide replies"
-                                : `View all replies ${c.replies_count ? `(${c.replies_count})` : ''}`}
-                          </button>
-                        </div>
-                      )}
-
-                      {/************************************
-                      111111111 reply Display replies of comments (filter out replies that are children to avoid duplication) 
-                       *********************************************************************/}
-                      {(() => {
-                        const repliesForComment = modalReplies[i] || [];
-                        const childIds = new Set();
-                        repliesForComment.forEach(r => (r?.children || []).forEach(ch => ch?.id && childIds.add(ch.id)));
-                        const topLevelReplies = repliesForComment.filter(r => !childIds.has(r?.id));
-                        return topLevelReplies;
-                      })()?.map((reply, ri, repliesArray) => (
-                        <div className="relative flex mt-2 ml-8" key={ri}>
-                          {/* Horizontal line from parent comment profile to reply profile */}
-                          {/* <div className="absolute border -left-15 top-[14px] w-10 h-px bg-gray-200"></div> */}
-                          {/* Vertical line connecting from parent profile down */}
-                          {/* {ri < repliesArray.length - 1 && (
-                            <div className="absolute -left-[50px] top-[14px] bottom-0 w-px bg-gray-200"></div>
-                          )} */}
-                          <div className="relative w-7 h-7 rounded-full overflow-hidden mr-2 mt-1">
-                            <img
-                              src={
-                                (reply?.client_comment?.image && `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${reply?.client_comment?.image?.startsWith('/') ? '' : '/'}${reply?.client_comment?.image}`) || "/common-avator.jpg"
-                              }
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.currentTarget.src = "/common-avator.jpg";
-                              }}
-                            />
-
-                          </div>
-                          {/* <div className="absolute border left-[12px] top-[36px] bottom-0 w-px bg-gray-500"></div> */}
-
-                          <div className="flex flex-col w-full">
-                            <div className="bg-gray-50 w-full p-2 rounded-2xl border border-gray-200 flex flex-col">
-                              <span className="font-medium text-xs">
-                                <Link
-                                  href={`/${reply?.username}`}
-                                  className="cursor-pointer hover:underline"
-                                >
-                                  {reply?.client_comment?.fname +
-                                    " " +
-                                    reply?.client_comment?.last_name || reply.user}{" "}
-                                </Link>
-                                <span className="text-gray-400 ml-1">
-                                  {reply.created_at
-                                    ? formatCompactTime(reply.created_at)
-                                    : "0s"}
-                                </span>
-                              </span>
-                              <span className="text-gray-700 text-xs">
-                                {renderContentWithMentions(reply.content)}
-                                {reply?.files?.length > 0 ? (
-                                  <img
-                                    src={getImageUrl(reply?.files[0]?.file_path, 'reply')}
-                                    width={100}
-                                    height={100}
-                                    className="mt-2 cursor-pointer hover:opacity-90 transition-opacity rounded-lg"
-                                    onClick={() => handleImagePreview(
-                                      getImageUrl(reply?.files[0]?.file_path, 'reply'),
-                                      [getImageUrl(reply?.files[0]?.file_path, 'reply')],
-                                      0
-                                    )}
-                                  />
-
-                                ) : ""}
-                              </span>
-                            </div>
-
-                            {/* Reply actions row */}
-                            <div className="flex items-center gap-3 mt-1 ml-2 text-[12px] text-gray-600">
-                              <span className="text-gray-500">{formatCompactTime(reply.created_at)}</span>
-                              <span>•</span>
-                              <button
-                                className="hover:underline relative cursor-pointer"
-                                onClick={() => setShowCommentReactionsFor(
-                                  showCommentReactionsFor === reply.id ? null : reply.id
-                                )}
-                                type="button"
-                              >
-                                {!reply.single_reaction ? (
-                                  <>
-                                    <span>Like</span>
-                                  </>
-                                ) : (
-                                  <span className="inline-block">
-                                    {reply?.single_reaction?.type === "like" && (
-                                      <span className="font-semibold">
-                                        <span className="text-blue-500 text-[12px]">Like</span>
-                                      </span>
-                                    )}
-                                    {reply?.single_reaction?.type === "love" && (
-                                      <span className="font-semibold">
-                                        <span className="text-red-700 text-[12px]">
-                                          Love
-                                        </span>
-                                      </span>
-                                    )}
-                                    {reply?.single_reaction?.type === "care" && (
-                                      <span className="font-semibold">
-                                        <span className="text-yellow-700 text-[12px]">
-                                          Care
-                                        </span>
-                                      </span>
-                                    )}
-                                    {reply?.single_reaction?.type === "haha" && (
-                                      <span className="font-semibold">
-                                        <span className="text-yellow-700 text-[12px]">
-                                          Haha
-                                        </span>
-                                      </span>
-                                    )}
-                                    {reply?.single_reaction?.type === "wow" && (
-                                      <span className="font-semibold">
-                                        <span className="text-yellow-700 text-[12px]">
-                                          Wow
-                                        </span>
-                                      </span>
-                                    )}
-                                    {reply?.single_reaction?.type === "sad" && (
-                                      <span className="font-semibold">
-                                        <span className="text-yellow-700 text-[12px]">
-                                          Sad
-                                        </span>
-                                      </span>
-                                    )}
-                                    {reply?.single_reaction?.type === "angry" && (
-                                      <span className="font-semibold">
-                                        <span className="text-red-500 text-[12px]">
-                                          Angry
-                                        </span>
-                                      </span>
-                                    )}
-                                  </span>
-                                )}
-                                {showCommentReactionsFor === reply.id && (
-                                  <div
-                                    ref={commentReactionRef}
-                                    className="absolute bottom-full w-50 bg-white p-2 rounded-full shadow-lg flex space-x-2 z-10"
-                                  >
-                                    <img
-                                      src="/like.png"
-                                      alt="Like"
-                                      className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleReplyReaction(reply.id, "like", reply.comment_id, ri);
-                                      }}
-                                    />
-                                    <img
-                                      src="/love.png"
-                                      alt="Love"
-                                      className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleReplyReaction(reply.id, "love", reply.comment_id, ri);
-                                      }}
-                                    />
-                                    <img
-                                      src="/care.png"
-                                      alt="Care"
-                                      className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleReplyReaction(reply.id, "care", reply.comment_id, ri);
-                                      }}
-                                    />
-                                    <img
-                                      src="/haha.png"
-                                      alt="Haha"
-                                      className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleReplyReaction(reply.id, "haha", reply.comment_id, ri);
-                                      }}
-                                    />
-                                    <img
-                                      src="/wow.png"
-                                      alt="Wow"
-                                      className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleReplyReaction(reply.id, "wow", reply.comment_id, ri);
-                                      }}
-                                    />
-                                    <img
-                                      src="/sad.png"
-                                      alt="Sad"
-                                      className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleReplyReaction(reply.id, "sad", reply.comment_id, ri);
-                                      }}
-                                    />
-                                    <img
-                                      src="/angry.png"
-                                      alt="Angry"
-                                      className="w-5 h-5 bg-white transform hover:scale-125 transition-transform cursor-pointer"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleReplyReaction(reply.id, "angry", reply.comment_id, ri);
-                                      }}
-                                    />
-                                  </div>
-                                )}
-                              </button>
-                              <span>•</span>
-                              <button
-                                className="hover:underline cursor-pointer font-semibold"
-                                onClick={() => handleReplyToReply(i, reply)}
-                                type="button"
-                              >
-                                Reply
-                              </button>
-                            </div>
-                            {/* Reply-to-reply input box - Facebook Style */}
-                            {modalReplyInputs[`reply-${i}-${reply.id}`] !== undefined && (
-                              <div className="flex items-start mt-3 ml-6">
-                                {/* User Avatar */}
-                                <img
-                                  src={profile?.client?.image ?
-                                    process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
-                                    profile?.client?.image : "/common-avator.jpg"
-                                  }
-                                  className="w-8 h-8 rounded-full object-cover mr-2 flex-shrink-0"
-                                  alt="Your avatar"
-                                  onError={(e) => {
-                                    e.target.onerror = null;
-                                    e.target.src = "/common-avator.jpg";
-                                  }}
-                                />
-
-                                {/* Input Container */}
-                                <div className="flex-1 bg-gray-100 rounded-2xl border border-gray-200 hover:bg-gray-50 focus-within:bg-white focus-within:border-blue-500 transition-all duration-200 relative" data-mention-anchor="true">
-                                  <div className="flex items-center px-3 py-2">
-                                    <input
-                                      type="text"
-                                      className="flex-1 bg-transparent focus:outline-none text-sm placeholder-gray-500"
-                                      placeholder={`Reply to ${reply?.client_comment?.fname || ""}...`}
-                                      value={modalReplyInputs[`reply-${i}-${reply.id}`] || ""}
-                                      ref={(el) => (inputRefs.current[`reply-${i}-${reply.id}`] = el)}
-                                      onChange={(e) => {
-                                        setModalReplyInputs((prev) => ({
-                                          ...prev,
-                                          [`reply-${i}-${reply.id}`]: e.target.value,
-                                        }));
-                                        handleMentionDetect(e, `reply-${i}-${reply.id}`);
-                                      }}
-                                      onKeyDown={(e) => {
-                                        const handled = handleMentionKeyDown(e, `reply-${i}-${reply.id}`);
-                                        if (!handled && e.key === 'Enter') {
-                                          e.preventDefault();
-                                          handleReplyToReplySubmit(i, reply.id);
-                                        }
-                                      }}
-                                    />
-
-                                    {/* Facebook-style action buttons */
-                                    }
-                                    <div className="flex items-center gap-1 ml-2 relative">
-                                      {/* Emoji button */}
-                                      <div className="relative">
-                                        <button
-                                          type="button"
-                                          className={`w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700 ${showEmojiPicker === `reply-${i}-${reply.id}` ? 'bg-blue-200' : ''}`}
-                                          title="Choose an emoji"
-                                          onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            toggleEmojiPicker(`reply-${i}-${reply.id}`);
-                                          }}
-                                        >
-                                          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                                            <path d="M8 1C4.1 1 1 4.1 1 8s3.1 7 7 7 7-3.1 7-7-3.1-7-7-7zM5.5 6.5c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm5 0c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm1.5 4c-.4 1.2-1.5 2-2.8 2.1-.1 0-.1 0-.2 0-.1 0-.1 0-.2 0-1.3-.1-2.4-.9-2.8-2.1-.1-.3.1-.5.4-.5h4.8c.3 0 .5.2.4.5-.4z" />
-                                          </svg>
-                                        </button>
-
-                                        {/* Emoji Picker */}
-                                        {showEmojiPicker === `reply-${i}-${reply.id}` && (
-                                          <div
-                                            className="emoji-picker-container absolute bottom-full right-0 mb-2 bg-white border rounded-lg shadow-xl z-50 w-80 max-h-96 overflow-hidden"
-                                            onClick={(e) => e.stopPropagation()}
-                                            onMouseDown={(e) => e.stopPropagation()}
-                                          >
-                                            {/* Category tabs */}
-                                            <div className="flex border-b bg-gray-50 p-2 gap-1">
-                                              {Object.keys(emojiCategories).map((category) => (
-                                                <button
-                                                  key={category}
-                                                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${activeEmojiCategory === category
-                                                    ? 'bg-blue-500 text-white'
-                                                    : 'bg-white text-gray-600 hover:bg-gray-100'
-                                                    }`}
-                                                  onClick={() => setActiveEmojiCategory(category)}
-                                                >
-                                                  {emojiCategories[category].name.split(' ')[0]}
-                                                </button>
-                                              ))}
-                                            </div>
-
-                                            {/* Emoji grid */}
-                                            <div className="p-3 max-h-64 overflow-y-auto">
-                                              <div className="grid grid-cols-8 gap-1">
-                                                {emojiCategories[activeEmojiCategory].emojis.map((emoji, idx) => (
-                                                  <button
-                                                    key={idx}
-                                                    type="button"
-                                                    className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-lg"
-                                                    onMouseDown={(e) => {
-                                                      e.stopPropagation();
-                                                    }}
-                                                    onClick={(e) => {
-                                                      e.preventDefault();
-                                                      e.stopPropagation();
-                                                      handleEmojiSelect(emoji, `reply-${i}-${reply.id}`);
-                                                    }}
-                                                    title={emoji}
-                                                  >
-                                                    {emoji}
-                                                  </button>
-                                                ))}
-                                              </div>
-                                            </div>
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      {/* Camera/Photo button */}
-                                      <>
-                                        <input
-                                          type="file"
-                                          accept="image/*"
-                                          multiple
-                                          style={{ display: 'none' }}
-                                          ref={(el) => (fileInputRefs.current[`reply-${i}-${reply.id}`] = el)}
-                                          onChange={(e) => handleReplyImageChange(e, `reply-${i}-${reply.id}`)}
-                                        />
-                                        <button
-                                          type="button"
-                                          className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
-                                          title="Attach a photo"
-                                          onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            handleReplyImageClick(`reply-${i}-${reply.id}`);
-                                          }}
-                                        >
-                                          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                                            <path d="M14.5 2h-13C.7 2 0 2.7 0 3.5v9c0 .8.7 1.5 1.5 1.5h13c.8 0 1.5-.7 1.5-1.5v-9c0-.8-.7-1.5-1.5-1.5zM5 4.5c.8 0 1.5.7 1.5 1.5S5.8 7.5 5 7.5 3.5 6.8 3.5 6 4.2 4.5 5 4.5zM13 12H3l2.5-3 1.5 2 3-4 3 5z" />
-                                          </svg>
-                                        </button>
-                                      </>
-
-                                    </div>
-                                  </div>
-
-                                  {/* Selected image previews (threaded reply) under input */}
-                                  {Array.isArray(modalReplyImages[`reply-${i}-${reply.id}`]) && modalReplyImages[`reply-${i}-${reply.id}`].length > 0 && (
-                                    <div className="px-3 pb-2">
-                                      <div className="flex flex-wrap gap-2">
-                                        {modalReplyImages[`reply-${i}-${reply.id}`].map((img, idx) => (
-                                          <div key={img.id || idx} className="inline-flex items-center gap-2 bg-white rounded-md border p-1">
-                                            <img
-                                              src={img.previewUrl}
-                                              className="w-12 h-12 object-cover rounded"
-                                              alt="preview"
-                                            />
-                                            <button
-                                              type="button"
-                                              className="text-xs text-red-600 hover:underline"
-                                              onClick={() => clearReplyImage(`reply-${i}-${reply.id}`, idx)}
-                                            >
-                                              Remove
-                                            </button>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Mention dropdown */}
-                                  {renderMentionDropdown(`reply-${i}-${reply.id}`)}
-                                </div>
-
-
-
-                                {/* Send button - show when there's text or image */}
-                                {(modalReplyInputs[`reply-${i}-${reply.id}`]?.trim() || (Array.isArray(modalReplyImages[`reply-${i}-${reply.id}`]) && modalReplyImages[`reply-${i}-${reply.id}`].length > 0)) && (
-                                  <button
-                                    className="ml-2 w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors flex-shrink-0"
-                                    onClick={() => handleReplyToReplySubmit(i, reply.id)}
-                                    type="button"
-                                    title="Send"
-                                  >
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                                      <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                                    </svg>
-                                  </button>
-                                )}
-                              </div>
-                            )}
-                            {/* children replies */}
-                            {renderReplies(reply?.children || [], i, 2)}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-gray-500 text-center py-8">No comments yet. Be the first to comment!</div>
-              )}
-
-
-
-              {/* **********************************************************
-            comments end
-            *************************************************************** */}
-            </div>
-
-            <div className="relative">
-              {/* Mention dropdown */}
-              <div className="absolute left-20 bottom-65">
-
-                {renderMentionDropdown(`modal-comment-${basicPostData.id}`)}
-              </div>
-              {/* Comment input at bottom */}
-              <div className="p-4 bg-gray-50 flex items-center gap-2 ">
-
-
-                <div className="w-9 h-9 rounded-full overflow-hidden">
-                  <img
-                    src={profile?.client?.image ?
-                      process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
-                      profile?.client?.image : "/common-avator.jpg"
-                    }
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = "/common-avator.jpg";
-                    }}
-                  />
-                </div>
-
-                <div className="relative flex-1" data-mention-anchor="true">
-
-                  <div className="w-full border rounded-full px-2 py-1 text-sm bg-white flex items-center gap-2 focus-within:ring-2 focus-within:ring-blue-400 relative">
-                    {/* Combined input container so images appear inside */}
-
-                    {/* Thumbnails inside the input */}
-                    {Array.isArray(modalReplyImages[`modal-comment-${basicPostData.id}`]) && modalReplyImages[`modal-comment-${basicPostData.id}`].length > 0 && (
-                      <div className="flex items-center gap-1 max-w-32 overflow-x-auto">
-                        {modalReplyImages[`modal-comment-${basicPostData.id}`].map((img, idx) => (
-                          <div key={img.id || idx} className="relative w-7 h-7 flex-shrink-0">
-                            <img src={img.previewUrl} className="w-7 h-7 object-cover rounded" alt="preview" />
-                            <button
-                              type="button"
-                              className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white text-[10px] leading-4 text-red-600 border"
-                              onClick={() => clearReplyImage(`modal-comment-${basicPostData.id}`, idx)}
-                              title="Remove"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    <input
-                      type="text"
-                      placeholder="Write a comment..."
-                      value={commentInputs[basicPostData.id] || ""}
-                      ref={(el) => (inputRefs.current[`modal-comment-${basicPostData.id}`] = el)}
-                      onChange={(e) => {
-                        setCommentInputs((prev) => ({
-                          ...prev,
-                          [basicPostData.id]: e.target.value,
-                        }));
-                        handleMentionDetect(e, `modal-comment-${basicPostData.id}`);
-                      }}
-                      onKeyDown={(e) => {
-                        const handled = handleMentionKeyDown(e, `modal-comment-${basicPostData.id}`);
-                        if (!handled && e.key === 'Enter') {
-                          e.preventDefault();
-                          handleCommentSubmit(basicPostData.id);
-                        }
-                      }}
-                      className="flex-1 bg-transparent outline-none border-0 px-2 py-1"
-                    />
-
-                    {/* Inline action buttons (emoji, GIF, photo, sticker) */}
-                    <div className="flex items-center gap-1">
-                      {/* Emoji button */}
-                      <button
-                        type="button"
-                        className={`w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700 ${showEmojiPicker === `modal-comment-${basicPostData.id}` ? 'bg-blue-200' : ''}`}
-                        title="Choose an emoji"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          toggleEmojiPicker(`modal-comment-${basicPostData.id}`);
-                        }}
-                      >
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                          <path d="M8 1C4.1 1 1 4.1 1 8s3.1 7 7 7 7-3.1 7-7-3.1-7-7-7zM5.5 6.5c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm5 0c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm1.5 4c-.4 1.2-1.5 2-2.8 2.1-.1 0-.1 0-.2 0-.1 0-.1 0-.2 0-1.3-.1-2.4-.9-2.8-2.1-.1-.3.1-.5.4-.5h4.8c.3 0 .5.2.4.5-.4z" />
-                        </svg>
-                      </button>
-
-
-                      {/* Photo attach */}
-                      <>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          style={{ display: 'none' }}
-                          ref={(el) => (fileInputRefs.current[`modal-comment-${basicPostData.id}`] = el)}
-                          onChange={(e) => handleReplyImageChange(e, `modal-comment-${basicPostData.id}`)}
-                        />
-                        <button
-                          type="button"
-                          className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
-                          title="Attach a photo"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleReplyImageClick(`modal-comment-${basicPostData.id}`);
-                          }}
-                        >
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                            <path d="M14.5 2h-13C.7 2 0 2.7 0 3.5v9c0 .8.7 1.5 1.5 1.5h13c.8 0 1.5-.7 1.5-1.5v-9c0-.8-.7-1.5-1.5-1.5zM5 4.5c.8 0 1.5.7 1.5 1.5S5.8 7.5 5 7.5 3.5 6.8 3.5 6 4.2 4.5 5 4.5zM13 12H3l2.5-3 1.5 2 3-4 3 5z" />
-                          </svg>
-                        </button>
-                      </>
-
-                    </div>
-                  </div>
-
-                  {/* Emoji Picker for comment */}
-                  {showEmojiPicker === `modal-comment-${basicPostData.id}` && (
-                    <div
-                      className="emoji-picker-container absolute bottom-full right-0 mb-2 bg-white border rounded-lg shadow-xl z-50 w-80 max-h-96 overflow-hidden"
-                      onClick={(e) => e.stopPropagation()}
-                      onMouseDown={(e) => e.stopPropagation()}
-                    >
-                      <div className="flex border-b bg-gray-50 p-2 gap-1">
-                        {Object.keys(emojiCategories).map((category) => (
-                          <button
-                            key={category}
-                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${activeEmojiCategory === category
-                              ? 'bg-blue-500 text-white'
-                              : 'bg-white text-gray-600 hover:bg-gray-100'
-                              }`}
-                            onClick={() => setActiveEmojiCategory(category)}
-                          >
-                            {emojiCategories[category].name.split(' ')[0]}
-                          </button>
-                        ))}
-                      </div>
-                      <div className="p-3 max-h-64 overflow-y-auto">
-                        <div className="grid grid-cols-8 gap-1">
-                          {emojiCategories[activeEmojiCategory].emojis.map((emoji, idx) => (
-                            <button
-                              key={idx}
-                              type="button"
-                              className="text-xl hover:bg-gray-100 rounded p-1"
-                              onMouseDown={(e) => {
-                                e.stopPropagation();
-                              }}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                console.log('🖱️ Modal emoji button clicked:', emoji, 'for', `modal-comment-${basicPostData.id}`);
-                                handleEmojiSelect(emoji, `modal-comment-${basicPostData.id}`);
-                              }}
-                            >
-                              {emoji}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-
-                </div>
-                <button
-                  onClick={() => handleCommentSubmit(basicPostData.id)}
-                  className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-full text-sm font-semibold disabled:opacity-50"
-                  disabled={!((commentInputs[basicPostData.id] && commentInputs[basicPostData.id].trim()) || (Array.isArray(modalReplyImages[`modal-comment-${basicPostData.id}`]) && modalReplyImages[`modal-comment-${basicPostData.id}`].length > 0))}
-                >
-                  Post
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Comment Modal - Extracted Component */}
+      <PostCommentsModal
+        isOpen={showCommentsModal}
+        onClose={() => setShowCommentsModal(false)}
+        basicPostData={basicPostData}
+        profile={profile}
+        handleShare={handleShare}
+        handleDeleteReaction={handleDeleteReaction}
+        handleImagePreview={handleImagePreview}
+        renderContentWithMentions={renderContentWithMentions}
+        showingReactionsIcon={showingReactionsIcon}
+        likingReactions={likingReactions}
+        reactionsImages={reactionsImages}
+        emojiCategories={emojiCategories}
+        commentInputs={commentInputs}
+        setCommentInputs={setCommentInputs}
+        handleCommentSubmit={handleCommentSubmit}
+        mentionOpenFor={mentionOpenFor}
+        mentionOptions={mentionOptions}
+        mentionActiveIndex={mentionActiveIndex}
+        mentionLoading={mentionLoading}
+        mentionHasMore={mentionHasMore}
+        handleMentionDetect={handleMentionDetect}
+        handleMentionKeyDown={handleMentionKeyDown}
+        insertMentionToken={insertMentionToken}
+        renderMentionDropdown={renderMentionDropdown}
+        inputRefs={inputRefs}
+        fileInputRefs={fileInputRefs}
+        modalReplyImages={modalReplyImages}
+        setModalReplyImages={setModalReplyImages}
+        handleReplyImageClick={handleReplyImageClick}
+        handleReplyImageChange={handleReplyImageChange}
+        clearReplyImage={clearReplyImage}
+      />
 
       {/* Image Preview Modal */}
       {showImagePreview && (
         <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
           <div className="relative max-w-screen-lg max-h-screen-lg w-full h-full flex items-center justify-center p-4">
-            {/* Close button */}
             <button
               onClick={closeImagePreview}
               className="absolute top-4 right-4 text-white text-4xl hover:text-gray-300 z-10"
             >
               ×
             </button>
-
-            {/* Previous button */}
             {previewImages.length > 1 && currentImageIndex > 0 && (
               <button
                 onClick={goToPreviousImage}
@@ -5577,8 +4328,6 @@ const PostList = ({ postsData }) => {
                 ‹
               </button>
             )}
-
-            {/* Next button */}
             {previewImages.length > 1 && currentImageIndex < previewImages.length - 1 && (
               <button
                 onClick={goToNextImage}
@@ -5587,15 +4336,11 @@ const PostList = ({ postsData }) => {
                 ›
               </button>
             )}
-
-            {/* Image */}
             <img
               src={previewImage}
               alt="Preview"
               className="max-w-full max-h-full object-contain"
             />
-
-            {/* Image counter */}
             {previewImages.length > 1 && (
               <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white bg-black bg-opacity-50 px-3 py-1 rounded">
                 {currentImageIndex + 1} / {previewImages.length}
@@ -5641,158 +4386,77 @@ const PostList = ({ postsData }) => {
         <div
           className="fixed z-[10000] bg-white border border-gray-200 rounded-lg shadow-xl p-4 w-80 max-w-sm"
           style={{
-            left: `${profilePopup.position.x - 160}px`, // Center the popup
+            left: `${profilePopup.position.x - 160}px`,
             top: `${profilePopup.position.y - 20}px`,
             transform: 'translateY(-100%)'
           }}
-          onMouseEnter={cancelHidePopup} // Cancel hiding when mouse enters popup
-          onMouseLeave={() => hideProfilePopup(false)} // Hide with delay when mouse leaves popup
+          onMouseEnter={cancelHidePopup}
+          onMouseLeave={() => hideProfilePopup(false)}
         >
           {profilePopup.profileData ? (
-            <div className="flex flex-col">
-              {/* Header with avatar and name */}
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-gray-200">
                   <img
                     src={profilePopup.profileData.image}
-                    alt={profilePopup.profileData.name}
                     className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.src = "/common-avator.jpg";
-                    }}
+                    onError={(e) => { e.target.src = "/common-avator.jpg"; }}
                   />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-bold text-lg text-gray-900 hover:underline cursor-pointer">
-                    <Link href={`/${profilePopup.profileData?.username}`}>
-                      {profilePopup.profileData.name}
-                    </Link>
-                  </h3>
-                  {profilePopup.profileData.bio && (
-                    <p className="text-gray-600 text-sm mt-1 line-clamp-2">
-                      {profilePopup.profileData.bio}
-                    </p>
+                  <h4 className="font-semibold text-gray-900">{profilePopup.profileData.name}</h4>
+                  {profilePopup.profileData.location && (
+                    <p className="text-xs text-gray-500">{profilePopup.profileData.location}</p>
                   )}
                 </div>
               </div>
-
-
-
-              {/* Profile details */}
-              <div className="space-y-2 text-sm text-gray-600 mb-4">
-                {profilePopup.profileData.workPlace && (
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clipRule="evenodd" />
-                    </svg>
-                    <span>Works at {profilePopup.profileData.workPlace}</span>
-                  </div>
-                )}
-                {profilePopup.profileData.education && (
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
-                    </svg>
-                    <span>Studied at {profilePopup.profileData.education}</span>
-                  </div>
-                )}
-                {profilePopup.profileData.location && (
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                    </svg>
-                    <span>Lives in {profilePopup.profileData.location}</span>
-                  </div>
-                )}
-                {profilePopup.profileData.relationshipStatus && (
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
-                    </svg>
-                    <span>{profilePopup.profileData.relationshipStatus}</span>
-                  </div>
-                )}
-                {profilePopup.profileData.mutualFriends > 0 && (
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
-                    </svg>
-                    <span>{profilePopup.profileData.mutualFriends} mutual friends</span>
-                  </div>
-                )}
-                {profilePopup.profileData.joinedDate && profilePopup.profileData.joinedDate !== "Unknown" && (
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                    </svg>
-                    <span>Joined {profilePopup.profileData.joinedDate}</span>
-                  </div>
-                )}
+              {profilePopup.profileData.bio && (
+                <p className="text-sm text-gray-600 line-clamp-2">{profilePopup.profileData.bio}</p>
+              )}
+              <div className="flex justify-around py-2 border-t border-b border-gray-100">
+                <div className="text-center cursor-pointer" onClick={() => handleStatsClick('posts', profilePopup.userId)}>
+                  <div className="font-semibold text-gray-900">{profilePopup.profileData.postsCount}</div>
+                  <div className="text-xs text-gray-500">Posts</div>
+                </div>
+                <div className="text-center cursor-pointer" onClick={() => handleStatsClick('followers', profilePopup.userId)}>
+                  <div className="font-semibold text-gray-900">{profilePopup.profileData.followersCount}</div>
+                  <div className="text-xs text-gray-500">Followers</div>
+                </div>
+                <div className="text-center cursor-pointer" onClick={() => handleStatsClick('following', profilePopup.userId)}>
+                  <div className="font-semibold text-gray-900">{profilePopup.profileData.followingCount}</div>
+                  <div className="text-xs text-gray-500">Following</div>
+                </div>
               </div>
-
-              {/* Action buttons */}
               <div className="flex gap-2">
-                <Link
-                  href={`/${profilePopup.profileData?.username}`}
-                  className="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium text-sm"
-                  onClick={() => hideProfilePopup(true)}
-                >
-                  View Profile
-                </Link>
-                {profilePopup.profileData.isFollowing ? (
-                  <button
-                    className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 transition-colors font-medium text-sm disabled:opacity-50"
-                    onClick={() => handleFollowToggle(profilePopup.profileData.id, true)}
-                    disabled={followLoading}
-                  >
-                    {followLoading ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
-                        <span>...</span>
-                      </div>
-                    ) : (
-                      "Following"
-                    )}
-                  </button>
-                ) : (
-                  <button
-                    className="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors font-medium text-sm disabled:opacity-50"
-                    onClick={() => handleFollowToggle(profilePopup.profileData.id, false)}
-                    disabled={followLoading}
-                  >
-                    {followLoading ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        <span>...</span>
-                      </div>
-                    ) : (
-                      "Follow"
-                    )}
-                  </button>
+                {profile?.client?.id !== profilePopup.userId && (
+                  <>
+                    <button
+                      onClick={() => handleFollowToggle(profilePopup.userId, profilePopup.profileData.isFollowing)}
+                      disabled={followLoading}
+                      className={`flex-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${profilePopup.profileData.isFollowing
+                        ? 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                        } ${followLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      {followLoading ? '...' : profilePopup.profileData.isFollowing ? 'Following' : 'Follow'}
+                    </button>
+                    <button
+                      onClick={() => handleSendMessage(profilePopup.userId, profilePopup.profileData.name)}
+                      className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-800 rounded-lg text-sm font-medium hover:bg-gray-300"
+                    >
+                      Message
+                    </button>
+                  </>
                 )}
               </div>
-
-              {/* Message button (secondary row) */}
-              {/* <div className="mt-2">
-                <button 
-                  className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 transition-colors font-medium text-sm"
-                  onClick={() => handleSendMessage(profilePopup.profileData.id, profilePopup.profileData.name)}
-                >
-                  Send Message
-                </button>
-              </div> */}
             </div>
           ) : (
-            // Loading state
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
           )}
-
-          {/* Popup arrow */}
           <div className="absolute bottom-0 left-1/2 transform translate-y-full -translate-x-1/2">
             <div className="w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-white"></div>
-            <div className="w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-gray-200 absolute -top-1"></div>
           </div>
         </div>
       )}
@@ -5806,5 +4470,3 @@ PostList.displayName = 'PostList';
 
 // Memoize the entire component to prevent unnecessary re-renders
 export default memo(PostList);
-
-

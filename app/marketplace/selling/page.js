@@ -50,7 +50,7 @@ export default function SellingDashboardPage() {
     try {
       setDeletingId(itemId);
       const response = await api.post(`/sale_post/delete/${itemId}`);
-      
+
       if (response.data?.success || response.status === 200) {
         // Remove the deleted item from the list
         setListings((prev) => prev.filter((item) => item.id !== itemId));
@@ -72,12 +72,12 @@ export default function SellingDashboardPage() {
       setLoading(true);
       // Fetch user's own listings from /my_sale_post API
       const response = await api.get("/my_sale_post").catch(() => ({ data: { success: false, data: { post: { data: [] } } } }));
-      
+
       // Parse response: response.data.data.post.data
       const data = response.data?.success && response.data?.data?.post?.data?.length
         ? response.data.data.post.data
         : [];
-      
+
       console.log("Fetched seller listings:", data);
       setListings(data);
     } catch (error) {
@@ -131,7 +131,7 @@ export default function SellingDashboardPage() {
 
   const filteredListings = listings.filter((item) => {
     const matchesSearch = !searchQuery || item.title?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "all" || 
+    const matchesStatus = statusFilter === "all" ||
       (statusFilter === "active" && (item.status === 1 || item.status === 2)) ||
       (statusFilter === "draft" && item.status === 1) ||
       (statusFilter === "sold" && item.status === 3);
@@ -331,9 +331,8 @@ export default function SellingDashboardPage() {
                 {filteredListings.map((item) => (
                   <div
                     key={item.id}
-                    className={`bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow ${
-                      viewMode === "list" ? "flex gap-4 p-4" : "p-4"
-                    }`}
+                    className={`bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow ${viewMode === "list" ? "flex gap-4 p-4" : "p-4"
+                      }`}
                   >
                     {/* Image */}
                     <div className={`relative ${viewMode === "list" ? "w-24 h-24 shrink-0" : "w-full h-48 mb-3"} bg-gray-100 rounded overflow-hidden`}>
@@ -373,7 +372,7 @@ export default function SellingDashboardPage() {
                           <FaShare className="w-3 h-3" />
                         </button>
                         <div className="relative">
-                          <button 
+                          <button
                             onClick={() => setOpenMenuId(openMenuId === item.id ? null : item.id)}
                             className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
                           >
@@ -381,8 +380,8 @@ export default function SellingDashboardPage() {
                           </button>
                           {openMenuId === item.id && (
                             <>
-                              <div 
-                                className="fixed inset-0 z-10" 
+                              <div
+                                className="fixed inset-0 z-10"
                                 onClick={() => setOpenMenuId(null)}
                               />
                               <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20">

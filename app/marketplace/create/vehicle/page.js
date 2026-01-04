@@ -25,35 +25,35 @@ export default function CreateVehicleListingPage() {
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [title, setTitle] = useState("");
- 
+
   const [loading, setLoading] = useState(false);
 
   // Get location from profile
   const locationName = useMemo(() => {
-    return profileData?.city?.name || 
-           profile?.client?.city?.name || 
-           profileData?.state?.name || 
-           profile?.client?.state?.name || 
-           "Location";
+    return profileData?.city?.name ||
+      profile?.client?.city?.name ||
+      profileData?.state?.name ||
+      profile?.client?.state?.name ||
+      "Location";
   }, [profileData, profile]);
 
   const countryId = useMemo(() => {
-    return profileData?.current_country_id || 
-           profileData?.from_country_id || 
-           profile?.client?.current_country_id || 
-           profile?.client?.from_country_id || 1;
+    return profileData?.current_country_id ||
+      profileData?.from_country_id ||
+      profile?.client?.current_country_id ||
+      profile?.client?.from_country_id || 1;
   }, [profileData, profile]);
 
   const stateId = useMemo(() => {
-    return profileData?.current_state_id || 
-           profileData?.from_state_id || 
-           profile?.client?.current_state_id || 
-           profile?.client?.from_state_id || 1;
+    return profileData?.current_state_id ||
+      profileData?.from_state_id ||
+      profile?.client?.current_state_id ||
+      profile?.client?.from_state_id || 1;
   }, [profileData, profile]);
 
   const cityId = useMemo(() => {
-    return profileData?.from_city_id || 
-           profile?.client?.from_city_id || 1;
+    return profileData?.from_city_id ||
+      profile?.client?.from_city_id || 1;
   }, [profileData, profile]);
 
   useEffect(() => {
@@ -141,17 +141,17 @@ export default function CreateVehicleListingPage() {
       formData.append("title", title);
       formData.append("price", price);
       formData.append("description", description);
-     
+
       formData.append("type", "2");
-      
-      
+
+
       // Vehicle-specific fields
       if (vehicleType) formData.append("vehicle_type", vehicleType);
       if (year) formData.append("year", year);
       if (make) formData.append("make", make);
       if (model) formData.append("model", model);
-      
-   
+
+
       // Add images
       images.forEach((img) => {
         if (img.file) {
@@ -200,8 +200,8 @@ export default function CreateVehicleListingPage() {
           <Intro />
         </div> */}
 
-        {/* Main Content - Right Side */}
-        <div className="w-full lg:w-3/4">
+        {/* Main Content - Full Width */}
+        <div className="w-full">
           <div className="bg-white rounded-lg shadow-sm min-h-screen">
             <div className="flex">
               {/* Left Sidebar - Form */}
@@ -263,7 +263,7 @@ export default function CreateVehicleListingPage() {
                     <p className="text-xs text-gray-500 mb-3">
                       Photos - {images.length} / 20 - You can add up to 20 photos.
                     </p>
-                    
+
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors">
                       <label className="cursor-pointer">
                         <input
@@ -406,7 +406,7 @@ export default function CreateVehicleListingPage() {
                     />
                   </div>
 
-               
+
 
                   {/* Disclaimer */}
                   <div className="text-xs text-gray-500 mb-6">
@@ -427,15 +427,14 @@ export default function CreateVehicleListingPage() {
                       <div
                         className="h-full bg-blue-600 transition-all duration-300"
                         style={{
-                          width: `${
-                            ((vehicleType ? 1 : 0) +
-                              (images.length > 0 ? 1 : 0) +
-                              (year ? 1 : 0) +
-                              (make ? 1 : 0) +
-                              (model ? 1 : 0) +
-                              (price ? 1 : 0)) *
+                          width: `${((vehicleType ? 1 : 0) +
+                            (images.length > 0 ? 1 : 0) +
+                            (year ? 1 : 0) +
+                            (make ? 1 : 0) +
+                            (model ? 1 : 0) +
+                            (price ? 1 : 0)) *
                             16.67
-                          }%`,
+                            }%`,
                         }}
                       />
                     </div>
@@ -477,7 +476,7 @@ export default function CreateVehicleListingPage() {
                             fill
                             className="object-contain"
                           />
-                          
+
                           {/* Navigation arrows */}
                           {images.length > 1 && (
                             <>
@@ -497,7 +496,7 @@ export default function CreateVehicleListingPage() {
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                 </svg>
                               </button>
-                              
+
                               {/* Image counter */}
                               <div className="absolute bottom-4 right-4 bg-black/70 text-white px-4 py-2 rounded-full text-sm font-medium">
                                 {selectedImageIndex + 1} / {images.length}
@@ -542,7 +541,7 @@ export default function CreateVehicleListingPage() {
                           <h4 className="font-semibold text-gray-900 mb-3">
                             About this vehicle for sale
                           </h4>
-                          
+
                           <div className="space-y-2">
                             {/* Vehicle Type */}
                             {vehicleType && (
@@ -551,7 +550,7 @@ export default function CreateVehicleListingPage() {
                                 <span className="capitalize">{vehicleType}</span>
                               </div>
                             )}
-                            
+
                             {/* Year */}
                             {year && (
                               <div className="flex items-center gap-2 text-sm text-gray-700">
@@ -559,7 +558,7 @@ export default function CreateVehicleListingPage() {
                                 <span>{year}</span>
                               </div>
                             )}
-                            
+
                             {/* Make */}
                             {make && (
                               <div className="flex items-center gap-2 text-sm text-gray-700">
@@ -567,7 +566,7 @@ export default function CreateVehicleListingPage() {
                                 <span>{make}</span>
                               </div>
                             )}
-                            
+
                             {/* Model */}
                             {model && (
                               <div className="flex items-center gap-2 text-sm text-gray-700">
@@ -576,7 +575,7 @@ export default function CreateVehicleListingPage() {
                               </div>
                             )}
                           </div>
-                          
+
                           {/* Description */}
                           {description && (
                             <div className="mt-4 pt-4 border-t border-gray-100">
