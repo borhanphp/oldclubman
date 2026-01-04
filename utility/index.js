@@ -134,6 +134,12 @@ export const getImageUrl = (path, type = 'post') => {
   // Clean the path (remove leading slashes)
   const cleanPath = pathStr.replace(/^\/+/, '');
 
+  // Check if the path already starts with the type prefix to avoid duplication
+  // e.g., if type is 'post' and path is 'post/images/...', don't add 'post/' again
+  if (type && cleanPath.startsWith(`${type}/`)) {
+    return `${baseUrl}/${cleanPath}`;
+  }
+
   if (type) {
     return `${baseUrl}/${type}/${cleanPath}`;
   }
