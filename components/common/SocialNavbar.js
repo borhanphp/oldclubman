@@ -32,6 +32,15 @@ import { CiHome } from "react-icons/ci";
 import NotificationDropdown from "@/components/notification/NotificationDropdown";
 import { pusherService } from "@/utility/pusher";
 
+// Helper function to get client image URL without duplication
+const getClientImageUrl = (imagePath, fallback = "/common-avator.jpg") => {
+  if (!imagePath) return fallback;
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  return process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + imagePath;
+};
+
 const SocialNavbar = () => {
   const { profile } = useSelector(({ settings }) => settings);
   const { unreadCount } = useSelector(({ notification }) => notification);
@@ -58,7 +67,7 @@ const SocialNavbar = () => {
       const timer = setTimeout(() => {
         const channelName = `private-notifications.${profile.client.id}`;
         console.log(`🔔 Subscribing to ${channelName}`);
-        
+
         try {
           // Use pusherService wrapper method instead of direct access
           const channel = pusherService.subscribeToChannel(channelName, {
@@ -66,14 +75,12 @@ const SocialNavbar = () => {
               console.log('🔔 New notification received:', data);
               if (data.notification) {
                 dispatch(addNotification(data.notification));
-                
+
                 // Show browser notification if permitted
                 if ('Notification' in window && Notification.permission === 'granted') {
                   new Notification(data.notification.title, {
                     body: data.notification.message,
-                    icon: data.notification.actor?.avatar ? 
-                      `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${data.notification.actor.avatar}` : 
-                      '/common-avator.jpg',
+                    icon: getClientImageUrl(data.notification.actor?.avatar),
                     tag: data.notification.id,
                   });
                 }
@@ -96,44 +103,44 @@ const SocialNavbar = () => {
     }
   }, [profile?.client?.id, dispatch]);
   return (
-   <>
-    <nav className="sticky top-0 z-10 px-4 md:px-10 flex items-center bg-white p-2 shadow-sm border-b border-gray-200">
-      {/* Left section: Logo and Search */}
-      <div className="flex items-center flex-1 md:flex-none">
-        <Link href="/" className="flex items-center">
-          <div className="w-8 h-8 md:w-12 md:h-12 rounded-full overflow-hidden flex items-center justify-center mr-2">
-            <img src="/oldman-logo.png" className="w-full h-full object-cover" />
+    <>
+      <nav className="sticky top-0 z-10 px-4 md:px-10 flex items-center bg-white p-2 shadow-sm border-b border-gray-200">
+        {/* Left section: Logo and Search */}
+        <div className="flex items-center flex-1 md:flex-none">
+          <Link href="/" className="flex items-center">
+            <div className="w-8 h-8 md:w-12 md:h-12 rounded-full overflow-hidden flex items-center justify-center mr-2">
+              <img src="/oldman-logo.png" className="w-full h-full object-cover" />
+            </div>
+          </Link>
+          {/* Search - Hidden on mobile, shown on tablet+ */}
+          <div className="hidden md:flex flex-1 items-center justify-center ml-4 max-w-md">
+            <PostsSearch />
           </div>
-        </Link>
-        {/* Search - Hidden on mobile, shown on tablet+ */}
-        <div className="hidden md:flex flex-1 items-center justify-center ml-4 max-w-md">
-          <PostsSearch />
-        </div>
-      </div>
-
-      {/* Center section: Menu items - Hidden on mobile, shown on desktop */}
-      <div className="hidden md:flex items-center justify-center flex-1 gap-4">
-        {/* MARKETPLACE Link */}
-        <div className="relative">
-          <Link href="/" className="flex items-center cursor-pointer p-3 rounded-md  hover:bg-gray-300 transition-colors">
-            <FaHome className="text-gray-600" size={26} />
-          </Link>
         </div>
 
-        <div className="relative">
-          <Link href="/marketplace" className="flex items-center cursor-pointer p-3 rounded-md  hover:bg-gray-300 transition-colors">
-            <FaShoppingBag className="text-gray-600" size={25} />
-          </Link>
-        </div>
+        {/* Center section: Menu items - Hidden on mobile, shown on desktop */}
+        <div className="hidden md:flex items-center justify-center flex-1 gap-4">
+          {/* MARKETPLACE Link */}
+          <div className="relative">
+            <Link href="/" className="flex items-center cursor-pointer p-3 rounded-md  hover:bg-gray-300 transition-colors">
+              <FaHome className="text-gray-600" size={26} />
+            </Link>
+          </div>
 
-        <div className="relative">
-          <Link href="/user/wallet" className="flex items-center cursor-pointer p-3 rounded-md  hover:bg-gray-300 transition-colors">
-            <FaWallet className="text-gray-600" size={25} />
-          </Link>
-        </div>
+          <div className="relative">
+            <Link href="/marketplace" className="flex items-center cursor-pointer p-3 rounded-md  hover:bg-gray-300 transition-colors">
+              <FaShoppingBag className="text-gray-600" size={25} />
+            </Link>
+          </div>
 
-        {/* ACCOUNT Dropdown */}
-        {/* <div 
+          <div className="relative">
+            <Link href="/user/wallet" className="flex items-center cursor-pointer p-3 rounded-md  hover:bg-gray-300 transition-colors">
+              <FaWallet className="text-gray-600" size={25} />
+            </Link>
+          </div>
+
+          {/* ACCOUNT Dropdown */}
+          {/* <div 
           className="relative"
           onMouseEnter={() => setShowDropdown(true)}
           onMouseLeave={() => setShowDropdown(false)}
@@ -177,17 +184,17 @@ const SocialNavbar = () => {
           )}
         </div> */}
 
-        {/* CARD - NFC Cards */}
-        <Link
-        href="/user/nfc" 
-          className="relative"
-          title="NFC Cards"
-        >
-          <div className="dropdown-menu flex items-center cursor-pointer p-3 rounded-md hover:bg-gray-300 transition-colors gap-1">
-            <FaIdCard className="text-gray-600" size={25} />
-          </div>
+          {/* CARD - NFC Cards */}
+          <Link
+            href="/user/nfc"
+            className="relative"
+            title="NFC Cards"
+          >
+            <div className="dropdown-menu flex items-center cursor-pointer p-3 rounded-md hover:bg-gray-300 transition-colors gap-1">
+              <FaIdCard className="text-gray-600" size={25} />
+            </div>
 
-          {/* {showCardDropdown && (
+            {/* {showCardDropdown && (
             <div className="absolute left-0 pt-2 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-30">
               <Link
                 href="/user/nfc"
@@ -197,10 +204,10 @@ const SocialNavbar = () => {
               </Link>
             </div>
           )} */}
-        </Link>
+          </Link>
 
-        {/* SHIPPING Dropdown */}
-        {/* <div 
+          {/* SHIPPING Dropdown */}
+          {/* <div 
           className="relative"
           onMouseEnter={() => setShowShippingDropdown(true)}
           onMouseLeave={() => setShowShippingDropdown(false)}
@@ -232,22 +239,22 @@ const SocialNavbar = () => {
             </div>
           )}
         </div> */}
-      </div>
-
-      {/* Right section: Icons - Hidden on mobile, shown on desktop */}
-      <div className="hidden md:flex items-center">
-        {/* Messages Icon with Dropdown */}
-        <div className="relative mr-2 p-3 rounded-md group bg-gray-200">
-          <Link
-            href="/user/messages"
-            className="icon-button text-gray-600 hover:text-black cursor-pointer"
-          >
-            <FaCommentAlt size={14} />
-          </Link>
         </div>
 
-        {/* Settings Icon*/}
-        {/* <div className="relative mr-2 p-3 rounded-md group bg-gray-200">
+        {/* Right section: Icons - Hidden on mobile, shown on desktop */}
+        <div className="hidden md:flex items-center">
+          {/* Messages Icon with Dropdown */}
+          <div className="relative mr-2 p-3 rounded-md group bg-gray-200">
+            <Link
+              href="/user/messages"
+              className="icon-button text-gray-600 hover:text-black cursor-pointer"
+            >
+              <FaCommentAlt size={14} />
+            </Link>
+          </div>
+
+          {/* Settings Icon*/}
+          {/* <div className="relative mr-2 p-3 rounded-md group bg-gray-200">
           <Link
             href="/user/account-settings"
             className="icon-button text-gray-600 hover:text-black cursor-pointer"
@@ -256,211 +263,203 @@ const SocialNavbar = () => {
           </Link>
         </div> */}
 
-        {/* Notifications Icon with Dropdown */}
-        <div className="relative mr-2">
-          <div 
-            className="p-3 rounded-md group bg-gray-200 cursor-pointer"
+          {/* Notifications Icon with Dropdown */}
+          <div className="relative mr-2">
+            <div
+              className="p-3 rounded-md group bg-gray-200 cursor-pointer"
+              onClick={() => setShowNotificationDropdown(!showNotificationDropdown)}
+            >
+              <div className="icon-button text-gray-600 hover:text-black relative">
+                <FaBell size={14} />
+                {unreadCount > 0 && (
+                  <>
+                    <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+            <NotificationDropdown
+              isOpen={showNotificationDropdown}
+              onClose={() => setShowNotificationDropdown(false)}
+            />
+          </div>
+
+          {/* User Profile Icon with Dropdown - Click based */}
+          <div className="relative ml-2">
+            <div
+              className="profile-icon cursor-pointer"
+              onClick={() => setOpenProfileDropdown(!openProfileDropdown)}
+            >
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-red-400 flex items-center justify-center text-white">
+                <img
+                  src={getClientImageUrl(profile?.client?.image)}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "/common-avator.jpg";
+                  }}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+
+            {openProfileDropdown && (
+              <div className="absolute p-3 right-0 mt-2 w-60 bg-white rounded-md shadow-lg py-1 z-30">
+                <div className="">
+                  <div className="flex items-center">
+                    <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
+                      <img
+                        src={getClientImageUrl(profile?.client?.image)}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = "/common-avator.jpg";
+                        }}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-[15px]">
+                        {profile?.client?.fname +
+                          " " +
+                          profile?.client?.last_name}
+                      </h3>
+                    </div>
+                  </div>
+                </div>
+
+                <Link
+                  href={`/${profile?.client?.username || profile?.client?.id}`}
+                  className="block hover:text-white hover:bg-blue-700 bg-blue-100 py-[6px] mt-2 w-full text-blue-600 font-semibold text-sm text-center mx-auto mb-2"
+                >
+                  View profile
+                </Link>
+
+                <Link
+                  href="/user/account-settings"
+                  className="flex items-center hover:text-blue-500 px-4 py-3 text-sm text-gray-600 "
+                >
+                  <FaCog className="mr-2 text-gray-500" />
+                  <span className="font-[600] text-gray-500 hover:text-blue-500 text-[15px]">
+                    Settings & Privacy
+                  </span>
+                </Link>
+
+                <Link
+                  href="/user/messages"
+                  className="flex items-center px-4  py-3 text-sm text-gray-600"
+                >
+                  <FaComment className="mr-2 text-gray-500" />
+                  <span className="font-[600] text-gray-500 hover:text-blue-500 text-[15px]">
+                    Chat
+                  </span>
+                </Link>
+
+                <div className="border-t border-gray-200 my-1"></div>
+
+                <Link
+                  onClick={() => {
+                    logout();
+                  }}
+                  href="/auth/login"
+                  className="flex items-center px-4 py-3 text-sm text-gray-600 hover:bg-gray-100 w-full text-left"
+                >
+                  <FaSignOutAlt className="mr-2 text-gray-500" />
+                  <span className="font-[600] text-gray-500 text-[15px]">
+                    Sign Out
+                  </span>
+                </Link>
+
+                <div className="border-t border-gray-200 mt-1 mb-2"></div>
+
+                <div className="px-4 pt-2 pb-3">
+                  <div className="flex items-center mb-2">
+                    <span className="text-sm text-gray-600 mr-3">Mode:</span>
+                    <div className="flex space-x-2">
+                      <button className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center text-white">
+                        <FaSun />
+                      </button>
+                      <button className="w-8 h-8 bg-gray-200 rounded-md flex items-center justify-center text-gray-600 hover:bg-gray-300">
+                        <FaMoon />
+                      </button>
+                      <button className="w-8 h-8 bg-gray-200 rounded-md flex items-center justify-center text-gray-600 hover:bg-gray-300">
+                        <FaAdjust />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile Menu Button and Icons */}
+        <div className="flex md:hidden items-center gap-2">
+          {/* Search Icon - Mobile only */}
+          <button
+            onClick={() => {/* You can add search modal here */ }}
+            className="p-2 rounded-md bg-gray-200 text-gray-600"
+          >
+            <FaSearch size={16} />
+          </button>
+
+          {/* Messages Icon - Mobile */}
+          <Link
+            href="/user/messages"
+            className="p-2 rounded-md bg-gray-200 text-gray-600 relative"
+          >
+            <FaCommentAlt size={16} />
+          </Link>
+
+          {/* Notifications Icon - Mobile */}
+          <div
+            className="p-2 rounded-md bg-gray-200 text-gray-600 relative cursor-pointer"
             onClick={() => setShowNotificationDropdown(!showNotificationDropdown)}
           >
-            <div className="icon-button text-gray-600 hover:text-black relative">
-              <FaBell size={14} />
-              {unreadCount > 0 && (
-                <>
-                  <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                </>
-              )}
-            </div>
+            <FaBell size={16} />
+            {unreadCount > 0 && (
+              <>
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              </>
+            )}
           </div>
-          <NotificationDropdown 
-            isOpen={showNotificationDropdown} 
-            onClose={() => setShowNotificationDropdown(false)} 
-          />
-        </div>
 
-        {/* User Profile Icon with Dropdown - Click based */}
-        <div className="relative ml-2">
-          <div
-            className="profile-icon cursor-pointer"
-            onClick={() => setOpenProfileDropdown(!openProfileDropdown)}
+          {/* Hamburger Menu Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2 rounded-md bg-gray-200 text-gray-600 transition-all duration-200 hover:bg-gray-300"
           >
-            <div className="w-8 h-8 rounded-full overflow-hidden bg-red-400 flex items-center justify-center text-white">
-              <img
-                src={
-                  (process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
-                  profile?.client?.image) || "/common-avator.jpg"
-                }
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = "/common-avator.jpg";
-                }}
-                className="w-full h-full object-cover"
-              />
+            <div className="transition-transform duration-300">
+              {mobileMenuOpen ? <FaTimes size={18} /> : <FaBars size={18} />}
             </div>
-          </div>
-
-          {openProfileDropdown && (
-            <div className="absolute p-3 right-0 mt-2 w-60 bg-white rounded-md shadow-lg py-1 z-30">
-              <div className="">
-                <div className="flex items-center">
-                  <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
-                    <img
-                      src={
-                        process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
-                        profile?.client?.image || "/common-avator.jpg"
-                      }
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = "/common-avator.jpg";
-                      }}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-[15px]">
-                      {profile?.client?.fname +
-                        " " +
-                        profile?.client?.last_name}
-                    </h3>
-                  </div>
-                </div>
-              </div>
-
-              <Link
-                href={`/${profile?.client?.username || profile?.client?.id}`}
-                className="block hover:text-white hover:bg-blue-700 bg-blue-100 py-[6px] mt-2 w-full text-blue-600 font-semibold text-sm text-center mx-auto mb-2"
-              >
-                View profile
-              </Link>
-
-              <Link
-                href="/user/account-settings"
-                className="flex items-center hover:text-blue-500 px-4 py-3 text-sm text-gray-600 "
-              >
-                <FaCog className="mr-2 text-gray-500" />
-                <span className="font-[600] text-gray-500 hover:text-blue-500 text-[15px]">
-                  Settings & Privacy
-                </span>
-              </Link>
-
-              <Link
-                href="/user/messages"
-                className="flex items-center px-4  py-3 text-sm text-gray-600"
-              >
-                <FaComment className="mr-2 text-gray-500" />
-                <span className="font-[600] text-gray-500 hover:text-blue-500 text-[15px]">
-                  Chat
-                </span>
-              </Link>
-
-              <div className="border-t border-gray-200 my-1"></div>
-
-              <Link
-                onClick={() => {
-                  logout();
-                }}
-                href="/auth/login"
-                className="flex items-center px-4 py-3 text-sm text-gray-600 hover:bg-gray-100 w-full text-left"
-              >
-                <FaSignOutAlt className="mr-2 text-gray-500" />
-                <span className="font-[600] text-gray-500 text-[15px]">
-                  Sign Out
-                </span>
-              </Link>
-
-              <div className="border-t border-gray-200 mt-1 mb-2"></div>
-
-              <div className="px-4 pt-2 pb-3">
-                <div className="flex items-center mb-2">
-                  <span className="text-sm text-gray-600 mr-3">Mode:</span>
-                  <div className="flex space-x-2">
-                    <button className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center text-white">
-                      <FaSun />
-                    </button>
-                    <button className="w-8 h-8 bg-gray-200 rounded-md flex items-center justify-center text-gray-600 hover:bg-gray-300">
-                      <FaMoon />
-                    </button>
-                    <button className="w-8 h-8 bg-gray-200 rounded-md flex items-center justify-center text-gray-600 hover:bg-gray-300">
-                      <FaAdjust />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Mobile Menu Button and Icons */}
-      <div className="flex md:hidden items-center gap-2">
-        {/* Search Icon - Mobile only */}
-        <button
-          onClick={() => {/* You can add search modal here */}}
-          className="p-2 rounded-md bg-gray-200 text-gray-600"
-        >
-          <FaSearch size={16} />
-        </button>
-
-        {/* Messages Icon - Mobile */}
-        <Link
-          href="/user/messages"
-          className="p-2 rounded-md bg-gray-200 text-gray-600 relative"
-        >
-          <FaCommentAlt size={16} />
-        </Link>
-
-        {/* Notifications Icon - Mobile */}
-        <div 
-          className="p-2 rounded-md bg-gray-200 text-gray-600 relative cursor-pointer"
-          onClick={() => setShowNotificationDropdown(!showNotificationDropdown)}
-        >
-          <FaBell size={16} />
-          {unreadCount > 0 && (
-            <>
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            </>
-          )}
+          </button>
         </div>
 
-        {/* Hamburger Menu Button */}
-        <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="p-2 rounded-md bg-gray-200 text-gray-600 transition-all duration-200 hover:bg-gray-300"
-        >
-          <div className="transition-transform duration-300">
-            {mobileMenuOpen ? <FaTimes size={18} /> : <FaBars size={18} />}
-          </div>
-        </button>
-      </div>
+        {/* Close profile dropdown when clicking outside */}
+        {openProfileDropdown && (
+          <div
+            className="fixed inset-0 z-20"
+            onClick={() => setOpenProfileDropdown(false)}
+          ></div>
+        )}
+      </nav>
 
-      {/* Close profile dropdown when clicking outside */}
-      {openProfileDropdown && (
+      {/* Mobile Menu Drawer */}
+      <>
+        {/* Backdrop */}
         <div
-          className="fixed inset-0 z-20"
-          onClick={() => setOpenProfileDropdown(false)}
+          className={`fixed inset-0 bg-black z-40 md:hidden transition-opacity duration-300 ease-in-out ${mobileMenuOpen ? 'opacity-50' : 'opacity-0 pointer-events-none'
+            }`}
+          onClick={() => setMobileMenuOpen(false)}
         ></div>
-      )}
-    </nav>
 
-    {/* Mobile Menu Drawer */}
-    <>
-      {/* Backdrop */}
-      <div
-        className={`fixed inset-0 bg-black z-40 md:hidden transition-opacity duration-300 ease-in-out ${
-          mobileMenuOpen ? 'opacity-50' : 'opacity-0 pointer-events-none'
-        }`}
-        onClick={() => setMobileMenuOpen(false)}
-      ></div>
-      
-      {/* Drawer */}
-      <div className={`fixed top-[0px] right-0 h-[calc(100vh-0px)] w-80 bg-white shadow-xl z-50 overflow-y-auto md:hidden transform transition-transform duration-300 ease-in-out ${
-        mobileMenuOpen ? 'translate-x-0' : 'translate-x-full pointer-events-none'
-      }`}>
+        {/* Drawer */}
+        <div className={`fixed top-[0px] right-0 h-[calc(100vh-0px)] w-80 bg-white shadow-xl z-50 overflow-y-auto md:hidden transform transition-transform duration-300 ease-in-out ${mobileMenuOpen ? 'translate-x-0' : 'translate-x-full pointer-events-none'
+          }`}>
           {/* Close Button Header */}
           <div className="flex justify-end items-center p-4 pb-2 border-b border-gray-200">
             <button
@@ -471,16 +470,13 @@ const SocialNavbar = () => {
               <FaTimes size={20} className="text-gray-600" />
             </button>
           </div>
-          
+
           <div className="p-4 pt-2">
             {/* Profile Section */}
             <div className="flex items-center  pb-1 border-b border-gray-200">
               <div className="w-12 h-12 rounded-full overflow-hidden bg-red-400 flex items-center justify-center text-white mr-3">
                 <img
-                  src={
-                    (process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
-                    profile?.client?.image) || "/common-avator.jpg"
-                  }
+                  src={getClientImageUrl(profile?.client?.image)}
                   onError={(e) => {
                     e.target.onerror = null;
                     e.target.src = "/common-avator.jpg";
@@ -646,15 +642,15 @@ const SocialNavbar = () => {
             </div>
           </div>
         </div>
-    </>
-     {/* <div className="fixed bottom-5 right-5">
+      </>
+      {/* <div className="fixed bottom-5 right-5">
         <Link href="/user/messages">
           <button className="bg-blue-500 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg">
             <FaComment size={20} />
           </button>
         </Link>
       </div> */}
-   </>
+    </>
   );
 };
 

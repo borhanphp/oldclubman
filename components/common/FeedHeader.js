@@ -35,6 +35,17 @@ import api from "@/helpers/axios";
 import { getGathering, getPosts, storePost } from "@/views/gathering/store";
 import Image from "next/image";
 
+// Helper function to get client image URL without duplication
+const getClientImageUrl = (imagePath, fallback = "/common-avator.jpg") => {
+  if (!imagePath) return fallback;
+  // If it's already a full URL, return as is
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  // Otherwise, prepend the base URL
+  return process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + imagePath;
+};
+
 function FeedHeader({
   userProfile = false,
   friendsTab = false,
@@ -76,48 +87,48 @@ function FeedHeader({
       canvas.width = imgElement.width;
       canvas.height = imgElement.height;
       ctx.drawImage(imgElement, 0, 0, canvas.width, canvas.height);
-      
+
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
       const colorBuckets = {};
-      
+
       // Helper function to quantize colors (group similar colors)
       const quantizeColor = (value) => Math.round(value / 20) * 20;
-      
+
       // Helper function to calculate color vibrancy/saturation
       const getColorScore = (r, g, b) => {
         const brightness = (r + g + b) / 3;
         const max = Math.max(r, g, b);
         const min = Math.min(r, g, b);
         const saturation = max === 0 ? 0 : (max - min) / max;
-        
+
         // Filter out very dark colors (brightness < 30) and pure white (brightness > 250)
         if (brightness < 30 || brightness > 250) return 0;
-        
+
         // Check if it's a grayscale color (very low saturation)
         const isGrayscale = saturation < 0.15;
-        
+
         // For light images (brightness > 180), prioritize any slightly saturated colors
         if (brightness > 180 && !isGrayscale) {
           return saturation * 200 + brightness;
         }
-        
+
         // For medium brightness with good saturation
         if (saturation > 0.3) {
           return saturation * brightness * 1.5;
         }
-        
+
         // Lower priority for low saturation colors
         return saturation * brightness * 0.5;
       };
-      
+
       // Sample pixels more densely (every 4th pixel)
       for (let i = 0; i < data.length; i += 16) {
         const r = data[i];
         const g = data[i + 1];
         const b = data[i + 2];
         const score = getColorScore(r, g, b);
-        
+
         // Only include colors with decent vibrancy
         if (score > 0) {
           // Quantize to group similar colors
@@ -125,7 +136,7 @@ function FeedHeader({
           const qg = quantizeColor(g);
           const qb = quantizeColor(b);
           const key = `${qr},${qg},${qb}`;
-          
+
           if (!colorBuckets[key]) {
             colorBuckets[key] = { r: qr, g: qg, b: qb, count: 0, score: 0 };
           }
@@ -133,13 +144,13 @@ function FeedHeader({
           colorBuckets[key].score += score;
         }
       }
-      
+
       // Get top colors sorted by combined score
       const sortedColors = Object.values(colorBuckets)
         .sort((a, b) => (b.count * b.score) - (a.count * a.score))
         .slice(0, 3)
         .map(({ r, g, b }) => `rgb(${r}, ${g}, ${b})`);
-      
+
       return sortedColors.length >= 3 ? sortedColors : ['rgb(59, 130, 246)', 'rgb(96, 165, 250)', 'rgb(147, 197, 253)'];
     } catch (error) {
       console.error('Error extracting colors:', error);
@@ -151,13 +162,13 @@ function FeedHeader({
     const colors = extractColorsFromImage(e.target);
     if (colors && colors.length >= 3) {
       // Dispatch custom event with extracted colors
-      window.dispatchEvent(new CustomEvent('coverColorsExtracted', { 
-        detail: { colors } 
+      window.dispatchEvent(new CustomEvent('coverColorsExtracted', {
+        detail: { colors }
       }));
     }
   };
 
-  
+
 
   const isMyProfile = data?.client?.id === profile?.client?.id;
   // console.log('isMyProfile',isMyProfile)
@@ -191,11 +202,11 @@ function FeedHeader({
     // Store errors for later reference
     let createError = null;
     let finalError = null;
-    
+
     try {
       const profileResponse = await dispatch(getUserProfile(contactId)).unwrap();
       const userData = profileResponse?.client;
-      
+
       if (!userData) {
         console.error('No user data received');
         toast.error('User data not available');
@@ -208,9 +219,9 @@ function FeedHeader({
           console.log("findConversationByUserId: chats is not an array", chats);
           return null;
         }
-        
+
         console.log(`Searching for conversation with userId: ${userId} in ${chats.length} chats`);
-        
+
         const found = chats.find(chat => {
           // Log each chat for debugging
           console.log("Checking chat:", {
@@ -221,7 +232,7 @@ function FeedHeader({
             is_group: chat.is_group,
             name: chat.name
           });
-          
+
           // Check user_ids field
           if (chat.user_ids !== undefined && chat.user_ids !== null) {
             const userIds = Array.isArray(chat.user_ids) ? chat.user_ids : [chat.user_ids];
@@ -230,11 +241,11 @@ function FeedHeader({
               return true;
             }
           }
-          
+
           // Check participants array
           if (chat.participants && Array.isArray(chat.participants)) {
-            if (chat.participants.some(p => 
-              String(p.id) === String(userId) || 
+            if (chat.participants.some(p =>
+              String(p.id) === String(userId) ||
               String(p.user_id) === String(userId) ||
               String(p.client_id) === String(userId)
             )) {
@@ -242,17 +253,17 @@ function FeedHeader({
               return true;
             }
           }
-          
+
           // Check other_user for direct messages
           if ((chat.is_group === 0 || chat.is_group === false || !chat.is_group) && chat.other_user) {
-            if (String(chat.other_user?.id) === String(userId) || 
-                String(chat.other_user?.user_id) === String(userId) ||
-                String(chat.other_user?.client_id) === String(userId)) {
+            if (String(chat.other_user?.id) === String(userId) ||
+              String(chat.other_user?.user_id) === String(userId) ||
+              String(chat.other_user?.client_id) === String(userId)) {
               console.log("Found conversation by other_user");
               return true;
             }
           }
-          
+
           // Check name field
           if (chat.name) {
             const userName = `${userData.fname} ${userData.last_name}`.toLowerCase();
@@ -261,27 +272,27 @@ function FeedHeader({
               return true;
             }
           }
-          
+
           return false;
         });
-        
+
         if (found) {
           console.log("Found conversation:", found);
         } else {
           console.log("No conversation found with userId:", userId);
         }
-        
+
         return found || null;
       };
 
       // First, check if conversation already exists
       let conversation = null;
-      
+
       try {
         // Get all chats
         const allChats = await dispatch(getAllChat()).unwrap();
         conversation = findConversationByUserId(allChats, userData.id);
-        
+
         // If not found, try direct API call
         if (!conversation) {
           const directResponse = await api.get('/chat');
@@ -297,7 +308,7 @@ function FeedHeader({
         const newChat = {
           is_group: 0,
           name: userData?.fname + " " + userData?.last_name,
-          avatar: userData?.image ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + userData?.image : "/common-avator.jpg",
+          avatar: getClientImageUrl(userData?.image),
           user_ids: userData?.id
         };
 
@@ -305,7 +316,7 @@ function FeedHeader({
           // Use direct API call to avoid error toast
           const createResponse = await api.post('/chat', newChat);
           console.log("Create conversation response:", createResponse.data);
-          
+
           // Handle different response structures
           if (createResponse.data?.data?.conversation?.id) {
             conversation = createResponse.data.data.conversation;
@@ -323,7 +334,7 @@ function FeedHeader({
               conversation = data;
             }
           }
-          
+
           // Update Redux store
           if (conversation?.id) {
             await dispatch(getAllChat());
@@ -337,33 +348,33 @@ function FeedHeader({
           // Handle "conversation already exists" error
           const errorStatus = createError?.response?.status;
           const errorMessage = createError?.response?.data?.message || '';
-          const isAlreadyExistsError = 
-            errorStatus === 400 && 
+          const isAlreadyExistsError =
+            errorStatus === 400 &&
             (errorMessage.toLowerCase().includes("already exists") ||
-             errorMessage.toLowerCase().includes("conversation"));
+              errorMessage.toLowerCase().includes("conversation"));
 
           if (isAlreadyExistsError) {
             console.log("Conversation already exists, finding it...");
             const errorData = createError?.response?.data;
             console.log("Full error data:", JSON.stringify(errorData, null, 2));
-            
+
             // First, try to extract conversation ID from error response
-            let convId = errorData?.data?.conversation_id || 
-                         errorData?.data?.id || 
-                         errorData?.conversation_id || 
-                         errorData?.id ||
-                         errorData?.conversation?.id ||
-                         errorData?.data?.conversation?.id;
-            
+            let convId = errorData?.data?.conversation_id ||
+              errorData?.data?.id ||
+              errorData?.conversation_id ||
+              errorData?.id ||
+              errorData?.conversation?.id ||
+              errorData?.data?.conversation?.id;
+
             // Check if error message contains conversation ID
             if (!convId && errorMessage) {
-              const idMatch = errorMessage.match(/conversation[_\s]*id[:\s]*(\d+)/i) || 
-                             errorMessage.match(/id[:\s]*(\d+)/i);
+              const idMatch = errorMessage.match(/conversation[_\s]*id[:\s]*(\d+)/i) ||
+                errorMessage.match(/id[:\s]*(\d+)/i);
               if (idMatch) {
                 convId = idMatch[1];
               }
             }
-            
+
             // Try to extract any ID from error response JSON
             if (!convId && errorData) {
               const errorStr = JSON.stringify(errorData);
@@ -385,7 +396,7 @@ function FeedHeader({
                 }
               }
             }
-            
+
             if (convId) {
               console.log("Using conversation ID from error:", convId);
               conversation = { id: convId }; // Don't convert UUID to Number!
@@ -394,14 +405,14 @@ function FeedHeader({
               try {
                 const updatedChats = await dispatch(getAllChat()).unwrap();
                 conversation = findConversationByUserId(updatedChats, userData.id);
-                
+
                 // If still not found, try direct API call
                 if (!conversation) {
                   const directResponse = await api.get('/chat');
                   const directChats = directResponse.data?.data || directResponse.data || [];
                   conversation = findConversationByUserId(directChats, userData.id);
                 }
-                
+
                 // Try JSON string search as last resort
                 if (!conversation) {
                   const allChatsResponse = await api.get('/chat');
@@ -431,13 +442,13 @@ function FeedHeader({
           const newChat = {
             is_group: 0,
             name: userData?.fname + " " + userData?.last_name,
-            avatar: userData?.image ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + userData?.image : "/common-avator.jpg",
+            avatar: getClientImageUrl(userData?.image),
             user_ids: userData?.id
           };
 
           const createResponse = await api.post('/chat', newChat);
           console.log("Final create response:", createResponse.data);
-          
+
           // Try all possible response structures
           if (createResponse.data?.data?.conversation?.id) {
             conversation = createResponse.data.data.conversation;
@@ -455,7 +466,7 @@ function FeedHeader({
               conversation = data;
             }
           }
-          
+
           // If we got a conversation, refresh and verify
           if (conversation?.id) {
             await dispatch(getAllChat());
@@ -463,7 +474,7 @@ function FeedHeader({
             // Refresh and search again
             const refreshedChats = await dispatch(getAllChat()).unwrap();
             conversation = findConversationByUserId(refreshedChats, userData.id);
-            
+
             // Last resort: JSON string search
             if (!conversation) {
               conversation = refreshedChats.find(chat => {
@@ -476,29 +487,29 @@ function FeedHeader({
           finalError = err; // Store error for later reference
           console.error("Final create attempt failed:", finalError);
           console.error("Error response:", finalError?.response?.data);
-          
+
           // If it's "already exists", try to extract conversation ID from error response
           if (finalError?.response?.status === 400) {
             const errorData = finalError?.response?.data;
             console.log("Full error data:", JSON.stringify(errorData, null, 2));
-            
+
             // Try to extract conversation ID from error response
-            let convId = errorData?.data?.conversation_id || 
-                         errorData?.data?.id || 
-                         errorData?.conversation_id || 
-                         errorData?.id ||
-                         errorData?.conversation?.id ||
-                         errorData?.data?.conversation?.id;
-            
+            let convId = errorData?.data?.conversation_id ||
+              errorData?.data?.id ||
+              errorData?.conversation_id ||
+              errorData?.id ||
+              errorData?.conversation?.id ||
+              errorData?.data?.conversation?.id;
+
             // Also check if error message contains conversation ID
             if (!convId && errorData?.message) {
-              const idMatch = errorData.message.match(/conversation[_\s]*id[:\s]*(\d+)/i) || 
-                             errorData.message.match(/id[:\s]*(\d+)/i);
+              const idMatch = errorData.message.match(/conversation[_\s]*id[:\s]*(\d+)/i) ||
+                errorData.message.match(/id[:\s]*(\d+)/i);
               if (idMatch) {
                 convId = idMatch[1];
               }
             }
-            
+
             if (convId) {
               console.log("Found conversation ID from error:", convId);
               conversation = { id: convId }; // Don't convert UUID to Number!
@@ -517,16 +528,16 @@ function FeedHeader({
                 } catch (userChatErr) {
                   console.log("user_id query failed, trying other methods...");
                 }
-                
+
                 // Option 2: Try to get all chats again (maybe it was a timing issue)
                 if (!conversation) {
                   const allChatsResponse = await api.get('/chat');
                   const allChats = allChatsResponse.data?.data || allChatsResponse.data || [];
                   console.log("All chats from API (retry):", allChats);
                   console.log("Looking for user ID:", userData.id);
-                  
+
                   conversation = findConversationByUserId(allChats, userData.id);
-                  
+
                   if (!conversation) {
                     // Try JSON string search
                     conversation = allChats.find(chat => {
@@ -539,12 +550,12 @@ function FeedHeader({
                     });
                   }
                 }
-                
+
                 // Option 3: Try to get conversation by attempting to send a test message or query messages
                 // Since conversation exists, we can try to query messages with user ID
                 if (!conversation) {
                   console.log("Conversation exists but not in chat list. Trying alternative methods...");
-                  
+
                   // Try to get conversation by checking if we can access messages
                   // Sometimes we need to query messages endpoint to find the conversation
                   try {
@@ -552,16 +563,16 @@ function FeedHeader({
                     // Maybe the conversation is in a different format or needs a different query
                     const allChatsResponse = await api.get('/chat');
                     const allChats = allChatsResponse.data?.data || allChatsResponse.data || [];
-                    
+
                     // Log the full response to see what we're getting
                     console.log("Full chat API response:", allChatsResponse.data);
-                    
+
                     // If still empty, the conversation might be filtered out
                     // This often happens when conversation has no messages yet
                     if (allChats.length === 0) {
                       console.log("Chat list is empty. Conversation exists but not returned by API.");
                       console.log("This likely means the conversation has no messages yet.");
-                      
+
                       // Since the backend says conversation exists, we need to find its ID
                       // Try to extract from error response
                       if (errorData?.data && typeof errorData.data === 'object') {
@@ -573,7 +584,7 @@ function FeedHeader({
                           console.log("Using error data as conversation:", conversation);
                         }
                       }
-                      
+
                       // If we still don't have conversation ID, try to query backend
                       // for conversation between current user and target user
                       if (!conversation?.id) {
@@ -587,7 +598,7 @@ function FeedHeader({
                               `?user_ids[]=${currentUserId}&user_ids[]=${userData.id}`,
                               `?with_user_id=${userData.id}`,
                             ];
-                            
+
                             for (const query of queryParams) {
                               try {
                                 const queryResponse = await api.get(`/chat${query}`);
@@ -607,7 +618,7 @@ function FeedHeader({
                           console.log("Query methods failed:", queryErr);
                         }
                       }
-                      
+
                       // If still no conversation ID, log the issue
                       if (!conversation?.id) {
                         console.log("Could not extract conversation ID. The conversation exists but API doesn't return it.");
@@ -635,7 +646,7 @@ function FeedHeader({
       // try to extract it from the error response or use alternative methods
       if (!conversation?.id) {
         console.log("Attempting final methods to find conversation ID...");
-        
+
         // Get the final error data from the last create attempt
         // We need to check the catch block's error
         // Since finalError is in the catch scope, we'll check it there
@@ -648,7 +659,7 @@ function FeedHeader({
             // Try to find conversation by attempting to get messages
             // We'll need to iterate through possible conversation IDs
             // But that's not practical...
-            
+
             // Instead, let's check if the backend has a way to get conversation by users
             // Or we can try to send a message directly which might create/use the conversation
             console.log("Conversation exists but ID not found. This is a backend API limitation.");
@@ -661,11 +672,11 @@ function FeedHeader({
 
       // Check if we had a "conversation already exists" error
       // This needs to be defined before we use it
-      const hadAlreadyExistsError = 
-        (createError?.response?.status === 400 && 
-         createError?.response?.data?.message?.toLowerCase().includes("already exists")) ||
-        (finalError?.response?.status === 400 && 
-         finalError?.response?.data?.message?.toLowerCase().includes("already exists"));
+      const hadAlreadyExistsError =
+        (createError?.response?.status === 400 &&
+          createError?.response?.data?.message?.toLowerCase().includes("already exists")) ||
+        (finalError?.response?.status === 400 &&
+          finalError?.response?.data?.message?.toLowerCase().includes("already exists"));
 
       // If we have a conversation, open the chat box
       if (conversation?.id) {
@@ -691,32 +702,32 @@ function FeedHeader({
           id: null, // We don't have the ID
           user_ids: userData.id,
           name: `${userData.fname} ${userData.last_name}`,
-          avatar: userData?.image ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + userData.image : "/common-avator.jpg",
+          avatar: getClientImageUrl(userData?.image),
           is_group: 0,
           // Store user data so we can try to find conversation when sending message
           _userData: userData,
           _pendingConversation: true // Flag to indicate this is a pending conversation
         };
-        
+
         // Set current chat with minimal data
         setCurrentChat(minimalConversation);
         setShowChatBox(true);
         toast.success('Opening conversation. You can now send a message.');
-        
+
         // Note: When user sends first message, the backend should handle finding/using the existing conversation
       } else {
         console.error("Could not find or create conversation. User ID:", userData.id);
-        
+
         if (hadAlreadyExistsError) {
           console.log("Conversation exists but not accessible via /chat endpoint.");
           console.log("Attempting multiple workarounds to find the conversation...");
-          
+
           // Workaround 1: Try with delay (sometimes there's a race condition)
           try {
             await new Promise(resolve => setTimeout(resolve, 500));
             const delayedChats = await dispatch(getAllChat()).unwrap();
             conversation = findConversationByUserId(delayedChats, userData.id);
-            
+
             if (!conversation) {
               const delayedResponse = await api.get('/chat');
               const delayedChatsList = delayedResponse.data?.data || delayedResponse.data || [];
@@ -725,7 +736,7 @@ function FeedHeader({
           } catch (delayErr) {
             console.error("Delayed fetch failed:", delayErr);
           }
-          
+
           // Workaround 2: Try querying with include_empty or similar parameters
           if (!conversation?.id) {
             try {
@@ -735,7 +746,7 @@ function FeedHeader({
                 '/chat?with_messages=0',
                 `/chat?user_id=${userData.id}&include_empty=1`,
               ];
-              
+
               for (const query of queryParams) {
                 try {
                   const queryResponse = await api.get(query);
@@ -753,11 +764,11 @@ function FeedHeader({
               console.error("Query workaround failed:", queryErr);
             }
           }
-          
+
           // Workaround 3: Since conversation exists, try to create a minimal conversation object
           // and attempt to open chat box - backend might handle it
           // But we need the conversation ID for this to work...
-          
+
           // If still no conversation, show helpful message
           if (!conversation?.id) {
             console.log("All workarounds failed. Backend needs to return conversation_id in error response.");
@@ -797,7 +808,7 @@ function FeedHeader({
     if (selectedImage) {
       setProfileImageLoading(true);
       const formData = new FormData();
-      
+
       // Add the image file to FormData
       if (profileSettingData?.image) {
         formData.append("image", profileSettingData.image);
@@ -808,27 +819,27 @@ function FeedHeader({
         toast.success("Profile photo updated successfully");
         dispatch(getMyProfile());
         dispatch(getUserProfile(data?.client?.id));
-        
+
         // Create a post about the profile photo change
         const postFormData = new FormData();
         postFormData.append("message", "");
         postFormData.append("privacy_mode", "public");
-        
+
         // Add the profile image to the post
         if (profileSettingData?.image) {
           postFormData.append("files[0]", profileSettingData.image);
         }
-        
+
         dispatch(storePost(postFormData))
-        .then(() => {
-          dispatch(getGathering())
-          dispatch(getPosts());
-          if(params?.id){
-            dispatch(getUserProfile(params?.id));
-          }
-          dispatch(getMyProfile());
-        })
-        
+          .then(() => {
+            dispatch(getGathering())
+            dispatch(getPosts());
+            if (params?.id) {
+              dispatch(getUserProfile(params?.id));
+            }
+            dispatch(getMyProfile());
+          })
+
         // Close modal and reset local state
         setShowEditPhotoModal(false);
         setSelectedImage(null);
@@ -865,7 +876,7 @@ function FeedHeader({
     if (selectedCoverImage) {
       setCoverImageLoading(true);
       const formData = new FormData();
-      
+
       // Add the cover photo file to FormData
       if (profileSettingData?.cover_photo) {
         formData.append("cover_photo", profileSettingData.cover_photo);
@@ -876,27 +887,27 @@ function FeedHeader({
         toast.success("Cover photo updated successfully");
         dispatch(getMyProfile());
         dispatch(getUserProfile(data?.client?.id));
-        
+
         // Create a post about the cover photo change
         const postFormData = new FormData();
         postFormData.append("message", "");
         postFormData.append("privacy_mode", "public");
-        
+
         // Add the cover image to the post
         if (profileSettingData?.cover_photo) {
           postFormData.append("files[0]", profileSettingData.cover_photo);
         }
-        
+
         dispatch(storePost(postFormData))
-        .then(() => {
-          dispatch(getGathering())
-          dispatch(getPosts());
-          if(params?.id){
-            dispatch(getUserProfile(params?.id));
-          }
-          dispatch(getMyProfile());
-        })
-        
+          .then(() => {
+            dispatch(getGathering())
+            dispatch(getPosts());
+            if (params?.id) {
+              dispatch(getUserProfile(params?.id));
+            }
+            dispatch(getMyProfile());
+          })
+
         // Close modal and reset local state
         setShowEditCoverModal(false);
         setSelectedCoverImage(null);
@@ -919,20 +930,15 @@ function FeedHeader({
   return (
     // <div className="w-full px-0 sm:px-15 md:px-0 xl:px-0">
     <div className="w-full max-w-7xl mx-auto">
-        {/* Cover Photo */}
-        <div className="cover-photo rounded-md relative w-full h-90 overflow-hidden group">
-          <div className="absolute inset-0 w-full">
+      {/* Cover Photo */}
+      <div className="cover-photo rounded-md relative w-full h-90 overflow-hidden group">
+        <div className="absolute inset-0 w-full">
           <Image
-          alt="oldclubman"
+            alt="oldclubman"
             ref={coverImageRef}
             width={1920}
             height={1080}
-            src={
-              data?.client?.cover_photo
-                ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
-                  data.client.cover_photo
-                : "/oldman-bg.jpg"
-            }
+            src={getClientImageUrl(data?.client?.cover_photo, "/oldman-bg.jpg")}
             className="w-full h-full object-cover"
             onLoad={handleCoverImageLoad}
             onError={(e) => {
@@ -942,7 +948,7 @@ function FeedHeader({
             crossOrigin="anonymous"
           />
         </div>
-        
+
         {/* Edit Cover Photo Button */}
         {data?.client && isMyProfile && (
           <div className="absolute bottom-4 right-4">
@@ -959,156 +965,141 @@ function FeedHeader({
 
       {/* Profile Section */}
       {!hideProfileSection && (
-      <div className="data-section bg-white px-6 py-4 relative">
-        <div className="flex justify-between ">
-          <div className="flex items-end">
-            {/* Profile Picture */}
-            <div className="data-pic relative -mt-16 mr-4">
-              <div className="w-28 -mt-30 h-28 rounded-full border-4 border-white overflow-hidden bg-white flex items-center justify-center text-white text-2xl">
-                <Image
-                alt="oldclubman"
-                  width={100}
-                  height={100}
-                  src={
-                    data?.client?.image
-                      ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
-                        data.client.image
-                      : "/common-avator.jpg"
-                  }
-                  className="w-full h-full object-cover rounded-full"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = "/common-avator.jpg";
-                  }}
-                />
-              </div>
-              {/* Edit Photo Overlay */}
-              {data?.client && isMyProfile && (
-                <div 
-                className="absolute cursor-pointer flex items-center justify-center bottom-3 right-2 w-7 h-7 bg-gray-400 rounded-full"
-                onClick={() => setShowEditPhotoModal(true)}
-              >
-                <div className="text-black text-sm font-medium flex flex-col items-center">
-                  <FaCamera className="" />
+        <div className="data-section bg-white px-6 py-4 relative">
+          <div className="flex justify-between ">
+            <div className="flex items-end">
+              {/* Profile Picture */}
+              <div className="data-pic relative -mt-16 mr-4">
+                <div className="w-28 -mt-30 h-28 rounded-full border-4 border-white overflow-hidden bg-white flex items-center justify-center text-white text-2xl">
+                  <Image
+                    alt="oldclubman"
+                    width={100}
+                    height={100}
+                    src={getClientImageUrl(data?.client?.image)}
+                    className="w-full h-full object-cover rounded-full"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "/common-avator.jpg";
+                    }}
+                  />
                 </div>
-              </div>
-              )}
-              
-            </div>
+                {/* Edit Photo Overlay */}
+                {data?.client && isMyProfile && (
+                  <div
+                    className="absolute cursor-pointer flex items-center justify-center bottom-3 right-2 w-7 h-7 bg-gray-400 rounded-full"
+                    onClick={() => setShowEditPhotoModal(true)}
+                  >
+                    <div className="text-black text-sm font-medium flex flex-col items-center">
+                      <FaCamera className="" />
+                    </div>
+                  </div>
+                )}
 
-            {/* Profile Info */}
-            <div className="data-info mb-2">
-              <Link href={`/${data?.client?.username}`}>
-              <h2 className="text-xl font-bold hover:underline">
-                {data?.client
-                  ? data?.client?.display_name || data?.client?.fname + " " + data?.client?.last_name
-                  : "Loading..."}
-              </h2>
-              </Link>
-             
-              <p className="text-gray-600 text-sm">
-                <Link
-                  href={`/${
-                    userProfile ? params?.username : profile?.client?.username
-                  }/friends`}
-                >
-                  <span className="hover:underline">
-                    {data.followers && data.followers} Followers
-                  </span>
-                </Link>{" "}
-                ·{" "}
-                <Link
-                  href={`/${
-                    userProfile ? params?.username : profile?.client?.username
-                  }/friends`}
-                >
-                  <span className="hover:underline">
-                    {data.following && data.following} Following
-                  </span>
+              </div>
+
+              {/* Profile Info */}
+              <div className="data-info mb-2">
+                <Link href={`/${data?.client?.username}`}>
+                  <h2 className="text-xl font-bold hover:underline">
+                    {data?.client
+                      ? data?.client?.display_name || data?.client?.fname + " " + data?.client?.last_name
+                      : "Loading..."}
+                  </h2>
                 </Link>
-              </p>
-              {showFriends && (
-                <div className="flex items-center mt-2">
-                  {data?.latest_eight_followers?.map((res, index) => {
-                    return (
-                      <div
-                        key={index}
-                        className={`${
-                          index !== 0 ? "-ml-2" : ""
-                        } cursor-pointer rounded-full w-8 h-8 border-2 border-white overflow-hidden`}
-                      >
-                        <Link
-                          href={`/${
-                            userProfile ? params?.id : profile?.client?.id
-                          }/friends`}
+
+                <p className="text-gray-600 text-sm">
+                  <Link
+                    href={`/${userProfile ? params?.username : profile?.client?.username
+                      }/friends`}
+                  >
+                    <span className="hover:underline">
+                      {data.followers && data.followers} Followers
+                    </span>
+                  </Link>{" "}
+                  ·{" "}
+                  <Link
+                    href={`/${userProfile ? params?.username : profile?.client?.username
+                      }/friends`}
+                  >
+                    <span className="hover:underline">
+                      {data.following && data.following} Following
+                    </span>
+                  </Link>
+                </p>
+                {showFriends && (
+                  <div className="flex items-center mt-2">
+                    {data?.latest_eight_followers?.map((res, index) => {
+                      return (
+                        <div
+                          key={index}
+                          className={`${index !== 0 ? "-ml-2" : ""
+                            } cursor-pointer rounded-full w-8 h-8 border-2 border-white overflow-hidden`}
                         >
-                          <img
-                            src={
-                              res?.follower_client?.image
-                                ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
-                                  res.follower_client.image
-                                : "/common-avator.jpg"
-                            }
-                            alt={`Profile ${index + 1}`}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = "/common-avator.jpg";
-                            }}
-                          />
-                        </Link>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                          <Link
+                            href={`/${userProfile ? params?.id : profile?.client?.id
+                              }/friends`}
+                          >
+                            <img
+                              src={getClientImageUrl(res?.follower_client?.image)}
+                              alt={`Profile ${index + 1}`}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = "/common-avator.jpg";
+                              }}
+                            />
+                          </Link>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* More Options */}
-{data?.client && (
-          <div className="relative ">
-            {userProfile && !isMyProfile && (
-              <button
-                className={`px-3 py-1 ${
-                  userProfileData?.isfollowed === 1
-                    ? "bg-red-200"
-                    : "bg-blue-200"
-                } mt-2 cursor-pointer rounded font-semibold transition`}
-                onClick={() => {
-                  handleFollow(data?.client?.id);
-                }}
-              >
-                <span className="flex gap-2">
-                  <FaUserTie className="mt-1" />{" "}
-                  {followLoading
-                    ? "Loading..."
-                    : userProfileData?.isfollowed === 1
-                    ? "UnFollow"
-                    : "Follow"}
-                </span>
-              </button>
-            )}
-            {showMsgBtn && !isMyProfile && (
-              <button
-                onClick={() => {handleMsgButtonSelect(data?.client?.id)} }
-                className="px-3 py-1 bg-blue-600 text-white ml-1 rounded-sm hover:bg-blue-700 cursor-pointer"
-              >
-                <span className="flex gap-2">
-                  <LuMessageCircleMore className="mt-1" /> Message
-                </span>
-              </button>
-            )}
-            {(showEditBtn || isMyProfile) && (
-              <button className="px-3 mr-2 py-1 bg-gray-300 text-black ml-1 rounded-sm hover:bg-gray-200 cursor-pointer">
-              <Link href={`/user/account-settings`} className="flex gap-2">
-                <FaEdit className="mt-1" /> Edit Profile
-              </Link>
-              </button>
-            )}
-           
+            {/* More Options */}
+            {data?.client && (
+              <div className="relative ">
+                {userProfile && !isMyProfile && (
+                  <button
+                    className={`px-3 py-1 ${userProfileData?.isfollowed === 1
+                      ? "bg-red-200"
+                      : "bg-blue-200"
+                      } mt-2 cursor-pointer rounded font-semibold transition`}
+                    onClick={() => {
+                      handleFollow(data?.client?.id);
+                    }}
+                  >
+                    <span className="flex gap-2">
+                      <FaUserTie className="mt-1" />{" "}
+                      {followLoading
+                        ? "Loading..."
+                        : userProfileData?.isfollowed === 1
+                          ? "UnFollow"
+                          : "Follow"}
+                    </span>
+                  </button>
+                )}
+                {showMsgBtn && !isMyProfile && (
+                  <button
+                    onClick={() => { handleMsgButtonSelect(data?.client?.id) }}
+                    className="px-3 py-1 bg-blue-600 text-white ml-1 rounded-sm hover:bg-blue-700 cursor-pointer"
+                  >
+                    <span className="flex gap-2">
+                      <LuMessageCircleMore className="mt-1" /> Message
+                    </span>
+                  </button>
+                )}
+                {(showEditBtn || isMyProfile) && (
+                  <button className="px-3 mr-2 py-1 bg-gray-300 text-black ml-1 rounded-sm hover:bg-gray-200 cursor-pointer">
+                    <Link href={`/user/account-settings`} className="flex gap-2">
+                      <FaEdit className="mt-1" /> Edit Profile
+                    </Link>
+                  </button>
+                )}
 
-            {/* <button>
+
+                {/* <button>
             <div className="relative ">
               <button
                 className="text-gray-600 bg-gray-200 hover:bg-gray-300 p-2 rounded-md cursor-pointer"
@@ -1140,10 +1131,10 @@ function FeedHeader({
               )}
             </div>
             </button> */}
-           
-          </div>)}
+
+              </div>)}
+          </div>
         </div>
-      </div>
       )}
 
       {/* Navigation Menu - Three Dot Dropdown */}
@@ -1166,17 +1157,16 @@ function FeedHeader({
                     className="fixed inset-0 z-10"
                     onClick={() => setShowNavDropdown(false)}
                   />
-                  
+
                   {/* Dropdown Menu */}
                   <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
                     <div className="py-2">
                       <Link
                         href="/user/nfc"
-                        className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100 transition-colors ${
-                          isLinkActive("/user/nfc")
-                            ? "text-blue-600 bg-blue-50"
-                            : "text-gray-700"
-                        }`}
+                        className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100 transition-colors ${isLinkActive("/user/nfc")
+                          ? "text-blue-600 bg-blue-50"
+                          : "text-gray-700"
+                          }`}
                         onClick={() => setShowNavDropdown(false)}
                       >
                         <FaIdCard className="text-lg" />
@@ -1185,11 +1175,10 @@ function FeedHeader({
 
                       <Link
                         href={`/${isMyProfile ? profile?.client?.username : params.username}/about`}
-                        className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100 transition-colors ${
-                          isLinkActive("/user/about") || isLinkActive(`/${params.username}/about`)
-                            ? "text-blue-600 bg-blue-50"
-                            : "text-gray-700"
-                        }`}
+                        className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100 transition-colors ${isLinkActive("/user/about") || isLinkActive(`/${params.username}/about`)
+                          ? "text-blue-600 bg-blue-50"
+                          : "text-gray-700"
+                          }`}
                         onClick={() => setShowNavDropdown(false)}
                       >
                         <FaInfoCircle className="text-lg" />
@@ -1198,11 +1187,10 @@ function FeedHeader({
 
                       <Link
                         href="/"
-                        className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100 transition-colors ${
-                          isLinkActive("/")
-                            ? "text-blue-600 bg-blue-50"
-                            : "text-gray-700"
-                        }`}
+                        className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100 transition-colors ${isLinkActive("/")
+                          ? "text-blue-600 bg-blue-50"
+                          : "text-gray-700"
+                          }`}
                         onClick={() => setShowNavDropdown(false)}
                       >
                         <FaBullhorn className="text-lg" />
@@ -1212,20 +1200,17 @@ function FeedHeader({
                       {(userProfile || friendsTab) && (
                         <>
                           <div className="border-t border-gray-200 my-2"></div>
-                          
+
                           <Link
-                            href={`/${
-                              userProfile ? params?.username : profile?.client?.username
-                            }/friends`}
-                            className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100 transition-colors ${
-                              isLinkActive(
-                                `/${
-                                  params?.username || params?.id || profile?.client?.username || profile?.client?.id
-                                }/friends`
-                              )
-                                ? "text-blue-600 bg-blue-50"
-                                : "text-gray-700"
-                            }`}
+                            href={`/${userProfile ? params?.username : profile?.client?.username
+                              }/friends`}
+                            className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100 transition-colors ${isLinkActive(
+                              `/${params?.username || params?.id || profile?.client?.username || profile?.client?.id
+                              }/friends`
+                            )
+                              ? "text-blue-600 bg-blue-50"
+                              : "text-gray-700"
+                              }`}
                             onClick={() => setShowNavDropdown(false)}
                           >
                             <FaUsers className="text-lg" />
@@ -1234,11 +1219,10 @@ function FeedHeader({
 
                           <Link
                             href="/user/account-settings"
-                            className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100 transition-colors ${
-                              isLinkActive("/user/account-settings")
-                                ? "text-blue-600 bg-blue-50"
-                                : "text-gray-700"
-                            }`}
+                            className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-100 transition-colors ${isLinkActive("/user/account-settings")
+                              ? "text-blue-600 bg-blue-50"
+                              : "text-gray-700"
+                              }`}
                             onClick={() => setShowNavDropdown(false)}
                           >
                             <FaCog className="text-lg" />
@@ -1257,7 +1241,7 @@ function FeedHeader({
 
       {/* Chat Box */}
       {showChatBox && currentChat && (
-        <ChatBox 
+        <ChatBox
           user={data?.client}
           currentChat={currentChat}
           onClose={() => {
@@ -1280,24 +1264,21 @@ function FeedHeader({
                 ✕
               </button>
             </div>
-            
+
             <div className="mb-4">
               <div className="flex flex-col items-center">
                 {/* Current/Preview Image */}
-                {selectedImage && 
-                <div className="w-32 h-32 rounded-full border-4 border-gray-200 overflow-hidden mb-4">
-                  <img
-                    src={
-                      imagePreview || 
-                      (data?.client?.image
-                        ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + data.client.image
-                        : "/common-avator.jpg")
-                    }
-                    className="w-full h-full object-cover"
-                    alt="Profile Preview"
-                  />
-                </div>}
-                
+                {selectedImage &&
+                  <div className="w-32 h-32 rounded-full border-4 border-gray-200 overflow-hidden mb-4">
+                    <img
+                      src={
+                        imagePreview || getClientImageUrl(data?.client?.image)
+                      }
+                      className="w-full h-full object-cover"
+                      alt="Profile Preview"
+                    />
+                  </div>}
+
                 {/* File Input */}
                 <input
                   type="file"
@@ -1314,7 +1295,7 @@ function FeedHeader({
                 </label>
               </div>
             </div>
-            
+
             {/* Modal Actions */}
             <div className="flex justify-center space-x-3">
               <button
@@ -1326,11 +1307,10 @@ function FeedHeader({
               <button
                 onClick={handleSaveImage}
                 disabled={!selectedImage || profileImageLoading}
-                className={`px-4 py-1 rounded ${
-                  selectedImage && !profileImageLoading
-                    ? 'bg-blue-500 text-white hover:bg-blue-600'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
+                className={`px-4 py-1 rounded ${selectedImage && !profileImageLoading
+                  ? 'bg-blue-500 text-white hover:bg-blue-600'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
               >
                 {profileImageLoading ? 'Saving...' : 'Save'}
               </button>
@@ -1352,23 +1332,20 @@ function FeedHeader({
                 ✕
               </button>
             </div>
-            
+
             <div className="mb-4">
               <div className="flex flex-col items-center">
                 {/* Current/Preview Cover Image */}
                 <div className="w-full h-40 rounded-lg border-4 border-gray-200 overflow-hidden mb-4">
                   <img
                     src={
-                      coverImagePreview || 
-                      (data?.client?.cover_photo
-                        ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + data.client.cover_photo
-                        : "/oldman-bg.jpg")
+                      coverImagePreview || getClientImageUrl(data?.client?.cover_photo, "/oldman-bg.jpg")
                     }
                     className="w-full h-full object-cover"
                     alt="Cover Preview"
                   />
                 </div>
-                
+
                 {/* File Input */}
                 <input
                   type="file"
@@ -1385,7 +1362,7 @@ function FeedHeader({
                 </label>
               </div>
             </div>
-            
+
             {/* Modal Actions */}
             <div className="flex justify-end space-x-3">
               <button
@@ -1397,11 +1374,10 @@ function FeedHeader({
               <button
                 onClick={handleSaveCoverImage}
                 disabled={!selectedCoverImage || coverImageLoading}
-                className={`px-4 py-2 rounded ${
-                  selectedCoverImage && !coverImageLoading
-                    ? 'bg-blue-500 text-white hover:bg-blue-600'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
+                className={`px-4 py-2 rounded ${selectedCoverImage && !coverImageLoading
+                  ? 'bg-blue-500 text-white hover:bg-blue-600'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
               >
                 {coverImageLoading ? 'Saving...' : 'Save Cover Photo'}
               </button>
