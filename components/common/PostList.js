@@ -47,6 +47,7 @@ import CommentThread from "./CommentThread";
 import api from "@/helpers/axios";
 import { getImageUrl } from "@/utility"; // Import helper
 import PostCommentsModal from "./PostCommentsModal";
+import { usePostComments } from "@/contexts/PostCommentsContext";
 
 const PostList = ({ postsData }) => {
   const { basicPostData } = useSelector(({ gathering }) => gathering);
@@ -55,6 +56,9 @@ const PostList = ({ postsData }) => {
   const params = useParams();
   const mapRefs = useRef({});
   const mapInstances = useRef({});
+
+  // Post Comments Context for notification-triggered modal
+  const { shouldOpenModal, consumePendingRequest } = usePostComments();
 
   useEffect(() => {
     let isMounted = true;
@@ -117,6 +121,17 @@ const PostList = ({ postsData }) => {
   const hidePopupTimeoutRef = useRef(null);
 
   const profilePopupAnchorRef = useRef(null);
+
+  // Effect to handle notification-triggered post comments modal
+  useEffect(() => {
+    if (shouldOpenModal && basicPostData?.id) {
+      // Consume the pending request and open the modal
+      const postId = consumePendingRequest();
+      if (postId && basicPostData?.id == postId) {
+        setShowCommentsModal(true);
+      }
+    }
+  }, [shouldOpenModal, basicPostData?.id, consumePendingRequest]);
 
   // Refs for input elements (text inputs) and file inputs
   const inputRefs = useRef({});

@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useChatBox } from "@/contexts/ChatBoxContext";
+import { usePostComments } from "@/contexts/PostCommentsContext";
 import {
   getNotifications,
   getUnreadCount,
@@ -18,6 +19,7 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
   const router = useRouter();
   const { openChatByConversationId } = useChatBox();
+  const { openPostComments } = usePostComments();
   const { notifications, loading, unreadCount } = useSelector(
     ({ notification }) => notification
   );
@@ -126,21 +128,19 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
         <div className="flex gap-2">
           <button
             onClick={() => setActiveTab("all")}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === "all"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === "all"
+              ? "bg-blue-600 text-white"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
           >
             All ({notifications.length})
           </button>
           <button
             onClick={() => setActiveTab("unread")}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === "unread"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === "unread"
+              ? "bg-blue-600 text-white"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
           >
             Unread ({unreadCount})
           </button>
@@ -170,9 +170,8 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
             {filteredNotifications.map((notification) => (
               <div
                 key={notification.id}
-                className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                  !notification.is_read ? "bg-blue-50" : ""
-                }`}
+                className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors ${!notification.is_read ? "bg-blue-50" : ""
+                  }`}
               >
                 <div className="flex items-start gap-3">
                   {/* Actor Avatar */}
@@ -194,11 +193,11 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div
-                      onClick={() => {
+                      onClick={async () => {
                         if (!notification.is_read) {
                           handleMarkAsRead(notification.id);
                         }
-                        
+
                         // Handle message notifications differently - open ChatBox
                         if (notification.type === 'message') {
                           // Extract conversation ID from action_url
@@ -209,11 +208,26 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
                             // Fallback to navigation if can't extract ID
                             router.push(notification.action_url || '/user/messages');
                           }
+                        } else if (notification.type === 'like' || notification.type === 'comment') {
+                          // Handle like/comment notifications - open post comments modal
+                          // Extract post_id from notification or action_url
+                          const postId = notification.post_id || notification.action_url?.match(/post\/(\d+)/)?.[1];
+                          if (postId) {
+                            // Navigate to home first, then open the comments modal
+                            router.push('/');
+                            // Small delay to ensure navigation completes
+                            setTimeout(() => {
+                              openPostComments(postId);
+                            }, 100);
+                          } else {
+                            // Fallback to navigation if can't extract post ID
+                            router.push(notification.action_url || '/');
+                          }
                         } else {
                           // For other notifications, navigate normally
                           router.push(notification.action_url || '#');
                         }
-                        
+
                         onClose();
                       }}
                       className="cursor-pointer"

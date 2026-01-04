@@ -19,7 +19,7 @@ const searchApi = async (query) => {
 // Advanced search profile API
 const advanceSearchProfile = async (filters) => {
   const params = new URLSearchParams();
-  
+
   // Add parameters only if they exist and are not empty
   if (filters.state_id) params.append('state_id', filters.state_id);
   if (filters.city_id) params.append('city_id', filters.city_id);
@@ -28,17 +28,17 @@ const advanceSearchProfile = async (filters) => {
   if (filters.blood_group) params.append('blood_group', filters.blood_group);
   if (filters.community) params.append('community', filters.community);
   if (filters.is_single) params.append('is_single', filters.is_single);
-  
+
   // Build query string
   let queryString = params.toString();
-  
+
   // Keep '+' sign visible for blood_group (A+, B+, AB+, O+)
   if (filters.blood_group && filters.blood_group.includes('+')) {
     queryString = queryString.replace(/%2B/g, '+');
   }
-  
+
   console.log('Advanced Search API:', `/client/advance_search_profile?${queryString}`);
-  
+
   const response = await api.get(`/client/advance_search_profile?${queryString}`);
   return response?.data?.data?.search_results || [];
 };
@@ -154,7 +154,7 @@ const SidebarSearch = () => {
     dispatch(setSearchLoading(true));
     try {
       let searchResults = [];
-      
+
       switch (searchCategory) {
         case 'singles': {
           // Singles search - is_single parameter
@@ -200,8 +200,8 @@ const SidebarSearch = () => {
         }
         case 'community': {
           // Community - if user entered community name, use it; otherwise send 'yes'
-          const params = { 
-            community: advancedFilters.community || 'yes' 
+          const params = {
+            community: advancedFilters.community || 'yes'
           };
           searchResults = await advanceSearchProfile(params);
           dispatch(setSearchQuery('Community Search'));
@@ -218,7 +218,7 @@ const SidebarSearch = () => {
           searchResults = await searchApi(query);
         }
       }
-      
+
       dispatch(setSearchResults(searchResults));
     } catch (error) {
       console.error('Advanced search error:', error);
@@ -233,7 +233,7 @@ const SidebarSearch = () => {
       dispatch(setSearchResults([]));
       return;
     }
-    
+
     // Only do general search if not in advanced mode
     if (!showAdvancedSearch) {
       dispatch(setSearchLoading(true));
@@ -273,7 +273,7 @@ const SidebarSearch = () => {
   }, [pathname, dispatch]);
 
   return (
-    <div className="p-4 hidden md:block border-b border-gray-200 relative bg-white rounded-md" ref={dropdownRef}>
+    <div className="p-4 ml-2 hidden md:block border-b border-gray-200 relative bg-white rounded-md" ref={dropdownRef}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-gray-900">
@@ -293,11 +293,10 @@ const SidebarSearch = () => {
           )}
           <button
             onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
-            className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
-              showAdvancedSearch 
-                ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-            }`}
+            className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${showAdvancedSearch
+              ? 'bg-blue-600 text-white hover:bg-blue-700'
+              : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+              }`}
           >
             <span className="font-semibold">Advanced</span>
             {showAdvancedSearch ? <FaChevronUp size={10} /> : <FaChevronDown size={10} />}
@@ -316,55 +315,50 @@ const SidebarSearch = () => {
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setSearchCategory('blood_donors')}
-                className={`flex items-center justify-center gap-2 p-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  searchCategory === 'blood_donors' 
-                    ? 'bg-red-500 text-white shadow-lg shadow-red-200 scale-105' 
-                    : 'bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 border border-gray-200'
-                }`}
+                className={`flex items-center justify-center gap-2 p-3 rounded-lg text-sm font-medium transition-all duration-200 ${searchCategory === 'blood_donors'
+                  ? 'bg-red-500 text-white shadow-lg shadow-red-200 scale-105'
+                  : 'bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 border border-gray-200'
+                  }`}
               >
                 <FaTint size={16} />
                 <span>Blood Donors</span>
               </button>
               <button
                 onClick={() => setSearchCategory('location')}
-                className={`flex items-center justify-center gap-2 p-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  searchCategory === 'location' 
-                    ? 'bg-blue-500 text-white shadow-lg shadow-blue-200 scale-105' 
-                    : 'bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 border border-gray-200'
-                }`}
+                className={`flex items-center justify-center gap-2 p-3 rounded-lg text-sm font-medium transition-all duration-200 ${searchCategory === 'location'
+                  ? 'bg-blue-500 text-white shadow-lg shadow-blue-200 scale-105'
+                  : 'bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 border border-gray-200'
+                  }`}
               >
                 <FaMapMarkerAlt size={16} />
                 <span>By Location</span>
               </button>
               <button
                 onClick={() => setSearchCategory('community')}
-                className={`flex items-center justify-center gap-2 p-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  searchCategory === 'community' 
-                    ? 'bg-green-500 text-white shadow-lg shadow-green-200 scale-105' 
-                    : 'bg-white text-gray-700 hover:bg-green-50 hover:text-green-600 border border-gray-200'
-                }`}
+                className={`flex items-center justify-center gap-2 p-3 rounded-lg text-sm font-medium transition-all duration-200 ${searchCategory === 'community'
+                  ? 'bg-green-500 text-white shadow-lg shadow-green-200 scale-105'
+                  : 'bg-white text-gray-700 hover:bg-green-50 hover:text-green-600 border border-gray-200'
+                  }`}
               >
                 <FaUsers size={16} />
                 <span>Community</span>
               </button>
               <button
                 onClick={() => setSearchCategory('school')}
-                className={`flex items-center justify-center gap-2 p-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  searchCategory === 'school' 
-                    ? 'bg-yellow-500 text-white shadow-lg shadow-yellow-200 scale-105' 
-                    : 'bg-white text-gray-700 hover:bg-yellow-50 hover:text-yellow-600 border border-gray-200'
-                }`}
+                className={`flex items-center justify-center gap-2 p-3 rounded-lg text-sm font-medium transition-all duration-200 ${searchCategory === 'school'
+                  ? 'bg-yellow-500 text-white shadow-lg shadow-yellow-200 scale-105'
+                  : 'bg-white text-gray-700 hover:bg-yellow-50 hover:text-yellow-600 border border-gray-200'
+                  }`}
               >
                 <FaGraduationCap size={16} />
                 <span>School Friends</span>
               </button>
               <button
                 onClick={() => setSearchCategory('singles')}
-                className={`flex items-center justify-center gap-2 p-3 rounded-lg text-sm font-medium transition-all duration-200 col-span-2 ${
-                  searchCategory === 'singles' 
-                    ? 'bg-pink-500 text-white shadow-lg shadow-pink-200 scale-105' 
-                    : 'bg-white text-gray-700 hover:bg-pink-50 hover:text-pink-600 border border-gray-200'
-                }`}
+                className={`flex items-center justify-center gap-2 p-3 rounded-lg text-sm font-medium transition-all duration-200 col-span-2 ${searchCategory === 'singles'
+                  ? 'bg-pink-500 text-white shadow-lg shadow-pink-200 scale-105'
+                  : 'bg-white text-gray-700 hover:bg-pink-50 hover:text-pink-600 border border-gray-200'
+                  }`}
               >
                 <FaHeart size={16} />
                 <span>Singles</span>
@@ -382,7 +376,7 @@ const SidebarSearch = () => {
                 </label>
                 <select
                   value={advancedFilters.blood_group}
-                  onChange={(e) => setAdvancedFilters({...advancedFilters, blood_group: e.target.value})}
+                  onChange={(e) => setAdvancedFilters({ ...advancedFilters, blood_group: e.target.value })}
                   className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
                 >
                   <option value="">Select Blood Type</option>
@@ -497,11 +491,11 @@ const SidebarSearch = () => {
               <FaSearch size={14} />
               <span>
                 {searchCategory === 'blood_donors' ? 'Search Blood Donors' :
-                 searchCategory === 'location' ? 'Search By Location' :
-                 searchCategory === 'community' ? 'Search Community' :
-                 searchCategory === 'school' ? 'Search School Friends' :
-                 searchCategory === 'singles' ? 'Search Singles' :
-                 'Search'}
+                  searchCategory === 'location' ? 'Search By Location' :
+                    searchCategory === 'community' ? 'Search Community' :
+                      searchCategory === 'school' ? 'Search School Friends' :
+                        searchCategory === 'singles' ? 'Search Singles' :
+                          'Search'}
               </span>
             </button>
           </div>
@@ -547,9 +541,9 @@ const SidebarSearch = () => {
                   <div className="flex items-center flex-1 min-w-0">
                     <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden mr-3 flex-shrink-0">
                       {result?.image ? (
-                        <img 
-                          src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + result?.image} 
-                          alt={result.name} 
+                        <img
+                          src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + result?.image}
+                          alt={result.name}
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             e.target.onerror = null;
@@ -557,16 +551,16 @@ const SidebarSearch = () => {
                           }}
                         />
                       ) : (
-                        <img 
-                          src="/common-avator.jpg" 
-                          alt="Default avatar" 
+                        <img
+                          src="/common-avator.jpg"
+                          alt="Default avatar"
                           className="w-full h-full object-cover"
                         />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <Link href={`/${result?.username}`}>
-                        <div 
+                        <div
                           className="font-medium text-gray-900 text-sm hover:underline truncate"
                         >
                           {result.fname + " " + result.last_name}
