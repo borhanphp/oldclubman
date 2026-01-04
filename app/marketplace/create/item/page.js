@@ -337,8 +337,8 @@ function CreateListingContent() {
 
   const seller = useMemo(() => ({
     name: `${profile?.client?.fname || ""} ${profile?.client?.last_name || ""}`.trim() || "Seller",
-    image: (process.env.NEXT_PUBLIC_CLIENT_FILE_PATH && profile?.client?.image)
-      ? `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${profile?.client?.image?.startsWith('/') ? '' : '/'}${profile?.client?.image}`
+    image: (process.env.NEXT_PUBLIC_FILE_PATH && profile?.client?.image)
+      ? `${process.env.NEXT_PUBLIC_FILE_PATH}${profile?.client?.image?.startsWith('/') ? '' : '/'}${profile?.client?.image}`
       : "/common-avator.jpg",
   }), [profile]);
 
@@ -361,7 +361,7 @@ function CreateListingContent() {
           <div className="flex flex-col items-center pt-6">
             <div className="w-20 h-20 rounded-full overflow-hidden bg-blue-100 mb-5">
               <img
-                src={profile?.client?.image ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + profile?.client?.image : "/common-avator.jpg"}
+                src={profile?.client?.image ? process.env.NEXT_PUBLIC_FILE_PATH + profile?.client?.image : "/common-avator.jpg"}
                 alt="Profile"
                 className="w-full h-full object-cover"
               />

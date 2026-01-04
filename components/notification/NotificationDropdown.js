@@ -94,7 +94,7 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
   const getImageUrl = (image) => {
     if (!image) return "/common-avator.jpg";
     if (image.startsWith('http')) return image;
-    return `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${image}`;
+    return `${process.env.NEXT_PUBLIC_FILE_PATH}${image}`;
   };
 
   const filteredNotifications =

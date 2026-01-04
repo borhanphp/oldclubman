@@ -90,9 +90,9 @@ const SearchResults = () => {
               <div className="flex items-center flex-1 min-w-0">
                 <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden mr-4 flex-shrink-0">
                   {result?.image ? (
-                    <img 
-                      src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + result?.image} 
-                      alt={result.name} 
+                    <img
+                      src={process.env.NEXT_PUBLIC_FILE_PATH + result?.image}
+                      alt={result.name}
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.target.onerror = null;
@@ -100,21 +100,21 @@ const SearchResults = () => {
                       }}
                     />
                   ) : (
-                    <img 
-                      src="/common-avator.jpg" 
-                      alt="Default avatar" 
+                    <img
+                      src="/common-avator.jpg"
+                      alt="Default avatar"
                       className="w-full h-full object-cover"
                     />
                   )}
                 </div>
-                
+
                 <div className="flex-1 min-w-0">
                   <Link href={`/${result?.username}`}>
                     <div className="font-medium text-gray-900 text-lg hover:underline truncate cursor-pointer">
                       {(result.fname || '') + (result.middle_name ? ' ' + result.middle_name : '') + (result.last_name ? ' ' + result.last_name : '')}
                     </div>
                   </Link>
-                  
+
                   <div className="text-sm text-gray-600 mt-1">
                     {result?.email && (
                       <span className="block">{result.email}</span>
@@ -141,7 +141,7 @@ const SearchResults = () => {
                       </span>
                     )}
                   </div>
-                  
+
                   {result?.followers?.length > 0 && (
                     <div className="text-xs text-gray-500 mt-1">
                       {result.followers

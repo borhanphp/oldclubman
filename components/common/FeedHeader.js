@@ -43,7 +43,7 @@ const getClientImageUrl = (imagePath, fallback = "/common-avator.jpg") => {
     return imagePath;
   }
   // Otherwise, prepend the base URL
-  return process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + imagePath;
+  return process.env.NEXT_PUBLIC_FILE_PATH + imagePath;
 };
 
 function FeedHeader({

@@ -79,7 +79,7 @@ const CommentModal = ({
             <div className="w-10 h-10 rounded-full overflow-hidden">
               <img
                 src={basicPostData?.client?.image ?
-                  process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
+                  process.env.NEXT_PUBLIC_FILE_PATH +
                   basicPostData?.client?.image : "/common-avator.jpg"
                 }
                 className="w-full h-full object-cover"
@@ -277,7 +277,7 @@ const CommentModal = ({
                   <div className="w-9 h-9 rounded-full overflow-hidden">
                     <img
                       src={c?.client?.image ?
-                        process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
+                        process.env.NEXT_PUBLIC_FILE_PATH +
                         c?.client?.image : "/common-avator.jpg"
                       }
                       className="w-full h-full object-cover"
@@ -545,7 +545,7 @@ const CommentModal = ({
                       <div className="w-6 h-6 rounded-full overflow-hidden mr-2 mt-1">
                         <img
                           src={
-                            process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
+                            process.env.NEXT_PUBLIC_FILE_PATH +
                             reply?.client_comment?.image || "/common-avator.jpg"
                           }
                           className="w-full h-full object-cover"
@@ -790,7 +790,7 @@ const CommentModal = ({
           <div className="w-9 h-9 rounded-full overflow-hidden">
             <img
               src={profile?.client?.image ?
-                process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
+                process.env.NEXT_PUBLIC_FILE_PATH +
                 profile?.client?.image : "/common-avator.jpg"
               }
               className="w-full h-full object-cover"

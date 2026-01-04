@@ -78,8 +78,8 @@ const NFCCardGrid = ({ nfcCards, loading }) => {
           ...card.nfc_info,
           ...card.nfc_design,
           display_nfc_color: card?.card_design?.color,
-          profilePhotoUrl: process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + card?.nfc_info?.image,
-          logoUrl: process.env.NEXT_PUBLIC_CARD_FILE_PATH + card?.card_design?.logo,
+          profilePhotoUrl: process.env.NEXT_PUBLIC_FILE_PATH + card?.nfc_info?.image,
+          logoUrl: process.env.NEXT_PUBLIC_FILE_PATH + card?.card_design?.logo,
         };
 
         return (
@@ -94,8 +94,8 @@ const NFCCardGrid = ({ nfcCards, loading }) => {
                   {(() => {
                     const selectedDesign = designOptions.find(d => d.id === card?.card_design?.design_card_id);
                     const designLabel = selectedDesign?.design_name?.toLowerCase() || 'classic';
-                    
-                    switch(designLabel) {
+
+                    switch (designLabel) {
                       case 'classic':
                         return <CardClassic basicNfcData={fullCard} />;
                       case 'modern':
@@ -131,14 +131,13 @@ const NFCCardGrid = ({ nfcCards, loading }) => {
                   <FaEye />
                   <span className="hidden sm:inline">View</span>
                 </Link>
-                
+
                 <button
                   onClick={() => handleCopyUrl(card.id)}
-                  className={`flex items-center justify-center space-x-1 ${
-                    copiedId === card.id
-                      ? 'bg-green-100 text-green-600'
-                      : 'bg-purple-100 hover:bg-purple-200 text-purple-600'
-                  } px-3 py-2 rounded-lg text-sm font-medium transition-colors`}
+                  className={`flex items-center justify-center space-x-1 ${copiedId === card.id
+                    ? 'bg-green-100 text-green-600'
+                    : 'bg-purple-100 hover:bg-purple-200 text-purple-600'
+                    } px-3 py-2 rounded-lg text-sm font-medium transition-colors`}
                   title="Copy URL"
                 >
                   <FaCopy />

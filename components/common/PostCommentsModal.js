@@ -244,7 +244,7 @@ const PostCommentsModal = ({
                     <img
                         src={
                             (reply?.client_comment?.image &&
-                                `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${reply?.client_comment?.image?.startsWith('/') ? '' : '/'}${reply?.client_comment?.image}`)
+                                `${process.env.NEXT_PUBLIC_FILE_PATH}${reply?.client_comment?.image?.startsWith('/') ? '' : '/'}${reply?.client_comment?.image}`)
                             || "/common-avator.jpg"
                         }
                         className="w-full h-full object-cover"
@@ -353,7 +353,7 @@ const PostCommentsModal = ({
                             <div className="flex items-start">
                                 <img
                                     src={profile?.client?.image ?
-                                        process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + profile?.client?.image
+                                        process.env.NEXT_PUBLIC_FILE_PATH + profile?.client?.image
                                         : "/common-avator.jpg"
                                     }
                                     className="w-8 h-8 rounded-full object-cover mr-2 flex-shrink-0"
@@ -473,7 +473,7 @@ const PostCommentsModal = ({
                         <div className="w-10 h-10 rounded-full overflow-hidden">
                             <img
                                 src={basicPostData?.client?.image ?
-                                    process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + basicPostData?.client?.image
+                                    process.env.NEXT_PUBLIC_FILE_PATH + basicPostData?.client?.image
                                     : "/common-avator.jpg"
                                 }
                                 className="w-full h-full object-cover"
@@ -618,7 +618,7 @@ const PostCommentsModal = ({
                                     <div className="w-9 h-9 rounded-full overflow-hidden">
                                         <img
                                             src={c?.client_comment?.image ?
-                                                process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + c?.client_comment?.image
+                                                process.env.NEXT_PUBLIC_FILE_PATH + c?.client_comment?.image
                                                 : "/common-avator.jpg"
                                             }
                                             className="w-full h-full object-cover"
@@ -743,7 +743,7 @@ const PostCommentsModal = ({
                                             <div className="flex items-start">
                                                 <img
                                                     src={profile?.client?.image ?
-                                                        process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + profile?.client?.image
+                                                        process.env.NEXT_PUBLIC_FILE_PATH + profile?.client?.image
                                                         : "/common-avator.jpg"
                                                     }
                                                     className="w-8 h-8 rounded-full object-cover mr-2"
@@ -867,7 +867,7 @@ const PostCommentsModal = ({
                         <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
                             <img
                                 src={profile?.client?.image ?
-                                    process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + profile?.client?.image
+                                    process.env.NEXT_PUBLIC_FILE_PATH + profile?.client?.image
                                     : "/common-avator.jpg"
                                 }
                                 className="w-full h-full object-cover"

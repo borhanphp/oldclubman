@@ -16,7 +16,7 @@ const FollowSuggestion = () => {
   const handleFollowToggle = async (userId, isCurrentlyFollowed) => {
     // Set loading state for this specific user
     setLoadingStates(prev => ({ ...prev, [userId]: true }));
-    
+
     try {
       if (isCurrentlyFollowed) {
         await dispatch(unFollowTo({ following_id: userId }));
@@ -36,8 +36,8 @@ const FollowSuggestion = () => {
   };
 
   const getFollowStatus = (user) => {
-    return followingStates[user.id] !== undefined 
-      ? followingStates[user.id] 
+    return followingStates[user.id] !== undefined
+      ? followingStates[user.id]
       : user.is_followed || false;
   };
 
@@ -48,13 +48,13 @@ const FollowSuggestion = () => {
   return (
     <div className="bg-white rounded-lg shadow-sm p-3 sm:p-4 mb-4">
       <h3 className="text-base sm:text-lg font-semibold mb-3">Who to follow</h3>
-      
+
       {followSuggestion && followSuggestion.length > 0 ? (
         <div className="space-y-3">
           {followSuggestion?.map((user, index) => {
             const isFollowed = getFollowStatus(user);
             const isLoading = isUserLoading(user.id);
-            
+
             return (
               <div key={user.id || index} className="flex items-center justify-between gap-3">
                 <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
@@ -63,14 +63,14 @@ const FollowSuggestion = () => {
                     <img
                       src={
                         user?.image
-                          ? `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}/${user.image}`
+                          ? `${process.env.NEXT_PUBLIC_FILE_PATH}/${user.image}`
                           : "/common-avator.jpg"
                       }
                       alt={user?.fname || "User"}
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  
+
                   {/* User Info */}
                   <div className="flex-1 min-w-0">
                     <Link href={`/${user?.username}`}>
@@ -90,11 +90,10 @@ const FollowSuggestion = () => {
                 <button
                   onClick={() => handleFollowToggle(user.id, isFollowed)}
                   disabled={isLoading}
-                  className={`px-2 sm:px-3 py-1 text-xs font-medium rounded-full transition-colors min-w-[60px] sm:min-w-[70px] flex-shrink-0 ${
-                    isFollowed
+                  className={`px-2 sm:px-3 py-1 text-xs font-medium rounded-full transition-colors min-w-[60px] sm:min-w-[70px] flex-shrink-0 ${isFollowed
                       ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
                       : "bg-blue-500 text-white hover:bg-blue-600"
-                  } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                    } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center">
@@ -109,9 +108,9 @@ const FollowSuggestion = () => {
               </div>
             );
           })}
-          
+
           {followSuggestion.length > 5 && (
-            <button 
+            <button
               onClick={() => dispatch(getFollowSuggestions())}
               className="w-full text-blue-500 hover:text-blue-600 text-sm font-medium py-2 mt-2"
             >

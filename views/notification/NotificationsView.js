@@ -111,7 +111,7 @@ const NotificationsView = () => {
   const getImageUrl = (image) => {
     if (!image) return "/common-avator.jpg";
     if (image.startsWith("http")) return image;
-    return `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${image}`;
+    return `${process.env.NEXT_PUBLIC_FILE_PATH}${image}`;
   };
 
   const filteredNotifications =
@@ -160,8 +160,8 @@ const NotificationsView = () => {
             <button
               onClick={() => handleTabChange("all")}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "all"
-                  ? "bg-blue-600 text-white shadow-md"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                ? "bg-blue-600 text-white shadow-md"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
             >
               <FaInbox size={14} />
@@ -170,8 +170,8 @@ const NotificationsView = () => {
             <button
               onClick={() => handleTabChange("unread")}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "unread"
-                  ? "bg-blue-600 text-white shadow-md"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                ? "bg-blue-600 text-white shadow-md"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
             >
               <FaFilter size={14} />

@@ -94,12 +94,11 @@ const GiftCardGifting = ({ giftCardData, onSuccess }) => {
           <h2 className="text-xl font-bold text-gray-800">Gift Card Details</h2>
         </div>
 
-        <div className={`bg-gradient-to-br ${
-          giftCardData.design === 'elegant' ? 'from-pink-500 to-red-600' :
-          giftCardData.design === 'modern' ? 'from-green-500 to-teal-600' :
-          giftCardData.design === 'festive' ? 'from-yellow-500 to-orange-600' :
-          'from-blue-500 to-purple-600'
-        } rounded-lg p-8 text-white text-center shadow-lg`}>
+        <div className={`bg-gradient-to-br ${giftCardData.design === 'elegant' ? 'from-pink-500 to-red-600' :
+            giftCardData.design === 'modern' ? 'from-green-500 to-teal-600' :
+              giftCardData.design === 'festive' ? 'from-yellow-500 to-orange-600' :
+                'from-blue-500 to-purple-600'
+          } rounded-lg p-8 text-white text-center shadow-lg`}>
           <FaGift className="text-5xl mx-auto mb-4" />
           <p className="text-4xl font-bold mb-2">${parseFloat(giftCardData.amount || 0).toFixed(2)}</p>
           <p className="text-sm opacity-90">Gift Card</p>
@@ -140,7 +139,7 @@ const GiftCardGifting = ({ giftCardData, onSuccess }) => {
                 >
                   <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200">
                     <img
-                      src={user.image ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + user.image : "/common-avator.jpg"}
+                      src={user.image ? process.env.NEXT_PUBLIC_FILE_PATH + user.image : "/common-avator.jpg"}
                       alt={user.fname}
                       className="w-full h-full object-cover"
                     />
@@ -160,7 +159,7 @@ const GiftCardGifting = ({ giftCardData, onSuccess }) => {
             <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center space-x-3">
               <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200">
                 <img
-                  src={selectedUser.image ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + selectedUser.image : "/common-avator.jpg"}
+                  src={selectedUser.image ? process.env.NEXT_PUBLIC_FILE_PATH + selectedUser.image : "/common-avator.jpg"}
                   alt={selectedUser.fname}
                   className="w-full h-full object-cover"
                 />

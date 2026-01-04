@@ -4,21 +4,21 @@ import errorResponse from "@/utility";
 import toast from "react-hot-toast";
 
 export const initialNfcData = {
-  prefix: '', 
+  prefix: '',
   card_type: 1,
-  first_name: '', 
-  middle_name: '', 
+  first_name: '',
+  middle_name: '',
   design_card_id: null, // Will be set from API
   display_nfc_color: "#ff00f",
-  last_name: '', 
+  last_name: '',
   suffix: '',
-  accreditations: '', 
-  preferredName: '', 
-  middle_name: '', 
+  accreditations: '',
+  preferredName: '',
+  middle_name: '',
   pronoun: '',
-  title: '', 
-  department: '', 
-  company: '', 
+  title: '',
+  department: '',
+  company: '',
   headline: '',
   profile: "",
   logo: null,
@@ -26,22 +26,22 @@ export const initialNfcData = {
   logoUrl: ""
 }
 
-export const getMyNfc = createAsyncThunk( 'nfc/getMyNfc', async ( ) => {
-    const result = axios.get( "client/myNfc" )
+export const getMyNfc = createAsyncThunk('nfc/getMyNfc', async () => {
+  const result = axios.get("client/myNfc")
     .then((res) => {
-        const resData = res.data.data;
-        return resData;
+      const resData = res.data.data;
+      return resData;
     })
     .catch((err) => {
-        errorResponse(err);
+      errorResponse(err);
     })
-    return result;
-} )
+  return result;
+})
 
 export const getNfcById = createAsyncThunk('nfc/getNfcById', async (id, { rejectWithValue }) => {
   try {
     const res = await axios.get(`nfc/card/${id}`);
-const data = res.data.data.nfc_card;
+    const data = res.data.data.nfc_card;
     const allData = {
       ...data,
       nfc_fields: data?.nfc_fields?.map((item) => ({
@@ -57,16 +57,16 @@ const data = res.data.data.nfc_card;
     const displayData = allData?.card_design;
     const infoData = allData?.nfc_info;
     // Merge as you did
-    const resData = { 
-      ...displayData, 
-      ...infoData,  
-      ...allData, 
-      profilePhotoUrl: process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + infoData?.image,
-      logoUrl: process.env.NEXT_PUBLIC_CARD_FILE_PATH + displayData?.logo,
+    const resData = {
+      ...displayData,
+      ...infoData,
+      ...allData,
+      profilePhotoUrl: process.env.NEXT_PUBLIC_FILE_PATH + infoData?.image,
+      logoUrl: process.env.NEXT_PUBLIC_FILE_PATH + displayData?.logo,
       display_nfc_color: displayData?.color,
 
     };
-    console.log('merged resData',resData)
+    console.log('merged resData', resData)
     return resData;
   } catch (err) {
     errorResponse(err);
@@ -78,7 +78,7 @@ const data = res.data.data.nfc_card;
 export const getNfcByIdPublic = createAsyncThunk('nfc/getNfcByIdPublic', async (id, { rejectWithValue }) => {
   try {
     const res = await axios.get(`public/nfc/card/${id}`);
-const data = res.data.data.nfc_card;
+    const data = res.data.data.nfc_card;
     const allData = {
       ...data,
       nfc_fields: data?.nfc_fields?.map((item) => ({
@@ -94,16 +94,16 @@ const data = res.data.data.nfc_card;
     const displayData = allData?.card_design;
     const infoData = allData?.nfc_info;
     // Merge as you did
-    const resData = { 
-      ...displayData, 
-      ...infoData,  
-      ...allData, 
-      profilePhotoUrl: process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + infoData?.image,
-      logoUrl: process.env.NEXT_PUBLIC_CARD_FILE_PATH + displayData?.logo,
+    const resData = {
+      ...displayData,
+      ...infoData,
+      ...allData,
+      profilePhotoUrl: process.env.NEXT_PUBLIC_FILE_PATH + infoData?.image,
+      logoUrl: process.env.NEXT_PUBLIC_FILE_PATH + displayData?.logo,
       display_nfc_color: displayData?.color,
 
     };
-    console.log('merged resData',resData)
+    console.log('merged resData', resData)
     return resData;
   } catch (err) {
     errorResponse(err);
@@ -112,81 +112,81 @@ const data = res.data.data.nfc_card;
   }
 });
 
-export const getNfcField = createAsyncThunk( 'nfc/getNfcField', async () => {
-  const result = axios.get( `nfc/field` )
-  .then((res) => {
-    console.log('nfc field response', res.data.data)
+export const getNfcField = createAsyncThunk('nfc/getNfcField', async () => {
+  const result = axios.get(`nfc/field`)
+    .then((res) => {
+      console.log('nfc field response', res.data.data)
       const resData = res.data.data;
       return resData;
-  })
-  .catch((err) => {
+    })
+    .catch((err) => {
       errorResponse(err);
-  })
+    })
   return result;
-} )
+})
 
-export const storeNfc = createAsyncThunk( 'nfc/storeNfc', async (data) => {
-  const result = axios.post( `/nfc/card/store`, data )
-  .then((res) => {
+export const storeNfc = createAsyncThunk('nfc/storeNfc', async (data) => {
+  const result = axios.post(`/nfc/card/store`, data)
+    .then((res) => {
       const resData = res.data.data;
       return resData;
-  })
-  .catch((err) => {
+    })
+    .catch((err) => {
       toast.error(err?.response?.data?.data[0])
       errorResponse(err);
-  })
+    })
   return result;
-} )
+})
 
-export const updateNfc = createAsyncThunk( 'nfc/updateNfc', async (data) => {
-  const result = axios.post( `/nfc/card/update/${data.id}`, data?.formData )
-  .then((res) => {
+export const updateNfc = createAsyncThunk('nfc/updateNfc', async (data) => {
+  const result = axios.post(`/nfc/card/update/${data.id}`, data?.formData)
+    .then((res) => {
       const resData = res.data.data;
       return resData;
-  })
-  .catch((err) => {
+    })
+    .catch((err) => {
       toast.error(err?.response?.data?.data[0])
       errorResponse(err);
-  })
+    })
   return result;
-} )
+})
 
-export const duplicateNfc = createAsyncThunk( 'nfc/duplicateNfc', async (id) => {
-  const result = axios.post( `/nfc/card/duplicate/${id}` )
-  .then((res) => {
+export const duplicateNfc = createAsyncThunk('nfc/duplicateNfc', async (id) => {
+  const result = axios.post(`/nfc/card/duplicate/${id}`)
+    .then((res) => {
       const resData = res.data.data;
       return resData;
-  })
-  .catch((err) => {
+    })
+    .catch((err) => {
       errorResponse(err);
-  })
+    })
   return result;
-} )
+})
 
-export const deleteNfc = createAsyncThunk( 'nfc/deleteNfc', async (id) => {
-  const result = axios.post( `/nfc/card/delete/${id}` )
-  .then((res) => {
+export const deleteNfc = createAsyncThunk('nfc/deleteNfc', async (id) => {
+  const result = axios.post(`/nfc/card/delete/${id}`)
+    .then((res) => {
       const resData = res.data.data;
       return resData;
-  })
-  .catch((err) => {
+    })
+    .catch((err) => {
       errorResponse(err);
-  })
+    })
   return result;
-} )
+})
 
-export const getVertualBackground = createAsyncThunk( 'nfc/getVertualBackground', async () => {
-  const result = axios.get( `/nfc/virtual_background` )
-  .then((res) => {
-    console.log('nfc virtual_background', res.data.data)
+export const getVertualBackground = createAsyncThunk('nfc/getVertualBackground', async () => {
+  const result = axios.get(`/nfc/virtual_background`)
+    .then((res) => {
+      console.log('nfc virtual_background', res.data.data)
       const resData = res.data.data;
       return resData;
-  })
-  .catch((err) => {
+    })
+    .catch((err) => {
       errorResponse(err);
-  })
+    })
   return result;
-} )
+})
 
 
 export const nfcSlice = createSlice({
@@ -246,11 +246,11 @@ export const nfcSlice = createSlice({
       .addCase(getNfcField.fulfilled, (state, action) => {
         state.nfcFieldsResponse = action.payload;
       })
-      
+
   },
 });
 
-export const {bindNfcData, addField, removeField, setFields, reorderFields, updateField} = nfcSlice.actions;
+export const { bindNfcData, addField, removeField, setFields, reorderFields, updateField } = nfcSlice.actions;
 
 
 export default nfcSlice.reducer;

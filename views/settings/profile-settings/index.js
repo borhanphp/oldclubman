@@ -31,12 +31,12 @@ const ProfileSettings = () => {
 
   useEffect(() => {
     setProfilePhotoPreview(
-      process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + profileSettingData?.image ||
-        null
+      process.env.NEXT_PUBLIC_FILE_PATH + profileSettingData?.image ||
+      null
     );
     setCoverPhotoPreview(
-      process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
-        profileSettingData?.cover_photo || null
+      process.env.NEXT_PUBLIC_FILE_PATH +
+      profileSettingData?.cover_photo || null
     );
   }, []);
 
@@ -124,7 +124,7 @@ const ProfileSettings = () => {
       dispatch(storeProfileSetting(submittedData)).then((res) => {
         toast.success("Successfully Updated");
         dispatch(getMyProfile());
-        
+
         // Reload user profile by username if available
         const username = profileSettingData?.username || profile?.client?.username;
         if (username) {
@@ -162,15 +162,15 @@ const ProfileSettings = () => {
                 />
 
               </div>
-            ):
-            <div className="w-16 h-16 rounded-full overflow-hidden mr-2">
-            <img
-              src={"/common-avator.jpg"}
-              alt="Profile Preview"
-              className="w-full h-full object-cover"
-            />
+            ) :
+              <div className="w-16 h-16 rounded-full overflow-hidden mr-2">
+                <img
+                  src={"/common-avator.jpg"}
+                  alt="Profile Preview"
+                  className="w-full h-full object-cover"
+                />
 
-          </div>
+              </div>
             }
             <button
               type="button"
@@ -203,7 +203,7 @@ const ProfileSettings = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            {(profileSettingData?.cover_photo && coverPhotoPreview ) ? (
+            {(profileSettingData?.cover_photo && coverPhotoPreview) ? (
               <div className="w-24 h-12 rounded overflow-hidden mr-2">
                 <img
                   src={coverPhotoPreview}
@@ -211,8 +211,8 @@ const ProfileSettings = () => {
                   className="w-full h-full object-cover"
                 />
               </div>
-            ) : 
-            <div className="w-24 h-12 rounded overflow-hidden mr-2">
+            ) :
+              <div className="w-24 h-12 rounded overflow-hidden mr-2">
                 <img
                   src={"/oldman-bg.jpg"}
                   alt="Cover Preview"
@@ -306,11 +306,10 @@ const ProfileSettings = () => {
         <div className="mt-8 text-right">
           <button
             type="submit"
-            className={`${
-              loading
+            className={`${loading
                 ? "bg-blue-300 cursor-not-allowed"
                 : "bg-blue-500 hover:bg-blue-600"
-            } text-white cursor-pointer px-6 py-2.5 rounded-md transition`}
+              } text-white cursor-pointer px-6 py-2.5 rounded-md transition`}
             disabled={loading}
           >
             {loading ? "Saving..." : "Save Changes"}

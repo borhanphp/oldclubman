@@ -32,19 +32,19 @@ export default function ListingDetailPage() {
       try {
         setLoading(true);
         const response = await api.get(`/single_sale_post/${params.id}`);
-        
+
         // Handle response structure
-        const listingData = response.data?.success 
-          ? response.data.data 
-          : response.data?.data 
-          ? response.data.data 
-          : response.data;
-        
+        const listingData = response.data?.success
+          ? response.data.data
+          : response.data?.data
+            ? response.data.data
+            : response.data;
+
         console.log("Fetched listing data:", listingData);
-        
+
         if (listingData) {
           setListing(listingData);
-          
+
           // Fetch seller info if client_id exists
           if (listingData.client_id) {
             try {
@@ -74,7 +74,7 @@ export default function ListingDetailPage() {
     if (!file) return "/common-avator.jpg";
     const filePath = file.file_path || file.path || file.url || file.file_url || '';
     if (!filePath) return "/common-avator.jpg";
-    
+
     // Build image URL using NEXT_PUBLIC_FILE_PATH/sale_post + file_path
     const base = process.env.NEXT_PUBLIC_FILE_PATH || '';
     const cleanBase = base ? base.replace(/\/+$/, '') : '';
@@ -82,7 +82,7 @@ export default function ListingDetailPage() {
     return cleanBase ? `${cleanBase}/sale_post/${cleanPath}` : `/public/uploads/sale_post/${cleanPath}`;
   };
 
-  const images = listing?.files && listing.files.length > 0 
+  const images = listing?.files && listing.files.length > 0
     ? listing.files.map(getImageUrl)
     : ["/common-avator.jpg"];
 
@@ -174,9 +174,9 @@ export default function ListingDetailPage() {
           console.log("findConversationBySellerId: chats is not an array", chats);
           return null;
         }
-        
+
         console.log(`Searching for conversation with sellerId: ${sellerId} in ${chats.length} chats`);
-        
+
         const found = chats.find(chat => {
           // Log each chat for debugging
           console.log("Checking chat:", {
@@ -186,7 +186,7 @@ export default function ListingDetailPage() {
             other_user: chat.other_user,
             is_group: chat.is_group
           });
-          
+
           // Check user_ids field (can be array or single value)
           if (chat.user_ids !== undefined && chat.user_ids !== null) {
             const userIds = Array.isArray(chat.user_ids) ? chat.user_ids : [chat.user_ids];
@@ -195,11 +195,11 @@ export default function ListingDetailPage() {
               return true;
             }
           }
-          
+
           // Check participants array
           if (chat.participants && Array.isArray(chat.participants)) {
-            if (chat.participants.some(p => 
-              Number(p.id) === Number(sellerId) || 
+            if (chat.participants.some(p =>
+              Number(p.id) === Number(sellerId) ||
               Number(p.user_id) === Number(sellerId) ||
               Number(p.client_id) === Number(sellerId)
             )) {
@@ -207,47 +207,47 @@ export default function ListingDetailPage() {
               return true;
             }
           }
-          
+
           // Check if it's a direct message and check the other user
           if (chat.is_group === 0 || chat.is_group === false || !chat.is_group) {
             // For direct messages, check if the other participant is the seller
-            if (chat.other_user?.id === Number(sellerId) || 
-                chat.other_user?.user_id === Number(sellerId) ||
-                chat.other_user?.client_id === Number(sellerId)) {
+            if (chat.other_user?.id === Number(sellerId) ||
+              chat.other_user?.user_id === Number(sellerId) ||
+              chat.other_user?.client_id === Number(sellerId)) {
               console.log("Found conversation by other_user");
               return true;
             }
           }
-          
+
           // Check name field (sometimes conversations are identified by name)
           if (chat.name) {
-            const sellerName = sellerInfo 
+            const sellerName = sellerInfo
               ? `${sellerInfo.fname} ${sellerInfo.last_name}`.toLowerCase()
               : listing.client?.fname && listing.client?.last_name
-              ? `${listing.client.fname} ${listing.client.last_name}`.toLowerCase()
-              : null;
-            
+                ? `${listing.client.fname} ${listing.client.last_name}`.toLowerCase()
+                : null;
+
             if (sellerName && chat.name.toLowerCase() === sellerName) {
               console.log("Found conversation by name");
               return true;
             }
           }
-          
+
           return false;
         });
-        
+
         if (found) {
           console.log("Found conversation:", found);
         } else {
           console.log("No conversation found with sellerId:", sellerId);
         }
-        
+
         return found || null;
       };
 
       // ALWAYS refresh chat list first to get the most up-to-date data
       let conversation = null;
-      
+
       // First, try to get fresh data from Redux
       try {
         const refreshedChats = await dispatch(getAllChat()).unwrap();
@@ -255,14 +255,14 @@ export default function ListingDetailPage() {
       } catch (e) {
         console.error("Error refreshing chats:", e);
       }
-      
+
       // If still not found, try direct API call (bypass Redux)
       if (!conversation) {
         try {
           const directResponse = await api.get('/chat');
           const directChats = directResponse.data?.data || directResponse.data || [];
           conversation = findConversationBySellerId(directChats, sellerId);
-          
+
           // If found via direct API, update Redux store
           if (conversation) {
             await dispatch(getAllChat());
@@ -274,210 +274,210 @@ export default function ListingDetailPage() {
 
       // Only try to create if we're absolutely sure no conversation exists
       if (!conversation) {
-          const sellerName = sellerInfo 
-            ? `${sellerInfo.fname} ${sellerInfo.last_name}`
-            : listing.client?.fname && listing.client?.last_name
+        const sellerName = sellerInfo
+          ? `${sellerInfo.fname} ${sellerInfo.last_name}`
+          : listing.client?.fname && listing.client?.last_name
             ? `${listing.client.fname} ${listing.client.last_name}`
             : "Seller";
 
-          const sellerAvatar = sellerInfo?.image
-            ? `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${sellerInfo.image}`
-            : listing.client?.image
-            ? `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${listing.client.image}`
+        const sellerAvatar = sellerInfo?.image
+          ? `${process.env.NEXT_PUBLIC_FILE_PATH}${sellerInfo.image}`
+          : listing.client?.image
+            ? `${process.env.NEXT_PUBLIC_FILE_PATH}${listing.client.image}`
             : "/common-avator.jpg";
 
-          const conversationData = {
-            is_group: 0,
-            name: sellerName,
-            avatar: sellerAvatar,
-            user_ids: sellerId
-          };
+        const conversationData = {
+          is_group: 0,
+          name: sellerName,
+          avatar: sellerAvatar,
+          user_ids: sellerId
+        };
 
-          // Use direct API call instead of thunk to avoid error toast
-          try {
-            const createResponse = await api.post('/chat', conversationData);
-            console.log("Create conversation response:", createResponse.data);
-            
-            // Handle different response structures
-            if (createResponse.data?.data?.conversation?.id) {
-              conversation = createResponse.data.data.conversation;
-              console.log("Got conversation from response.data.data.conversation:", conversation);
-            } else if (createResponse.data?.data?.id) {
-              conversation = { id: createResponse.data.data.id };
-              console.log("Got conversation ID from response.data.data.id:", conversation);
-            } else if (createResponse.data?.conversation?.id) {
-              conversation = createResponse.data.conversation;
-              console.log("Got conversation from response.data.conversation:", conversation);
-            } else if (createResponse.data?.id) {
-              conversation = { id: createResponse.data.id };
-              console.log("Got conversation ID from response.data.id:", conversation);
-            } else if (createResponse.data?.data) {
-              // If data exists but structure is unclear, try to extract ID
-              const data = createResponse.data.data;
-              if (data.id) {
-                conversation = { id: data.id };
-              } else if (typeof data === 'object' && Object.keys(data).length > 0) {
-                // Try to find id in the data object
-                conversation = data;
-              }
-            }
-            
-            // Update Redux store after successful creation
-            if (conversation?.id) {
-              await dispatch(getAllChat());
-            } else {
-              // If we didn't get conversation, refresh and try to find it
-              console.log("Conversation created but ID not found in response, refreshing...");
-              const refreshedChats = await dispatch(getAllChat()).unwrap();
-              conversation = findConversationBySellerId(refreshedChats, sellerId);
-            }
-          } catch (createError) {
-            // Check if it's "conversation already exists" error
-            const errorStatus = createError?.response?.status;
-            const errorMessage = createError?.response?.data?.message || '';
-            const isAlreadyExistsError = 
-              errorStatus === 400 && 
-              (errorMessage.toLowerCase().includes("already exists") ||
-               errorMessage.toLowerCase().includes("conversation"));
+        // Use direct API call instead of thunk to avoid error toast
+        try {
+          const createResponse = await api.post('/chat', conversationData);
+          console.log("Create conversation response:", createResponse.data);
 
-            if (isAlreadyExistsError) {
-              // Suppress the error toast by not calling errorResponse
-              console.log("Conversation already exists, finding it...");
-              
-              // Refresh chat list and find the existing conversation
-              try {
-                const updatedChats = await dispatch(getAllChat()).unwrap();
-                conversation = findConversationBySellerId(updatedChats, sellerId);
-                
-                // If still not found, try direct API call
-                if (!conversation) {
-                  const directResponse = await api.get('/chat');
-                  const directChats = directResponse.data?.data || directResponse.data || [];
-                  conversation = findConversationBySellerId(directChats, sellerId);
-                }
-                
-                // Check error response for conversation ID
-                if (!conversation && createError?.response?.data) {
-                  const errorData = createError.response.data;
-                  let convId = errorData?.data?.conversation_id || 
-                               errorData?.data?.id || 
-                               errorData?.conversation_id || 
-                               errorData?.id ||
-                               errorData?.conversation?.id;
-                  
-                  if (convId) {
-                    const allChats = await dispatch(getAllChat()).unwrap();
-                    conversation = allChats?.find(chat => chat.id === Number(convId));
-                  }
-                }
-              } catch (refreshError) {
-                console.error("Error refreshing chats after create error:", refreshError);
+          // Handle different response structures
+          if (createResponse.data?.data?.conversation?.id) {
+            conversation = createResponse.data.data.conversation;
+            console.log("Got conversation from response.data.data.conversation:", conversation);
+          } else if (createResponse.data?.data?.id) {
+            conversation = { id: createResponse.data.data.id };
+            console.log("Got conversation ID from response.data.data.id:", conversation);
+          } else if (createResponse.data?.conversation?.id) {
+            conversation = createResponse.data.conversation;
+            console.log("Got conversation from response.data.conversation:", conversation);
+          } else if (createResponse.data?.id) {
+            conversation = { id: createResponse.data.id };
+            console.log("Got conversation ID from response.data.id:", conversation);
+          } else if (createResponse.data?.data) {
+            // If data exists but structure is unclear, try to extract ID
+            const data = createResponse.data.data;
+            if (data.id) {
+              conversation = { id: data.id };
+            } else if (typeof data === 'object' && Object.keys(data).length > 0) {
+              // Try to find id in the data object
+              conversation = data;
+            }
+          }
+
+          // Update Redux store after successful creation
+          if (conversation?.id) {
+            await dispatch(getAllChat());
+          } else {
+            // If we didn't get conversation, refresh and try to find it
+            console.log("Conversation created but ID not found in response, refreshing...");
+            const refreshedChats = await dispatch(getAllChat()).unwrap();
+            conversation = findConversationBySellerId(refreshedChats, sellerId);
+          }
+        } catch (createError) {
+          // Check if it's "conversation already exists" error
+          const errorStatus = createError?.response?.status;
+          const errorMessage = createError?.response?.data?.message || '';
+          const isAlreadyExistsError =
+            errorStatus === 400 &&
+            (errorMessage.toLowerCase().includes("already exists") ||
+              errorMessage.toLowerCase().includes("conversation"));
+
+          if (isAlreadyExistsError) {
+            // Suppress the error toast by not calling errorResponse
+            console.log("Conversation already exists, finding it...");
+
+            // Refresh chat list and find the existing conversation
+            try {
+              const updatedChats = await dispatch(getAllChat()).unwrap();
+              conversation = findConversationBySellerId(updatedChats, sellerId);
+
+              // If still not found, try direct API call
+              if (!conversation) {
+                const directResponse = await api.get('/chat');
+                const directChats = directResponse.data?.data || directResponse.data || [];
+                conversation = findConversationBySellerId(directChats, sellerId);
               }
-              
-              // If still not found after all attempts, try to extract from error response
+
+              // Check error response for conversation ID
               if (!conversation && createError?.response?.data) {
                 const errorData = createError.response.data;
-                console.log("Error response data:", errorData);
-                
-                // Try to find conversation ID in error response
-                let convId = errorData?.data?.conversation_id || 
-                             errorData?.data?.id || 
-                             errorData?.conversation_id || 
-                             errorData?.id ||
-                             errorData?.conversation?.id ||
-                             errorData?.data?.conversation?.id;
-                
+                let convId = errorData?.data?.conversation_id ||
+                  errorData?.data?.id ||
+                  errorData?.conversation_id ||
+                  errorData?.id ||
+                  errorData?.conversation?.id;
+
                 if (convId) {
-                  console.log("Found conversation ID in error:", convId);
-                  // Try to get the conversation by ID
-                  try {
-                    const allChats = await dispatch(getAllChat()).unwrap();
-                    conversation = allChats?.find(chat => chat.id === Number(convId));
-                    
-                    if (!conversation) {
-                      // Try direct API call to get conversation by ID
-                      try {
-                        const convResponse = await api.get(`/chat/${convId}/messages`);
-                        if (convResponse.data?.conversation) {
-                          conversation = { id: Number(convId), ...convResponse.data.conversation };
-                        } else {
-                          conversation = { id: Number(convId) };
-                        }
-                      } catch (e) {
-                        console.error("Error fetching conversation by ID:", e);
+                  const allChats = await dispatch(getAllChat()).unwrap();
+                  conversation = allChats?.find(chat => chat.id === Number(convId));
+                }
+              }
+            } catch (refreshError) {
+              console.error("Error refreshing chats after create error:", refreshError);
+            }
+
+            // If still not found after all attempts, try to extract from error response
+            if (!conversation && createError?.response?.data) {
+              const errorData = createError.response.data;
+              console.log("Error response data:", errorData);
+
+              // Try to find conversation ID in error response
+              let convId = errorData?.data?.conversation_id ||
+                errorData?.data?.id ||
+                errorData?.conversation_id ||
+                errorData?.id ||
+                errorData?.conversation?.id ||
+                errorData?.data?.conversation?.id;
+
+              if (convId) {
+                console.log("Found conversation ID in error:", convId);
+                // Try to get the conversation by ID
+                try {
+                  const allChats = await dispatch(getAllChat()).unwrap();
+                  conversation = allChats?.find(chat => chat.id === Number(convId));
+
+                  if (!conversation) {
+                    // Try direct API call to get conversation by ID
+                    try {
+                      const convResponse = await api.get(`/chat/${convId}/messages`);
+                      if (convResponse.data?.conversation) {
+                        conversation = { id: Number(convId), ...convResponse.data.conversation };
+                      } else {
+                        conversation = { id: Number(convId) };
                       }
+                    } catch (e) {
+                      console.error("Error fetching conversation by ID:", e);
                     }
-                  } catch (e) {
-                    console.error("Error getting chats:", e);
                   }
+                } catch (e) {
+                  console.error("Error getting chats:", e);
                 }
               }
-              
-              // If still not found, try to extract conversation ID from error response more thoroughly
-              if (!conversation && createError?.response?.data) {
-                const errorData = createError.response.data;
-                console.log("Error response data (full):", JSON.stringify(errorData, null, 2));
-                
-                // Try to find conversation ID in error response - check all possible locations
-                let convId = errorData?.data?.conversation_id || 
-                             errorData?.data?.id || 
-                             errorData?.conversation_id || 
-                             errorData?.id ||
-                             errorData?.conversation?.id ||
-                             errorData?.data?.conversation?.id;
-                
-                // Also check if error message contains conversation ID
-                if (!convId && errorData?.message) {
-                  const idMatch = errorData.message.match(/conversation[_\s]*id[:\s]*(\d+)/i) || 
-                                 errorData.message.match(/id[:\s]*(\d+)/i);
-                  if (idMatch) {
-                    convId = idMatch[1];
-                  }
+            }
+
+            // If still not found, try to extract conversation ID from error response more thoroughly
+            if (!conversation && createError?.response?.data) {
+              const errorData = createError.response.data;
+              console.log("Error response data (full):", JSON.stringify(errorData, null, 2));
+
+              // Try to find conversation ID in error response - check all possible locations
+              let convId = errorData?.data?.conversation_id ||
+                errorData?.data?.id ||
+                errorData?.conversation_id ||
+                errorData?.id ||
+                errorData?.conversation?.id ||
+                errorData?.data?.conversation?.id;
+
+              // Also check if error message contains conversation ID
+              if (!convId && errorData?.message) {
+                const idMatch = errorData.message.match(/conversation[_\s]*id[:\s]*(\d+)/i) ||
+                  errorData.message.match(/id[:\s]*(\d+)/i);
+                if (idMatch) {
+                  convId = idMatch[1];
                 }
-                
-                if (convId) {
-                  console.log("Found conversation ID from error:", convId);
-                  // Use the conversation ID directly - we don't need the full object
-                  conversation = { id: Number(convId) };
-                } else {
-                  // Last resort: try to query all chats one more time with a more aggressive search
-                  try {
-                    const allChatsResponse = await api.get('/chat');
-                    const allChats = allChatsResponse.data?.data || allChatsResponse.data || [];
-                    
-                    // Search through all chats more thoroughly - check every field
-                    conversation = allChats.find(chat => {
-                      // Convert entire chat object to string and search for seller ID
-                      const chatStr = JSON.stringify(chat);
-                      return chatStr.includes(String(sellerId));
-                    });
-                    
-                    if (!conversation) {
-                      console.error("Could not find conversation after all attempts");
-                      toast.error("Could not find existing conversation. Please try again.");
-                      setSendingMessage(false);
-                      return;
-                    }
-                  } catch (finalErr) {
-                    console.error("Final search failed:", finalErr);
+              }
+
+              if (convId) {
+                console.log("Found conversation ID from error:", convId);
+                // Use the conversation ID directly - we don't need the full object
+                conversation = { id: Number(convId) };
+              } else {
+                // Last resort: try to query all chats one more time with a more aggressive search
+                try {
+                  const allChatsResponse = await api.get('/chat');
+                  const allChats = allChatsResponse.data?.data || allChatsResponse.data || [];
+
+                  // Search through all chats more thoroughly - check every field
+                  conversation = allChats.find(chat => {
+                    // Convert entire chat object to string and search for seller ID
+                    const chatStr = JSON.stringify(chat);
+                    return chatStr.includes(String(sellerId));
+                  });
+
+                  if (!conversation) {
+                    console.error("Could not find conversation after all attempts");
                     toast.error("Could not find existing conversation. Please try again.");
                     setSendingMessage(false);
                     return;
                   }
+                } catch (finalErr) {
+                  console.error("Final search failed:", finalErr);
+                  toast.error("Could not find existing conversation. Please try again.");
+                  setSendingMessage(false);
+                  return;
                 }
-              } else if (!conversation) {
-                toast.error("Could not find existing conversation. Please try again.");
-                setSendingMessage(false);
-                return;
               }
-            } else {
-              // For other errors, show error and throw
-              console.error("Error creating conversation:", createError);
-              toast.error(createError?.response?.data?.message || "Failed to create conversation");
-              throw createError;
+            } else if (!conversation) {
+              toast.error("Could not find existing conversation. Please try again.");
+              setSendingMessage(false);
+              return;
             }
+          } else {
+            // For other errors, show error and throw
+            console.error("Error creating conversation:", createError);
+            toast.error(createError?.response?.data?.message || "Failed to create conversation");
+            throw createError;
           }
         }
+      }
 
       // If we still don't have a conversation ID, try one more time to find it
       if (!conversation?.id) {
@@ -486,10 +486,10 @@ export default function ListingDetailPage() {
           // Sometimes the backend returns the conversation in the error, let's check one more time
           const finalChats = await api.get('/chat');
           const finalChatsList = finalChats.data?.data || finalChats.data || [];
-          
+
           // Try to find by seller ID one more time
           conversation = findConversationBySellerId(finalChatsList, sellerId);
-          
+
           // If still not found, try to send message anyway - backend might handle it
           if (!conversation?.id) {
             console.log("No conversation ID found, but attempting to send message...");
@@ -499,8 +499,8 @@ export default function ListingDetailPage() {
               // Try to get conversation by querying with seller ID
               const convQuery = await api.get(`/chat?user_id=${sellerId}`);
               if (convQuery.data?.data) {
-                const convData = Array.isArray(convQuery.data.data) 
-                  ? convQuery.data.data[0] 
+                const convData = Array.isArray(convQuery.data.data)
+                  ? convQuery.data.data[0]
                   : convQuery.data.data;
                 if (convData?.id) {
                   conversation = { id: convData.id };
@@ -519,17 +519,17 @@ export default function ListingDetailPage() {
       if (!conversation?.id) {
         console.log("Final attempt: Creating new conversation...");
         try {
-          const sellerName = sellerInfo 
+          const sellerName = sellerInfo
             ? `${sellerInfo.fname} ${sellerInfo.last_name}`
             : listing.client?.fname && listing.client?.last_name
-            ? `${listing.client.fname} ${listing.client.last_name}`
-            : "Seller";
+              ? `${listing.client.fname} ${listing.client.last_name}`
+              : "Seller";
 
           const sellerAvatar = sellerInfo?.image
-            ? `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${sellerInfo.image}`
+            ? `${process.env.NEXT_PUBLIC_FILE_PATH}${sellerInfo.image}`
             : listing.client?.image
-            ? `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${listing.client.image}`
-            : "/common-avator.jpg";
+              ? `${process.env.NEXT_PUBLIC_FILE_PATH}${listing.client.image}`
+              : "/common-avator.jpg";
 
           const conversationData = {
             is_group: 0,
@@ -541,7 +541,7 @@ export default function ListingDetailPage() {
           // Try to create conversation one more time
           const createResponse = await api.post('/chat', conversationData);
           console.log("Final create conversation response:", createResponse.data);
-          
+
           // Handle different response structures (same as above)
           if (createResponse.data?.data?.conversation?.id) {
             conversation = createResponse.data.data.conversation;
@@ -561,7 +561,7 @@ export default function ListingDetailPage() {
               conversation = data;
             }
           }
-          
+
           // Update Redux store after successful creation
           if (conversation?.id) {
             await dispatch(getAllChat());
@@ -570,7 +570,7 @@ export default function ListingDetailPage() {
             console.log("Conversation created but ID not found, refreshing to find it...");
             const refreshedChats = await dispatch(getAllChat()).unwrap();
             conversation = findConversationBySellerId(refreshedChats, sellerId);
-            
+
             // If still not found, try JSON string search
             if (!conversation) {
               conversation = refreshedChats.find(chat => {
@@ -581,14 +581,14 @@ export default function ListingDetailPage() {
           }
         } catch (finalCreateError) {
           console.error("Final create attempt failed:", finalCreateError);
-          
+
           // If it's "already exists" error, try to find it one more time
           if (finalCreateError?.response?.status === 400) {
             try {
               const allChatsResponse = await api.get('/chat');
               const allChats = allChatsResponse.data?.data || allChatsResponse.data || [];
               conversation = findConversationBySellerId(allChats, sellerId);
-              
+
               // If still not found, try JSON string search as last resort
               if (!conversation) {
                 conversation = allChats.find(chat => {
@@ -627,10 +627,10 @@ export default function ListingDetailPage() {
         await dispatch(sendMessage(messageData)).unwrap();
 
         toast.success("Message sent successfully!");
-        
+
         // Clear message input
         setMessage("Good afternoon, is this still available?");
-        
+
         // Stay on product details page - no redirect
       } catch (sendError) {
         console.error("Error sending message:", sendError);
@@ -690,7 +690,7 @@ export default function ListingDetailPage() {
 
           {/* Main Image Container with Slider */}
           <div className="flex-1 flex items-center justify-center relative bg-gray-50 overflow-hidden">
-            <div 
+            <div
               className="relative w-full h-full max-h-[calc(100vh-200px)] flex transition-transform duration-300 ease-in-out"
               style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
               onTouchStart={onTouchStart}
@@ -756,11 +756,10 @@ export default function ListingDetailPage() {
                 <button
                   key={index}
                   onClick={() => goToImage(index)}
-                  className={`w-12 h-12 rounded overflow-hidden border-2 transition-all ${
-                    index === currentImageIndex 
-                      ? "border-blue-600 shadow-md" 
+                  className={`w-12 h-12 rounded overflow-hidden border-2 transition-all ${index === currentImageIndex
+                      ? "border-blue-600 shadow-md"
                       : "border-gray-300 hover:border-gray-400"
-                  }`}
+                    }`}
                 >
                   <Image
                     src={img}
@@ -795,7 +794,7 @@ export default function ListingDetailPage() {
               {/* Action Buttons Row - Different for Owner vs Visitor */}
               {isOwner ? (
                 <div className="flex gap-2 mb-4">
-                  <Link 
+                  <Link
                     href={`/marketplace/create?id=${listing.id}`}
                     className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                   >
@@ -813,7 +812,7 @@ export default function ListingDetailPage() {
                 </div>
               ) : (
                 <div className="flex gap-2 mb-4">
-                  <button 
+                  <button
                     onClick={handleSendMessage}
                     disabled={sendingMessage || !message.trim()}
                     className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -869,11 +868,11 @@ export default function ListingDetailPage() {
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Condition</span>
                     <span className="text-gray-900 font-medium">
-                      {listing.condition === 1 ? 'New' : 
-                       listing.condition === 2 ? 'Like New' : 
-                       listing.condition === 3 ? 'Good' : 
-                       listing.condition === 4 ? 'Fair' : 
-                       listing.condition === 5 ? 'For Parts' : 'Used'}
+                      {listing.condition === 1 ? 'New' :
+                        listing.condition === 2 ? 'Like New' :
+                          listing.condition === 3 ? 'Good' :
+                            listing.condition === 4 ? 'Fair' :
+                              listing.condition === 5 ? 'For Parts' : 'Used'}
                     </span>
                   </div>
                 </div>
@@ -917,7 +916,7 @@ export default function ListingDetailPage() {
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200">
                     <img
-                      src={sellerInfo.image ? `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${sellerInfo.image}` : "/common-avator.jpg"}
+                      src={sellerInfo.image ? `${process.env.NEXT_PUBLIC_FILE_PATH}${sellerInfo.image}` : "/common-avator.jpg"}
                       alt={sellerInfo.fname}
                       className="w-full h-full object-cover"
                     />

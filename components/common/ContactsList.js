@@ -23,8 +23,8 @@ const ContactsList = () => {
   const contacts = myFollowers?.map(follower => ({
     id: follower.id,
     name: `${follower.follower_client?.fname || ''} ${follower.follower_client?.last_name || ''}`.trim(),
-    avatar: follower.follower_client?.image 
-      ? `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}/${follower.follower_client.image}`
+    avatar: follower.follower_client?.image
+      ? `${process.env.NEXT_PUBLIC_FILE_PATH}/${follower.follower_client.image}`
       : "/common-avator.jpg",
     isOnline: follower.follower_client?.is_online || false,
     lastSeen: follower.follower_client?.last_seen || "Unknown",
@@ -41,7 +41,7 @@ const ContactsList = () => {
     try {
       const profileResponse = await dispatch(getUserProfile(contact.userId)).unwrap();
       const userData = profileResponse?.client;
-      
+
       if (!userData) {
         console.error('No user data received');
         return;
@@ -50,12 +50,12 @@ const ContactsList = () => {
       const newChat = {
         is_group: 0,
         name: userData?.fname + " " + userData?.last_name,
-        avatar: userData?.image ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + userData?.image : "/common-avator.jpg",
+        avatar: userData?.image ? process.env.NEXT_PUBLIC_FILE_PATH + userData?.image : "/common-avator.jpg",
         user_ids: userData?.id
       };
 
       const conversationResponse = await dispatch(startConversation(newChat)).unwrap();
-      
+
       if (conversationResponse?.conversation) {
         setCurrentChat(conversationResponse.conversation);
         setSelectedUser(userData);
@@ -80,7 +80,7 @@ const ContactsList = () => {
             </p>
           </div>
           <div className="flex items-center space-x-2">
-            <Link 
+            <Link
               href="/messages"
               className="p-2 hover:bg-white rounded-lg transition-all duration-200"
               title="View all messages"
@@ -89,7 +89,7 @@ const ContactsList = () => {
             </Link>
           </div>
         </div>
-        
+
         {/* Search Bar */}
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -146,7 +146,7 @@ const ContactsList = () => {
         ) : (
           <div className="p-3 space-y-1">
             {filteredContacts.map((contact, index) => (
-              <div 
+              <div
                 key={contact.id}
                 className="flex items-center p-3 bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 rounded-xl cursor-pointer transition-all duration-200 border border-transparent hover:border-blue-200 hover:shadow-md group"
                 onClick={() => handleContactClick(contact)}
@@ -194,7 +194,7 @@ const ContactsList = () => {
         )
 
         }
-        
+
         {/* Empty State */}
         {!loading && filteredContacts.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 px-6 bg-white m-3 rounded-2xl border-2 border-dashed border-gray-200">
@@ -211,7 +211,7 @@ const ContactsList = () => {
               {searchTerm ? 'No contacts found' : 'No followers yet'}
             </h3>
             <p className="text-sm text-gray-500 text-center max-w-[200px]">
-              {searchTerm 
+              {searchTerm
                 ? 'Try a different search term'
                 : 'When people follow you, they will appear here'
               }
@@ -220,11 +220,11 @@ const ContactsList = () => {
         )}
       </div>
 
-     
+
 
       {/* Chat Box */}
       {showChatBox && currentChat && selectedUser && (
-        <ChatBox 
+        <ChatBox
           user={selectedUser}
           currentChat={currentChat}
           onClose={() => {

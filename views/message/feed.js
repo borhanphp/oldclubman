@@ -2,11 +2,11 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { 
-  FaSearch, FaUserFriends, FaSmile, FaPaperclip, FaPaperPlane, 
-  FaCheckCircle, FaImage, FaFile, FaFileAlt, FaFilePdf, 
-  FaFileWord, FaFileExcel, FaFileImage, FaFileArchive, FaFileAudio, 
-  FaFileVideo, FaTimesCircle, FaCommentAlt, FaAddressBook, 
+import {
+  FaSearch, FaUserFriends, FaSmile, FaPaperclip, FaPaperPlane,
+  FaCheckCircle, FaImage, FaFile, FaFileAlt, FaFilePdf,
+  FaFileWord, FaFileExcel, FaFileImage, FaFileArchive, FaFileAudio,
+  FaFileVideo, FaTimesCircle, FaCommentAlt, FaAddressBook,
   FaEnvelope, FaBars, FaArrowLeft, FaDownload, FaCircle
 } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
@@ -26,13 +26,13 @@ import moment from 'moment';
 
 const MessagingContent = () => {
   const searchParams = useSearchParams();
-  const { allChat, prevChat, convarsationData, unreadCounts } = useSelector(({chat}) => chat);
-  const { userFollowers, profile, userProfileData, myFollowers } = useSelector(({settings}) => settings);
+  const { allChat, prevChat, convarsationData, unreadCounts } = useSelector(({ chat }) => chat);
+  const { userFollowers, profile, userProfileData, myFollowers } = useSelector(({ settings }) => settings);
   const dispatch = useDispatch();
-  
+
   // Online status tracking
   const { isUserOnline, onlineUsers, appearOnline, toggleOnlineStatus } = useOnlineStatus();
-  
+
   // State for active chats
   const [currentChat, setCurrentChat] = useState(null);
   const [activeTab, setActiveTab] = useState('chats');
@@ -58,12 +58,12 @@ const MessagingContent = () => {
   // Initialize Pusher service when component mounts
   useEffect(() => {
     pusherService.initialize();
-    
+
     // Request notification permission (for browser notifications)
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }
-    
+
     return () => {
       pusherService.disconnect();
     };
@@ -76,10 +76,10 @@ const MessagingContent = () => {
   }, [dispatch]);
 
   // Typing indicator
-  const { 
-    handleTyping, 
-    handleStopTyping, 
-    isAnyoneTyping 
+  const {
+    handleTyping,
+    handleStopTyping,
+    isAnyoneTyping
   } = useTypingIndicator(currentChat?.id, profile?.client?.id);
 
   // Handle window resize - show sidebar on desktop
@@ -124,8 +124,8 @@ const MessagingContent = () => {
                 contactsMap.set(userId, {
                   id: userId,
                   name: `${user.fname || ''} ${user.last_name || ''}`.trim(),
-                  avatar: user.image 
-                    ? `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${user.image}`
+                  avatar: user.image
+                    ? `${process.env.NEXT_PUBLIC_FILE_PATH}${user.image}`
                     : "/common-avator.jpg",
                   isOnline: user.is_online || false,
                   userId: userId,
@@ -140,18 +140,18 @@ const MessagingContent = () => {
             try {
               const searchResponse = await api.get(`/client/search_by_people?search=${encodeURIComponent(searchTerm)}`);
               const searchResults = searchResponse.data?.data?.follow_connections || [];
-              
+
               // Clear existing contacts and only show search results
               contactsMap.clear();
-              
+
               searchResults.forEach(result => {
                 const userId = result.id;
                 if (userId && userId !== currentUserId) {
                   contactsMap.set(userId, {
                     id: userId,
                     name: `${result.fname || ''} ${result.last_name || ''}`.trim(),
-                    avatar: result.image 
-                      ? `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${result.image}`
+                    avatar: result.image
+                      ? `${process.env.NEXT_PUBLIC_FILE_PATH}${result.image}`
                       : "/common-avator.jpg",
                     isOnline: result.is_online || false,
                     userId: userId,
@@ -181,17 +181,17 @@ const MessagingContent = () => {
     try {
       // Get the other user in the conversation (not the current user)
       const otherUser = conversation?.users?.find(user => String(user.id) !== String(profile?.client?.id));
-      
+
       // Construct the display name from the other user
-      const displayName = otherUser 
+      const displayName = otherUser
         ? `${otherUser.fname || ''} ${otherUser.last_name || ''}`.trim() || otherUser.display_name || otherUser.username || 'Unknown User'
         : conversation?.name || 'Unknown User';
-      
+
       // Get avatar from the other user
-      const displayAvatar = otherUser?.image 
+      const displayAvatar = otherUser?.image
         ? getImageUrl(otherUser.image)
         : conversation?.avatar || "/common-avator.jpg";
-      
+
       // Enhanced conversation object with correct display data
       const enhancedConversation = {
         ...conversation,
@@ -200,14 +200,14 @@ const MessagingContent = () => {
         isOnline: otherUser?.is_online || false,
         _otherUser: otherUser // Store for reference
       };
-      
+
       setCurrentChat(enhancedConversation);
-      
+
       // Clear unread count for this conversation
       dispatch(clearUnreadCount(conversation.id));
-      
+
       const response = await dispatch(getMessage({ id: conversation.id })).unwrap();
-      
+
       if (response) {
         // On mobile, hide sidebar and show chat
         if (window.innerWidth < 768) {
@@ -257,7 +257,7 @@ const MessagingContent = () => {
   // convarsationData holds the conversation ID for messaging
   // This prevents Redux updates from overwriting our carefully set display data
 
-  
+
   // Subscribe to current conversation for real-time messages
   useChatPusher(
     convarsationData?.id,
@@ -272,7 +272,7 @@ const MessagingContent = () => {
       currentConv: convarsationData?.id,
       hasPusher: !!pusherService.pusher
     });
-    
+
     if (!allChat || allChat.length === 0 || !pusherService.pusher) {
       console.log('🔔 Cannot subscribe: missing data');
       return;
@@ -285,28 +285,28 @@ const MessagingContent = () => {
         const channelName = `private-conversation.${chat.id}`;
         console.log(`🔔 Subscribing to ${channelName} for notifications`);
         const channel = pusherService.pusher.subscribe(channelName);
-        
+
         const messageHandler = (data) => {
           console.log(`🔔 Message received on ${channelName}:`, data);
-          
+
           if (data.message) {
             dispatch(incrementUnreadCount(chat.id));
-            
+
             // Show notification
             const otherUser = chat?.users?.find(user => String(user.id) !== String(profile?.client?.id));
-            const senderName = otherUser 
+            const senderName = otherUser
               ? `${otherUser.fname || ''} ${otherUser.last_name || ''}`.trim() || 'Unknown User'
               : chat?.name || 'Unknown User';
-            const senderAvatar = otherUser?.image 
+            const senderAvatar = otherUser?.image
               ? getImageUrl(otherUser.image)
               : chat?.avatar || '/common-avator.jpg';
-            
+
             console.log('🔔 Calling showNotification with:', {
               chatId: chat.id,
               message: data.message,
               senderInfo: { name: senderName, avatar: senderAvatar }
             });
-            
+
             showNotification(chat.id, data.message, {
               name: senderName,
               avatar: senderAvatar
@@ -339,12 +339,12 @@ const MessagingContent = () => {
   }, [prevChat]);
 
   // Filter chats based on search term
-  const filteredChats = allChat?.filter(chat => 
+  const filteredChats = allChat?.filter(chat =>
     chat.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Filter contacts based on search term
-  const filteredContacts = allContacts?.filter(contact => 
+  const filteredContacts = allContacts?.filter(contact =>
     contact.name.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
@@ -354,7 +354,7 @@ const MessagingContent = () => {
     try {
       const profileResponse = await dispatch(getUserProfile(contactId)).unwrap();
       const userData = profileResponse?.client;
-      
+
       if (!userData) {
         console.error('No user data received');
         toast.error('User data not available');
@@ -370,14 +370,14 @@ const MessagingContent = () => {
       // Helper function to find conversation by user ID
       const findConversationByUserId = (chats, userId) => {
         if (!chats || !Array.isArray(chats)) return null;
-        
+
         return chats.find(chat => {
           if (chat.user_ids) {
             const userIds = Array.isArray(chat.user_ids) ? chat.user_ids : [chat.user_ids];
             if (userIds.some(id => Number(id) === Number(userId))) return true;
           }
-          if (chat.participants?.some(p => 
-            Number(p.id) === Number(userId) || 
+          if (chat.participants?.some(p =>
+            Number(p.id) === Number(userId) ||
             Number(p.user_id) === Number(userId) ||
             Number(p.client_id) === Number(userId)
           )) return true;
@@ -392,11 +392,11 @@ const MessagingContent = () => {
 
       // First, check if conversation already exists
       let conversation = null;
-      
+
       try {
         const allChats = await dispatch(getAllChat()).unwrap();
         conversation = findConversationByUserId(allChats, userData.id);
-        
+
         if (!conversation) {
           const directResponse = await api.get('/chat');
           const directChats = directResponse.data?.data || directResponse.data || [];
@@ -411,13 +411,13 @@ const MessagingContent = () => {
         const newChat = {
           is_group: 0,
           name: `${userData.fname} ${userData.last_name}`,
-          avatar: userData?.image ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + userData.image : "/common-avator.jpg",
+          avatar: userData?.image ? process.env.NEXT_PUBLIC_FILE_PATH + userData.image : "/common-avator.jpg",
           user_ids: userData.id
         };
 
         try {
           const createResponse = await api.post('/chat', newChat);
-          
+
           // Handle different response structures
           if (createResponse.data?.data?.conversation?.id) {
             conversation = createResponse.data.data.conversation;
@@ -435,7 +435,7 @@ const MessagingContent = () => {
               conversation = data;
             }
           }
-          
+
           if (conversation?.id) {
             await dispatch(getAllChat());
           } else {
@@ -446,36 +446,36 @@ const MessagingContent = () => {
           // Handle "conversation already exists" error
           const errorStatus = err?.response?.status;
           const errorMessage = err?.response?.data?.message || '';
-          const isAlreadyExistsError = 
-            errorStatus === 400 && 
+          const isAlreadyExistsError =
+            errorStatus === 400 &&
             (errorMessage.toLowerCase().includes("already exists") ||
-             errorMessage.toLowerCase().includes("conversation"));
+              errorMessage.toLowerCase().includes("conversation"));
 
           if (isAlreadyExistsError) {
             // Try to extract conversation ID from error or refresh and find it
             const errorData = err?.response?.data;
-            let convId = errorData?.data?.conversation_id || 
-                         errorData?.data?.id || 
-                         errorData?.conversation_id || 
-                         errorData?.id ||
-                         errorData?.conversation?.id ||
-                         errorData?.data?.conversation?.id;
-            
+            let convId = errorData?.data?.conversation_id ||
+              errorData?.data?.id ||
+              errorData?.conversation_id ||
+              errorData?.id ||
+              errorData?.conversation?.id ||
+              errorData?.data?.conversation?.id;
+
             if (!convId && errorMessage) {
-              const idMatch = errorMessage.match(/conversation[_\s]*id[:\s]*(\d+)/i) || 
-                             errorMessage.match(/id[:\s]*(\d+)/i);
+              const idMatch = errorMessage.match(/conversation[_\s]*id[:\s]*(\d+)/i) ||
+                errorMessage.match(/id[:\s]*(\d+)/i);
               if (idMatch) {
                 convId = idMatch[1];
               }
             }
-            
+
             if (convId) {
               conversation = { id: Number(convId) };
             } else {
               // Refresh and find it
               const updatedChats = await dispatch(getAllChat()).unwrap();
               conversation = findConversationByUserId(updatedChats, userData.id);
-              
+
               if (!conversation) {
                 const directResponse = await api.get('/chat');
                 const directChats = directResponse.data?.data || directResponse.data || [];
@@ -495,11 +495,11 @@ const MessagingContent = () => {
         const enrichedConversation = {
           ...conversation,
           name: conversation.name || `${userData.fname} ${userData.last_name}`,
-          avatar: conversation.avatar || (userData?.image ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + userData.image : "/common-avator.jpg"),
+          avatar: conversation.avatar || (userData?.image ? process.env.NEXT_PUBLIC_FILE_PATH + userData.image : "/common-avator.jpg"),
           isOnline: userData.is_online || false,
           user_ids: conversation.user_ids || userData.id
         };
-        
+
         setCurrentChat(enrichedConversation);
         try {
           await dispatch(getMessage({ id: conversation.id }));
@@ -524,12 +524,12 @@ const MessagingContent = () => {
           id: null,
           user_ids: userData.id,
           name: `${userData.fname} ${userData.last_name}`,
-          avatar: userData?.image ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + userData.image : "/common-avator.jpg",
+          avatar: userData?.image ? process.env.NEXT_PUBLIC_FILE_PATH + userData.image : "/common-avator.jpg",
           is_group: 0,
           _userData: userData,
           _pendingConversation: true
         };
-        
+
         setCurrentChat(minimalConversation);
         setActiveTab('chats');
         // On mobile, hide sidebar and show chat
@@ -547,42 +547,42 @@ const MessagingContent = () => {
   // Get file icon based on type
   const getFileIcon = (fileName) => {
     const extension = fileName?.split('.').pop()?.toLowerCase();
-    switch(extension) {
-      case 'pdf': 
+    switch (extension) {
+      case 'pdf':
         return <FaFilePdf className="text-red-500" size={28} />;
       case 'doc':
-      case 'docx': 
+      case 'docx':
         return <FaFileWord className="text-blue-500" size={28} />;
       case 'xls':
-      case 'xlsx': 
+      case 'xlsx':
         return <FaFileExcel className="text-green-500" size={28} />;
       case 'ppt':
-      case 'pptx': 
+      case 'pptx':
         return <FaFileAlt className="text-orange-500" size={28} />;
       case 'jpg':
       case 'jpeg':
       case 'png':
       case 'gif':
       case 'webp':
-      case 'svg': 
+      case 'svg':
         return <FaFileImage className="text-purple-500" size={28} />;
       case 'zip':
       case 'rar':
-      case '7z': 
+      case '7z':
         return <FaFileArchive className="text-yellow-600" size={28} />;
       case 'mp3':
       case 'wav':
-      case 'ogg': 
+      case 'ogg':
         return <FaFileAudio className="text-pink-500" size={28} />;
       case 'mp4':
       case 'avi':
       case 'mov':
-      case 'wmv': 
+      case 'wmv':
         return <FaFileVideo className="text-indigo-500" size={28} />;
       case 'txt':
-      case 'csv': 
+      case 'csv':
         return <FaFileAlt className="text-gray-500" size={28} />;
-      default: 
+      default:
         return <FaFileAlt className="text-gray-400" size={28} />;
     }
   };
@@ -591,14 +591,14 @@ const MessagingContent = () => {
   const parseMessageFile = (message) => {
     // If already has file object, return it
     if (message.file) return message.file;
-    
+
     // Parse file_name JSON if it exists
     if (message.file_name) {
       try {
-        const files = typeof message.file_name === 'string' 
-          ? JSON.parse(message.file_name) 
+        const files = typeof message.file_name === 'string'
+          ? JSON.parse(message.file_name)
           : message.file_name;
-        
+
         // Return first file from array
         if (Array.isArray(files) && files.length > 0) {
           const fileInfo = files[0];
@@ -614,7 +614,7 @@ const MessagingContent = () => {
         return null;
       }
     }
-    
+
     return null;
   };
 
@@ -627,30 +627,30 @@ const MessagingContent = () => {
   // Get image URL with proper path
   const getImageUrl = (imagePath) => {
     if (!imagePath) return '/common-avator.jpg';
-    
+
     // If it's already a full URL (http:// or https://), return as-is
     if (/^https?:\/\//i.test(imagePath)) {
       return imagePath;
     }
-    
+
     // Clean up malformed paths that start with domain name or dots
     let cleanPath = imagePath;
-    
+
     // Remove leading dots and domain names (e.g., ".oldclubman.com/" or "oldclubman.com/")
     cleanPath = cleanPath.replace(/^\.?[a-zA-Z0-9.-]+\.(com|net|org|io)(\/|$)/i, '');
-    
+
     // Remove leading /api/ if present
     cleanPath = cleanPath.replace(/^\/api\//, '');
-    
+
     // Remove leading slashes
     cleanPath = cleanPath.replace(/^\/+/, '');
-    
+
     // Get base URL without /api suffix
     const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/api\/?$/, '');
-    
+
     // Construct final URL
     const fullUrl = `${apiUrl}/${cleanPath}`;
-    
+
     console.log('🖼️ Image URL:', { original: imagePath, cleaned: cleanPath, final: fullUrl });
     return fullUrl;
   };
@@ -665,10 +665,10 @@ const MessagingContent = () => {
   // Show notification for new message
   const showNotification = (conversationId, message, senderInfo) => {
     console.log('🔔 showNotification called:', { conversationId, message, senderInfo });
-    
+
     const notificationId = `notif-${Date.now()}`;
     const messagePreview = message?.content || (message?.type === 'file' ? '📎 Sent a file' : 'New message');
-    
+
     const newNotification = {
       id: notificationId,
       conversationId,
@@ -686,7 +686,7 @@ const MessagingContent = () => {
       console.log('🔔 Notifications state updated:', updated);
       return updated;
     });
-    
+
     // Also show browser notification if permitted
     if ('Notification' in window && Notification.permission === 'granted') {
       const browserNotif = new Notification(senderInfo?.name || 'New Message', {
@@ -695,7 +695,7 @@ const MessagingContent = () => {
         tag: conversationId, // Prevents duplicate notifications for same conversation
         requireInteraction: false
       });
-      
+
       // Click to open chat
       browserNotif.onclick = () => {
         window.focus();
@@ -705,7 +705,7 @@ const MessagingContent = () => {
         }
         browserNotif.close();
       };
-      
+
       // Auto-close after 5 seconds
       setTimeout(() => browserNotif.close(), 5000);
     }
@@ -765,7 +765,7 @@ const MessagingContent = () => {
       },
       _optimistic: true
     };
-    
+
     // Add file info to optimistic message if file is being sent
     if (selectedFile) {
       optimisticMessage.file_name = JSON.stringify([{
@@ -809,7 +809,7 @@ const MessagingContent = () => {
       };
 
       console.log('📤 Sending message with file:', selectedFile?.name, selectedFile?.type, selectedFile?.size);
-      
+
       // Clear message input immediately
       setNewMessage("");
       if (selectedFile) {
@@ -822,23 +822,23 @@ const MessagingContent = () => {
 
       // Add optimistic message immediately
       dispatch(addMessageToChat(optimisticMessage));
-      
+
       // Scroll to bottom
       setTimeout(() => {
         scrollToBottom();
       }, 50);
-      
+
       // Send to server
       const response = await dispatch(sendMessage(chatData)).unwrap();
       console.log('✅ Message sent successfully:', response);
-      
+
       // Reset upload progress
       setUploadProgress(0);
-      
+
     } catch (error) {
       console.error('❌ Error sending message:', error);
       console.error('Error details:', error.response?.data || error.message);
-      
+
       // Reset upload progress on error
       setUploadProgress(0);
       toast.error(error.message || 'Failed to send message. Please try again.');
@@ -863,18 +863,18 @@ const MessagingContent = () => {
       e.target.value = ''; // Clear the file input
       return;
     }
-    
+
     // Expanded allowed file types
     const allowedTypes = [
       // Images
-      'image/jpeg', 
-      'image/png', 
-      'image/gif', 
+      'image/jpeg',
+      'image/png',
+      'image/gif',
       'image/webp',
       'image/svg+xml',
       // Documents
-      'application/pdf', 
-      'application/msword', 
+      'application/pdf',
+      'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/vnd.ms-excel',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -893,7 +893,7 @@ const MessagingContent = () => {
       'video/mp4',
       'video/mpeg'
     ];
-    
+
     if (!allowedTypes.includes(file.type)) {
       toast.error('File type not supported. Supported types: Images, PDF, Word, Excel, PowerPoint, Text, ZIP, Audio, Video');
       e.target.value = '';
@@ -976,7 +976,7 @@ const MessagingContent = () => {
   // Handle input change and send typing event
   const handleInputChange = (e) => {
     setNewMessage(e.target.value);
-    
+
     // Trigger typing indicator
     if (e.target.value.length > 0) {
       handleTyping();
@@ -1015,8 +1015,8 @@ const MessagingContent = () => {
   }, [currentChat, convarsationData?.id, dispatch]);
 
 
-// Removed unused filteredChatsUsers - was causing error when profile.client is undefined
-// const filteredChatsUsers = allChat?.map(mp => mp?.user_id === mp.users?.filter(ddd => ddd?.id === Number(profile?.client?.id)))
+  // Removed unused filteredChatsUsers - was causing error when profile.client is undefined
+  // const filteredChatsUsers = allChat?.map(mp => mp?.user_id === mp.users?.filter(ddd => ddd?.id === Number(profile?.client?.id)))
 
   return (
     <>
@@ -1026,34 +1026,32 @@ const MessagingContent = () => {
         onClose={closeNotification}
         onClick={handleNotificationClick}
       />
-      
+
       <div className="h-full w-full overflow-hidden bg-gray-50" style={{ height: '100%' }}>
         <div className="bg-white h-full w-full shadow-lg overflow-hidden rounded-lg" style={{ height: '100%', maxHeight: '100vh' }}>
           <div className="flex h-full w-full overflow-hidden" style={{ height: '100%' }}>
             {/* Left Sidebar */}
             <div className={`flex flex-col border-r border-gray-200 ${showSidebar ? 'block' : 'hidden'} md:block ${showSidebar ? 'w-full md:w-auto' : ''} absolute md:relative z-30 md:z-auto bg-white h-full`}>
-              
+
               {/* Content area */}
               <div className="w-full sm:w-80 flex flex-col bg-gray-50">
                 {/* Tabs */}
                 <div className="flex items-center justify-center gap-3 p-3 bg-gradient-to-r from-blue-600 to-blue-700 border-b border-blue-800">
-                  <button 
-                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 ${
-                      activeTab === 'chats' 
-                        ? 'bg-white text-blue-600 shadow-lg' 
+                  <button
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 ${activeTab === 'chats'
+                        ? 'bg-white text-blue-600 shadow-lg'
                         : 'bg-blue-500 bg-opacity-50 text-white hover:bg-opacity-70'
-                    }`}
+                      }`}
                     onClick={() => handleTabChange('chats')}
                   >
                     <FaCommentAlt className="w-4 h-4" />
                     <span className="text-sm">Chats</span>
                   </button>
-                  <button 
-                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 ${
-                      activeTab === 'contacts' 
-                        ? 'bg-white text-blue-600 shadow-lg' 
+                  <button
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 ${activeTab === 'contacts'
+                        ? 'bg-white text-blue-600 shadow-lg'
                         : 'bg-blue-500 bg-opacity-50 text-white hover:bg-opacity-70'
-                    }`}
+                      }`}
                     onClick={() => handleTabChange('contacts')}
                   >
                     <FaUserFriends className="w-4 h-4" />
@@ -1067,8 +1065,8 @@ const MessagingContent = () => {
                     <FaCircle className={`text-xs ${appearOnline ? 'text-green-500' : 'text-gray-400'}`} />
                     <span className="text-sm text-gray-600">Your Status:</span>
                   </div>
-                  <OnlineStatusToggle 
-                    isOnline={appearOnline} 
+                  <OnlineStatusToggle
+                    isOnline={appearOnline}
                     onToggle={toggleOnlineStatus}
                   />
                 </div>
@@ -1088,7 +1086,7 @@ const MessagingContent = () => {
                     />
                   </div>
                 </div>
-                
+
                 {/* Chats List */}
                 {activeTab === 'chats' && (
                   <div className="overflow-y-auto flex-1 bg-white">
@@ -1096,64 +1094,63 @@ const MessagingContent = () => {
                       allChat?.map(chat => {
                         // Get the other user in the conversation (not the current user)
                         const otherUser = chat?.users?.find(user => String(user.id) !== String(profile?.client?.id))
-                        
+
                         // Construct the display name from the other user
-                        const displayName = otherUser 
+                        const displayName = otherUser
                           ? `${otherUser.fname || ''} ${otherUser.last_name || ''}`.trim() || otherUser.display_name || otherUser.username || 'Unknown User'
                           : chat?.name || 'Unknown User';
-                        
+
                         // Get avatar from the other user
-                        const displayAvatar = otherUser?.image 
+                        const displayAvatar = otherUser?.image
                           ? getImageUrl(otherUser.image)
                           : chat?.avatar || "/common-avator.jpg";
-                        
+
                         const unreadCount = unreadCounts[chat?.id] || 0;
-                        
+
                         return (
-                            <div 
-                              key={chat?.id} 
-                              className={`flex items-center p-3 md:p-4 border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-all duration-200 ${
-                                chat?.id === currentChat?.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : 'border-l-4 border-l-transparent'
+                          <div
+                            key={chat?.id}
+                            className={`flex items-center p-3 md:p-4 border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-all duration-200 ${chat?.id === currentChat?.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : 'border-l-4 border-l-transparent'
                               }`}
-                              onClick={() => handleChatSelect2(chat)}
-                            >
-                              <div className="relative mr-3 flex-shrink-0">
-                                {displayAvatar && displayAvatar !== "/common-avator.jpg" ? (
-                                  <div className="w-11 h-11 md:w-12 md:h-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-blue-600 shadow-md ring-2 ring-white">
-                                    <img 
-                                      src={displayAvatar}
-                                      alt={displayName}
-                                      className="w-full h-full object-cover"
-                                      onError={(e) => {
-                                        e.target.src = '/common-avator.jpg';
-                                        e.target.onerror = null;
-                                      }}
-                                    />
-                                  </div>
-                                ) : (
-                                  <div className="w-11 h-11 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm md:text-base font-semibold shadow-md ring-2 ring-white">
-                                    {(displayName || 'U').charAt(0).toUpperCase()}
-                                  </div>
-                                )}
-                                {isUserOnline(otherUser?.id) && (
-                                  <div className="absolute bottom-0 right-0 w-3 h-3 md:w-3.5 md:h-3.5 bg-green-500 rounded-full border-2 border-white shadow-md"></div>
-                                )}
+                            onClick={() => handleChatSelect2(chat)}
+                          >
+                            <div className="relative mr-3 flex-shrink-0">
+                              {displayAvatar && displayAvatar !== "/common-avator.jpg" ? (
+                                <div className="w-11 h-11 md:w-12 md:h-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-blue-600 shadow-md ring-2 ring-white">
+                                  <img
+                                    src={displayAvatar}
+                                    alt={displayName}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      e.target.src = '/common-avator.jpg';
+                                      e.target.onerror = null;
+                                    }}
+                                  />
+                                </div>
+                              ) : (
+                                <div className="w-11 h-11 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm md:text-base font-semibold shadow-md ring-2 ring-white">
+                                  {(displayName || 'U').charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              {isUserOnline(otherUser?.id) && (
+                                <div className="absolute bottom-0 right-0 w-3 h-3 md:w-3.5 md:h-3.5 bg-green-500 rounded-full border-2 border-white shadow-md"></div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex justify-between items-center mb-1">
+                                <h3 className="text-sm md:text-base font-semibold text-gray-800 truncate">{displayName}</h3>
+                                <span className="text-[10px] md:text-xs text-gray-400 ml-2 font-medium">{chat?.time}</span>
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex justify-between items-center mb-1">
-                                  <h3 className="text-sm md:text-base font-semibold text-gray-800 truncate">{displayName}</h3>
-                                  <span className="text-[10px] md:text-xs text-gray-400 ml-2 font-medium">{chat?.time}</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                  <p className="text-xs md:text-sm text-gray-500 truncate flex-1">{chat?.message}</p>
-                                  {unreadCount > 0 && (
-                                    <span className="ml-2 bg-blue-500 text-white text-[10px] md:text-xs rounded-full min-w-[18px] h-[18px] md:min-w-[20px] md:h-5 flex items-center justify-center px-1.5 font-semibold shadow-sm">
-                                      {unreadCount}
-                                    </span>
-                                  )}
-                                </div>
+                              <div className="flex justify-between items-center">
+                                <p className="text-xs md:text-sm text-gray-500 truncate flex-1">{chat?.message}</p>
+                                {unreadCount > 0 && (
+                                  <span className="ml-2 bg-blue-500 text-white text-[10px] md:text-xs rounded-full min-w-[18px] h-[18px] md:min-w-[20px] md:h-5 flex items-center justify-center px-1.5 font-semibold shadow-sm">
+                                    {unreadCount}
+                                  </span>
+                                )}
                               </div>
                             </div>
+                          </div>
                         )
                       })
                     ) : (
@@ -1167,7 +1164,7 @@ const MessagingContent = () => {
                     )}
                   </div>
                 )}
-                
+
                 {/* Contacts List */}
                 {activeTab === 'contacts' && (
                   <div className="overflow-y-auto flex-1 bg-white">
@@ -1178,15 +1175,15 @@ const MessagingContent = () => {
                       </div>
                     ) : filteredContacts.length > 0 ? (
                       filteredContacts.map(contact => (
-                        <div 
-                          key={contact.id} 
+                        <div
+                          key={contact.id}
                           className="flex items-center p-3 md:p-4 border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-all duration-200 group"
                           onClick={() => handleContactSelect(contact.userId)}
                         >
                           <div className="relative mr-3 flex-shrink-0">
                             <div className="w-11 h-11 md:w-12 md:h-12 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-sm md:text-base font-semibold shadow-md ring-2 ring-white group-hover:ring-blue-200 transition-all">
                               {contact.avatar && contact.avatar !== "/common-avator.jpg" ? (
-                                <img 
+                                <img
                                   src={contact.avatar}
                                   alt={contact.name}
                                   className="w-full h-full object-cover"
@@ -1229,14 +1226,14 @@ const MessagingContent = () => {
                 )}
               </div>
             </div>
-            
+
             {/* Chat Area */}
             <div className={`flex-1 flex flex-col ${!showSidebar ? 'flex' : 'hidden'} md:flex w-full bg-gray-50`} style={{ height: '100%' }}>
               {/* Chat Header */}
               <div className="px-4 md:px-6 py-4 md:py-5 border-b border-gray-200 bg-white flex items-center justify-between shadow-sm shrink-0">
                 <div className="flex items-center flex-1 min-w-0">
                   {/* Back button for mobile */}
-                  <button 
+                  <button
                     onClick={() => setShowSidebar(true)}
                     className="md:hidden mr-3 p-2 hover:bg-gray-100 rounded-lg transition-colors"
                     aria-label="Back to chats"
@@ -1246,7 +1243,7 @@ const MessagingContent = () => {
                   <div className="relative mr-3 md:mr-4 flex-shrink-0">
                     {currentChat?.avatar || userProfileData?.client?.image ? (
                       <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-blue-600 shadow-md ring-2 ring-white">
-                        <img 
+                        <img
                           src={currentChat?.avatar || getImageUrl(userProfileData?.client?.image)}
                           alt={currentChat?.name || userProfileData?.client?.fname || 'User'}
                           className="w-full h-full object-cover"
@@ -1286,7 +1283,7 @@ const MessagingContent = () => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Chat Messages */}
               <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 md:py-6 bg-gradient-to-b from-gray-50 to-gray-100" style={{ minHeight: 0 }}>
                 {!currentChat ? (
@@ -1312,16 +1309,16 @@ const MessagingContent = () => {
                       const messageSenderId = String(message.user_id || message.user?.id || '');
                       const currentUserId = String(profile?.client?.id || '');
                       const isCurrentUser = messageSenderId === currentUserId;
-                      
+
                       // Group messages from the same user
-                      const prevMessageSenderId = index > 0 ? 
-                        String(prevChat[index - 1]?.user_id || prevChat[index - 1]?.user?.id || '') 
+                      const prevMessageSenderId = index > 0 ?
+                        String(prevChat[index - 1]?.user_id || prevChat[index - 1]?.user?.id || '')
                         : null;
                       const isSameUser = index > 0 && prevMessageSenderId === messageSenderId;
-                      
+
                       // Parse file information
                       const fileInfo = parseMessageFile(message);
-                      
+
                       // Debug logging for file/image/video messages
                       if (message.type === 'file' || message.type === 'image' || message.type === 'video') {
                         console.log('📎 File/Image/Video message:', {
@@ -1332,108 +1329,106 @@ const MessagingContent = () => {
                           hasContent: !!message.content
                         });
                       }
-                      
+
                       return (
-                      <div 
-                        key={message.id} 
-                        className={`flex items-end ${isCurrentUser ? 'justify-end' : 'justify-start'} ${isSameUser ? 'mt-1' : 'mt-4'}`}
-                      >
-                        {/* Only render message bubble if there's content or file/image/video */}
-                        {(message.content || ((message.type === 'file' || message.type === 'image' || message.type === 'video') && fileInfo)) && (
-                        <div className={`max-w-[75%] md:max-w-sm lg:max-w-lg ${
-                          isCurrentUser 
-                            ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl rounded-br-md shadow-md' 
-                            : 'bg-white border border-gray-200 rounded-2xl rounded-bl-md shadow-sm'
-                        } p-3 md:p-3.5 hover:shadow-lg transition-all duration-200`}>
-                          {(message.type === 'file' || message.type === 'image' || message.type === 'video') && fileInfo && (
-                            <div className="mb-2">
-                              {message.type === 'image' || isImageFile(fileInfo.name) ? (
-                                // Image preview
-                                <div 
-                                  className="rounded-xl overflow-hidden mb-2 shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
-                                  onClick={() => openImageModal(getImageUrl(fileInfo.path))}
-                                >
-                                  <img 
-                                    src={getImageUrl(fileInfo.path)}
-                                    alt={fileInfo.name}
-                                    className="w-full h-auto max-h-64 object-cover"
-                                    onError={(e) => {
-                                      e.target.src = '/common-avator.jpg';
-                                      e.target.onerror = null;
-                                    }}
-                                  />
-                                </div>
-                              ) : message.type === 'video' ? (
-                                // Video preview
-                                <div className="rounded-xl overflow-hidden mb-2 shadow-sm">
-                                  <video 
-                                    src={getImageUrl(fileInfo.path)}
-                                    controls
-                                    className="w-full h-auto max-h-64 object-cover"
-                                    onError={(e) => {
-                                      console.error('❌ Video load error:', getImageUrl(fileInfo.path));
-                                    }}
-                                  >
-                                    Your browser does not support the video tag.
-                                  </video>
-                                </div>
-                              ) : (
-                                // File attachment
-                                <div className={`p-3 rounded-lg ${isCurrentUser ? 'bg-blue-600 bg-opacity-50' : 'bg-gray-100'}`}>
-                                  <div className="flex items-center">
-                                    {getFileIcon(fileInfo.name)}
-                                    <div className="ml-3 flex-1 min-w-0">
-                                      <p className={`text-sm font-semibold truncate ${isCurrentUser ? 'text-white' : 'text-gray-800'}`}>
-                                        {fileInfo.name}
-                                      </p>
-                                      <p className={`text-xs ${isCurrentUser ? 'text-blue-100' : 'text-gray-500'}`}>
-                                        {formatFileSize(fileInfo.size)}
-                                      </p>
-                                    </div>
-                                    <button 
-                                      onClick={() => handleFileDownload(getImageUrl(fileInfo.path), fileInfo.name)}
-                                      className={`ml-2 text-xs px-3 py-1.5 rounded-md font-medium transition-all ${
-                                        isCurrentUser 
-                                          ? 'bg-white text-blue-600 hover:bg-blue-50' 
-                                          : 'bg-blue-500 text-white hover:bg-blue-600'
-                                      } shadow-sm`}
+                        <div
+                          key={message.id}
+                          className={`flex items-end ${isCurrentUser ? 'justify-end' : 'justify-start'} ${isSameUser ? 'mt-1' : 'mt-4'}`}
+                        >
+                          {/* Only render message bubble if there's content or file/image/video */}
+                          {(message.content || ((message.type === 'file' || message.type === 'image' || message.type === 'video') && fileInfo)) && (
+                            <div className={`max-w-[75%] md:max-w-sm lg:max-w-lg ${isCurrentUser
+                                ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl rounded-br-md shadow-md'
+                                : 'bg-white border border-gray-200 rounded-2xl rounded-bl-md shadow-sm'
+                              } p-3 md:p-3.5 hover:shadow-lg transition-all duration-200`}>
+                              {(message.type === 'file' || message.type === 'image' || message.type === 'video') && fileInfo && (
+                                <div className="mb-2">
+                                  {message.type === 'image' || isImageFile(fileInfo.name) ? (
+                                    // Image preview
+                                    <div
+                                      className="rounded-xl overflow-hidden mb-2 shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
+                                      onClick={() => openImageModal(getImageUrl(fileInfo.path))}
                                     >
-                                      Download
-                                    </button>
-                                  </div>
+                                      <img
+                                        src={getImageUrl(fileInfo.path)}
+                                        alt={fileInfo.name}
+                                        className="w-full h-auto max-h-64 object-cover"
+                                        onError={(e) => {
+                                          e.target.src = '/common-avator.jpg';
+                                          e.target.onerror = null;
+                                        }}
+                                      />
+                                    </div>
+                                  ) : message.type === 'video' ? (
+                                    // Video preview
+                                    <div className="rounded-xl overflow-hidden mb-2 shadow-sm">
+                                      <video
+                                        src={getImageUrl(fileInfo.path)}
+                                        controls
+                                        className="w-full h-auto max-h-64 object-cover"
+                                        onError={(e) => {
+                                          console.error('❌ Video load error:', getImageUrl(fileInfo.path));
+                                        }}
+                                      >
+                                        Your browser does not support the video tag.
+                                      </video>
+                                    </div>
+                                  ) : (
+                                    // File attachment
+                                    <div className={`p-3 rounded-lg ${isCurrentUser ? 'bg-blue-600 bg-opacity-50' : 'bg-gray-100'}`}>
+                                      <div className="flex items-center">
+                                        {getFileIcon(fileInfo.name)}
+                                        <div className="ml-3 flex-1 min-w-0">
+                                          <p className={`text-sm font-semibold truncate ${isCurrentUser ? 'text-white' : 'text-gray-800'}`}>
+                                            {fileInfo.name}
+                                          </p>
+                                          <p className={`text-xs ${isCurrentUser ? 'text-blue-100' : 'text-gray-500'}`}>
+                                            {formatFileSize(fileInfo.size)}
+                                          </p>
+                                        </div>
+                                        <button
+                                          onClick={() => handleFileDownload(getImageUrl(fileInfo.path), fileInfo.name)}
+                                          className={`ml-2 text-xs px-3 py-1.5 rounded-md font-medium transition-all ${isCurrentUser
+                                              ? 'bg-white text-blue-600 hover:bg-blue-50'
+                                              : 'bg-blue-500 text-white hover:bg-blue-600'
+                                            } shadow-sm`}
+                                        >
+                                          Download
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               )}
+                              {message.content && (
+                                <p className={`text-sm md:text-base break-words whitespace-pre-wrap leading-relaxed ${isCurrentUser ? 'text-white' : 'text-gray-800'}`}>
+                                  {message.content}
+                                </p>
+                              )}
+
+                              <div className={`text-[10px] md:text-xs mt-2 flex justify-end items-center gap-1.5 ${isCurrentUser ? 'text-blue-100' : 'text-gray-400'}`}>
+                                <span className="font-medium">
+                                  {moment(message.created_at).format('hh:mm a')}
+                                </span>
+                                {message.is_read && isCurrentUser && (
+                                  <FaCheckCircle className="text-xs" />
+                                )}
+                              </div>
                             </div>
                           )}
-                          {message.content && (
-                            <p className={`text-sm md:text-base break-words whitespace-pre-wrap leading-relaxed ${isCurrentUser ? 'text-white' : 'text-gray-800'}`}>
-                              {message.content}
-                            </p>
-                          )}
-                          
-                          <div className={`text-[10px] md:text-xs mt-2 flex justify-end items-center gap-1.5 ${isCurrentUser ? 'text-blue-100' : 'text-gray-400'}`}>
-                            <span className="font-medium">
-                              {moment(message.created_at).format('hh:mm a')}
-                            </span>
-                            {message.is_read && isCurrentUser && (
-                              <FaCheckCircle className="text-xs" />
-                            )}
-                          </div>
                         </div>
-                        )}
-                      </div>
-                    );
+                      );
                     })}
-                    
+
                     {/* Typing Indicator */}
                     {isAnyoneTyping && currentChat && (
-                      <TypingIndicator 
+                      <TypingIndicator
                         userName={currentChat.name}
                         showAvatar={true}
                         avatarUrl={currentChat.avatar}
                       />
                     )}
-                    
+
                     <div ref={messagesEndRef} />
                   </div>
                 ) : (
@@ -1446,7 +1441,7 @@ const MessagingContent = () => {
                   </div>
                 )}
               </div>
-              
+
               {/* File Preview */}
               {currentChat && selectedFile && (
                 <div className="px-4 md:px-6 py-3 bg-gradient-to-r from-blue-50 to-purple-50 border-t border-blue-200 shrink-0">
@@ -1454,9 +1449,9 @@ const MessagingContent = () => {
                     <div className="flex-shrink-0">
                       {filePreview ? (
                         <div className="w-12 h-12 md:w-16 md:h-16 rounded-lg overflow-hidden border-2 border-gray-200">
-                          <img 
-                            src={filePreview} 
-                            alt="Preview" 
+                          <img
+                            src={filePreview}
+                            alt="Preview"
                             className="w-full h-full object-cover"
                           />
                         </div>
@@ -1478,7 +1473,7 @@ const MessagingContent = () => {
                             <span>{uploadProgress}%</span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
+                            <div
                               className="bg-blue-500 h-2 rounded-full transition-all duration-300"
                               style={{ width: `${uploadProgress}%` }}
                             />
@@ -1490,7 +1485,7 @@ const MessagingContent = () => {
                         </p>
                       )}
                     </div>
-                    <button 
+                    <button
                       onClick={removeSelectedFile}
                       className="ml-3 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full p-2 transition-all"
                       title="Remove file"
@@ -1500,52 +1495,51 @@ const MessagingContent = () => {
                   </div>
                 </div>
               )}
-              
+
               {/* Message Input */}
               {currentChat && (
-              <div className="px-4 md:px-6 py-3 md:py-4 border-t border-gray-200 bg-white shadow-lg shrink-0">
-                <div className="flex items-center gap-2 rounded-2xl bg-gray-50 px-3 md:px-4 py-2 md:py-2.5 border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all duration-200">
-                  <button 
-                    className="text-gray-400 p-1.5 md:p-2 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                    title="Add emoji"
-                  >
-                    <FaSmile className="text-lg md:text-xl" />
-                  </button>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileSelect}
-                    className="hidden"
-                  />
-                  <button 
-                    className="text-gray-400 p-1.5 md:p-2 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                    onClick={() => fileInputRef.current.click()}
-                    title="Attach file"
-                  >
-                    <FaPaperclip className="text-lg md:text-xl" />
-                  </button>
-                  <input
-                    type="text"
-                    placeholder="Type your message..."
-                    className="flex-1 bg-transparent border-none outline-none px-2 md:px-3 py-1.5 text-sm md:text-base text-gray-800 placeholder-gray-400"
-                    value={newMessage}
-                    onChange={handleInputChange}
-                    onKeyPress={handleKeyPress}
-                  />
-                  <button 
-                    className={`p-2.5 md:p-3 rounded-xl transition-all duration-200 shadow-sm ${
-                      (newMessage.trim() || selectedFile) 
-                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-lg transform hover:scale-105' 
-                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                    }`}
-                    onClick={handleSendMessage}
-                    disabled={!newMessage.trim() && !selectedFile}
-                    title="Send message"
-                  >
-                    <FaPaperPlane className="text-base md:text-lg" />
-                  </button>
+                <div className="px-4 md:px-6 py-3 md:py-4 border-t border-gray-200 bg-white shadow-lg shrink-0">
+                  <div className="flex items-center gap-2 rounded-2xl bg-gray-50 px-3 md:px-4 py-2 md:py-2.5 border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all duration-200">
+                    <button
+                      className="text-gray-400 p-1.5 md:p-2 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                      title="Add emoji"
+                    >
+                      <FaSmile className="text-lg md:text-xl" />
+                    </button>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                    <button
+                      className="text-gray-400 p-1.5 md:p-2 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                      onClick={() => fileInputRef.current.click()}
+                      title="Attach file"
+                    >
+                      <FaPaperclip className="text-lg md:text-xl" />
+                    </button>
+                    <input
+                      type="text"
+                      placeholder="Type your message..."
+                      className="flex-1 bg-transparent border-none outline-none px-2 md:px-3 py-1.5 text-sm md:text-base text-gray-800 placeholder-gray-400"
+                      value={newMessage}
+                      onChange={handleInputChange}
+                      onKeyPress={handleKeyPress}
+                    />
+                    <button
+                      className={`p-2.5 md:p-3 rounded-xl transition-all duration-200 shadow-sm ${(newMessage.trim() || selectedFile)
+                          ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-lg transform hover:scale-105'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        }`}
+                      onClick={handleSendMessage}
+                      disabled={!newMessage.trim() && !selectedFile}
+                      title="Send message"
+                    >
+                      <FaPaperPlane className="text-base md:text-lg" />
+                    </button>
+                  </div>
                 </div>
-              </div>
               )}
             </div>
           </div>
@@ -1554,7 +1548,7 @@ const MessagingContent = () => {
 
       {/* Image Modal */}
       {imageModalOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 backdrop-blur-sm animate-fadeIn"
           onClick={closeImageModal}
         >
@@ -1569,7 +1563,7 @@ const MessagingContent = () => {
             </button>
 
             {/* Image */}
-            <div 
+            <div
               className="relative transition-all duration-300 animate-scaleIn"
               onClick={(e) => e.stopPropagation()}
             >

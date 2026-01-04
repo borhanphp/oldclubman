@@ -1507,7 +1507,7 @@ const PostModal = () => {
                   <img
                     src={
                       profile?.client?.image
-                        ? process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + profile?.client?.image
+                        ? process.env.NEXT_PUBLIC_FILE_PATH + profile?.client?.image
                         : "/common-avator.jpg"
                     }
                     onError={(e) => {

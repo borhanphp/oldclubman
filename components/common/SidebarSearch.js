@@ -542,7 +542,7 @@ const SidebarSearch = () => {
                     <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden mr-3 flex-shrink-0">
                       {result?.image ? (
                         <img
-                          src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + result?.image}
+                          src={process.env.NEXT_PUBLIC_FILE_PATH + result?.image}
                           alt={result.name}
                           className="w-full h-full object-cover"
                           onError={(e) => {

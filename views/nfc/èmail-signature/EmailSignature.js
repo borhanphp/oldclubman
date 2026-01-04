@@ -7,32 +7,32 @@ import Link from "next/link";
 import { FaEnvelope } from "react-icons/fa";
 
 const EmailSignature = () => {
-    const { nfcData } = useSelector(({ nfc }) => nfc);
-    const [activeTab, setActiveTab] = useState('square');
-    const [selectedCard, setSelectedCard] = useState(null);
-    const [copied, setCopied] = useState(false);
-    
-    const dispatch = useDispatch();
-  
-    useEffect(() => {
-      dispatch(getMyNfc());
-    }, []);
-  
-    const handleClickOnCard = (card) => {
-      setSelectedCard(card);
-      dispatch(getNfcById(card.id));
-    };
+  const { nfcData } = useSelector(({ nfc }) => nfc);
+  const [activeTab, setActiveTab] = useState('square');
+  const [selectedCard, setSelectedCard] = useState(null);
+  const [copied, setCopied] = useState(false);
 
-    const copyToClipboard = () => {
-      // Create a temporary container
-      const tempDiv = document.createElement('div');
-      
-      // Add the signature HTML
-      tempDiv.innerHTML = `
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(getMyNfc());
+  }, []);
+
+  const handleClickOnCard = (card) => {
+    setSelectedCard(card);
+    dispatch(getNfcById(card.id));
+  };
+
+  const copyToClipboard = () => {
+    // Create a temporary container
+    const tempDiv = document.createElement('div');
+
+    // Add the signature HTML
+    tempDiv.innerHTML = `
 <table cellpadding="0" cellspacing="0" style="font-family: Arial,sans-serif; font-size: 12px;">
   <tr>
     <td style="padding-right: 12px;" valign="top">
-      <img src="${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + selectedCard?.nfc_info?.image || '/oldman-bg.jpg'}" width="90" height="90" style="display: block; max-width: 90px;" />
+      <img src="${process.env.NEXT_PUBLIC_FILE_PATH + selectedCard?.nfc_info?.image || '/oldman-bg.jpg'}" width="90" height="90" style="display: block; max-width: 90px;" />
     </td>
     <td valign="top">
       <table cellpadding="0" cellspacing="0" style="font-family: Arial,sans-serif;">
@@ -66,63 +66,63 @@ const EmailSignature = () => {
   </tr>
 </table>`;
 
-      // Append to document temporarily
-      document.body.appendChild(tempDiv);
-      
-      // Create a range and selection
-      const range = document.createRange();
-      range.selectNode(tempDiv);
-      const selection = window.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range);
-      
-      try {
-        // Execute copy command
-        const successful = document.execCommand('copy');
-        if (successful) {
-          setCopied(true);
-          setTimeout(() => setCopied(false), 2000);
-        }
-      } catch (err) {
-        console.error('Failed to copy:', err);
-      }
-      
-      // Clean up
-      selection.removeAllRanges();
-      document.body.removeChild(tempDiv);
-    };
+    // Append to document temporarily
+    document.body.appendChild(tempDiv);
 
-    console.log('selectedCard',selectedCard)
- 
-    return (
-      <div className="min-h-screen">
-        {/* Hero Section */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="flex flex-col md:flex-row items-center justify-between">
-              <div className="mb-6 md:mb-0">
-                <h1 className="text-4xl font-bold mb-2">Email Signatures</h1>
-                <p className="text-blue-100 text-lg">
-                  Create professional email signatures from your NFC cards
-                </p>
-              </div>
-              <Link
-                href="/user/nfc"
-                className="inline-flex items-center space-x-2 bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:shadow-xl transition-all"
-              >
-                <span>Back to Cards</span>
-              </Link>
+    // Create a range and selection
+    const range = document.createRange();
+    range.selectNode(tempDiv);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    try {
+      // Execute copy command
+      const successful = document.execCommand('copy');
+      if (successful) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+
+    // Clean up
+    selection.removeAllRanges();
+    document.body.removeChild(tempDiv);
+  };
+
+  console.log('selectedCard', selectedCard)
+
+  return (
+    <div className="min-h-screen">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="flex flex-col md:flex-row items-center justify-between">
+            <div className="mb-6 md:mb-0">
+              <h1 className="text-4xl font-bold mb-2">Email Signatures</h1>
+              <p className="text-blue-100 text-lg">
+                Create professional email signatures from your NFC cards
+              </p>
             </div>
+            <Link
+              href="/user/nfc"
+              className="inline-flex items-center space-x-2 bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:shadow-xl transition-all"
+            >
+              <span>Back to Cards</span>
+            </Link>
           </div>
         </div>
+      </div>
 
-        {/* Main content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          
+      {/* Main content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
-         
-          <div className="bg-white rounded-xl shadow-lg p-8">
-            {/* Cards Grid */}
+
+
+        <div className="bg-white rounded-xl shadow-lg p-8">
+          {/* Cards Grid */}
           <div className="flex flex-row gap-8 px-8 py-4 overflow-x-auto max-w-[5000px]">
             <div className="grid grid-cols-10 gap-4">
               {nfcData?.nfc_cards?.data?.map((card, index) => {
@@ -132,10 +132,10 @@ const EmailSignature = () => {
                   ...card.nfc_design,
                   display_nfc_color: card?.card_design?.color,
                   profilePhotoUrl:
-                    process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
+                    process.env.NEXT_PUBLIC_FILE_PATH +
                     card?.nfc_info?.image,
                   logoUrl:
-                    process.env.NEXT_PUBLIC_CARD_FILE_PATH +
+                    process.env.NEXT_PUBLIC_FILE_PATH +
                     card?.card_design?.logo,
                 };
 
@@ -223,62 +223,57 @@ const EmailSignature = () => {
               })}
             </div>
           </div>
-           {/* Tabs and Content */}
-            {/* Tabs */}
-            <div className="flex gap-4 mb-8 pb-4 justify-center">
-              <button
-                onClick={() => setActiveTab('square')}
-                className={`flex items-center gap-2 px-6 py-3 rounded-lg ${
-                  activeTab === 'square' ? 'bg-[#6c5ce7] text-white' : 'bg-gray-100'
+          {/* Tabs and Content */}
+          {/* Tabs */}
+          <div className="flex gap-4 mb-8 pb-4 justify-center">
+            <button
+              onClick={() => setActiveTab('square')}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg ${activeTab === 'square' ? 'bg-[#6c5ce7] text-white' : 'bg-gray-100'
                 }`}
-              >
-                SQUARE
-              </button>
-              <button
-                onClick={() => setActiveTab('qrcode')}
-                className={`flex items-center gap-2 px-6 py-3 rounded-lg ${
-                  activeTab === 'qrcode' ? 'bg-[#6c5ce7] text-white' : 'bg-gray-100'
+            >
+              SQUARE
+            </button>
+            <button
+              onClick={() => setActiveTab('qrcode')}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg ${activeTab === 'qrcode' ? 'bg-[#6c5ce7] text-white' : 'bg-gray-100'
                 }`}
-              >
-                QR CODE
-              </button>
-              <button
-                onClick={() => setActiveTab('imglogo')}
-                className={`flex items-center gap-2 px-6 py-3 rounded-lg ${
-                  activeTab === 'imglogo' ? 'bg-[#6c5ce7] text-white' : 'bg-gray-100'
+            >
+              QR CODE
+            </button>
+            <button
+              onClick={() => setActiveTab('imglogo')}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg ${activeTab === 'imglogo' ? 'bg-[#6c5ce7] text-white' : 'bg-gray-100'
                 }`}
-              >
-                IMG + LOGO
-              </button>
-              <button
-                onClick={() => setActiveTab('logo')}
-                className={`flex items-center gap-2 px-6 py-3 rounded-lg ${
-                  activeTab === 'logo' ? 'bg-[#6c5ce7] text-white' : 'bg-gray-100'
+            >
+              IMG + LOGO
+            </button>
+            <button
+              onClick={() => setActiveTab('logo')}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg ${activeTab === 'logo' ? 'bg-[#6c5ce7] text-white' : 'bg-gray-100'
                 }`}
-              >
-                LOGO
-              </button>
-              <button
-                onClick={() => setActiveTab('text')}
-                className={`flex items-center gap-2 px-6 py-3 rounded-lg ${
-                  activeTab === 'text' ? 'bg-[#6c5ce7] text-white' : 'bg-gray-100'
+            >
+              LOGO
+            </button>
+            <button
+              onClick={() => setActiveTab('text')}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg ${activeTab === 'text' ? 'bg-[#6c5ce7] text-white' : 'bg-gray-100'
                 }`}
-              >
-                TEXT
-              </button>
-            </div>
+            >
+              TEXT
+            </button>
+          </div>
 
-            {/* Tab Content */}
-            <div className="flex justify-center gap-8 ">
-              {activeTab === 'square' && 
+          {/* Tab Content */}
+          <div className="flex justify-center gap-8 ">
+            {activeTab === 'square' &&
               <div className="">
                 <div className="bg-gray-50 rounded-xl p-6 flex gap-2">
                   <div className="bg-white rounded-xl shadow-md overflow-hidden">
-                    
+
 
                     <div className="relative rounded-xl flex flex-col items-center justify-center text-white">
-                    <img 
-                        src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + selectedCard?.nfc_info?.image || '/oldman-bg.jpg'}
+                      <img
+                        src={process.env.NEXT_PUBLIC_FILE_PATH + selectedCard?.nfc_info?.image || '/oldman-bg.jpg'}
                         alt="Profile"
                         className="w-50 h-50 object-cover"
                       />
@@ -304,35 +299,35 @@ const EmailSignature = () => {
                   <div className="bg-white rounded-xl shadow-md overflow-hidden">
 
                     <div className="relative w-50 h-50 bg-[#6c5ce7] rounded-xl flex flex-col items-center justify-center text-white">
-                  <div className=" p-4 rounded-xl">
-                    <div className="w-32 rounded-md h-32 flex items-center justify-center">
-                    <QRCodeSVG
-                          value={`${typeof window !== 'undefined' ? window.location.origin : ''}/user/fb_share/${selectedCard?.id}`}
-                          size={180}
-                          bgColor="#f3f4f6"
-                          fgColor="#222"
-                          level="H"
-                          className=""
-                          includeMargin={true}
-                        />
-                    </div>
-                    
-                  </div>
-                  <span className="absolute font-semibold text-sm bottom-2 uppercase tracking-wide">Connect</span>
-                  <span className="absolute font-semibold p-1 text-[12px]  border border-white rounded-md bg-[#6c5ce7] uppercase tracking-wide">Hi</span>
+                      <div className=" p-4 rounded-xl">
+                        <div className="w-32 rounded-md h-32 flex items-center justify-center">
+                          <QRCodeSVG
+                            value={`${typeof window !== 'undefined' ? window.location.origin : ''}/user/fb_share/${selectedCard?.id}`}
+                            size={180}
+                            bgColor="#f3f4f6"
+                            fgColor="#222"
+                            level="H"
+                            className=""
+                            includeMargin={true}
+                          />
+                        </div>
 
-                </div>
+                      </div>
+                      <span className="absolute font-semibold text-sm bottom-2 uppercase tracking-wide">Connect</span>
+                      <span className="absolute font-semibold p-1 text-[12px]  border border-white rounded-md bg-[#6c5ce7] uppercase tracking-wide">Hi</span>
+
+                    </div>
                   </div>
                 </div>
               </div>}
 
-              {activeTab === 'qrcode' && 
+            {activeTab === 'qrcode' &&
               <div className="">
-                <div className="bg-white border rounded-[12px] shadow-lg overflow-hidden" style={{width: '360px'}}>
+                <div className="bg-white border rounded-[12px] shadow-lg overflow-hidden" style={{ width: '360px' }}>
                   <div className="flex gap-4">
                     <div className="flex-shrink-0 leading-tight">
-                      <img 
-                        src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + selectedCard?.nfc_info?.image || '/oldman-bg.jpg'}
+                      <img
+                        src={process.env.NEXT_PUBLIC_FILE_PATH + selectedCard?.nfc_info?.image || '/oldman-bg.jpg'}
                         alt="Profile"
                         className="w-[90px] h-[90px] rounded-br-xl"
                       />
@@ -349,7 +344,7 @@ const EmailSignature = () => {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="px-5 pt-3 space-y-2.5">
                     <div className="flex items-center gap-2 ">
                       <div className="leading-tight w-5 h-5 rounded-full bg-[#6c5ce7]/10 flex items-center justify-center flex-shrink-0">
@@ -389,177 +384,177 @@ const EmailSignature = () => {
                   </div>
 
                   <div className="flex justify-end cursor-pointer">
-                  <div className="bg-[#6c5ce7]  rounded-tl-xl py-2 w-[150px] flex  justify-center">
-                    <button className="text-white cursor-pointer text-[12px] tracking-wide">
-                      SAVE CONTACT
-                    </button>
-                  </div>
+                    <div className="bg-[#6c5ce7]  rounded-tl-xl py-2 w-[150px] flex  justify-center">
+                      <button className="text-white cursor-pointer text-[12px] tracking-wide">
+                        SAVE CONTACT
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>}
 
-              {activeTab === 'imglogo' && 
+            {activeTab === 'imglogo' &&
               <div className="">
-              <div className="bg-white border rounded-[12px] shadow-lg overflow-hidden" style={{width: '360px'}}>
-                <div className="flex gap-4">
-                  <div className="flex-shrink-0 leading-tight">
-                    <img 
-                      src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + selectedCard?.nfc_info?.image || '/oldman-bg.jpg'}
-                      alt="Profile"
-                      className="w-[90px] h-[90px] rounded-br-xl"
-                    />
-                  </div>
-                  <div className="flex-grow pt-2">
-                    <h3 className="text-[18px]  font-bold text-gray-900 ">
-                      {selectedCard?.card_name || 'Taufiqul Islam Pius'}
-                    </h3>
-                    <p className="text-[12px] text-[#444] leading-tight">
-                      {selectedCard?.nfc_info?.title || 'President & CEO'}
-                    </p>
-                    <p className="text-[12px] text-[#666]">
-                      {selectedCard?.nfc_info?.company || 'Khondoker Group Company, Inc.'}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center px-4 py-3 gap-5">
-                  <div className="flex items-center gap-2 ">
-                    <div className="leading-tight w-5 h-5 rounded-full bg-[#6c5ce7]/10 flex items-center justify-center flex-shrink-0">
-                      <svg className="w-4 h-4 text-[#6c5ce7]" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                      </svg>
+                <div className="bg-white border rounded-[12px] shadow-lg overflow-hidden" style={{ width: '360px' }}>
+                  <div className="flex gap-4">
+                    <div className="flex-shrink-0 leading-tight">
+                      <img
+                        src={process.env.NEXT_PUBLIC_FILE_PATH + selectedCard?.nfc_info?.image || '/oldman-bg.jpg'}
+                        alt="Profile"
+                        className="w-[90px] h-[90px] rounded-br-xl"
+                      />
                     </div>
-                    <span className="text-[12px] text-[#444]">{selectedCard?.client?.email || 'info@taufiqulpius.com'}</span>
-                  </div>
-                  <div className="flex items-center gap-2 leading-tight -mt-1">
-                    <div className="w-5 h-5 rounded-full bg-[#6c5ce7]/10 flex items-center justify-center flex-shrink-0">
-                      <svg className="w-4 h-4 text-[#6c5ce7]" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                      </svg>
+                    <div className="flex-grow pt-2">
+                      <h3 className="text-[18px]  font-bold text-gray-900 ">
+                        {selectedCard?.card_name || 'Taufiqul Islam Pius'}
+                      </h3>
+                      <p className="text-[12px] text-[#444] leading-tight">
+                        {selectedCard?.nfc_info?.title || 'President & CEO'}
+                      </p>
+                      <p className="text-[12px] text-[#666]">
+                        {selectedCard?.nfc_info?.company || 'Khondoker Group Company, Inc.'}
+                      </p>
                     </div>
-                    <span className="text-[12px] text-[#444]">{selectedCard?.client?.contact_no || '+1 718 839 5812'}</span>
+                  </div>
+
+                  <div className="flex items-center px-4 py-3 gap-5">
+                    <div className="flex items-center gap-2 ">
+                      <div className="leading-tight w-5 h-5 rounded-full bg-[#6c5ce7]/10 flex items-center justify-center flex-shrink-0">
+                        <svg className="w-4 h-4 text-[#6c5ce7]" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                          <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                        </svg>
+                      </div>
+                      <span className="text-[12px] text-[#444]">{selectedCard?.client?.email || 'info@taufiqulpius.com'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 leading-tight -mt-1">
+                      <div className="w-5 h-5 rounded-full bg-[#6c5ce7]/10 flex items-center justify-center flex-shrink-0">
+                        <svg className="w-4 h-4 text-[#6c5ce7]" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                        </svg>
+                      </div>
+                      <span className="text-[12px] text-[#444]">{selectedCard?.client?.contact_no || '+1 718 839 5812'}</span>
+                    </div>
+                  </div>
+
+
+                  <div className="flex justify-end cursor-pointer">
+                    <div className="bg-[#6c5ce7]  rounded-tl-xl py-2 w-[150px] flex  justify-center">
+                      <button className="text-white cursor-pointer text-[12px] tracking-wide">
+                        SAVE CONTACT
+                      </button>
+                    </div>
                   </div>
                 </div>
+              </div>}
 
-
-                <div className="flex justify-end cursor-pointer">
-                <div className="bg-[#6c5ce7]  rounded-tl-xl py-2 w-[150px] flex  justify-center">
-                  <button className="text-white cursor-pointer text-[12px] tracking-wide">
-                    SAVE CONTACT
-                  </button>
-                </div>
-                </div>
-              </div>
-            </div>}
-
-              {activeTab === 'logo' && 
+            {activeTab === 'logo' &&
               <div className="">
-              <div className="bg-white border rounded-[12px] shadow-lg overflow-hidden" style={{width: '360px'}}>
-                <div className="flex gap-4">
-                  <div className="flex-shrink-0 leading-tight">
-                    <img 
-                      src={process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + selectedCard?.nfc_info?.image || '/oldman-bg.jpg'}
-                      alt="Profile"
-                      className="w-[90px] h-[90px] rounded-br-xl"
-                    />
-                  </div>
-                  <div className="flex-grow pt-2">
-                    <h3 className="text-[18px]  font-bold text-gray-900 ">
-                      {selectedCard?.card_name || 'Taufiqul Islam Pius'}
-                    </h3>
-                    <p className="text-[12px] text-[#444] leading-tight">
-                      {selectedCard?.nfc_info?.title || 'President & CEO'}
-                    </p>
-                    <p className="text-[12px] text-[#666]">
-                      {selectedCard?.nfc_info?.company || 'Khondoker Group Company, Inc.'}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center px-4 py-3 gap-5">
-                  <div className="flex items-center gap-2 ">
-                    <div className="leading-tight w-5 h-5 rounded-full bg-[#6c5ce7]/10 flex items-center justify-center flex-shrink-0">
-                      <svg className="w-4 h-4 text-[#6c5ce7]" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                      </svg>
+                <div className="bg-white border rounded-[12px] shadow-lg overflow-hidden" style={{ width: '360px' }}>
+                  <div className="flex gap-4">
+                    <div className="flex-shrink-0 leading-tight">
+                      <img
+                        src={process.env.NEXT_PUBLIC_FILE_PATH + selectedCard?.nfc_info?.image || '/oldman-bg.jpg'}
+                        alt="Profile"
+                        className="w-[90px] h-[90px] rounded-br-xl"
+                      />
                     </div>
-                    <span className="text-[12px] text-[#444]">{selectedCard?.client?.email || 'info@taufiqulpius.com'}</span>
-                  </div>
-                  <div className="flex items-center gap-2 leading-tight -mt-1">
-                    <div className="w-5 h-5 rounded-full bg-[#6c5ce7]/10 flex items-center justify-center flex-shrink-0">
-                      <svg className="w-4 h-4 text-[#6c5ce7]" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                      </svg>
+                    <div className="flex-grow pt-2">
+                      <h3 className="text-[18px]  font-bold text-gray-900 ">
+                        {selectedCard?.card_name || 'Taufiqul Islam Pius'}
+                      </h3>
+                      <p className="text-[12px] text-[#444] leading-tight">
+                        {selectedCard?.nfc_info?.title || 'President & CEO'}
+                      </p>
+                      <p className="text-[12px] text-[#666]">
+                        {selectedCard?.nfc_info?.company || 'Khondoker Group Company, Inc.'}
+                      </p>
                     </div>
-                    <span className="text-[12px] text-[#444]">{selectedCard?.client?.contact_no || '+1 718 839 5812'}</span>
+                  </div>
+
+                  <div className="flex items-center px-4 py-3 gap-5">
+                    <div className="flex items-center gap-2 ">
+                      <div className="leading-tight w-5 h-5 rounded-full bg-[#6c5ce7]/10 flex items-center justify-center flex-shrink-0">
+                        <svg className="w-4 h-4 text-[#6c5ce7]" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                          <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                        </svg>
+                      </div>
+                      <span className="text-[12px] text-[#444]">{selectedCard?.client?.email || 'info@taufiqulpius.com'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 leading-tight -mt-1">
+                      <div className="w-5 h-5 rounded-full bg-[#6c5ce7]/10 flex items-center justify-center flex-shrink-0">
+                        <svg className="w-4 h-4 text-[#6c5ce7]" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                        </svg>
+                      </div>
+                      <span className="text-[12px] text-[#444]">{selectedCard?.client?.contact_no || '+1 718 839 5812'}</span>
+                    </div>
+                  </div>
+
+
+                  <div className="flex justify-end cursor-pointer">
+                    <div className="bg-[#6c5ce7]  rounded-tl-xl py-2 w-[150px] flex  justify-center">
+                      <button className="text-white cursor-pointer text-[12px] tracking-wide">
+                        SAVE CONTACT
+                      </button>
+                    </div>
                   </div>
                 </div>
+              </div>}
 
-
-                <div className="flex justify-end cursor-pointer">
-                <div className="bg-[#6c5ce7]  rounded-tl-xl py-2 w-[150px] flex  justify-center">
-                  <button className="text-white cursor-pointer text-[12px] tracking-wide">
-                    SAVE CONTACT
-                  </button>
-                </div>
-                </div>
-              </div>
-            </div>}
-
-              {activeTab === 'text' && 
+            {activeTab === 'text' &&
               <div className="">
-              <div className="bg-white border rounded-[12px] shadow-lg overflow-hidden" style={{width: '360px'}}>
-                <div className="flex gap-4">
-                  
-                  <div className="flex-grow pt-2 px-4">
-                    <h3 className="text-[18px]  font-bold text-gray-900 ">
-                      {selectedCard?.card_name || 'Taufiqul Islam Pius'}
-                    </h3>
-                    <p className="text-[12px] text-[#444] leading-tight">
-                      {selectedCard?.nfc_info?.title || 'President & CEO'}
-                    </p>
-                    <p className="text-[12px] text-[#666]">
-                      {selectedCard?.nfc_info?.company || 'Khondoker Group Company, Inc.'}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center px-4 py-3 gap-5">
-                  <div className="flex items-center gap-2 ">
-                    <div className="leading-tight w-5 h-5 rounded-full bg-[#6c5ce7]/10 flex items-center justify-center flex-shrink-0">
-                      <svg className="w-4 h-4 text-[#6c5ce7]" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                      </svg>
+                <div className="bg-white border rounded-[12px] shadow-lg overflow-hidden" style={{ width: '360px' }}>
+                  <div className="flex gap-4">
+
+                    <div className="flex-grow pt-2 px-4">
+                      <h3 className="text-[18px]  font-bold text-gray-900 ">
+                        {selectedCard?.card_name || 'Taufiqul Islam Pius'}
+                      </h3>
+                      <p className="text-[12px] text-[#444] leading-tight">
+                        {selectedCard?.nfc_info?.title || 'President & CEO'}
+                      </p>
+                      <p className="text-[12px] text-[#666]">
+                        {selectedCard?.nfc_info?.company || 'Khondoker Group Company, Inc.'}
+                      </p>
                     </div>
-                    <span className="text-[12px] text-[#444]">{selectedCard?.client?.email || 'info@taufiqulpius.com'}</span>
                   </div>
-                  <div className="flex items-center gap-2 leading-tight -mt-1">
-                    <div className="w-5 h-5 rounded-full bg-[#6c5ce7]/10 flex items-center justify-center flex-shrink-0">
-                      <svg className="w-4 h-4 text-[#6c5ce7]" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                      </svg>
+
+                  <div className="flex items-center px-4 py-3 gap-5">
+                    <div className="flex items-center gap-2 ">
+                      <div className="leading-tight w-5 h-5 rounded-full bg-[#6c5ce7]/10 flex items-center justify-center flex-shrink-0">
+                        <svg className="w-4 h-4 text-[#6c5ce7]" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                          <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                        </svg>
+                      </div>
+                      <span className="text-[12px] text-[#444]">{selectedCard?.client?.email || 'info@taufiqulpius.com'}</span>
                     </div>
-                    <span className="text-[12px] text-[#444]">{selectedCard?.client?.contact_no || '+1 718 839 5812'}</span>
+                    <div className="flex items-center gap-2 leading-tight -mt-1">
+                      <div className="w-5 h-5 rounded-full bg-[#6c5ce7]/10 flex items-center justify-center flex-shrink-0">
+                        <svg className="w-4 h-4 text-[#6c5ce7]" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                        </svg>
+                      </div>
+                      <span className="text-[12px] text-[#444]">{selectedCard?.client?.contact_no || '+1 718 839 5812'}</span>
+                    </div>
+                  </div>
+
+
+                  <div className="flex justify-end cursor-pointer">
+                    <div className="bg-[#6c5ce7]  rounded-tl-xl py-2 w-[150px] flex  justify-center">
+                      <button className="text-white cursor-pointer text-[12px] tracking-wide">
+                        SAVE CONTACT
+                      </button>
+                    </div>
                   </div>
                 </div>
+              </div>}
+          </div>
 
-
-                <div className="flex justify-end cursor-pointer">
-                <div className="bg-[#6c5ce7]  rounded-tl-xl py-2 w-[150px] flex  justify-center">
-                  <button className="text-white cursor-pointer text-[12px] tracking-wide">
-                    SAVE CONTACT
-                  </button>
-                </div>
-                </div>
-              </div>
-            </div>}
-            </div>
-
-            {/* Instructions with Generate Button */}
-            <div className="flex justify-center">
+          {/* Instructions with Generate Button */}
+          <div className="flex justify-center">
             <div className="space-y-6 mt-8 ">
               <div className="flex items-center  gap-4">
                 <div className="w-8 h-8 rounded-full bg-[#6c5ce7] text-white flex items-center justify-center">1</div>
@@ -600,11 +595,11 @@ const EmailSignature = () => {
                 <p className="text-gray-700">Click "Save Changes"</p>
               </div>
             </div>
-            </div>
           </div>
         </div>
       </div>
-    );
+    </div>
+  );
 };
 
 export default EmailSignature;

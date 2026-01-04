@@ -121,7 +121,7 @@ export default function YourListingsPage() {
   const activeListings = listings.filter(item => item.status === 1 || item.status === 2).length;
 
   const profileImage = profile?.client?.image
-    ? `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${profile.client.image.startsWith('/') ? '' : '/'}${profile.client.image}`
+    ? `${process.env.NEXT_PUBLIC_FILE_PATH}${profile.client.image.startsWith('/') ? '' : '/'}${profile.client.image}`
     : "/common-avator.jpg";
 
   const profileName = profile?.client?.fname && profile?.client?.last_name

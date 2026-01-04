@@ -49,6 +49,15 @@ import { getImageUrl } from "@/utility"; // Import helper
 import PostCommentsModal from "./PostCommentsModal";
 import { usePostComments } from "@/contexts/PostCommentsContext";
 
+// Helper function to get client image URL without duplication
+const getClientImageUrl = (imagePath, fallback = "/common-avator.jpg") => {
+  if (!imagePath) return fallback;
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  return process.env.NEXT_PUBLIC_FILE_PATH + imagePath;
+};
+
 const PostList = ({ postsData }) => {
   const { basicPostData } = useSelector(({ gathering }) => gathering);
   const { profile, myFollowers } = useSelector(({ settings }) => settings);
@@ -902,9 +911,7 @@ const PostList = ({ postsData }) => {
         acc.push({
           id: user.id,
           name: fullName,
-          avatar: user.image ?
-            `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}/${user.image}` :
-            "/common-avator.jpg",
+          avatar: getClientImageUrl(user.image),
           source: user.source
         });
       }
@@ -960,9 +967,7 @@ const PostList = ({ postsData }) => {
           name: user.display_name ||
             `${user.fname || ''} ${user.middle_name ? user.middle_name + ' ' : ''}${user.last_name || ''}`.trim() ||
             'Unknown User',
-          avatar: user.image ?
-            `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}/${user.image}` :
-            "/common-avator.jpg",
+          avatar: getClientImageUrl(user.image),
           source: "api",
           rawData: user
         }));
@@ -1996,9 +2001,7 @@ const PostList = ({ postsData }) => {
       <div className="relative flex mt-2" style={{ marginLeft: `${level * 16}px` }} key={`${reply?.id || ri}-${level}`}>
         <div className="w-6 h-6 rounded-full overflow-hidden mr-2 mt-1">
           <img
-            src={
-              (reply?.client_comment?.image && `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${reply?.client_comment?.image?.startsWith('/') ? '' : '/'}${reply?.client_comment?.image}`) || "/common-avator.jpg"
-            }
+            src={getClientImageUrl(reply?.client_comment?.image)}
             className="w-full h-full object-cover"
             onError={(e) => {
               e.currentTarget.src = "/common-avator.jpg";
@@ -2111,10 +2114,7 @@ const PostList = ({ postsData }) => {
             <div className="flex items-start mt-3 ml-6">
               {/* User Avatar */}
               <img
-                src={profile?.client?.image ?
-                  process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
-                  profile?.client?.image : "/common-avator.jpg"
-                }
+                src={getClientImageUrl(profile?.client?.image)}
                 className="w-8 h-8 rounded-full object-cover mr-2 flex-shrink-0"
                 alt="Your avatar"
                 onError={(e) => {
@@ -2587,9 +2587,7 @@ const PostList = ({ postsData }) => {
           name: userData.client?.display_name ||
             `${userData.client?.fname || ''} ${userData.client?.last_name || ''}`.trim() ||
             "Unknown User",
-          image: userData.client?.image
-            ? `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${userData.client.image.startsWith('/') ? '' : '/'}${userData.client.image}`
-            : "/common-avator.jpg",
+          image: getClientImageUrl(userData.client?.image),
           bio: userData.client?.profile_overview ||
             userData.client?.tagline ||
             userData.client?.bio ||
@@ -2629,9 +2627,7 @@ const PostList = ({ postsData }) => {
         fallbackData = {
           id: followerData.id,
           name: followerData.display_name || followerData.name || "Unknown User",
-          image: followerData.image
-            ? `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${followerData.image.startsWith('/') ? '' : '/'}${followerData.image}`
-            : "/common-avator.jpg",
+          image: getClientImageUrl(followerData.image),
           bio: followerData.bio || "No bio available",
           location: followerData.location || null,
           joinedDate: "Unknown",
@@ -2650,9 +2646,7 @@ const PostList = ({ postsData }) => {
             fallbackData = {
               id: comment.client_id,
               name: `${comment.client_comment?.fname || ''} ${comment.client_comment?.last_name || ''}`.trim() || "Unknown User",
-              image: comment.client_comment?.image
-                ? `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${comment.client_comment.image.startsWith('/') ? '' : '/'}${comment.client_comment.image}`
-                : "/common-avator.jpg",
+              image: getClientImageUrl(comment.client_comment?.image),
               bio: comment.client_comment?.bio || "No bio available",
               location: comment.client_comment?.location || null,
               joinedDate: new Date(comment.created_at).getFullYear(),
@@ -3170,13 +3164,10 @@ const PostList = ({ postsData }) => {
                 <div className="w-10 h-10 border border-blue-600 rounded-full overflow-hidden mr-3">
                   <Image
                     // src={ item?.client?.image ?
-                    //   process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
+                    //   process.env.NEXT_PUBLIC_FILE_PATH +
                     //   item?.client?.image : "/common-avator.jpg"
                     // }
-                    src={item?.client?.image ?
-                      process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
-                      item?.client?.image : "/common-avator.jpg"
-                    }
+                    src={getClientImageUrl(item?.client?.image)}
                     className="w-full h-full object-cover"
 
                     alt="oldclubman"
@@ -3531,10 +3522,7 @@ const PostList = ({ postsData }) => {
                   <div className="flex">
                     <div className="w-8 h-8 rounded-full overflow-hidden mr-2 mt-2">
                       <img
-                        src={item?.latest_comment?.client?.image ?
-                          process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
-                          item?.latest_comment?.client?.image : "/common-avator.jpg"
-                        }
+                        src={getClientImageUrl(item?.latest_comment?.client?.image)}
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           e.target.onerror = null;
@@ -3768,9 +3756,7 @@ const PostList = ({ postsData }) => {
                         {/* Reply Avatar */}
                         <div className="w-6 h-6 rounded-full overflow-hidden mr-2 mt-1">
                           <img
-                            src={
-                              (reply?.client_comment?.image && `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${reply?.client_comment?.image?.startsWith('/') ? '' : '/'}${reply?.client_comment?.image}`) || "/common-avator.jpg"
-                            }
+                            src={getClientImageUrl(reply?.client_comment?.image)}
                             className="w-full h-full object-cover"
                             onError={(e) => {
                               e.currentTarget.src = "/common-avator.jpg";
@@ -3951,11 +3937,7 @@ const PostList = ({ postsData }) => {
                   <div className="flex items-start mt-3 ml-10">
                     {/* User Avatar */}
                     <img
-                      src={
-                        profile?.image
-                          ? `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${profile.image.startsWith('/') ? '' : '/'}${profile.image}`
-                          : "/common-avator.jpg"
-                      }
+                      src={getClientImageUrl(profile?.image)}
                       className="w-7 h-7 rounded-full object-cover mr-2 mt-1"
                       onError={(e) => {
                         e.currentTarget.src = "/common-avator.jpg";
@@ -4116,11 +4098,7 @@ const PostList = ({ postsData }) => {
               <div className="flex mt-2">
                 <div className="w-8 h-8 rounded-full overflow-hidden mr-2">
                   <img
-                    src={
-                      profile?.image
-                        ? `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${profile.image.startsWith('/') ? '' : '/'}${profile.image}`
-                        : "/common-avator.jpg"
-                    }
+                    src={getClientImageUrl(profile?.image)}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       e.currentTarget.src = "/common-avator.jpg";

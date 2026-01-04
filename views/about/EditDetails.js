@@ -20,15 +20,15 @@ import Link from "next/link";
 // Utility function to handle image loading with fallbacks
 const getImageSrc = (imagePath, fallback = "/common-avator.jpg") => {
   if (!imagePath) return fallback;
-  
+
   // Try different path combinations
   const paths = [
-    process.env.NEXT_PUBLIC_CLIENT_FILE_PATH + imagePath,
+    process.env.NEXT_PUBLIC_FILE_PATH + imagePath,
     `/uploads/client/${imagePath}`,
     `/public/uploads/client/${imagePath}`,
     imagePath.startsWith('http') ? imagePath : null
   ].filter(Boolean);
-  
+
   return paths[0] || fallback;
 };
 
@@ -63,14 +63,14 @@ const EditDetails = () => {
   const { profile, profileData } = useSelector(({ settings }) => settings);
   const { isPostModalOpen } = useSelector(({ gathering }) => gathering);
   const dispatch = useDispatch();
-const workDataForShow = profile.client?.metas?.filter(dd => dd.meta_key === "WORK")
-const educationDataShow = profile.client?.metas?.filter(dd => dd.meta_key === "EDUCATION")
-const profileDataForShow = profile.client?.metas?.filter(dd => dd.meta_key === "PROFILE")
-const socialLinksDataForShow = profile.client?.metas?.filter(dd => dd.meta_key === "SOCIAL_LINKS")
-const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value);
+  const workDataForShow = profile.client?.metas?.filter(dd => dd.meta_key === "WORK")
+  const educationDataShow = profile.client?.metas?.filter(dd => dd.meta_key === "EDUCATION")
+  const profileDataForShow = profile.client?.metas?.filter(dd => dd.meta_key === "PROFILE")
+  const socialLinksDataForShow = profile.client?.metas?.filter(dd => dd.meta_key === "SOCIAL_LINKS")
+  const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value);
 
-  
-// State for privacy settings
+
+  // State for privacy settings
   const [privacySettings, setPrivacySettings] = useState({
     marital_status: true,
     dob: true,
@@ -92,10 +92,10 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
   useEffect(() => {
     if (profile?.client?.profile_visibility) {
       try {
-        const visibilityData = typeof profile.client.profile_visibility === 'string' 
-          ? JSON.parse(profile.client.profile_visibility) 
+        const visibilityData = typeof profile.client.profile_visibility === 'string'
+          ? JSON.parse(profile.client.profile_visibility)
           : profile.client.profile_visibility;
-        
+
         setPrivacySettings(prev => ({
           ...prev,
           ...visibilityData
@@ -112,8 +112,8 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
     let currentVisibility = {};
     if (profile?.client?.profile_visibility) {
       try {
-        currentVisibility = typeof profile.client.profile_visibility === 'string' 
-          ? JSON.parse(profile.client.profile_visibility) 
+        currentVisibility = typeof profile.client.profile_visibility === 'string'
+          ? JSON.parse(profile.client.profile_visibility)
           : profile.client.profile_visibility;
       } catch (error) {
         console.error('Error parsing profile visibility:', error);
@@ -145,10 +145,10 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
       metas: JSON.stringify(profileData?.metas),
       profile_visibility: JSON.stringify(newVisibility)
     }))
-    .then(() => {
-    dispatch(getMyProfile());
-    toast.success("Updated")
-    })
+      .then(() => {
+        dispatch(getMyProfile());
+        toast.success("Updated")
+      })
   };
 
 
@@ -293,7 +293,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
         );
       }
       if (field === 'blood') {
-        const groups = ['A+','A-','B+','B-','AB+','AB-','O+','O-'];
+        const groups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
         return (
           <select
             className="border border-gray-300 rounded px-2 py-1 text-sm"
@@ -332,14 +332,12 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
             <div className="flex items-center mr-4">
               <button
                 onClick={() => handlePrivacyToggle(field)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                  isPublic ? "bg-blue-600" : "bg-gray-200"
-                }`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${isPublic ? "bg-blue-600" : "bg-gray-200"
+                  }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    isPublic ? "translate-x-6" : "translate-x-1"
-                  }`}
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isPublic ? "translate-x-6" : "translate-x-1"
+                    }`}
                 />
               </button>
             </div>
@@ -417,14 +415,14 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
 
       let workEntries = [];
       try {
-        workEntries = typeof currentWorkData.meta_value === 'string' 
-          ? JSON.parse(currentWorkData.meta_value) 
+        workEntries = typeof currentWorkData.meta_value === 'string'
+          ? JSON.parse(currentWorkData.meta_value)
           : currentWorkData.meta_value || [];
       } catch (error) {
         console.error('Error parsing work data:', error);
         return;
       }
-      
+
 
       // Update the specific work entry's status
       const updatedWorkEntries = workEntries.map(work => {
@@ -497,7 +495,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
     const handleSaveWork = () => {
       // Generate unique ID for new work or use existing ID for editing
       const workId = editingWorkId || `work_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
+
       const newWork = {
         id: workId,
         ...workFormData,
@@ -508,8 +506,8 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
       let currentWorkEntries = [];
       if (workDataForShow && workDataForShow.length > 0) {
         try {
-          currentWorkEntries = typeof workDataForShow[0].meta_value === 'string' 
-            ? JSON.parse(workDataForShow[0].meta_value) 
+          currentWorkEntries = typeof workDataForShow[0].meta_value === 'string'
+            ? JSON.parse(workDataForShow[0].meta_value)
             : workDataForShow[0].meta_value || [];
         } catch (error) {
           console.error('Error parsing current work data:', error);
@@ -520,7 +518,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
       let updatedWorkEntries;
       if (editingWorkId) {
         // Update existing work
-        updatedWorkEntries = currentWorkEntries.map(work => 
+        updatedWorkEntries = currentWorkEntries.map(work =>
           work.id === editingWorkId ? newWork : work
         );
       } else {
@@ -547,18 +545,18 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
 
       const submittedData = {
         company_name: workFormData?.company,
-        position:workFormData?.position,
-        start_date:workFormData?.start_date,
-        end_date:workFormData?.end_date,
+        position: workFormData?.position,
+        start_date: workFormData?.start_date,
+        end_date: workFormData?.end_date,
         description: workFormData?.description,
-        status:1,
+        status: 1,
       }
       dispatch(saveWork(submittedData))
 
       dispatch(storeBsicInformation(saveData))
-      .then(() => {
-        dispatch(getMyProfile());
-        toast.success("Updated")
+        .then(() => {
+          dispatch(getMyProfile());
+          toast.success("Updated")
         })
 
       // Reset form
@@ -601,7 +599,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
       // Remove the work entry with the specified ID
       const updatedWorkEntries = data?.filter(work => work.id !== id);
       setWorkEntries(updatedWorkEntries);
-      
+
       // Save updated data to backend
       const metas = [
         {
@@ -633,45 +631,43 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
 
         {/* Display work entries in clean design */}
         {workDataForShow && workDataForShow.length > 0 && workDataForShow.map((workData, index) => {
-          const workEntries = typeof workData.meta_value === 'string' 
-            ? JSON.parse(workData.meta_value) 
+          const workEntries = typeof workData.meta_value === 'string'
+            ? JSON.parse(workData.meta_value)
             : workData.meta_value || [];
-          
+
           return Array.isArray(workEntries) ? workEntries.map((entry, entryIndex) => {
             // Use the actual entry ID, or generate one if it doesn't exist
             const uniqueId = entry.id || `work_${index}_${entryIndex}_${Date.now()}`;
-            
-            
+
+
             return (
               <div key={uniqueId} className="flex items-center mb-3 last:mb-0">
                 {/* Privacy Toggle */}
                 <div className="flex items-center mr-4">
                   <button
                     onClick={() => handleWorkPrivacyToggle(entry.id || uniqueId)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                      (entry.status || 'public') === 'public' ? "bg-blue-600" : "bg-gray-200"
-                    }`}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${(entry.status || 'public') === 'public' ? "bg-blue-600" : "bg-gray-200"
+                      }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        (entry.status || 'public') === 'public' ? "translate-x-6" : "translate-x-1"
-                      }`}
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${(entry.status || 'public') === 'public' ? "translate-x-6" : "translate-x-1"
+                        }`}
                     />
                   </button>
                 </div>
 
                 {/* Work Title and Company */}
                 <div className="flex-1 text-sm text-gray-700">
-                  {entry.position && entry.company 
+                  {entry.position && entry.company
                     ? `${entry.position} at ${entry.company}`
                     : entry.title || entry.position || 'Work Entry'
                   }
                 </div>
 
                 {/* Edit Icon */}
-                <button 
+                <button
                   className="text-gray-400 ml-2 hover:text-gray-600"
-                  onClick={() => handleEditWork({...entry, id: entry.id || uniqueId})}
+                  onClick={() => handleEditWork({ ...entry, id: entry.id || uniqueId })}
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
@@ -679,7 +675,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
                 </button>
 
                 {/* Delete Icon */}
-                <button 
+                <button
                   className="text-red-400 ml-2 hover:text-red-600"
                   onClick={() => handleDeleteWork(workEntries, entry.id || uniqueId)}
                 >
@@ -697,7 +693,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
           <div className="text-gray-500 text-sm py-2">No work data found</div>
         )}
 
-      
+
 
         {/* Add/Edit Work Form */}
         {(isAddingWork || editingWorkId) && (
@@ -752,7 +748,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
                 <button
                   onClick={handleSaveWork}
                   className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                > 
+                >
                   Save
                 </button>
                 <button
@@ -769,7 +765,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
         {/* Add Workplace Button */}
         {!isAddingWork && !editingWorkId && (
           <div className="flex items-center mt-4">
-            <button 
+            <button
               className="flex items-center text-blue-600 hover:text-blue-700 transition-colors"
               onClick={handleAddWork}
             >
@@ -818,8 +814,8 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
 
       let educationEntries = [];
       try {
-        educationEntries = typeof currentEducationData.meta_value === 'string' 
-          ? JSON.parse(currentEducationData.meta_value) 
+        educationEntries = typeof currentEducationData.meta_value === 'string'
+          ? JSON.parse(currentEducationData.meta_value)
           : currentEducationData.meta_value || [];
       } catch (error) {
         console.error('Error parsing education data:', error);
@@ -896,7 +892,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
     const handleSaveEducation = () => {
       // Generate unique ID for new education or use existing ID for editing
       const educationId = editingEducationId || `education_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
+
       const newEducation = {
         id: educationId,
         ...educationFormData,
@@ -907,8 +903,8 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
       let currentEducationEntries = [];
       if (educationDataShow && educationDataShow.length > 0) {
         try {
-          currentEducationEntries = typeof educationDataShow[0].meta_value === 'string' 
-            ? JSON.parse(educationDataShow[0].meta_value) 
+          currentEducationEntries = typeof educationDataShow[0].meta_value === 'string'
+            ? JSON.parse(educationDataShow[0].meta_value)
             : educationDataShow[0].meta_value || [];
         } catch (error) {
           console.error('Error parsing current education data:', error);
@@ -919,7 +915,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
       let updatedEducationEntries;
       if (editingEducationId) {
         // Update existing education
-        updatedEducationEntries = currentEducationEntries.map(education => 
+        updatedEducationEntries = currentEducationEntries.map(education =>
           education.id === editingEducationId ? newEducation : education
         );
       } else {
@@ -946,9 +942,9 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
 
       const submittedData = {
         institution: educationFormData?.institution,
-        field_of_study:educationFormData?.field_of_study,
-        degree:educationFormData?.degree,
-        start_date:educationFormData?.start_date,
+        field_of_study: educationFormData?.field_of_study,
+        degree: educationFormData?.degree,
+        start_date: educationFormData?.start_date,
         end_date: educationFormData?.end_date,
         description: educationFormData?.description,
         status: 1,
@@ -956,9 +952,9 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
       dispatch(saveEducation(submittedData))
 
       dispatch(storeBsicInformation(saveData))
-      .then(() => {
-        dispatch(getMyProfile());
-        toast.success("Updated")
+        .then(() => {
+          dispatch(getMyProfile());
+          toast.success("Updated")
         })
 
       // Reset form
@@ -980,7 +976,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
       setIsAddingEducation(false);
       setEditingEducationId(null);
       setEducationFormData({
-      id: "",
+        id: "",
         title: "",
         institution: "",
         degree: "",
@@ -1003,7 +999,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
       // Remove the education entry with the specified ID
       const updatedEducationEntries = data?.filter(education => education.id !== id);
       setEducationEntries(updatedEducationEntries);
-      
+
       // Save updated data to backend
       const metas = [
         {
@@ -1035,7 +1031,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
         {/* Display education entries in clean design */}
         {educationDataShow && educationDataShow.length > 0 && educationDataShow.map((educationData, index) => {
           let educationEntries = [];
-          
+
           try {
             if (typeof educationData.meta_value === 'string') {
               educationEntries = JSON.parse(educationData.meta_value);
@@ -1048,43 +1044,41 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
             console.error('Error parsing education data:', error);
             educationEntries = [];
           }
-          
-          
+
+
           return Array.isArray(educationEntries) ? educationEntries.map((entry, entryIndex) => {
             // Use the actual entry ID, or generate one if it doesn't exist
             const uniqueId = entry.id || `education_${index}_${entryIndex}_${Date.now()}`;
-            
-            
+
+
             return (
               <div key={uniqueId} className="flex items-center mb-3 last:mb-0">
                 {/* Privacy Toggle */}
                 <div className="flex items-center mr-4">
                   <button
                     onClick={() => handleEducationPrivacyToggle(entry.id || uniqueId)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                      (entry.status || 'public') === 'public' ? "bg-blue-600" : "bg-gray-200"
-                    }`}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${(entry.status || 'public') === 'public' ? "bg-blue-600" : "bg-gray-200"
+                      }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        (entry.status || 'public') === 'public' ? "translate-x-6" : "translate-x-1"
-                      }`}
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${(entry.status || 'public') === 'public' ? "translate-x-6" : "translate-x-1"
+                        }`}
                     />
                   </button>
                 </div>
 
                 {/* Education Title and Institution */}
                 <div className="flex-1 text-sm text-gray-700">
-                  {entry.degree && entry.institution 
+                  {entry.degree && entry.institution
                     ? `${entry.degree} at ${entry.institution}`
                     : entry.title || entry.degree || entry.institution || 'Education Entry'
                   }
                 </div>
 
                 {/* Edit Icon */}
-                <button 
+                <button
                   className="text-gray-400 ml-2 hover:text-gray-600"
-                  onClick={() => handleEditEducation({...entry, id: entry.id || uniqueId})}
+                  onClick={() => handleEditEducation({ ...entry, id: entry.id || uniqueId })}
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
@@ -1092,7 +1086,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
                 </button>
 
                 {/* Delete Icon */}
-                <button 
+                <button
                   className="text-red-400 ml-2 hover:text-red-600"
                   onClick={() => handleDeleteEducation(educationEntries, entry.id || uniqueId)}
                 >
@@ -1110,9 +1104,9 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
           <div className="text-gray-500 text-sm py-2">No education data found</div>
         )}
 
-       
 
-       
+
+
 
         {/* Add/Edit Education Form */}
         {(isAddingEducation || editingEducationId) && (
@@ -1192,7 +1186,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
         {/* Add Education Button */}
         {!isAddingEducation && !editingEducationId && (
           <div className="flex items-center mt-4">
-            <button 
+            <button
               className="flex items-center text-blue-600 hover:text-blue-700 transition-colors"
               onClick={handleAddEducation}
             >
@@ -1227,7 +1221,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
       platform: "",
       username: ""
     });
-  
+
     const socialPlatforms = [
       { link: "youtube.com/@", value: "youtube", label: "YouTube" },
       { link: "instagram.com/", value: "instagram", label: "Instagram" },
@@ -1240,21 +1234,21 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
       // { link: "wh.", value: "whatsapp", label: "WhatsApp" },
       // { link: "", value: "telegram", label: "Telegram" }
     ];
-  
+
     const handleSocialLinkPrivacyToggle = (id) => {
       const currentSocialLinkData = socialLinksDataForShow && socialLinksDataForShow.length > 0 ? socialLinksDataForShow[0] : null;
       if (!currentSocialLinkData) return;
-  
+
       let socialLinkEntries = [];
       try {
-        socialLinkEntries = typeof currentSocialLinkData.meta_value === 'string' 
-          ? JSON.parse(currentSocialLinkData.meta_value) 
+        socialLinkEntries = typeof currentSocialLinkData.meta_value === 'string'
+          ? JSON.parse(currentSocialLinkData.meta_value)
           : currentSocialLinkData.meta_value || [];
       } catch (error) {
         console.error('Error parsing social link data:', error);
         return;
       }
-  
+
       const updatedSocialLinkEntries = socialLinkEntries.map(link => {
         if (link.id === id) {
           const currentStatus = link.status || 'public';
@@ -1265,7 +1259,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
         }
         return link;
       });
-  
+
       const metas = [
         {
           meta_key: 'SOCIAL_LINKS',
@@ -1273,20 +1267,20 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
           meta_status: '1'
         }
       ];
-  
+
       const saveData = {
         ...profileData,
         metas: JSON.stringify(metas).replace(/"/g, "'"),
         profile_visibility: profileData?.profile_visibility
       };
-  
+
       dispatch(storeBsicInformation(saveData))
         .then(() => {
           dispatch(getMyProfile());
           toast.success("Social link privacy updated");
         });
     };
-  
+
     const handleAddSocialLink = () => {
       const linkId = `social_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       setIsAddingSocialLink(true);
@@ -1296,7 +1290,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
         username: ""
       });
     };
-  
+
     const handleEditSocialLink = (link) => {
       setEditingSocialLinkId(link.id);
       setSocialLinkFormData({
@@ -1305,42 +1299,42 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
         username: link.username || ""
       });
     };
-  
+
     const handleSaveSocialLink = () => {
       const linkId = editingSocialLinkId || `social_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
+
       if (!socialLinkFormData.platform || !socialLinkFormData.username) {
         toast.error("Please fill in all fields");
         return;
       }
-      
+
       const newSocialLink = {
         id: linkId,
         ...socialLinkFormData,
         status: 'public'
       };
-  
+
       let currentSocialLinkEntries = [];
       if (socialLinksDataForShow && socialLinksDataForShow.length > 0) {
         try {
-          currentSocialLinkEntries = typeof socialLinksDataForShow[0].meta_value === 'string' 
-            ? JSON.parse(socialLinksDataForShow[0].meta_value) 
+          currentSocialLinkEntries = typeof socialLinksDataForShow[0].meta_value === 'string'
+            ? JSON.parse(socialLinksDataForShow[0].meta_value)
             : socialLinksDataForShow[0].meta_value || [];
         } catch (error) {
           console.error('Error parsing current social link data:', error);
           currentSocialLinkEntries = [];
         }
       }
-  
+
       let updatedSocialLinkEntries;
       if (editingSocialLinkId) {
-        updatedSocialLinkEntries = currentSocialLinkEntries.map(link => 
+        updatedSocialLinkEntries = currentSocialLinkEntries.map(link =>
           link.id === editingSocialLinkId ? newSocialLink : link
         );
       } else {
         updatedSocialLinkEntries = [...currentSocialLinkEntries, newSocialLink];
       }
-  
+
       const metas = [
         {
           meta_key: 'SOCIAL_LINKS',
@@ -1348,19 +1342,19 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
           meta_status: '1'
         }
       ];
-  
+
       const saveData = {
         ...profileData,
         metas: JSON.stringify(metas).replace(/"/g, "'"),
         profile_visibility: profileData?.profile_visibility
       };
-  
+
       dispatch(storeBsicInformation(saveData))
         .then(() => {
           dispatch(getMyProfile());
           toast.success("Updated");
         });
-  
+
       setIsAddingSocialLink(false);
       setEditingSocialLinkId(null);
       setSocialLinkFormData({
@@ -1369,7 +1363,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
         username: ""
       });
     };
-  
+
     const handleCancelSocialLink = () => {
       setIsAddingSocialLink(false);
       setEditingSocialLinkId(null);
@@ -1379,7 +1373,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
         username: ""
       });
     };
-  
+
     const handleSocialLinkFormChange = (e) => {
       const { name, value } = e.target;
       setSocialLinkFormData(prev => ({
@@ -1387,10 +1381,10 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
         [name]: value
       }));
     };
-  
+
     const handleDeleteSocialLink = (data, id) => {
       const updatedSocialLinkEntries = data?.filter(link => link.id !== id);
-      
+
       const metas = [
         {
           meta_key: 'SOCIAL_LINKS',
@@ -1398,81 +1392,79 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
           meta_status: '1'
         }
       ];
-  
+
       const saveData = {
         ...profileData,
         metas: JSON.stringify(metas).replace(/"/g, "'"),
         profile_visibility: profileData?.profile_visibility
       };
-  
+
       dispatch(storeBsicInformation(saveData))
         .then(() => {
           dispatch(getMyProfile());
           toast.success("Social link deleted");
         });
     };
-  
+
     const getPlatformLabel = (platformValue) => {
       const platform = socialPlatforms.find(p => p.value === platformValue);
       return platform ? platform?.link : platformValue;
     };
-    
+
     const getPlatformUrl = (platformValue, username) => {
       if (!platformValue || !username) return '#';
-      
+
       const platform = socialPlatforms.find(p => p.value === platformValue);
       if (!platform) return '#';
-      
+
       const baseUrl = platform.link;
       // Ensure username doesn't already include the domain
       const cleanUsername = username.replace(/^https?:\/\//, '').replace(/^www\./, '');
-      
+
       // Build full URL
       let fullUrl = baseUrl + cleanUsername;
-      
+
       // Add protocol if not present
       if (!fullUrl.startsWith('http://') && !fullUrl.startsWith('https://')) {
         fullUrl = 'https://' + fullUrl;
       }
-      
+
       return fullUrl;
     };
-  
+
     return (
       <div className="bg-white rounded-lg border border-gray-100 p-4 mb-4">
         <h4 className="text-base font-bold text-gray-800 mb-4">SOCIAL LINKS</h4>
-  
+
         {/* Display social link entries */}
         {socialLinksDataForShow && socialLinksDataForShow.length > 0 && socialLinksDataForShow.map((socialLinkData, index) => {
-          const socialLinkEntries = typeof socialLinkData.meta_value === 'string' 
-            ? JSON.parse(socialLinkData.meta_value) 
+          const socialLinkEntries = typeof socialLinkData.meta_value === 'string'
+            ? JSON.parse(socialLinkData.meta_value)
             : socialLinkData.meta_value || [];
-          
+
           return Array.isArray(socialLinkEntries) ? socialLinkEntries.map((entry, entryIndex) => {
             const uniqueId = entry.id || `social_${index}_${entryIndex}_${Date.now()}`;
-            
+
             return (
               <div key={uniqueId} className="flex items-center mb-3 last:mb-0">
                 {/* Privacy Toggle */}
                 <div className="flex items-center mr-4">
                   <button
                     onClick={() => handleSocialLinkPrivacyToggle(entry.id || uniqueId)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                      (entry.status || 'public') === 'public' ? "bg-blue-600" : "bg-gray-200"
-                    }`}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${(entry.status || 'public') === 'public' ? "bg-blue-600" : "bg-gray-200"
+                      }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        (entry.status || 'public') === 'public' ? "translate-x-6" : "translate-x-1"
-                      }`}
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${(entry.status || 'public') === 'public' ? "translate-x-6" : "translate-x-1"
+                        }`}
                     />
                   </button>
                 </div>
-  
+
                 {/* Platform and Username */}
                 <div className="flex-1 text-sm text-gray-700 flex items-center gap-2">
-                  <Link 
-                    className="hover:underline font-medium" 
+                  <Link
+                    className="hover:underline font-medium"
                     href={getPlatformUrl(entry.platform, entry.username)}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -1480,19 +1472,19 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
                     {getPlatformLabel(entry.platform)}{entry?.username}
                   </Link>
                 </div>
-  
+
                 {/* Edit Icon */}
-                <button 
+                <button
                   className="text-gray-400 ml-2 hover:text-gray-600"
-                  onClick={() => handleEditSocialLink({...entry, id: entry.id || uniqueId})}
+                  onClick={() => handleEditSocialLink({ ...entry, id: entry.id || uniqueId })}
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                   </svg>
                 </button>
-  
+
                 {/* Delete Icon */}
-                <button 
+                <button
                   className="text-red-400 ml-2 hover:text-red-600"
                   onClick={() => handleDeleteSocialLink(socialLinkEntries, entry.id || uniqueId)}
                 >
@@ -1504,12 +1496,12 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
             );
           }) : null;
         })}
-  
+
         {/* Show message when no social link data */}
         {(!socialLinksDataForShow || socialLinksDataForShow.length === 0) && (
           <div className="text-gray-500 text-sm py-2">No social links found</div>
         )}
-  
+
         {/* Add/Edit Social Link Form */}
         {(isAddingSocialLink || editingSocialLinkId) && (
           <div className="bg-gray-50 p-4 rounded-lg mb-4">
@@ -1560,11 +1552,10 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
                   </button>
                   <button
                     onClick={handleSaveSocialLink}
-                    className={`px-3 py-1 rounded-full text-sm ${
-                      socialLinkFormData.platform && socialLinkFormData.username
-                        ? "bg-blue-500 text-white hover:bg-blue-600" 
+                    className={`px-3 py-1 rounded-full text-sm ${socialLinkFormData.platform && socialLinkFormData.username
+                        ? "bg-blue-500 text-white hover:bg-blue-600"
                         : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                    }`}
+                      }`}
                     disabled={!socialLinkFormData.platform || !socialLinkFormData.username}
                   >
                     Save
@@ -1574,11 +1565,11 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
             </div>
           </div>
         )}
-  
+
         {/* Add Social Link Button */}
         {!isAddingSocialLink && !editingSocialLinkId && (
           <div className="flex items-center mt-4">
-            <button 
+            <button
               className="flex items-center text-blue-600 hover:text-blue-700 transition-colors"
               onClick={handleAddSocialLink}
             >
@@ -1653,7 +1644,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
       "Entertainer",
       "Public Figure"
     ]
-    
+
 
     // Use profileDataForShow from parent component
     // const profileDataForShow = profile.client?.metas?.filter(dd => dd.meta_key === "PROFILE");
@@ -1665,15 +1656,15 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
 
       let profileEntries = [];
       try {
-        profileEntries = typeof currentProfileData.meta_value === 'string' 
-          ? JSON.parse(currentProfileData.meta_value) 
+        profileEntries = typeof currentProfileData.meta_value === 'string'
+          ? JSON.parse(currentProfileData.meta_value)
           : currentProfileData.meta_value || [];
       } catch (error) {
         console.error('Error parsing profile data:', error);
         return;
       }
 
-      
+
 
       // Update the specific profile entry's status
       const updatedProfileEntries = profileEntries.map(profile => {
@@ -1691,7 +1682,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
       // Save updated data to backend - preserve existing metas
       const existingMetas = profile.client?.metas || [];
       const otherMetas = existingMetas.filter(meta => meta.meta_key !== 'PROFILE');
-      
+
       const newMetas = [
         ...otherMetas,
         {
@@ -1770,7 +1761,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
     const handleSaveProfile = () => {
       // Generate unique ID for new profile or use existing ID for editing
       const profileId = editingProfileId || `profile_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
+
       const newProfile = {
         id: profileId,
         category: (editingProfileId ? (selectedCategories[0] || profileFormData.category) : profileFormData.category),
@@ -1781,8 +1772,8 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
       let currentProfileEntries = [];
       if (profileDataForShow && profileDataForShow.length > 0) {
         try {
-          currentProfileEntries = typeof profileDataForShow[0].meta_value === 'string' 
-            ? JSON.parse(profileDataForShow[0].meta_value) 
+          currentProfileEntries = typeof profileDataForShow[0].meta_value === 'string'
+            ? JSON.parse(profileDataForShow[0].meta_value)
             : profileDataForShow[0].meta_value || [];
         } catch (error) {
           console.error('Error parsing current profile data:', error);
@@ -1793,7 +1784,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
       let updatedProfileEntries;
       if (editingProfileId) {
         // Update existing profile
-        updatedProfileEntries = currentProfileEntries.map(profile => 
+        updatedProfileEntries = currentProfileEntries.map(profile =>
           profile.id === editingProfileId ? newProfile : profile
         );
       } else {
@@ -1814,7 +1805,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
       // Save to backend using metas structure - preserve existing metas
       const existingMetas = profile.client?.metas || [];
       const otherMetas = existingMetas.filter(meta => meta.meta_key !== 'PROFILE');
-      
+
       const newMetas = [
         ...otherMetas,
         {
@@ -1833,9 +1824,9 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
       };
 
       dispatch(storeBsicInformation(saveData))
-      .then(() => {
-        dispatch(getMyProfile());
-        toast.success("Updated")
+        .then(() => {
+          dispatch(getMyProfile());
+          toast.success("Updated")
         })
 
       // Reset form
@@ -1892,11 +1883,11 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
       // Remove the profile entry with the specified ID
       const updatedProfileEntries = data?.filter(profile => profile.id !== id);
       setProfileEntries(updatedProfileEntries);
-      
+
       // Save updated data to backend - preserve existing metas
       const existingMetas = profile.client?.metas || [];
       const otherMetas = existingMetas.filter(meta => meta.meta_key !== 'PROFILE');
-      
+
       const newMetas = [
         ...otherMetas,
         {
@@ -1925,13 +1916,13 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
 
         {/* Display existing profile entries */}
         {profileDataForShow && profileDataForShow.length > 0 && profileDataForShow.map((profileData, index) => {
-          const profileEntries = typeof profileData.meta_value === 'string' 
-            ? JSON.parse(profileData.meta_value) 
+          const profileEntries = typeof profileData.meta_value === 'string'
+            ? JSON.parse(profileData.meta_value)
             : profileData.meta_value || [];
-          
+
           return Array.isArray(profileEntries) ? profileEntries.map((entry, entryIndex) => {
             const uniqueId = entry.id || `profile_${index}_${entryIndex}_${Date.now()}`;
-            
+
             return (
               <div key={uniqueId} className="mb-3">
                 {/* Category Entry */}
@@ -1942,34 +1933,33 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
                       <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
                       </svg>
-                      
+
                       {/* Category Text */}
                       <span className="text-gray-900 font-medium">
                         {entry.category || 'Category'}
                       </span>
                     </div>
-                    
+
                     {/* Action Icons */}
                     <div className="flex items-center space-x-2">
                       {/* Privacy Toggle (Globe Icon) */}
                       <button
                         onClick={() => handleProfilePrivacyToggle(entry.id || uniqueId)}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-                          (entry.status || 'public') === 'public' 
-                            ? "bg-gray-200 text-gray-600 hover:bg-gray-300" 
+                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${(entry.status || 'public') === 'public'
+                            ? "bg-gray-200 text-gray-600 hover:bg-gray-300"
                             : "bg-gray-100 text-gray-400 hover:bg-gray-200"
-                        }`}
+                          }`}
                         title={(entry.status || 'public') === 'public' ? 'Public' : 'Private'}
                       >
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
                         </svg>
                       </button>
-                      
+
                       {/* Edit Icon */}
-                      <button 
+                      <button
                         className="w-8 h-8 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 flex items-center justify-center transition-colors"
-                        onClick={() => handleEditProfile({...entry, id: entry.id || uniqueId})}
+                        onClick={() => handleEditProfile({ ...entry, id: entry.id || uniqueId })}
                         title="Edit category"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2001,7 +1991,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm text-gray-500">Categories</span>
             </div>
-            
+
             {/* Category Input Field with Multi-select and Suggestions */}
             <div className="border border-gray-200 rounded-lg p-3 bg-white">
               <div className="flex flex-wrap gap-2 items-center">
@@ -2053,11 +2043,11 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
                 </div>
               </div>
             </div>
-            
+
             {/* Required Label */}
             <div className="mt-3 text-sm text-gray-500">Required</div>
             <hr className="my-3 border-gray-200" />
-            
+
             {/* Privacy Toggle and Action Buttons */}
             <div className="flex items-center justify-between">
               <button className="flex items-center px-3 py-1 rounded-full text-sm bg-gray-200 text-gray-700 hover:bg-gray-300">
@@ -2066,7 +2056,7 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
                 </svg>
                 Public
               </button>
-              
+
               <div className="flex space-x-2">
                 <button
                   onClick={handleCancelProfile}
@@ -2076,11 +2066,10 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
                 </button>
                 <button
                   onClick={handleSaveProfile}
-                  className={`px-3 py-1 rounded-full text-sm ${
-                    (editingProfileId ? selectedCategories.length === 1 : selectedCategories.length > 0 || profileFormData.category)
-                      ? "bg-blue-500 text-white hover:bg-blue-600" 
+                  className={`px-3 py-1 rounded-full text-sm ${(editingProfileId ? selectedCategories.length === 1 : selectedCategories.length > 0 || profileFormData.category)
+                      ? "bg-blue-500 text-white hover:bg-blue-600"
                       : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                  }`}
+                    }`}
                   disabled={!(editingProfileId ? selectedCategories.length === 1 : (selectedCategories.length > 0 || profileFormData.category))}
                 >
                   Save
@@ -2090,12 +2079,12 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
           </div>
         )}
 
-        
+
 
         {/* Add Category Button */}
         {!isFormVisible && (
           <div className="flex items-center mt-4">
-            <button 
+            <button
               className="flex items-center text-blue-600 hover:text-blue-700 transition-colors"
               onClick={handleAddProfile}
             >
@@ -2126,98 +2115,98 @@ const [previousWork, setPreviousWork] = useState(workDataForShow[0]?.meta_value)
     <>
       {/* Content Area - Responsive 3 Column Layout */}
       <div className="content-area pt-3">
-  <div className="mx-auto h-[calc(90vh-100px)] overflow-y-auto">
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-      {/* Center Content - PROFILE INFO - Full width on mobile, 12 cols on large screens */}
-      <div className="col-span-1 lg:col-span-12">
-        <div className="bg-white  p-4 mb-4">
-          
+        <div className="mx-auto h-[calc(90vh-100px)] overflow-y-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            {/* Center Content - PROFILE INFO - Full width on mobile, 12 cols on large screens */}
+            <div className="col-span-1 lg:col-span-12">
+              <div className="bg-white  p-4 mb-4">
 
-          {/* Profile Information */}
-          <div className="mb-4">
-            <OverViewBlock
-              icon={<CiUser size={20} />}
-              title="Sex"
-              value={profile?.client?.gender}
-              field="gender"
-              visibility={profile?.client?.profile_visibility?.gender}
-            />
 
-            <OverViewBlock
-              icon={<CiCalendar size={20} />}
-              title="Date of Birth"
-              value={moment(profile?.client?.dob).format("MMM-DD-YYYY")}
-              field="dob"
-              visibility={profile?.client?.profile_visibility?.dob}
+                {/* Profile Information */}
+                <div className="mb-4">
+                  <OverViewBlock
+                    icon={<CiUser size={20} />}
+                    title="Sex"
+                    value={profile?.client?.gender}
+                    field="gender"
+                    visibility={profile?.client?.profile_visibility?.gender}
+                  />
 
-            />
+                  <OverViewBlock
+                    icon={<CiCalendar size={20} />}
+                    title="Date of Birth"
+                    value={moment(profile?.client?.dob).format("MMM-DD-YYYY")}
+                    field="dob"
+                    visibility={profile?.client?.profile_visibility?.dob}
 
-            <OverViewBlock
-              icon={<CiLocationOn size={20} />}
-              title="Place of Birth"
-              value={profile?.client?.fromcity?.name}
-              field="location"
-              visibility={profile?.client?.profile_visibility?.location}
-            />
+                  />
 
-            <OverViewBlock
-              icon={<CiLocationOn size={20} />}
-              title="Current City"
-              value={profile?.client?.currentstate?.name}
-              field="city"
-              visibility={profile?.client?.profile_visibility?.city}
-            />
+                  <OverViewBlock
+                    icon={<CiLocationOn size={20} />}
+                    title="Place of Birth"
+                    value={profile?.client?.fromcity?.name}
+                    field="location"
+                    visibility={profile?.client?.profile_visibility?.location}
+                  />
 
-            <OverViewBlock
-              icon={<CiHeart size={20} />}
-              title="Relationship Status"
-              value={profile?.client?.marital_status_name}
-              field="status"
-              visibility={profile?.client?.profile_visibility?.marital_status}
+                  <OverViewBlock
+                    icon={<CiLocationOn size={20} />}
+                    title="Current City"
+                    value={profile?.client?.currentstate?.name}
+                    field="city"
+                    visibility={profile?.client?.profile_visibility?.city}
+                  />
 
-            />
+                  <OverViewBlock
+                    icon={<CiHeart size={20} />}
+                    title="Relationship Status"
+                    value={profile?.client?.marital_status_name}
+                    field="status"
+                    visibility={profile?.client?.profile_visibility?.marital_status}
 
-            {/* Work Section */}
-            <WorkSection />
+                  />
 
-            {/* Education Section */}
-            <EducationSection />
+                  {/* Work Section */}
+                  <WorkSection />
 
-            {/* Profile Section */}
-            <ProfileSection />
+                  {/* Education Section */}
+                  <EducationSection />
 
-            {/* Social Links Section */}
-<SocialLinksSection />
+                  {/* Profile Section */}
+                  <ProfileSection />
 
-            <OverViewBlock
-              icon={<CiPhone size={20} />}
-              title="Contact"
-              value={profile?.client?.contact_no}
-              field="contact_no"
-              visibility={profile?.client?.profile_visibility?.contact_no}
-            />
+                  {/* Social Links Section */}
+                  <SocialLinksSection />
 
-            <OverViewBlock
-              icon={<CiMail size={20} />}
-              title="Email"
-              value={profile?.client?.email}
-              field="email"
-              visibility={profile?.client?.profile_visibility?.email}
-            />
+                  <OverViewBlock
+                    icon={<CiPhone size={20} />}
+                    title="Contact"
+                    value={profile?.client?.contact_no}
+                    field="contact_no"
+                    visibility={profile?.client?.profile_visibility?.contact_no}
+                  />
 
-            <OverViewBlock
-              icon={<CiUser size={20} />}
-              title="Blood Group"
-              value={"A+"}
-              field="blood"
-              visibility={profile?.client?.profile_visibility?.blood_group}
-            />
+                  <OverViewBlock
+                    icon={<CiMail size={20} />}
+                    title="Email"
+                    value={profile?.client?.email}
+                    field="email"
+                    visibility={profile?.client?.profile_visibility?.email}
+                  />
+
+                  <OverViewBlock
+                    icon={<CiUser size={20} />}
+                    title="Blood Group"
+                    value={"A+"}
+                    field="blood"
+                    visibility={profile?.client?.profile_visibility?.blood_group}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </div>
-</div>
 
     </>
   );
