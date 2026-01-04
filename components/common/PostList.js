@@ -4550,6 +4550,44 @@ const PostList = ({ postsData }) => {
                         <div className="text-gray-700 text-sm mt-1">
                           {renderContentWithMentions(c.content)}
                         </div>
+                        {/* Display comment files */}
+                        {c?.files?.length > 0 && (() => {
+                          console.log('📎 Comment files:', c.files);
+                          return (
+                            <div className="mt-2">
+                              {c.files.map((file, fileIdx) => {
+                                const filePath = file.file_path || file.path || '';
+                                console.log('📎 File path:', filePath);
+                                // Try comment folder first since these are comment files
+                                const commentImgSrc = getImageUrl(filePath, 'comment');
+                                console.log('📎 Generated URL:', commentImgSrc);
+                                return (
+                                  <img
+                                    key={fileIdx}
+                                    src={commentImgSrc}
+                                    alt="Comment attachment"
+                                    className="w-auto max-w-full max-h-48 cursor-pointer hover:opacity-90 transition-opacity rounded-lg"
+                                    onClick={() => handleImagePreview(commentImgSrc, [commentImgSrc], 0)}
+                                    onError={(e) => {
+                                      console.log('🚨 Comment image failed:', e.target.src);
+                                      // Try post folder as fallback
+                                      const postSrc = getImageUrl(filePath, 'post');
+                                      if (e.target.src !== postSrc) {
+                                        console.log('🔄 Trying post folder:', postSrc);
+                                        e.target.src = postSrc;
+                                      } else {
+                                        // Try reply folder as last resort
+                                        const replySrc = getImageUrl(filePath, 'reply');
+                                        console.log('🔄 Trying reply folder:', replySrc);
+                                        e.target.src = replySrc;
+                                      }
+                                    }}
+                                  />
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
 
                         {/* Reaction count pill overlay */}
                         {c?.reactions?.length > 0 && (
