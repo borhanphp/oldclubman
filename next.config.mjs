@@ -41,6 +41,11 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'd3lt66zpzoyofs.cloudfront.net',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'oldclub-bucket.s3.amazonaws.com',
         pathname: '/**',
       },
