@@ -9,12 +9,13 @@ import { useParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { MdPhotoAlbum, MdPhotoLibrary } from 'react-icons/md';
 import { LuMapPinCheckInside } from 'react-icons/lu';
+import { getImageUrl } from '@/utility';
 
 const PostModal = () => {
-  const {profile, backgroundOptions} = useSelector(({settings}) => settings)
-  const { basicPostData, loading, isPostModalOpen} = useSelector(({gathering}) => gathering)
+  const { profile, backgroundOptions } = useSelector(({ settings }) => settings)
+  const { basicPostData, loading, isPostModalOpen } = useSelector(({ gathering }) => gathering)
   const dispatch = useDispatch();
-  const {id} = basicPostData;
+  const { id } = basicPostData;
   const [filePreviews, setFilePreviews] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPrivacyDropdown, setShowPrivacyDropdown] = useState(false);
@@ -24,7 +25,7 @@ const PostModal = () => {
   const storedRichMessageRef = useRef('');
   const prevBackgroundActiveRef = useRef(false);
   const [removeFiles, setRemoveFiles] = useState([]);
-  const [isShowImageSection, setIsShowImageSection] = useState(id ? true :false);
+  const [isShowImageSection, setIsShowImageSection] = useState(id ? true : false);
   const [selectedBackground, setSelectedBackground] = useState(/\/post_background\/.+/.test(basicPostData?.background_url) ? basicPostData?.background_url : null);
   const [backgroundScrollIndex, setBackgroundScrollIndex] = useState(0);
   const [isVisibleBg, setIsVisibleBg] = useState(true);
@@ -41,7 +42,7 @@ const PostModal = () => {
   const routeLineRef = useRef(null);
   const [routeOrigin, setRouteOrigin] = useState(null); // { lat, lng }
   const [routeDestination, setRouteDestination] = useState(null); // { lat, lng }
-  
+
   // Check-in state
   const [checkInLocation, setCheckInLocation] = useState(null); // { place_name, lat, lng, address }
   const [placeSearchQuery, setPlaceSearchQuery] = useState('');
@@ -166,14 +167,14 @@ const PostModal = () => {
     setIsSearchingPlaces(true);
     try {
       const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-      
+
       if (googleApiKey) {
         // Use Google Geocoding API
         const response = await fetch(
           `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${googleApiKey}&limit=5`
         );
         const data = await response.json();
-        
+
         if (data.status === 'OK' && data.results) {
           const results = data.results.map((place) => ({
             place_name: place.formatted_address,
@@ -196,7 +197,7 @@ const PostModal = () => {
           `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`
         );
         const data = await response.json();
-        
+
         const results = data.map((place) => ({
           place_name: place.display_name,
           lat: parseFloat(place.lat),
@@ -205,7 +206,7 @@ const PostModal = () => {
           type: place.type,
           osm_id: place.osm_id
         }));
-        
+
         setPlaceSearchResults(results);
       }
     } catch (error) {
@@ -247,13 +248,13 @@ const PostModal = () => {
     setIsSearchingTravelFrom(true);
     try {
       const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-      
+
       if (googleApiKey) {
         const response = await fetch(
           `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${googleApiKey}&limit=5`
         );
         const data = await response.json();
-        
+
         if (data.status === 'OK' && data.results) {
           const results = data.results.map((place) => ({
             place_name: place.formatted_address,
@@ -274,7 +275,7 @@ const PostModal = () => {
           `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`
         );
         const data = await response.json();
-        
+
         const results = data.map((place) => ({
           place_name: place.display_name,
           lat: parseFloat(place.lat),
@@ -283,7 +284,7 @@ const PostModal = () => {
           type: place.type,
           osm_id: place.osm_id
         }));
-        
+
         setTravelFromResults(results);
       }
     } catch (error) {
@@ -304,13 +305,13 @@ const PostModal = () => {
     setIsSearchingTravelTo(true);
     try {
       const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-      
+
       if (googleApiKey) {
         const response = await fetch(
           `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${googleApiKey}&limit=5`
         );
         const data = await response.json();
-        
+
         if (data.status === 'OK' && data.results) {
           const results = data.results.map((place) => ({
             place_name: place.formatted_address,
@@ -331,7 +332,7 @@ const PostModal = () => {
           `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`
         );
         const data = await response.json();
-        
+
         const results = data.map((place) => ({
           place_name: place.display_name,
           lat: parseFloat(place.lat),
@@ -340,7 +341,7 @@ const PostModal = () => {
           type: place.type,
           osm_id: place.osm_id
         }));
-        
+
         setTravelToResults(results);
       }
     } catch (error) {
@@ -458,13 +459,13 @@ const PostModal = () => {
         console.error('Error removing map:', e);
       }
       routeMapRef.current = null;
-      
+
       // Clean up the container to allow re-initialization
       if (routeMapContainerRef.current) {
         routeMapContainerRef.current._leaflet_id = null;
         routeMapContainerRef.current.innerHTML = '';
       }
-      
+
       resetRoute();
       resetCheckIn();
     }
@@ -474,7 +475,7 @@ const PostModal = () => {
   useEffect(() => {
     // Initialize map when location modal is open OR when location is selected in main modal
     const shouldShowMap = showLocationModal || (!showLocationModal && (checkInLocation || routeDestination || travelFrom || travelTo));
-    
+
     if (!shouldShowMap) {
       // Clean up map when not needed
       if (routeMapRef.current) {
@@ -485,7 +486,7 @@ const PostModal = () => {
         }
         routeMapRef.current = null;
       }
-      
+
       // Clean up the container
       if (routeMapContainerRef.current) {
         routeMapContainerRef.current._leaflet_id = null;
@@ -493,14 +494,14 @@ const PostModal = () => {
       }
       return;
     }
-    
+
     let mapInstance = null;
     let timeoutId = null;
     let retryTimeoutId = null;
-    
+
     const initMap = () => {
       const container = routeMapContainerRef.current;
-      
+
       console.log('Attempting to init map...', {
         showLocationModal,
         hasContainer: !!container,
@@ -510,20 +511,20 @@ const PostModal = () => {
         checkInLocation,
         routeDestination
       });
-      
+
       if (!container) {
         console.log('Container not found, retrying...');
         setTimeout(() => initMap(), 200);
         return;
       }
-      
+
       // Check if container has dimensions
       if (container.offsetWidth === 0 || container.offsetHeight === 0) {
         console.log('Container has no dimensions, retrying...');
         setTimeout(() => initMap(), 200);
         return;
       }
-      
+
       // If map already exists, just update it
       if (routeMapRef.current) {
         console.log('Map already initialized, updating...');
@@ -534,10 +535,10 @@ const PostModal = () => {
         }
         return;
       }
-      
+
       loadLeafletAssets().then(() => {
         if (routeMapRef.current || !container) return;
-        
+
         const L = window.L;
         try {
           // Clear any existing leaflet instance
@@ -545,7 +546,7 @@ const PostModal = () => {
             container._leaflet_id = null;
             container.innerHTML = '';
           }
-          
+
           mapInstance = L.map(container).setView([23.8103, 90.4125], 5);
 
           // Use OpenStreetMap tiles (free, no API key required)
@@ -555,19 +556,19 @@ const PostModal = () => {
           }).addTo(mapInstance);
 
           routeMapRef.current = mapInstance;
-          
+
           console.log('Map initialized successfully', {
             hasMap: !!mapInstance,
             containerSize: { width: container.offsetWidth, height: container.offsetHeight }
           });
-          
+
           setTimeout(() => {
             if (mapInstance) {
               mapInstance.invalidateSize();
               console.log('Map size invalidated');
             }
           }, 100);
-  
+
           // Add markers for selected locations
           if (checkInLocation) {
             const marker = L.marker([checkInLocation.lat, checkInLocation.lng], {
@@ -583,7 +584,7 @@ const PostModal = () => {
             marker.bindPopup(`<b>${checkInLocation.place_name}</b>`);
             routeMarkersRef.current.checkin = marker;
           }
-  
+
           if (routeDestination) {
             const marker = L.marker([routeDestination.lat, routeDestination.lng], {
               icon: L.icon({
@@ -629,7 +630,7 @@ const PostModal = () => {
             marker.bindPopup(`<b>Traveling To: ${travelTo.place_name}</b>`);
             routeMarkersRef.current.travelTo = marker;
           }
-  
+
           // Draw route line if both locations exist
           if (checkInLocation && routeDestination) {
             drawRouteLine(checkInLocation, routeDestination);
@@ -645,7 +646,7 @@ const PostModal = () => {
               [travelTo.lat, travelTo.lng]
             ], { color: '#8b5cf6', weight: 4, opacity: 0.7 }).addTo(mapInstance);
           }
-  
+
           // Fit bounds to show all markers
           if (checkInLocation || routeDestination || travelFrom || travelTo) {
             const bounds = [];
@@ -657,14 +658,14 @@ const PostModal = () => {
               mapInstance.fitBounds(bounds, { padding: [50, 50] });
             }
           }
-  
+
           // Only allow click interactions in location modal
           if (showLocationModal) {
             if (checkInMode === 'checkin' || checkInMode === 'destination' || checkInMode === 'travel') {
               mapInstance.on('click', (e) => {
                 const { latlng } = e;
                 const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-                
+
                 if (googleApiKey) {
                   // Use Google Reverse Geocoding
                   fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latlng.lat},${latlng.lng}&key=${googleApiKey}`)
@@ -747,14 +748,14 @@ const PostModal = () => {
         console.error('Error loading map assets:', error);
       });
     };
-    
+
     // Give the modal time to render before initializing map
     let secondRetryId = null;
-    
+
     timeoutId = setTimeout(() => {
       console.log('Starting map initialization...');
       initMap();
-      
+
       // Multiple retries to ensure map loads
       retryTimeoutId = setTimeout(() => {
         if (!routeMapRef.current) {
@@ -762,7 +763,7 @@ const PostModal = () => {
           initMap();
         }
       }, 400);
-      
+
       // Second retry
       secondRetryId = setTimeout(() => {
         if (!routeMapRef.current) {
@@ -771,12 +772,12 @@ const PostModal = () => {
         }
       }, 1000);
     }, 200);
-    
+
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
       if (retryTimeoutId) clearTimeout(retryTimeoutId);
       if (secondRetryId) clearTimeout(secondRetryId);
-      
+
       const mapToRemove = routeMapRef.current || mapInstance;
       if (mapToRemove && mapToRemove._container) {
         try {
@@ -785,10 +786,10 @@ const PostModal = () => {
           console.log('Map cleanup skipped (already removed)');
         }
       }
-      
+
       routeMapRef.current = null;
       mapInstance = null;
-      
+
       if (routeMapContainerRef.current) {
         routeMapContainerRef.current._leaflet_id = null;
         routeMapContainerRef.current.innerHTML = '';
@@ -800,7 +801,7 @@ const PostModal = () => {
   // Force map update when location is selected
   useEffect(() => {
     if (!routeMapRef.current) return;
-    
+
     const L = window.L;
     if (!L) return;
 
@@ -826,13 +827,13 @@ const PostModal = () => {
             shadowSize: [41, 41]
           })
         }).addTo(routeMapRef.current);
-        
+
         marker.bindPopup(`<b>${checkInLocation.place_name}</b>`);
         if (showLocationModal) {
           marker.openPopup();
         }
         routeMarkersRef.current.checkin = marker;
-        
+
         // Center map on location
         routeMapRef.current.setView([checkInLocation.lat, checkInLocation.lng], 15);
       }
@@ -857,7 +858,7 @@ const PostModal = () => {
             shadowSize: [41, 41]
           })
         }).addTo(routeMapRef.current);
-        
+
         marker.bindPopup(`<b>${routeDestination.place_name}</b>`);
         routeMarkersRef.current.destination = marker;
       }
@@ -886,7 +887,7 @@ const PostModal = () => {
             shadowSize: [41, 41]
           })
         }).addTo(routeMapRef.current);
-        
+
         marker.bindPopup(`<b>Traveling From: ${travelFrom.place_name}</b>`);
         if (showLocationModal) {
           marker.openPopup();
@@ -912,7 +913,7 @@ const PostModal = () => {
             shadowSize: [41, 41]
           })
         }).addTo(routeMapRef.current);
-        
+
         marker.bindPopup(`<b>Traveling To: ${travelTo.place_name}</b>`);
         routeMarkersRef.current.travelTo = marker;
       }
@@ -927,7 +928,7 @@ const PostModal = () => {
         [travelFrom.lat, travelFrom.lng],
         [travelTo.lat, travelTo.lng]
       ], { color: '#8b5cf6', weight: 4, opacity: 0.7 }).addTo(routeMapRef.current);
-      
+
       // Fit bounds to show both travel markers
       routeMapRef.current.fitBounds([
         [travelFrom.lat, travelFrom.lng],
@@ -937,11 +938,11 @@ const PostModal = () => {
   }, [checkInLocation, routeDestination, travelFrom, travelTo, showLocationModal]);
 
   const handleBackgroundSelect = (background) => {
-   
+
     const plainText = getPlainTextFromHtml(messageEditorRef.current.innerHTML || "");
     messageEditorRef.current.innerText = "";
-   
-    dispatch(bindPostData({ ...basicPostData, message: plainText+" " }));
+
+    dispatch(bindPostData({ ...basicPostData, message: plainText + " " }));
     setSelectedBackground(background);
   };
 
@@ -949,18 +950,18 @@ const PostModal = () => {
     // Restore text when removing background
     if (messageEditorRef.current) {
       const currentPlainText = messageEditorRef.current.innerText || '';
-      
+
       // Convert plain text to HTML paragraphs
       let contentToRestore;
       if (currentPlainText.trim()) {
-        contentToRestore = currentPlainText.split('\n').map(line => 
+        contentToRestore = currentPlainText.split('\n').map(line =>
           line.trim() ? `<p>${line.trim()}</p>` : '<p><br></p>'
         ).join('');
       } else {
         // If no text, restore stored content
         contentToRestore = storedRichMessageRef.current || '';
       }
-      
+
       messageEditorRef.current.innerHTML = contentToRestore;
       dispatch(bindPostData({ ...basicPostData, message: contentToRestore }));
       previousMessageRef.current = contentToRestore;
@@ -1049,7 +1050,7 @@ const PostModal = () => {
 
   const plainMessageLength = useMemo(() => getPlainTextLength(basicPostData?.message), [basicPostData?.message]);
 
-  
+
   useEffect(() => {
     dispatch(getMyProfile())
     dispatch(getPostBackgrounds())
@@ -1057,7 +1058,7 @@ const PostModal = () => {
     if (isPostModalOpen && id && basicPostData?.files?.length > 0) {
       const previews = basicPostData?.files?.map(file => ({
         id: file.id || (Date.now() + Math.random().toString(36).substring(2, 9)),
-        src: `${process.env.NEXT_PUBLIC_FILE_PATH}/post/${file.file_path}`,
+        src: getImageUrl(file.file_path, 'post'),
         file_type: file?.file_type
       }));
       setFilePreviews(previews);
@@ -1116,28 +1117,28 @@ const PostModal = () => {
   }, [basicPostData, dispatch, isBackgroundActive]);
 
   const handleEditorInput = () => {
-  
+
     const editor = messageEditorRef.current;
     if (!editor) {
       return;
     }
-    
+
 
     const html = editor.innerHTML;
     const plainLength = getPlainTextLength(html);
 
-    if(selectedBackground){
+    if (selectedBackground) {
       editor.style.color = "white"
       editor.style.fontWeight = "bold"
       editor.style.fontSize = "24px"
       editor.style.textAlign = "center"
     }
-    
+
     if (plainLength > 280) {
       setIsVisibleBg(false);
       setSelectedBackground(null);
       storedRichMessageRef.current = '';
-    }else{
+    } else {
       setIsVisibleBg(true);
     }
 
@@ -1150,23 +1151,23 @@ const PostModal = () => {
 
   const handleEditorPaste = (event) => {
     event.preventDefault();
-    
+
     // Check if there are files (images) in the clipboard
     const items = event.clipboardData?.items;
     if (items) {
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
-        
+
         // Handle image files
         if (item.type.indexOf('image') !== -1) {
           const file = item.getAsFile();
           if (file) {
             // Add the image file to the post data
             dispatch(bindPostData({
-              ...basicPostData, 
+              ...basicPostData,
               files: [...(basicPostData.files || []), file]
             }));
-            
+
             // Generate preview for the pasted image
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -1177,10 +1178,10 @@ const PostModal = () => {
               }]);
             };
             reader.readAsDataURL(file);
-            
+
             // Show image section when image is pasted
             setIsShowImageSection(true);
-            
+
             // Show success message
             toast.success('Image pasted successfully!');
             return;
@@ -1188,7 +1189,7 @@ const PostModal = () => {
         }
       }
     }
-    
+
     // If no images, handle text paste
     const textData = event.clipboardData?.getData('text/plain') ?? '';
 
@@ -1222,12 +1223,12 @@ const PostModal = () => {
       if (selectedBackground) {
         handleBackgroundClear();
       }
-      
+
       dispatch(bindPostData({
-        ...basicPostData, 
+        ...basicPostData,
         files: [...(basicPostData.files || []), ...selectedFiles]
       }));
-      
+
       // Generate previews for the new files
       selectedFiles.forEach(file => {
         const reader = new FileReader();
@@ -1246,19 +1247,19 @@ const PostModal = () => {
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (e.dataTransfer.files.length > 0) {
       // Clear background when images are dropped
       if (selectedBackground) {
         handleBackgroundClear();
       }
-      
+
       const droppedFiles = Array.from(e.dataTransfer.files);
       dispatch(bindPostData({
         ...basicPostData,
         files: [...(basicPostData.files || []), ...droppedFiles]
       }));
-      
+
       // Generate previews for the new files
       droppedFiles.forEach(file => {
         const reader = new FileReader();
@@ -1302,15 +1303,15 @@ const PostModal = () => {
     e.preventDefault();
     e.stopPropagation();
   };
-  
+
   const handlePrivacyChange = (mode) => {
-    dispatch(bindPostData({...basicPostData, privacy_mode: mode}))
+    dispatch(bindPostData({ ...basicPostData, privacy_mode: mode }))
     setShowPrivacyDropdown(false);
   };
 
 
-  
-  const handlePost = async () => {        
+
+  const handlePost = async () => {
     try {
       setIsSubmitting(true);
 
@@ -1384,7 +1385,7 @@ const PostModal = () => {
           formData.append(`post_locations[${index}][name]`, location.name);
         });
       }
-      
+
       if (messageContent?.length < 280 && selectedBackground) {
         formData.append('background_url', selectedBackground?.image?.path);
       }
@@ -1459,8 +1460,8 @@ const PostModal = () => {
     setTravelToResults([]);
     resetRoute();
     resetCheckIn();
-   }
-  
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/30">
       <div className="bg-white rounded-2xl w-full max-w-lg mx-4 shadow-2xl flex flex-col relative overflow-hidden" style={{ height: '600px', maxHeight: '90vh' }}>
@@ -1476,7 +1477,7 @@ const PostModal = () => {
               </button>
             )}
             <h2 className="text-2xl font-bold flex-1 text-center text-gray-900">
-              {showLocationModal 
+              {showLocationModal
                 ? (checkInMode === 'checkin' ? 'Check in at a place' : checkInMode === 'destination' ? 'Add destination' : 'Add travel route')
                 : (id ? "Edit Post" : "Create post")}
             </h2>
@@ -1494,10 +1495,9 @@ const PostModal = () => {
         {/* Slider Container */}
         <div className="relative flex-1" style={{ minHeight: 0, position: 'relative', overflow: 'visible' }}>
           {/* Main Post Modal Content */}
-          <div 
-            className={`w-full h-full flex flex-col transition-transform duration-300 ease-in-out ${
-              showLocationModal ? 'absolute inset-0 -translate-x-full' : 'relative translate-x-0'
-            }`}
+          <div
+            className={`w-full h-full flex flex-col transition-transform duration-300 ease-in-out ${showLocationModal ? 'absolute inset-0 -translate-x-full' : 'relative translate-x-0'
+              }`}
             style={{ zIndex: showLocationModal ? 0 : 2 }}
           >
             <div className="p-4 overflow-y-auto flex-1">
@@ -1561,49 +1561,49 @@ const PostModal = () => {
                   </div>
                 </div>
               </div>
-          <div className="flex-1 mb-4">
-            {plainMessageLength > 280 ? (
-              <div className="flex items-center gap-2 mb-2">
-                <button
-                  type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    applyTextFormatting("bold");
-                  }}
-                  className="p-2 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-100 focus:outline-none"
-                  aria-label="Bold"
-                  title="Bold"
-                >
-                  <FaBold size={14} />
-                </button>
-                <button
-                  type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    applyTextFormatting("italic");
-                  }}
-                  className="p-2 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-100 focus:outline-none"
-                  aria-label="Italic"
-                  title="Italic"
-                >
-                  <FaItalic size={14} />
-                </button>
-                <button
-                  type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    applyTextFormatting("underline");
-                  }}
-                  className="p-2 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-100 focus:outline-none"
-                  aria-label="Underline"
-                  title="Underline"
-                >
-                  <FaUnderline size={14} />
-                </button>
-                {/* <button
+              <div className="flex-1 mb-4">
+                {plainMessageLength > 280 ? (
+                  <div className="flex items-center gap-2 mb-2">
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        applyTextFormatting("bold");
+                      }}
+                      className="p-2 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-100 focus:outline-none"
+                      aria-label="Bold"
+                      title="Bold"
+                    >
+                      <FaBold size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        applyTextFormatting("italic");
+                      }}
+                      className="p-2 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-100 focus:outline-none"
+                      aria-label="Italic"
+                      title="Italic"
+                    >
+                      <FaItalic size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        applyTextFormatting("underline");
+                      }}
+                      className="p-2 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-100 focus:outline-none"
+                      aria-label="Underline"
+                      title="Underline"
+                    >
+                      <FaUnderline size={14} />
+                    </button>
+                    {/* <button
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={(e) => {
@@ -1616,217 +1616,216 @@ const PostModal = () => {
               >
                 <FaHeading size={14} />
               </button> */}
-              </div>
-            ) : (
-              ""
-            )}
-            {selectedBackground &&
-            selectedBackground?.id !== "white" &&
-            plainMessageLength < 280 ? (
-              <div
-                className="relative w-full min-h-[400px] rounded-lg flex items-center justify-center bg-cover bg-center bg-no-repeat"
-                style={{
-                  backgroundImage: selectedBackground?.image?.url
-                    ? `url(${selectedBackground.image.url})`
-                    : `url(${basicPostData?.background_url})`,
-                  paddingBottom: "100px",
-                }}
-              >
-                <div className="relative w-full max-w-md">
-                  {!plainMessageLength && (
-                    <span
-                      aria-hidden="true"
-                      className="pointer-events-none absolute left-30 top-10 text-white/70"
-                    >{`What's on your mind, ${profile?.client?.fname}? Post anything!`}</span>
-                  )}
+                  </div>
+                ) : (
+                  ""
+                )}
+                {selectedBackground &&
+                  selectedBackground?.id !== "white" &&
+                  plainMessageLength < 280 ? (
                   <div
-                    ref={messageEditorRef}
-                    className="w-full border-0 resize-none outline-none p-4 text-white text-center bg-transparent min-h-[120px] max-h-[200px] text-[24px] font-medium whitespace-pre-wrap break-words"
-                    contentEditable
-                    role="textbox"
-                    aria-multiline="true"
-                    onInput={handleEditorInput}
-                    onBlur={handleEditorInput}
-                    onPaste={handleEditorPaste}
-                    suppressContentEditableWarning
+                    className="relative w-full min-h-[400px] rounded-lg flex items-center justify-center bg-cover bg-center bg-no-repeat"
+                    style={{
+                      backgroundImage: selectedBackground?.image?.url
+                        ? `url(${selectedBackground.image.url})`
+                        : `url(${basicPostData?.background_url})`,
+                      paddingBottom: "100px",
+                    }}
+                  >
+                    <div className="relative w-full max-w-md">
+                      {!plainMessageLength && (
+                        <span
+                          aria-hidden="true"
+                          className="pointer-events-none absolute left-30 top-10 text-white/70"
+                        >{`What's on your mind, ${profile?.client?.fname}? Post anything!`}</span>
+                      )}
+                      <div
+                        ref={messageEditorRef}
+                        className="w-full border-0 resize-none outline-none p-4 text-white text-center bg-transparent min-h-[120px] max-h-[200px] text-[24px] font-medium whitespace-pre-wrap break-words"
+                        contentEditable
+                        role="textbox"
+                        aria-multiline="true"
+                        onInput={handleEditorInput}
+                        onBlur={handleEditorInput}
+                        onPaste={handleEditorPaste}
+                        suppressContentEditableWarning
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    {!plainMessageLength && (
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute left-4 top-4 text-gray-400"
+                      >{`What's on your mind, ${profile?.client?.fname}? Post anything!`}</span>
+                    )}
+                    <div
+                      ref={messageEditorRef}
+                      className="w-full border-0 outline-none p-4 transition-all duration-200 text-lg text-gray-700 bg-transparent min-h-[120px] whitespace-pre-wrap break-words"
+                      contentEditable
+                      role="textbox"
+                      aria-multiline="true"
+                      onInput={handleEditorInput}
+                      onBlur={handleEditorInput}
+                      onPaste={handleEditorPaste}
+                      suppressContentEditableWarning
+                    />
+                  </div>
+                )}
+              </div>
+
+
+              {/* Image/Video Previews - Show only when files are uploaded */}
+              {filePreviews?.length > 0 && (
+                <div className="mb-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    {filePreviews?.map((preview) => (
+                      <div key={preview.id} className="relative rounded-lg overflow-hidden">
+                        {preview?.file?.type.startsWith("video/") ? (
+                          <video
+                            controls
+                            className="w-full h-48 object-cover"
+                          >
+                            <source src={preview?.src} />
+                          </video>
+                        ) : (
+                          <img
+                            src={preview?.src}
+                            alt="Upload preview"
+                            className="w-full h-48 object-cover"
+                          />
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveFile(preview.id);
+                          }}
+                          className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 transition-colors"
+                        >
+                          <FaTimes size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Hidden File Input */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFilesChange}
+                accept="image/*,video/*"
+                className="hidden"
+                multiple
+              />
+
+
+
+              {(!showLocationModal && (checkInLocation || routeDestination || travelFrom || travelTo)) && (
+                <div className="mb-3">
+                  <div
+                    ref={routeMapContainerRef}
+                    id="checkin-map-container"
+                    className="w-full rounded-md border border-gray-200 bg-gray-100"
+                    style={{
+                      height: '384px',
+                      width: '100%',
+                      position: 'relative',
+                      zIndex: 0
+                    }}
                   />
                 </div>
-              </div>
-            ) : (
-              <div className="relative">
-                {!plainMessageLength && (
-                  <span
-                    aria-hidden="true"
-                    className="pointer-events-none absolute left-4 top-4 text-gray-400"
-                  >{`What's on your mind, ${profile?.client?.fname}? Post anything!`}</span>
-                )}
-                <div
-                  ref={messageEditorRef}
-                  className="w-full border-0 outline-none p-4 transition-all duration-200 text-lg text-gray-700 bg-transparent min-h-[120px] whitespace-pre-wrap break-words"
-                  contentEditable
-                  role="textbox"
-                  aria-multiline="true"
-                  onInput={handleEditorInput}
-                  onBlur={handleEditorInput}
-                  onPaste={handleEditorPaste}
-                  suppressContentEditableWarning
-                />
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-         
-          {/* Image/Video Previews - Show only when files are uploaded */}
-          {filePreviews?.length > 0 && (
-            <div className="mb-4">
-              <div className="grid grid-cols-2 gap-3">
-                {filePreviews?.map((preview) => (
-                  <div key={preview.id} className="relative rounded-lg overflow-hidden">
-                    {preview?.file?.type.startsWith("video/") ? (
-                      <video
-                        controls
-                        className="w-full h-48 object-cover"
-                      >
-                        <source src={preview?.src} />
-                      </video>
-                    ) : (
-                      <img
-                        src={preview?.src}
-                        alt="Upload preview"
-                        className="w-full h-48 object-cover"
-                      />
-                    )}
+
+            {/* Background Selection - Button on Left */}
+            <div className='ms-4'>
+              {(!checkInLocation && !routeDestination && filePreviews?.length === 0) && (
+                <div className="mb-3">
+                  <div className="flex items-center space-x-2">
+                    {/* Toggle Button on Left */}
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemoveFile(preview.id);
-                      }}
-                      className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 transition-colors"
+                      onClick={() => setShowBackgroundOptions(!showBackgroundOptions)}
+                      className="flex-shrink-0 w-9 h-9 bg-gray-200 rounded-md flex items-center justify-center hover:bg-gray-300 transition-colors"
+                      title="Background options"
                     >
-                      <FaTimes size={14} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {/* Hidden File Input */}
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFilesChange}
-            accept="image/*,video/*"
-            className="hidden"
-            multiple
-          />
-
-         
-
-          {(!showLocationModal && (checkInLocation || routeDestination || travelFrom || travelTo)) && (
-            <div className="mb-3">
-              <div
-                ref={routeMapContainerRef}
-                id="checkin-map-container"
-                className="w-full rounded-md border border-gray-200 bg-gray-100"
-                style={{ 
-                  height: '384px', 
-                  width: '100%', 
-                  position: 'relative', 
-                  zIndex: 0 
-                }}
-              />
-            </div>
-          )}
-            </div>
-
-
-{/* Background Selection - Button on Left */}
-          <div className='ms-4'>
-           {(!checkInLocation && !routeDestination && filePreviews?.length === 0) && (
-            <div className="mb-3">
-              <div className="flex items-center space-x-2">
-                {/* Toggle Button on Left */}
-                <button
-                  onClick={() => setShowBackgroundOptions(!showBackgroundOptions)}
-                  className="flex-shrink-0 w-9 h-9 bg-gray-200 rounded-md flex items-center justify-center hover:bg-gray-300 transition-colors"
-                  title="Background options"
-                >
-                  {showBackgroundOptions ? 
-                  <FaChevronLeft size={14} className="text-gray-600" />
-                :
-                <FaChevronRight size={14} className="text-gray-600" />}
-                  </button>
-
-                {/* Background Options Bar - Only show when toggled */}
-                {showBackgroundOptions && (
-                  <div className="flex items-center space-x-1 flex-1  rounded-xl">
-                    {/* Left Arrow */}
-                    {backgroundScrollIndex > 0 && (
-                      <button
-                        onClick={() => scrollBackgrounds("left")}
-                        className="flex-shrink-0 w-9 h-9  rounded-lg flex items-center justify-center hover:bg-gray-300 transition-colors"
-                      >
+                      {showBackgroundOptions ?
                         <FaChevronLeft size={14} className="text-gray-600" />
-                      </button>
-                    )}
+                        :
+                        <FaChevronRight size={14} className="text-gray-600" />}
+                    </button>
 
-                    {/* Background Swatches */}
-                    <div className="flex items-center space-x-2 flex-1 overflow-hidden">
-                      {isVisibleBg &&
-                        visibleBackgrounds?.map((bg) => (
+                    {/* Background Options Bar - Only show when toggled */}
+                    {showBackgroundOptions && (
+                      <div className="flex items-center space-x-1 flex-1  rounded-xl">
+                        {/* Left Arrow */}
+                        {backgroundScrollIndex > 0 && (
                           <button
-                            key={bg.id}
+                            onClick={() => scrollBackgrounds("left")}
+                            className="flex-shrink-0 w-9 h-9  rounded-lg flex items-center justify-center hover:bg-gray-300 transition-colors"
+                          >
+                            <FaChevronLeft size={14} className="text-gray-600" />
+                          </button>
+                        )}
+
+                        {/* Background Swatches */}
+                        <div className="flex items-center space-x-2 flex-1 overflow-hidden">
+                          {isVisibleBg &&
+                            visibleBackgrounds?.map((bg) => (
+                              <button
+                                key={bg.id}
+                                onClick={() => {
+                                  handleBackgroundSelect(bg);
+                                  setShowBackgroundOptions(false);
+                                }}
+                                className={`flex-shrink-0 w-8 h-8 rounded-md border-3 overflow-hidden transition-all duration-200 hover:scale-105 ${selectedBackground?.id === bg.id
+                                  ? "border-blue-500 ring-2 ring-blue-400 scale-105"
+                                  : "border-transparent"
+                                  }`}
+                                style={{
+                                  backgroundImage: `url(${bg?.image?.url})`,
+                                  backgroundSize: 'cover',
+                                  backgroundPosition: 'center'
+                                }}
+                                title={bg.name}
+                              />
+                            ))}
+                        </div>
+
+                        {/* Right Arrow */}
+                        {backgroundScrollIndex < backgroundOptions.length - 8 && (
+                          <button
+                            onClick={() => scrollBackgrounds("right")}
+                            className="flex-shrink-0 w-9 h-9  rounded-lg flex items-center justify-center hover:bg-gray-300 transition-colors"
+                          >
+                            <FaChevronRight size={14} className="text-gray-600" />
+                          </button>
+                        )}
+
+                        {/* Clear Background */}
+                        {selectedBackground && selectedBackground?.id !== "white" && (
+                          <button
                             onClick={() => {
-                              handleBackgroundSelect(bg);
+                              handleBackgroundClear();
                               setShowBackgroundOptions(false);
                             }}
-                            className={`flex-shrink-0 w-8 h-8 rounded-md border-3 overflow-hidden transition-all duration-200 hover:scale-105 ${
-                              selectedBackground?.id === bg.id
-                                ? "border-blue-500 ring-2 ring-blue-400 scale-105"
-                                : "border-transparent"
-                            }`}
-                            style={{
-                              backgroundImage: `url(${bg?.image?.url})`,
-                              backgroundSize: 'cover',
-                              backgroundPosition: 'center'
-                            }}
-                            title={bg.name}
-                          />
-                        ))}
-                    </div>
-
-                    {/* Right Arrow */}
-                    {backgroundScrollIndex < backgroundOptions.length - 8 && (
-                      <button
-                        onClick={() => scrollBackgrounds("right")}
-                        className="flex-shrink-0 w-9 h-9  rounded-lg flex items-center justify-center hover:bg-gray-300 transition-colors"
-                      >
-                        <FaChevronRight size={14} className="text-gray-600" />
-                      </button>
-                    )}
-
-                    {/* Clear Background */}
-                    {selectedBackground && selectedBackground?.id !== "white" && (
-                      <button
-                        onClick={() => {
-                          handleBackgroundClear();
-                          setShowBackgroundOptions(false);
-                        }}
-                        className="flex-shrink-0 w-9 h-9 bg-white border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors"
-                        title="Clear background"
-                      >
-                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
+                            className="flex-shrink-0 w-9 h-9 bg-white border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors"
+                            title="Clear background"
+                          >
+                            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
-          )}
-          </div>
             {/* Add to your post Section */}
             <div className="px-4 pb-2 flex-shrink-0">
               <div className="border border-gray-300 rounded-lg p-3">
@@ -1843,7 +1842,7 @@ const PostModal = () => {
                         <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
                       </svg>
                     </button>
-                    
+
                     {/* Tag People */}
                     {/* <button
                       className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -1853,7 +1852,7 @@ const PostModal = () => {
                         <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
                       </svg>
                     </button> */}
-                    
+
                     {/* Product/Feeling */}
                     {/* <button
                       className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -1863,7 +1862,7 @@ const PostModal = () => {
                         <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
                       </svg>
                     </button> */}
-                    
+
                     {/* Check-in/Location */}
                     <button
                       onClick={() => {
@@ -1877,7 +1876,7 @@ const PostModal = () => {
                         <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                       </svg>
                     </button>
-                    
+
                     {/* Travel Route */}
                     <button
                       onClick={() => {
@@ -1891,7 +1890,7 @@ const PostModal = () => {
                         <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
                       </svg>
                     </button>
-                    
+
                     {/* More options */}
                     {/* <button
                       className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -1905,17 +1904,16 @@ const PostModal = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* Next Button */}
             <div className="px-4 pb-4 flex-shrink-0">
               <button
                 onClick={handlePost}
-                className={`px-4 py-3 w-full rounded-lg transition font-semibold text-base ${
-                  loading ||
+                className={`px-4 py-3 w-full rounded-lg transition font-semibold text-base ${loading ||
                   (plainMessageLength === 0 && !basicPostData?.files?.length && !checkInLocation && !routeDestination && !travelFrom && !travelTo)
-                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                    : "bg-blue-500 text-white hover:bg-blue-600 cursor-pointer"
-                }`}
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  : "bg-blue-500 text-white hover:bg-blue-600 cursor-pointer"
+                  }`}
                 disabled={
                   loading ||
                   (plainMessageLength === 0 && !basicPostData?.files?.length && !checkInLocation && !routeDestination && !travelFrom && !travelTo)
@@ -1929,12 +1927,12 @@ const PostModal = () => {
 
         {/* Inner Sliding Panel for Check-in / Destination */}
         {showLocationModal && (
-        <div
-          className="absolute inset-0 bg-white flex flex-col"
-          style={{ zIndex: 10, height: '100%' }}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0" style={{ flexShrink: 0 }}>
+          <div
+            className="absolute inset-0 bg-white flex flex-col"
+            style={{ zIndex: 10, height: '100%' }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0" style={{ flexShrink: 0 }}>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setShowLocationModal(false)}
@@ -1956,232 +1954,232 @@ const PostModal = () => {
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-4" style={{ flex: 1, minHeight: 0, overflowY: 'auto', backgroundColor: '#f9fafb' }}>
-               
-                {checkInMode === 'travel' ? (
-                  <>
-                    {/* Travel Mode UI */}
-                    <div className="mb-4">
-                      {/* Traveling From Search */}
-                      <div className="relative mb-4 travel-from-search-container">
-                        {/* <label className="block text-sm font-medium text-gray-700 mb-2">
+
+              {checkInMode === 'travel' ? (
+                <>
+                  {/* Travel Mode UI */}
+                  <div className="mb-4">
+                    {/* Traveling From Search */}
+                    <div className="relative mb-4 travel-from-search-container">
+                      {/* <label className="block text-sm font-medium text-gray-700 mb-2">
                           Traveling From
                         </label> */}
-                        <input
-                          type="text"
-                          placeholder="Your current location"
-                          value={travelFromQuery}
-                          onChange={(e) => {
-                            setTravelFromQuery(e.target.value);
-                            setShowTravelFromSearch(true);
-                          }}
-                          onFocus={() => setShowTravelFromSearch(true)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                        
-                        {/* Travel From Search Results */}
-                        {showTravelFromSearch && travelFromResults?.length > 0 && (
-                          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                            {isSearchingTravelFrom && (
-                              <div className="px-3 py-2 text-sm text-gray-500">Searching...</div>
-                            )}
-                            {travelFromResults?.map((place, index) => (
-                              <div
-                                key={index}
-                                onClick={() => {
-                                  setTravelFrom(place);
-                                  setTravelFromQuery(place.place_name);
-                                  setTravelFromResults([]);
-                                  setShowTravelFromSearch(false);
-                                }}
-                                className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
-                              >
-                                <div className="text-sm font-medium text-gray-900">
-                                  {place.place_name.split(',')[0]}
-                                </div>
-                                <div className="text-xs text-gray-500 truncate">
-                                  {place.place_name}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      <input
+                        type="text"
+                        placeholder="Your current location"
+                        value={travelFromQuery}
+                        onChange={(e) => {
+                          setTravelFromQuery(e.target.value);
+                          setShowTravelFromSearch(true);
+                        }}
+                        onFocus={() => setShowTravelFromSearch(true)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
 
-                      {/* Selected Travel From */}
-                      {travelFrom && (
-                        <div className="mb-4 p-3 rounded-md border bg-blue-50 border-blue-200">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-start flex-1">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                              </svg>
-                              <div className="flex-1">
-                                <div className="text-sm font-medium text-gray-900">
-                                  From: {travelFrom.place_name.split(',')[0]}
-                                </div>
-                                <div className="text-xs text-gray-600 mt-1">
-                                  {travelFrom.place_name}
-                                </div>
+                      {/* Travel From Search Results */}
+                      {showTravelFromSearch && travelFromResults?.length > 0 && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                          {isSearchingTravelFrom && (
+                            <div className="px-3 py-2 text-sm text-gray-500">Searching...</div>
+                          )}
+                          {travelFromResults?.map((place, index) => (
+                            <div
+                              key={index}
+                              onClick={() => {
+                                setTravelFrom(place);
+                                setTravelFromQuery(place.place_name);
+                                setTravelFromResults([]);
+                                setShowTravelFromSearch(false);
+                              }}
+                              className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                            >
+                              <div className="text-sm font-medium text-gray-900">
+                                {place.place_name.split(',')[0]}
+                              </div>
+                              <div className="text-xs text-gray-500 truncate">
+                                {place.place_name}
                               </div>
                             </div>
-                            <button
-                              onClick={() => {
-                                setTravelFrom(null);
-                                setTravelFromQuery('');
-                              }}
-                              className="text-gray-500 hover:text-gray-700 ml-2"
-                            >
-                              <FaTimes size={14} />
-                            </button>
-                          </div>
+                          ))}
                         </div>
                       )}
+                    </div>
 
-                      {/* Traveling To Search */}
-                      <div className="relative mb-4 travel-to-search-container">
-                        {/* <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {/* Selected Travel From */}
+                    {travelFrom && (
+                      <div className="mb-4 p-3 rounded-md border bg-blue-50 border-blue-200">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start flex-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <div className="flex-1">
+                              <div className="text-sm font-medium text-gray-900">
+                                From: {travelFrom.place_name.split(',')[0]}
+                              </div>
+                              <div className="text-xs text-gray-600 mt-1">
+                                {travelFrom.place_name}
+                              </div>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setTravelFrom(null);
+                              setTravelFromQuery('');
+                            }}
+                            className="text-gray-500 hover:text-gray-700 ml-2"
+                          >
+                            <FaTimes size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Traveling To Search */}
+                    <div className="relative mb-4 travel-to-search-container">
+                      {/* <label className="block text-sm font-medium text-gray-700 mb-2">
                           Traveling To
                         </label> */}
-                        <input
-                          type="text"
-                          placeholder="Your next destination"
-                          value={travelToQuery}
-                          onChange={(e) => {
-                            setTravelToQuery(e.target.value);
-                            setShowTravelToSearch(true);
-                          }}
-                          onFocus={() => setShowTravelToSearch(true)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                        
-                        {/* Travel To Search Results */}
-                        {showTravelToSearch && travelToResults?.length > 0 && (
-                          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                            {isSearchingTravelTo && (
-                              <div className="px-3 py-2 text-sm text-gray-500">Searching...</div>
-                            )}
-                            {travelToResults?.map((place, index) => (
-                              <div
-                                key={index}
-                                onClick={() => {
-                                  setTravelTo(place);
-                                  setTravelToQuery(place.place_name);
-                                  setTravelToResults([]);
-                                  setShowTravelToSearch(false);
-                                }}
-                                className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
-                              >
-                                <div className="text-sm font-medium text-gray-900">
-                                  {place.place_name.split(',')[0]}
-                                </div>
-                                <div className="text-xs text-gray-500 truncate">
-                                  {place.place_name}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      <input
+                        type="text"
+                        placeholder="Your next destination"
+                        value={travelToQuery}
+                        onChange={(e) => {
+                          setTravelToQuery(e.target.value);
+                          setShowTravelToSearch(true);
+                        }}
+                        onFocus={() => setShowTravelToSearch(true)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
 
-                      {/* Selected Travel To */}
-                      {travelTo && (
-                        <div className="mb-4 p-3 rounded-md border bg-purple-50 border-purple-200">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-start flex-1">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                              </svg>
-                              <div className="flex-1">
-                                <div className="text-sm font-medium text-gray-900">
-                                  To: {travelTo.place_name.split(',')[0]}
-                                </div>
-                                <div className="text-xs text-gray-600 mt-1">
-                                  {travelTo.place_name}
-                                </div>
+                      {/* Travel To Search Results */}
+                      {showTravelToSearch && travelToResults?.length > 0 && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                          {isSearchingTravelTo && (
+                            <div className="px-3 py-2 text-sm text-gray-500">Searching...</div>
+                          )}
+                          {travelToResults?.map((place, index) => (
+                            <div
+                              key={index}
+                              onClick={() => {
+                                setTravelTo(place);
+                                setTravelToQuery(place.place_name);
+                                setTravelToResults([]);
+                                setShowTravelToSearch(false);
+                              }}
+                              className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                            >
+                              <div className="text-sm font-medium text-gray-900">
+                                {place.place_name.split(',')[0]}
+                              </div>
+                              <div className="text-xs text-gray-500 truncate">
+                                {place.place_name}
                               </div>
                             </div>
-                            <button
-                              onClick={() => {
-                                setTravelTo(null);
-                                setTravelToQuery('');
-                              }}
-                              className="text-gray-500 hover:text-gray-700 ml-2"
-                            >
-                              <FaTimes size={14} />
-                            </button>
-                          </div>
+                          ))}
                         </div>
                       )}
                     </div>
-                    
-                    {/* Map for Travel */}
-                    <div className="mb-4">
-                      <div
-                        ref={checkInMode === 'travel' ? routeMapContainerRef : null}
-                        id="travel-map-container"
-                        className="w-full rounded-md border border-gray-200"
-                        style={{ height: '384px', width: '100%', position: 'relative', zIndex: 0 }}
-                      />
-                      <div className="mt-2 text-xs text-gray-600">
-                        {!travelFrom && !travelTo
-                          ? "Search for locations above or click on the map to set your travel route."
-                          : travelFrom && !travelTo
-                            ? "Now select your destination."
-                            : travelFrom && travelTo
-                              ? `Route: ${travelFrom.place_name.split(',')[0]} → ${travelTo.place_name.split(',')[0]}`
-                              : "Search for a starting location."}
-                      </div>
-                    </div>
-                  </>
-                ) : (checkInMode === 'checkin' || checkInMode === 'destination') ? (
-                  <>
-                    <div className="mb-4">
-                      {/* Place Search */}
-                      <div className="relative mb-3 place-search-container">
-                        <input
-                          type="text"
-                          placeholder="Search for a place..."
-                          value={placeSearchQuery}
-                          onChange={(e) => {
-                            setPlaceSearchQuery(e.target.value);
-                            setShowPlaceSearch(true);
-                          }}
-                          onFocus={() => setShowPlaceSearch(true)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                       
-                        
-                        {/* Search Results Dropdown */}
-                        {showPlaceSearch && placeSearchResults?.length > 0 && (
-                          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                            {isSearchingPlaces && (
-                              <div className="px-3 py-2 text-sm text-gray-500">Searching...</div>
-                            )}
-                            {placeSearchResults?.map((place, index) => (
-                              <div
-                                key={index}
-                                onClick={() => {
-                                  selectPlace(place); 
-                                  // setShowLocationModal(true);
-                                }}
-                                className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
-                              >
-                                <div className="text-sm font-medium text-gray-900">
-                                  {place.place_name.split(',')[0]}
-                                </div>
-                                <div className="text-xs text-gray-500 truncate">
-                                  {place.place_name}
-                                </div>
+
+                    {/* Selected Travel To */}
+                    {travelTo && (
+                      <div className="mb-4 p-3 rounded-md border bg-purple-50 border-purple-200">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start flex-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <div className="flex-1">
+                              <div className="text-sm font-medium text-gray-900">
+                                To: {travelTo.place_name.split(',')[0]}
                               </div>
-                            ))}
+                              <div className="text-xs text-gray-600 mt-1">
+                                {travelTo.place_name}
+                              </div>
+                            </div>
                           </div>
-                        )}
+                          <button
+                            onClick={() => {
+                              setTravelTo(null);
+                              setTravelToQuery('');
+                            }}
+                            className="text-gray-500 hover:text-gray-700 ml-2"
+                          >
+                            <FaTimes size={14} />
+                          </button>
+                        </div>
                       </div>
-                      
-                      {/* Set Destination Button - After Check-in */}
-                      {/* {(checkInMode === 'checkin' && checkInLocation && !routeDestination) && (
+                    )}
+                  </div>
+
+                  {/* Map for Travel */}
+                  <div className="mb-4">
+                    <div
+                      ref={checkInMode === 'travel' ? routeMapContainerRef : null}
+                      id="travel-map-container"
+                      className="w-full rounded-md border border-gray-200"
+                      style={{ height: '384px', width: '100%', position: 'relative', zIndex: 0 }}
+                    />
+                    <div className="mt-2 text-xs text-gray-600">
+                      {!travelFrom && !travelTo
+                        ? "Search for locations above or click on the map to set your travel route."
+                        : travelFrom && !travelTo
+                          ? "Now select your destination."
+                          : travelFrom && travelTo
+                            ? `Route: ${travelFrom.place_name.split(',')[0]} → ${travelTo.place_name.split(',')[0]}`
+                            : "Search for a starting location."}
+                    </div>
+                  </div>
+                </>
+              ) : (checkInMode === 'checkin' || checkInMode === 'destination') ? (
+                <>
+                  <div className="mb-4">
+                    {/* Place Search */}
+                    <div className="relative mb-3 place-search-container">
+                      <input
+                        type="text"
+                        placeholder="Search for a place..."
+                        value={placeSearchQuery}
+                        onChange={(e) => {
+                          setPlaceSearchQuery(e.target.value);
+                          setShowPlaceSearch(true);
+                        }}
+                        onFocus={() => setShowPlaceSearch(true)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+
+
+                      {/* Search Results Dropdown */}
+                      {showPlaceSearch && placeSearchResults?.length > 0 && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                          {isSearchingPlaces && (
+                            <div className="px-3 py-2 text-sm text-gray-500">Searching...</div>
+                          )}
+                          {placeSearchResults?.map((place, index) => (
+                            <div
+                              key={index}
+                              onClick={() => {
+                                selectPlace(place);
+                                // setShowLocationModal(true);
+                              }}
+                              className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                            >
+                              <div className="text-sm font-medium text-gray-900">
+                                {place.place_name.split(',')[0]}
+                              </div>
+                              <div className="text-xs text-gray-500 truncate">
+                                {place.place_name}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Set Destination Button - After Check-in */}
+                    {/* {(checkInMode === 'checkin' && checkInLocation && !routeDestination) && (
                         <div className="mb-3">
                           <button 
                             className='w-full border py-3 border-green-400 cursor-pointer bg-green-200 hover:bg-green-300 font-semibold text-base rounded-md transition-colors flex items-center justify-center gap-2' 
@@ -2199,82 +2197,81 @@ const PostModal = () => {
                           </button>
                         </div>
                       )} */}
-                      
-                      {/* Selected Location Display */}
-                      {((checkInMode === 'checkin' && checkInLocation) || (checkInMode === 'destination' && routeDestination)) && (
-                        <div className={`mb-3 p-3 rounded-md border ${
-                          checkInMode === 'destination' 
-                            ? 'bg-green-50 border-green-200' 
-                            : 'bg-blue-50 border-blue-200'
+
+                    {/* Selected Location Display */}
+                    {((checkInMode === 'checkin' && checkInLocation) || (checkInMode === 'destination' && routeDestination)) && (
+                      <div className={`mb-3 p-3 rounded-md border ${checkInMode === 'destination'
+                        ? 'bg-green-50 border-green-200'
+                        : 'bg-blue-50 border-blue-200'
                         }`}>
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-start flex-1">
-                              {checkInMode === 'destination' ? (
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                              ) : (
-                                <LuMapPinCheckInside size={20} className="text-red-600 mr-2 mt-0.5" />
-                              )}
-                              <div className="flex-1">
-                                <div className="text-sm font-medium text-gray-900">
-                                  {checkInMode === 'destination' 
-                                    ? routeDestination?.place_name.split(',')[0] 
-                                    : checkInLocation?.place_name.split(',')[0]
-                                  }
-                                </div>
-                                <div className="text-xs text-gray-600 mt-1">
-                                  {checkInMode === 'destination' 
-                                    ? routeDestination?.place_name 
-                                    : checkInLocation?.place_name
-                                  }
-                                </div>
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start flex-1">
+                            {checkInMode === 'destination' ? (
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                            ) : (
+                              <LuMapPinCheckInside size={20} className="text-red-600 mr-2 mt-0.5" />
+                            )}
+                            <div className="flex-1">
+                              <div className="text-sm font-medium text-gray-900">
+                                {checkInMode === 'destination'
+                                  ? routeDestination?.place_name.split(',')[0]
+                                  : checkInLocation?.place_name.split(',')[0]
+                                }
+                              </div>
+                              <div className="text-xs text-gray-600 mt-1">
+                                {checkInMode === 'destination'
+                                  ? routeDestination?.place_name
+                                  : checkInLocation?.place_name
+                                }
                               </div>
                             </div>
-                            <button
-                              onClick={() => {
-                                if (checkInMode === 'destination') {
-                                  setRouteDestination(null);
-                                } else {
-                                  resetCheckIn();
-                                }
-                              }}
-                              className="text-gray-500 hover:text-gray-700 ml-2"
-                            >
-                              <FaTimes size={14} />
-                            </button>
                           </div>
+                          <button
+                            onClick={() => {
+                              if (checkInMode === 'destination') {
+                                setRouteDestination(null);
+                              } else {
+                                resetCheckIn();
+                              }
+                            }}
+                            className="text-gray-500 hover:text-gray-700 ml-2"
+                          >
+                            <FaTimes size={14} />
+                          </button>
                         </div>
-                      )}
-                    </div>
-                    
-                    {/* Map for Check-in */}
-                    <div className="mb-4">
-                      <div
-                        ref={(checkInMode === 'checkin' || checkInMode === 'destination') ? routeMapContainerRef : null}
-                        id="checkin-map-container"
-                        className="w-full rounded-md border border-gray-200"
-                        style={{ height: '384px', width: '100%', position: 'relative', zIndex: 0 }}
-                      />
-                      <div className="mt-2 text-xs text-gray-600">
-                        {(checkInMode === 'checkin' && !checkInLocation) || (checkInMode === 'destination' && !routeDestination)
-                          ? "Search for a place above or click on the map to select a location."
-                          : checkInMode === 'destination' && routeDestination
-                            ? `Selected: ${routeDestination.place_name}`
-                            : checkInLocation
-                              ? `Selected: ${checkInLocation.place_name}`
-                              : "Search for a place above or click on the map to select a location."}
                       </div>
-                     
+                    )}
+                  </div>
+
+                  {/* Map for Check-in */}
+                  <div className="mb-4">
+                    <div
+                      ref={(checkInMode === 'checkin' || checkInMode === 'destination') ? routeMapContainerRef : null}
+                      id="checkin-map-container"
+                      className="w-full rounded-md border border-gray-200"
+                      style={{ height: '384px', width: '100%', position: 'relative', zIndex: 0 }}
+                    />
+                    <div className="mt-2 text-xs text-gray-600">
+                      {(checkInMode === 'checkin' && !checkInLocation) || (checkInMode === 'destination' && !routeDestination)
+                        ? "Search for a place above or click on the map to select a location."
+                        : checkInMode === 'destination' && routeDestination
+                          ? `Selected: ${routeDestination.place_name}`
+                          : checkInLocation
+                            ? `Selected: ${checkInLocation.place_name}`
+                            : "Search for a place above or click on the map to select a location."}
                     </div>
 
-                  </>
-                ) : (
-                  <div className="text-center text-gray-500 py-8">
-                    Please select a mode
                   </div>
-                )}
+
+                </>
+              ) : (
+                <div className="text-center text-gray-500 py-8">
+                  Please select a mode
+                </div>
+              )}
             </div>
 
             {/* Fixed Done Button at Bottom */}
@@ -2291,7 +2288,7 @@ const PostModal = () => {
                 </button>
               </div>
             )}
-        </div>
+          </div>
         )}
       </div>
     </div>

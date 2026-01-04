@@ -63,7 +63,7 @@ const FeedLayout = ({ children, showMsgBtn, showFriends, userProfile }) => {
             </div>
             <div className="grid grid-cols-11">
               
-              <div className="col-span-2 hidden md:block sticky top-0 h-screen overflow-y-auto">
+              <div className="col-span-2 hidden md:block sticky top-0 p-2  h-screen overflow-y-auto">
                 {/* Left sidebar - Search box */}
                 <SidebarSearch />
               </div>

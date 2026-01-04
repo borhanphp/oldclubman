@@ -43,7 +43,9 @@ import { getMyProfile, getUserProfile, getUserProfileByUsername, getAllFollowers
 import toast from "react-hot-toast";
 import Image from "next/image";
 import CommentThread from "./CommentThread";
+
 import api from "@/helpers/axios";
+import { getImageUrl } from "@/utility"; // Import helper
 
 const PostList = ({ postsData }) => {
   const { basicPostData } = useSelector(({ gathering }) => gathering);
@@ -55,7 +57,7 @@ const PostList = ({ postsData }) => {
 
   useEffect(() => {
     let isMounted = true;
-    
+
     const loadData = async () => {
       try {
         if (isMounted) {
@@ -69,25 +71,25 @@ const PostList = ({ postsData }) => {
         console.error('Error loading data:', error);
       }
     };
-    
+
     loadData();
-    
+
     return () => {
       isMounted = false;
     };
   }, [dispatch]);
 
- 
+
 
   const [showReactionsFor, setShowReactionsFor] = useState(null);
   const [showCommentReactionsFor, setShowCommentReactionsFor] = useState(null);
   const [commentInputs, setCommentInputs] = useState({});
-  
+
   // Debug: Log commentInputs changes
   useEffect(() => {
     console.log('🔄 commentInputs changed:', commentInputs);
   }, [commentInputs]);
-  
+
   const [commentLikes, setCommentLikes] = useState({});
   const [replyInputs, setReplyInputs] = useState({});
   const [commentReplies, setCommentReplies] = useState({});
@@ -146,7 +148,7 @@ const PostList = ({ postsData }) => {
   // Handle emoji selection
   const handleEmojiSelect = useCallback((emoji, inputKey) => {
     console.log('😊 Emoji selected:', { emoji, inputKey });
-    
+
     if (inputKey.includes("reply")) {
       setModalReplyInputs((prev) => {
         const currentValue = prev[inputKey] || '';
@@ -156,7 +158,7 @@ const PostList = ({ postsData }) => {
           [inputKey]: currentValue + emoji,
         };
       });
-      
+
       // Focus the input after emoji selection
       setTimeout(() => {
         const inputElement = inputRefs.current[inputKey];
@@ -172,7 +174,7 @@ const PostList = ({ postsData }) => {
       // Extract postId by removing the prefix (post-comment- or modal-comment-)
       const postId = inputKey.replace(/^(post-comment-|modal-comment-)/, '');
       console.log('😊 Comment input - PostId:', postId, 'InputKey:', inputKey);
-      
+
       setCommentInputs((prev) => {
         const currentValue = prev[postId] || '';
         const newValue = currentValue + emoji;
@@ -187,7 +189,7 @@ const PostList = ({ postsData }) => {
         console.log('😊 Comment input - New state:', newState);
         return newState;
       });
-      
+
       // Focus the input after emoji selection
       setTimeout(() => {
         const inputElement = inputRefs.current[inputKey];
@@ -234,8 +236,8 @@ const PostList = ({ postsData }) => {
   }, []);
 
 
-   // Load Leaflet assets function
-   const loadLeafletAssets = () => {
+  // Load Leaflet assets function
+  const loadLeafletAssets = () => {
     if (typeof window === 'undefined') return Promise.resolve();
     if (window.L) return Promise.resolve();
 
@@ -268,62 +270,62 @@ const PostList = ({ postsData }) => {
   };
 
 
-   // Initialize map for a post
-   const initMapForPost = async (postId, postLocations) => {
+  // Initialize map for a post
+  const initMapForPost = async (postId, postLocations) => {
     if (!postLocations || postLocations.length === 0) return;
-    
+
     await loadLeafletAssets();
-    
+
     const containerId = `map-container-${postId}`;
     const container = document.getElementById(containerId);
-    
+
     if (!container) {
       console.error('Map container not found:', containerId);
       return;
     }
-    
+
     if (mapInstances.current[postId]) {
       return; // Map already initialized
     }
-    
+
     // Clean up if container already has leaflet instance
     if (container._leaflet_id) {
       container._leaflet_id = null;
       container.innerHTML = '';
     }
-    
+
     const L = window.L;
     if (!L) {
       console.error('Leaflet library not loaded');
       return;
     }
-    
+
     try {
       // Set max zoom limit to prevent excessive zooming
       const MAX_ZOOM = 18; // Reduced from 20 to avoid tile loading issues
       const MIN_ZOOM = 3;
-      
+
       const map = L.map(container, {
         maxZoom: MAX_ZOOM,
         minZoom: MIN_ZOOM
       });
-      
+
       // Use OpenStreetMap tiles (free, no API key required)
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: MAX_ZOOM,
         minZoom: MIN_ZOOM
       }).addTo(map);
-      
+
       mapInstances.current[postId] = map;
-      
+
       const bounds = [];
       const markers = [];
-      
+
       // Process locations
       const checkIn = postLocations.find(loc => loc.post_type === 1);
       const destination = postLocations.find(loc => loc.post_type === 2);
-      
+
       // Add check-in marker
       if (checkIn && checkIn.lat && checkIn.lon) {
         const checkInLat = parseFloat(checkIn.lat);
@@ -344,7 +346,7 @@ const PostList = ({ postsData }) => {
           bounds.push([checkInLat, checkInLon]);
         }
       }
-      
+
       // Add destination marker
       if (destination && destination.lat && destination.lon) {
         const destLat = parseFloat(destination.lat);
@@ -365,7 +367,7 @@ const PostList = ({ postsData }) => {
           bounds.push([destLat, destLon]);
         }
       }
-      
+
       // Draw route line if both exist
       if (checkIn && destination && checkIn.lat && checkIn.lon && destination.lat && destination.lon) {
         try {
@@ -375,35 +377,35 @@ const PostList = ({ postsData }) => {
           const startLon = parseFloat(checkIn.lon);
           const endLat = parseFloat(destination.lat);
           const endLon = parseFloat(destination.lon);
-          
+
           // Validate coordinates
           if (isNaN(startLat) || isNaN(startLon) || isNaN(endLat) || isNaN(endLon)) {
             console.error('Invalid coordinates for route line');
             // Skip curve drawing but continue with map initialization
             throw new Error('Invalid coordinates');
           }
-          
+
           // Calculate midpoint
           const midLat = (startLat + endLat) / 2;
           const midLon = (startLon + endLon) / 2;
-          
+
           // Calculate distance between points
           const latDiff = endLat - startLat;
           const lonDiff = endLon - startLon;
-          
+
           // Create curve by offsetting midpoint perpendicular to the line
           // Offset factor controls the curve intensity (smaller = more subtle curve)
           const offsetFactor = 0.3;
           const perpLat = -lonDiff * offsetFactor;
           const perpLon = latDiff * offsetFactor;
-          
+
           const curveLat = midLat + perpLat;
           const curveLon = midLon + perpLon;
-          
+
           // Generate smooth curve points using quadratic Bezier approximation
           const curvePoints = [];
           const numPoints = 20; // Number of points for smooth curve
-          
+
           for (let i = 0; i <= numPoints; i++) {
             const t = i / numPoints;
             // Quadratic Bezier curve formula: (1-t)²P₀ + 2(1-t)tP₁ + t²P₂
@@ -411,10 +413,10 @@ const PostList = ({ postsData }) => {
             const lon = (1 - t) * (1 - t) * startLon + 2 * (1 - t) * t * curveLon + t * t * endLon;
             curvePoints.push([lat, lon]);
           }
-          
-          L.polyline(curvePoints, { 
-            color: '#2563eb', 
-            weight: 4, 
+
+          L.polyline(curvePoints, {
+            color: '#2563eb',
+            weight: 4,
             opacity: 0.7,
             dashArray: '8, 5', // Creates dotted/dashed line style
             lineCap: 'round', // Rounded line caps
@@ -427,9 +429,9 @@ const PostList = ({ postsData }) => {
             L.polyline([
               [parseFloat(checkIn.lat), parseFloat(checkIn.lon)],
               [parseFloat(destination.lat), parseFloat(destination.lon)]
-            ], { 
-              color: '#2563eb', 
-              weight: 4, 
+            ], {
+              color: '#2563eb',
+              weight: 4,
               opacity: 0.7,
               dashArray: '8, 5',
               lineCap: 'round',
@@ -440,10 +442,10 @@ const PostList = ({ postsData }) => {
           }
         }
       }
-      
+
       // Fit bounds to show all markers with zoom limits
       let hasLargeDistance = false; // Track if we're handling large distances
-      
+
       if (bounds.length > 0) {
         if (bounds.length === 1) {
           // Set reasonable zoom for single marker (13 is city-level, safer than 15)
@@ -452,35 +454,35 @@ const PostList = ({ postsData }) => {
           // Calculate distance between points to determine appropriate zoom strategy
           const [lat1, lon1] = bounds[0];
           const [lat2, lon2] = bounds[1];
-          
+
           // Calculate approximate distance in kilometers using Haversine formula
           const R = 6371; // Earth's radius in km
           const dLat = (lat2 - lat1) * Math.PI / 180;
           const dLon = (lon2 - lon1) * Math.PI / 180;
           const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
           const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
           const distanceKm = R * c;
-          
+
           // Create a proper LatLngBounds object from the marker positions
           const latLngBounds = L.latLngBounds(bounds);
-          
+
           // For very large distances (e.g., continents apart), ensure both markers are visible
           if (distanceKm > 1000) {
             hasLargeDistance = true; // Mark that we're handling large distances
             console.log(`Large distance detected: ${distanceKm.toFixed(2)} km between markers`);
-            
+
             // Keep MIN_ZOOM at 1 for very large distances to allow zooming out enough
             // Don't restore it back to 3, as that causes the map to zoom in
             map.setMinZoom(1);
-            
+
             // Use fitBounds with zero padding first - this should show both markers
-            map.fitBounds(latLngBounds, { 
+            map.fitBounds(latLngBounds, {
               padding: [0, 0],
               animate: false
             });
-            
+
             // Verify and fix if needed
             setTimeout(() => {
               const bounds_check = map.getBounds();
@@ -488,29 +490,29 @@ const PostList = ({ postsData }) => {
               const marker2 = L.latLng(bounds[1]);
               const marker1Visible = bounds_check.contains(marker1);
               const marker2Visible = bounds_check.contains(marker2);
-              
+
               console.log(`After fitBounds - Marker 1 visible: ${marker1Visible}, Marker 2 visible: ${marker2Visible}`);
-              
+
               if (!marker1Visible || !marker2Visible) {
                 // If not visible, expand bounds by 20% and try again
                 const expandedBounds = latLngBounds.pad(0.2);
-                map.fitBounds(expandedBounds, { 
+                map.fitBounds(expandedBounds, {
                   padding: [0, 0],
                   animate: false
                 });
-                
+
                 // Check again after expansion
                 setTimeout(() => {
                   const secondCheck = map.getBounds();
                   const stillNotVisible = !secondCheck.contains(marker1) || !secondCheck.contains(marker2);
-                  
+
                   if (stillNotVisible) {
                     console.log('Markers still not visible, using world bounds');
                     // Last resort: show entire world to ensure both markers are visible
                     const worldBounds = L.latLngBounds([[-85, -180], [85, 180]]);
-                    map.fitBounds(worldBounds, { 
-                      padding: [0, 0], 
-                      animate: false 
+                    map.fitBounds(worldBounds, {
+                      padding: [0, 0],
+                      animate: false
                     });
                   }
                   map.invalidateSize();
@@ -521,7 +523,7 @@ const PostList = ({ postsData }) => {
             }, 200);
           } else {
             // Normal distance - use standard padding and zoom limits
-            map.fitBounds(latLngBounds, { 
+            map.fitBounds(latLngBounds, {
               padding: [50, 50],
               maxZoom: MAX_ZOOM
             });
@@ -530,7 +532,7 @@ const PostList = ({ postsData }) => {
       } else {
         map.setView([23.8103, 90.4125], Math.max(5, MIN_ZOOM));
       }
-      
+
       // Only call invalidateSize if we haven't already handled it for large distances
       // For large distances, invalidateSize is called inside the setTimeout above
       if (!hasLargeDistance) {
@@ -544,59 +546,59 @@ const PostList = ({ postsData }) => {
   };
 
   // Initialize maps for posts with location data
-useEffect(() => {
-  if (!postsData || !Array.isArray(postsData)) return;
-  
-  postsData.forEach(item => {
-    if (item?.post_location && item.post_location.length > 0 && item.id) {
-      // Delay initialization to ensure DOM is ready
-      setTimeout(() => {
-        initMapForPost(item.id, item.post_location);
-      }, 300);
-    }
-  });
-  
-  // Cleanup on unmount
-  return () => {
-    Object.keys(mapInstances.current).forEach(postId => {
-      try {
-        if (mapInstances.current[postId]) {
-          mapInstances.current[postId].remove();
-        }
-      } catch (error) {
-        console.error('Error cleaning up map:', error);
+  useEffect(() => {
+    if (!postsData || !Array.isArray(postsData)) return;
+
+    postsData.forEach(item => {
+      if (item?.post_location && item.post_location.length > 0 && item.id) {
+        // Delay initialization to ensure DOM is ready
+        setTimeout(() => {
+          initMapForPost(item.id, item.post_location);
+        }, 300);
       }
     });
-    mapInstances.current = {};
-  };
-}, [postsData]);
 
-// Create a callback ref for each post
-const setMapContainerRef = (postId, postLocations) => (element) => {
-  if (element && !mapInstances.current[postId]) {
-    // Small delay to ensure element is fully mounted
-    setTimeout(() => {
-      initMapForPost(postId, postLocations);
-    }, 100);
-  }
-};
-  
+    // Cleanup on unmount
+    return () => {
+      Object.keys(mapInstances.current).forEach(postId => {
+        try {
+          if (mapInstances.current[postId]) {
+            mapInstances.current[postId].remove();
+          }
+        } catch (error) {
+          console.error('Error cleaning up map:', error);
+        }
+      });
+      mapInstances.current = {};
+    };
+  }, [postsData]);
+
+  // Create a callback ref for each post
+  const setMapContainerRef = (postId, postLocations) => (element) => {
+    if (element && !mapInstances.current[postId]) {
+      // Small delay to ensure element is fully mounted
+      setTimeout(() => {
+        initMapForPost(postId, postLocations);
+      }, 100);
+    }
+  };
+
 
   const handleCommentSubmit = (postId) => {
     const inputKey = `post-comment-${postId}`;
     const comment = commentInputs[postId];
     const images = modalReplyImages[inputKey] || [];
     const hasImage = Array.isArray(images) && images.length > 0;
-    
+
     // Process mentions before validation
     const processedComment = processContentForServer(comment);
-    console.log('💬 Comment submission:', { 
-      original: comment, 
+    console.log('💬 Comment submission:', {
+      original: comment,
       processed: processedComment,
       mappingsCount: mentionMappingsRef.current.size,
       availableMappings: Array.from(mentionMappingsRef.current.keys())
     });
-    
+
     // Check if there's processed content or images
     if (!processedComment?.trim() && !hasImage) return;
 
@@ -681,7 +683,7 @@ const setMapContainerRef = (postId, postLocations) => (element) => {
       dispatch(getPostById(postId));
       dispatch(getMyProfile());
       const username = profile?.client?.username || params?.id;
-      if(username){
+      if (username) {
         dispatch(getUserProfileByUsername(username));
       }
     });
@@ -695,7 +697,7 @@ const setMapContainerRef = (postId, postLocations) => (element) => {
       dispatch(getPostById(postId));
       dispatch(getMyProfile());
       const username = profile?.client?.username || params?.id;
-      if(username){
+      if (username) {
         dispatch(getUserProfileByUsername(username));
       }
     });
@@ -784,7 +786,7 @@ const setMapContainerRef = (postId, postLocations) => (element) => {
   const buildMentionCandidates = useCallback((query = "") => {
     // Collect users from multiple sources
     let allUsers = [];
-    
+
     // Add followers
     if (myFollowers && myFollowers.length > 0) {
       const followerUsers = myFollowers.map(f => ({
@@ -796,7 +798,7 @@ const setMapContainerRef = (postId, postLocations) => (element) => {
       }));
       allUsers.push(...followerUsers);
     }
-    
+
     // Add users from current post's comments
     if (basicPostData?.comments) {
       const commentUsers = basicPostData.comments.map(c => ({
@@ -807,7 +809,7 @@ const setMapContainerRef = (postId, postLocations) => (element) => {
         source: "comment"
       }));
       allUsers.push(...commentUsers);
-      
+
       // Add users from replies
       basicPostData.comments.forEach(c => {
         if (c.replies) {
@@ -822,7 +824,7 @@ const setMapContainerRef = (postId, postLocations) => (element) => {
         }
       });
     }
-    
+
     // Remove duplicates by ID and create final list
     const uniqueUsers = allUsers.reduce((acc, user) => {
       const fullName = `${user.fname} ${user.last_name}`.trim();
@@ -830,29 +832,29 @@ const setMapContainerRef = (postId, postLocations) => (element) => {
         acc.push({
           id: user.id,
           name: fullName,
-          avatar: user.image ? 
-            `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}/${user.image}` : 
+          avatar: user.image ?
+            `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}/${user.image}` :
             "/common-avator.jpg",
           source: user.source
         });
       }
       return acc;
     }, []);
-    
+
     // Filter by query
     const q = query.toLowerCase();
     const filtered = uniqueUsers.filter((u) => u.id && u.name && (!q || u.name.toLowerCase().includes(q)));
-    
-    console.log('Built candidates:', { 
-      query, 
-      totalUsers: allUsers.length, 
+
+    console.log('Built candidates:', {
+      query,
+      totalUsers: allUsers.length,
       allUsersDetails: allUsers.map(u => ({ id: u.id, name: `${u.fname} ${u.last_name}`.trim(), source: u.source })),
       uniqueUsers: uniqueUsers.length,
       uniqueUsersDetails: uniqueUsers.map(u => ({ id: u.id, name: u.name, source: u.source })),
       filtered: filtered.length,
-      candidates: filtered 
+      candidates: filtered
     });
-    
+
     return filtered.slice(0, 8);
   }, [myFollowers, basicPostData]);
 
@@ -863,15 +865,15 @@ const setMapContainerRef = (postId, postLocations) => (element) => {
       if (mentionAbortControllerRef.current) {
         mentionAbortControllerRef.current.abort();
       }
-      
+
       // Create new AbortController for this request
       mentionAbortControllerRef.current = new AbortController();
-      
+
       setMentionLoading(true);
-      
+
       const itemsPerPage = 10; // Number of items to fetch per page
       console.log('🔍 Fetching mentioned people:', { query, page, itemsPerPage, append });
-      
+
       const response = await api.get(`/client/mentioned_people/${itemsPerPage}`, {
         params: {
           search: query,
@@ -879,34 +881,34 @@ const setMapContainerRef = (postId, postLocations) => (element) => {
         },
         signal: mentionAbortControllerRef.current.signal
       });
-      
+
       console.log('🔍 API Response:', response.data);
-      
+
       if (response.data && response.data.data && response.data.data.follow_connections && response.data.data.follow_connections.data) {
         const users = response.data.data.follow_connections.data.map(user => ({
           id: user.id,
-          name: user.display_name || 
-                `${user.fname || ''} ${user.middle_name ? user.middle_name + ' ' : ''}${user.last_name || ''}`.trim() || 
-                'Unknown User',
-          avatar: user.image ? 
-            `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}/${user.image}` : 
+          name: user.display_name ||
+            `${user.fname || ''} ${user.middle_name ? user.middle_name + ' ' : ''}${user.last_name || ''}`.trim() ||
+            'Unknown User',
+          avatar: user.image ?
+            `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}/${user.image}` :
             "/common-avator.jpg",
           source: "api",
           rawData: user
         }));
-        
+
         // Update mention options based on append flag
         if (append) {
           setMentionOptions(prev => [...prev, ...users]);
         } else {
           setMentionOptions(users);
         }
-        
+
         // Update pagination state
         const paginationData = response.data.data.follow_connections;
         const hasMore = paginationData.current_page < paginationData.last_page;
         setMentionHasMore(hasMore);
-        
+
         console.log('🔍 Pagination info:', {
           currentPage: paginationData.current_page,
           lastPage: paginationData.last_page,
@@ -914,15 +916,15 @@ const setMapContainerRef = (postId, postLocations) => (element) => {
           totalUsers: paginationData.total,
           usersThisPage: users.length
         });
-        
+
         return users;
       }
-      
+
       return [];
     } catch (error) {
       if (error.name !== 'AbortError') {
         console.error('Error fetching mentioned people:', error);
-        
+
         // Fallback to local data on error (only for first page)
         if (!append) {
           console.log('🔄 Falling back to local data');
@@ -931,7 +933,7 @@ const setMapContainerRef = (postId, postLocations) => (element) => {
           return fallbackUsers;
         }
       }
-      
+
       return [];
     } finally {
       setMentionLoading(false);
@@ -954,48 +956,48 @@ const setMapContainerRef = (postId, postLocations) => (element) => {
   };
 
   const setInputValueByKey = (inputKey, value) => {
-  if (inputKey.startsWith("reply-") || inputKey.startsWith("single-reply-")) {
-    setModalReplyInputs((prev) => ({ ...prev, [inputKey]: value }));
-    return;
-  }
-  if (inputKey.startsWith("modal-comment-") || inputKey.startsWith("post-comment-")) {
+    if (inputKey.startsWith("reply-") || inputKey.startsWith("single-reply-")) {
+      setModalReplyInputs((prev) => ({ ...prev, [inputKey]: value }));
+      return;
+    }
+    if (inputKey.startsWith("modal-comment-") || inputKey.startsWith("post-comment-")) {
+      const parts = inputKey.split("-");
+      const postId = parts[parts.length - 1];
+      setCommentInputs((prev) => ({ ...prev, [postId]: value }));
+      return;
+    }
     const parts = inputKey.split("-");
     const postId = parts[parts.length - 1];
     setCommentInputs((prev) => ({ ...prev, [postId]: value }));
-    return;
-  }
-  const parts = inputKey.split("-");
-  const postId = parts[parts.length - 1];
-  setCommentInputs((prev) => ({ ...prev, [postId]: value }));
-};
+  };
 
-const calculateCaretOffset = useCallback((inputElement, selectionStart, value) => {
-  if (!inputElement) return { left: 0 };
-  if (typeof window === 'undefined') return { left: 0 };
+  const calculateCaretOffset = useCallback((inputElement, selectionStart, value) => {
+    if (!inputElement) return { left: 0 };
+    if (typeof window === 'undefined') return { left: 0 };
 
-  if (!measureCanvasRef.current) {
-    measureCanvasRef.current = document.createElement('canvas');
-  }
+    if (!measureCanvasRef.current) {
+      measureCanvasRef.current = document.createElement('canvas');
+    }
 
-  const canvas = measureCanvasRef.current;
-  const context = canvas.getContext('2d');
-  if (!context) return { left: 0 };
+    const canvas = measureCanvasRef.current;
+    const context = canvas.getContext('2d');
+    if (!context) return { left: 0 };
 
-  const style = window.getComputedStyle(inputElement);
-  const fontParts = [style.fontStyle, style.fontVariant, style.fontWeight, style.fontSize, style.fontFamily].filter(Boolean);
-  context.font = fontParts.join(' ');
+    const style = window.getComputedStyle(inputElement);
+    const fontParts = [style.fontStyle, style.fontVariant, style.fontWeight, style.fontSize, style.fontFamily].filter(Boolean);
+    context.font = fontParts.join(' ');
 
-  const textBeforeCaret = (value || '').slice(0, selectionStart);
-  const textMetrics = context.measureText(textBeforeCaret);
-  const paddingLeft = parseFloat(style.paddingLeft) || 0;
-  const borderLeft = parseFloat(style.borderLeftWidth) || 0;
-  const scrollLeft = inputElement.scrollLeft || 0;
+    const textBeforeCaret = (value || '').slice(0, selectionStart);
+    const textMetrics = context.measureText(textBeforeCaret);
+    const paddingLeft = parseFloat(style.paddingLeft) || 0;
+    const borderLeft = parseFloat(style.borderLeftWidth) || 0;
+    const scrollLeft = inputElement.scrollLeft || 0;
 
-  const left = paddingLeft + borderLeft + textMetrics.width - scrollLeft;
-  return { left };
-}, []);
+    const left = paddingLeft + borderLeft + textMetrics.width - scrollLeft;
+    return { left };
+  }, []);
 
-const handleMentionDetect = async (e, inputKey) => {
+  const handleMentionDetect = async (e, inputKey) => {
     const value = e.target.value;
     const caret = e.target.selectionStart ?? value.length;
     const before = value.slice(0, caret);
@@ -1041,7 +1043,7 @@ const handleMentionDetect = async (e, inputKey) => {
 
   const insertMentionToken = useCallback((user, inputKey) => {
     console.log('🔗 insertMentionToken called:', { user: user.name, inputKey });
-    
+
     // Store the mention mapping persistently (normalize spaces)
     const normalizedName = user.name.toLowerCase().trim().replace(/\s+/g, ' ');
     mentionMappingsRef.current.set(normalizedName, {
@@ -1049,14 +1051,14 @@ const handleMentionDetect = async (e, inputKey) => {
       name: user.name,
       rawData: user.rawData
     });
-    
-    console.log('🔗 Storing mention mapping:', { 
-      originalName: user.name, 
-      normalizedKey: normalizedName, 
+
+    console.log('🔗 Storing mention mapping:', {
+      originalName: user.name,
+      normalizedKey: normalizedName,
       mappingStored: mentionMappingsRef.current.has(normalizedName),
-      totalMappings: mentionMappingsRef.current.size 
+      totalMappings: mentionMappingsRef.current.size
     });
-    
+
     const value = getInputValueByKey(inputKey);
     const input = inputRefs.current[inputKey];
     const caret = input?.selectionStart ?? value.length;
@@ -1066,10 +1068,10 @@ const handleMentionDetect = async (e, inputKey) => {
     // Use a cleaner format that's more readable in input fields
     const token = `@${user.name} `;
     const newValue = before + token + after;
-    
+
     console.log('🔗 Inserting mention:', { before, token, after, newValue });
     console.log('🔗 Stored mention mapping:', mentionMappingsRef.current.get(normalizedName));
-    
+
     setInputValueByKey(inputKey, newValue);
     resetMentionState({ abortRequest: false });
     setTimeout(() => {
@@ -1105,17 +1107,17 @@ const handleMentionDetect = async (e, inputKey) => {
   const handleMentionScroll = useCallback(async (e) => {
     const { scrollTop, scrollHeight, clientHeight } = e.target;
     const isNearBottom = scrollTop + clientHeight >= scrollHeight - 10;
-    
+
     if (isNearBottom && mentionHasMore && !mentionLoading) {
-      console.log('🔄 Loading more mentions...', { 
-        currentPage: mentionPage, 
-        nextPage: mentionPage + 1, 
-        query: mentionQuery 
+      console.log('🔄 Loading more mentions...', {
+        currentPage: mentionPage,
+        nextPage: mentionPage + 1,
+        query: mentionQuery
       });
-      
+
       const nextPage = mentionPage + 1;
       setMentionPage(nextPage);
-      
+
       // Fetch next page and append to existing results
       await fetchMentionedPeople(mentionQuery, nextPage, true);
     }
@@ -1123,8 +1125,8 @@ const handleMentionDetect = async (e, inputKey) => {
 
   // Reusable mention dropdown component with pagination
   const renderMentionDropdown = useCallback((inputKey) => {
- 
-    
+
+
     if (mentionOpenFor !== inputKey || (mentionOptions.length === 0 && !mentionLoading)) {
       return null;
     }
@@ -1220,43 +1222,43 @@ const handleMentionDetect = async (e, inputKey) => {
   // Helper function to convert @Name format back to [Name](id) for server
   const processContentForServer = useCallback((content, mentionData = {}) => {
     if (!content) return content;
-    
+
     console.log('🔄 processContentForServer - Original content:', content);
-    
+
     let processedContent = content;
-    
+
     // Find all @mentions in the content (simple format)
     // Match @ followed by one or more words (handles multi-word names)
     const mentionRegex = /@([^\s@]+(?:\s+[^\s@]+)*)/g;
     let match;
-    
+
     while ((match = mentionRegex.exec(content)) !== null) {
       const fullMentionText = match[1].trim();
       console.log('🔄 Found @mention text:', fullMentionText);
-      
+
       // First, try to find in persistent mention mappings (normalize spaces)
       const lookupKey = fullMentionText.toLowerCase().trim().replace(/\s+/g, ' ');
       console.log('🔄 Looking up mention:', lookupKey, 'in', Array.from(mentionMappingsRef.current.keys()));
       console.log('🔄 Exact key match exists:', mentionMappingsRef.current.has(lookupKey));
-      
+
       let persistentMapping = mentionMappingsRef.current.get(lookupKey);
-      
+
       // If exact match not found, try to find partial matches (for cases like "@Name extra text")
       if (!persistentMapping) {
         console.log('🔄 Trying partial matches for:', lookupKey);
         const availableKeys = Array.from(mentionMappingsRef.current.keys());
-        
+
         // Try to find the longest matching key that starts the fullMentionText
         let bestMatch = null;
         let bestMatchLength = 0;
-        
+
         for (const key of availableKeys) {
           if (lookupKey.startsWith(key) && key.length > bestMatchLength) {
             bestMatch = key;
             bestMatchLength = key.length;
           }
         }
-        
+
         if (bestMatch) {
           persistentMapping = mentionMappingsRef.current.get(bestMatch);
           console.log('🔄 Found partial match:', { bestMatch, mapping: persistentMapping });
@@ -1264,11 +1266,11 @@ const handleMentionDetect = async (e, inputKey) => {
           const matchedWords = bestMatch.split(' ');
           const originalWords = fullMentionText.toLowerCase().split(' ');
           const matchedText = originalWords.slice(0, matchedWords.length).join(' ');
-          
+
           // Update the fullMentionText to only the matched portion for replacement
           const actualMentionText = fullMentionText.split(' ').slice(0, matchedWords.length).join(' ');
           console.log('🔄 Adjusting mention text from:', fullMentionText, 'to:', actualMentionText);
-          
+
           const fullMention = `[${persistentMapping.name}](${persistentMapping.id})`;
           const originalMention = `@${actualMentionText}`;
           console.log('🔄 Converting partial match:', { originalMention, fullMention });
@@ -1276,7 +1278,7 @@ const handleMentionDetect = async (e, inputKey) => {
           continue; // Skip to next mention
         }
       }
-      
+
       if (persistentMapping) {
         console.log('🔄 Found in persistent mappings:', persistentMapping);
         const fullMention = `[${persistentMapping.name}](${persistentMapping.id})`;
@@ -1287,11 +1289,11 @@ const handleMentionDetect = async (e, inputKey) => {
       } else {
         console.log('🔄 NOT found in persistent mappings for key:', lookupKey);
       }
-      
+
       // Try to find the best matching user in followers list
       let bestMatch = null;
       let bestMatchLength = 0;
-      
+
       console.log('🔄 Available followers:', myFollowers?.map(f => ({
         id: f?.follower_client?.id,
         fname: f?.follower_client?.fname,
@@ -1299,10 +1301,10 @@ const handleMentionDetect = async (e, inputKey) => {
         name: `${f?.follower_client?.fname || ""} ${f?.follower_client?.last_name || ""}`.trim(),
         rawData: f?.follower_client
       })));
-      
+
       // Get all available users from multiple sources (API + local fallback)
       let allUsers = [];
-      
+
       // First, check if we have API users from recent mention searches
       if (mentionOptions && mentionOptions.length > 0) {
         const apiUsers = mentionOptions.map(user => ({
@@ -1311,15 +1313,17 @@ const handleMentionDetect = async (e, inputKey) => {
           last_name: user.rawData?.last_name || user.name.split(' ').slice(1).join(' ') || "",
           image: user.rawData?.image,
           source: "api",
-          originalData: { follower_client: user.rawData || { 
-            id: user.id, 
-            fname: user.name.split(' ')[0] || "", 
-            last_name: user.name.split(' ').slice(1).join(' ') || ""
-          }}
+          originalData: {
+            follower_client: user.rawData || {
+              id: user.id,
+              fname: user.name.split(' ')[0] || "",
+              last_name: user.name.split(' ').slice(1).join(' ') || ""
+            }
+          }
         }));
         allUsers.push(...apiUsers);
       }
-      
+
       // Add followers as fallback
       if (myFollowers && myFollowers.length > 0) {
         const followerUsers = myFollowers.map(f => ({
@@ -1332,7 +1336,7 @@ const handleMentionDetect = async (e, inputKey) => {
         }));
         allUsers.push(...followerUsers);
       }
-      
+
       // Add users from current post's comments
       if (basicPostData?.comments) {
         const commentUsers = basicPostData.comments.map(c => ({
@@ -1344,7 +1348,7 @@ const handleMentionDetect = async (e, inputKey) => {
           originalData: { follower_client: c.client_comment }
         }));
         allUsers.push(...commentUsers);
-        
+
         // Add users from replies
         basicPostData.comments.forEach(c => {
           if (c.replies) {
@@ -1360,7 +1364,7 @@ const handleMentionDetect = async (e, inputKey) => {
           }
         });
       }
-      
+
       // Remove duplicates and check each user
       const uniqueUsers = allUsers.reduce((acc, user) => {
         const fullName = `${user.fname} ${user.last_name}`.trim();
@@ -1369,7 +1373,7 @@ const handleMentionDetect = async (e, inputKey) => {
         }
         return acc;
       }, []);
-      
+
       console.log('🔄 All users before dedup:', allUsers.map(u => ({
         id: u.id,
         fname: u.fname,
@@ -1377,17 +1381,17 @@ const handleMentionDetect = async (e, inputKey) => {
         name: `${u.fname} ${u.last_name}`.trim(),
         source: u.source
       })));
-      
+
       console.log('🔄 Available users for processing:', uniqueUsers.map(u => ({
         id: u.id,
         name: `${u.fname} ${u.last_name}`.trim(),
         source: u.source
       })));
-      
+
       uniqueUsers.forEach(user => {
         const fullName = `${user.fname} ${user.last_name}`.trim();
         console.log('🔄 Checking user:', fullName, 'vs mention:', fullMentionText);
-        
+
         // Check if the mention starts with this user's name
         if (fullMentionText.toLowerCase().startsWith(fullName.toLowerCase()) && fullName.length > bestMatchLength) {
           console.log('🔄 Match found!', fullName);
@@ -1395,14 +1399,14 @@ const handleMentionDetect = async (e, inputKey) => {
           bestMatchLength = fullName.length;
         }
       });
-      
+
       console.log('🔄 Best match found:', bestMatch ? bestMatch.follower_client : 'NOT FOUND');
-      
+
       if (bestMatch) {
         const userName = `${bestMatch.follower_client.fname || ""} ${bestMatch.follower_client.last_name || ""}`.trim();
         const fullMention = `[${userName}](${bestMatch.follower_client.id})`;
         console.log('🔄 Converting to:', fullMention);
-        
+
         // Replace only the user name part, keep the rest
         const originalMention = `@${fullMentionText}`;
         const extraText = fullMentionText.substring(userName.length).trim();
@@ -1410,7 +1414,7 @@ const handleMentionDetect = async (e, inputKey) => {
         processedContent = processedContent.replace(originalMention, newMention);
       }
     }
-    
+
     console.log('🔄 processContentForServer - Final processed content:', processedContent);
     return processedContent;
   }, [myFollowers, basicPostData, mentionOptions]);
@@ -1441,14 +1445,14 @@ const handleMentionDetect = async (e, inputKey) => {
     return false;
   };
 
-  
+
   // Sanitize HTML to allow only safe formatting tags
   const sanitizeHTML = useCallback((html) => {
     if (!html) return '';
-    
+
     // Only allow specific formatting tags: b, i, u, strong, em, p, h1, a, br
     const allowedTags = ['b', 'i', 'u', 'strong', 'em', 'p', 'h1', 'a', 'br'];
-    
+
     // Remove all HTML tags except the allowed ones
     let sanitized = html.replace(/<\/?([^>]+)>/g, (match, tagName) => {
       const tag = tagName.toLowerCase().split(' ')[0]; // Get tag name without attributes
@@ -1457,7 +1461,7 @@ const handleMentionDetect = async (e, inputKey) => {
         if (tag === 'a') {
           const hrefMatch = match.match(/href\s*=\s*["']([^"']*)["']/i);
           const targetMatch = match.match(/target\s*=\s*["']([^"']*)["']/i);
-          
+
           let cleanMatch = '<a';
           if (hrefMatch) {
             cleanMatch += ` href="${hrefMatch[1]}"`;
@@ -1466,14 +1470,14 @@ const handleMentionDetect = async (e, inputKey) => {
             cleanMatch += ` target="${targetMatch[1]}"`;
           }
           cleanMatch += '>';
-          
+
           return cleanMatch;
         }
         return match; // Keep allowed tags
       }
       return ''; // Remove disallowed tags
     });
-    
+
     // Clean up excessive line breaks and empty paragraphs
     sanitized = sanitized
       // Replace multiple consecutive empty paragraphs with <br> tags with single one
@@ -1485,47 +1489,47 @@ const handleMentionDetect = async (e, inputKey) => {
       .replace(/(<br\s*\/?>)+$/gi, '')
       // Clean up multiple consecutive empty paragraphs
       .replace(/(<p><\/p>){2,}/gi, '<p></p>');
-    
+
     return sanitized;
   }, []);
 
   // Render content with mentions and HTML formatting - optimized with useCallback
   const renderContentWithHtml = useCallback((text) => {
     if (!text) return null;
-    
+
     // Clean up ALL @ symbols from mention formats
     let cleanedText = text
       // Remove @ from @[Name](id) format - supports numeric IDs, UUIDs, and usernames
       .replace(/@(\[.+?\]\([a-zA-Z0-9_-]+\))/g, '$1')
       // Remove @ from standalone @Name mentions (but keep the name)
       .replace(/@([^@\s]+(?:\s[^@\s]+)*)/g, '$1');
-    
+
     // Sanitize HTML to only allow safe formatting tags
     cleanedText = sanitizeHTML(cleanedText);
-    
+
     // Add proper styling to H1 elements
     cleanedText = cleanedText.replace(/<h1([^>]*)>/gi, '<h1$1 style="font-size: 1.5em; font-weight: bold; color: inherit; display: block; margin: 0.5em 0; line-height: 1.2;">');
-    
+
     // Handle the clean [Name](id) or [Name](username) format
     // Updated to support both numeric IDs, alphanumeric usernames, and UUIDs with hyphens
     const fullFormatRegex = /\[(.+?)\]\(([a-zA-Z0-9_-]+)\)/g;
-    
+
     const elements = [];
     let lastIndex = 0;
     let match;
-    
+
     // Handle full format mentions [Name](id/username) and make them clickable
     while ((match = fullFormatRegex.exec(cleanedText)) !== null) {
       const start = match.index;
       const [full, name, id] = match;
-      
+
       if (start > lastIndex) {
         elements.push(cleanedText.slice(lastIndex, start));
       }
       elements.push(
-        <Link 
-          href={`/${id}`} 
-          className="text-black hover:text-gray-700 font-bold cursor-pointer bg-blue-50 hover:bg-blue-100 px-1 py-0.5 rounded transition-colors duration-200" 
+        <Link
+          href={`/${id}`}
+          className="text-black hover:text-gray-700 font-bold cursor-pointer bg-blue-50 hover:bg-blue-100 px-1 py-0.5 rounded transition-colors duration-200"
           key={`m-${start}`}
           onMouseEnter={(e) => {
             cancelHidePopup();
@@ -1538,57 +1542,57 @@ const handleMentionDetect = async (e, inputKey) => {
       );
       lastIndex = start + full.length;
     }
-    
+
     if (lastIndex < cleanedText.length) {
       elements.push(cleanedText.slice(lastIndex));
     }
-    
-        // If we have elements (mentions), we need to handle HTML in each text part
-        if (elements.length > 0) {
-          return elements.map((element, index) => {
-            if (typeof element === 'string') {
-              // For text parts, render sanitized HTML using dangerouslySetInnerHTML
-              return (
-                <div 
-                  key={index} 
-                  className="post-content"
-                  style={{
-                    '--p-display': 'block',
-                    '--p-margin': '0.5em 0',
-                    '--h1-display': 'block',
-                    '--h1-margin': '0.5em 0',
-                    '--h1-font-size': '1.5em',
-                    '--h1-font-weight': 'bold',
-                    '--a-color': '#2563eb',
-                    '--a-text-decoration': 'underline',
-                    '--a-hover-color': '#1d4ed8'
-                  }}
-                  dangerouslySetInnerHTML={{ __html: element }} 
-                />
-              );
-            }
-            return element;
-          });
+
+    // If we have elements (mentions), we need to handle HTML in each text part
+    if (elements.length > 0) {
+      return elements.map((element, index) => {
+        if (typeof element === 'string') {
+          // For text parts, render sanitized HTML using dangerouslySetInnerHTML
+          return (
+            <div
+              key={index}
+              className="post-content"
+              style={{
+                '--p-display': 'block',
+                '--p-margin': '0.5em 0',
+                '--h1-display': 'block',
+                '--h1-margin': '0.5em 0',
+                '--h1-font-size': '1.5em',
+                '--h1-font-weight': 'bold',
+                '--a-color': '#2563eb',
+                '--a-text-decoration': 'underline',
+                '--a-hover-color': '#1d4ed8'
+              }}
+              dangerouslySetInnerHTML={{ __html: element }}
+            />
+          );
         }
-        
-        // If no mentions, render the cleaned text with sanitized HTML support
-        return (
-          <div 
-            className="post-content"
-            style={{
-              '--p-display': 'block',
-              '--p-margin': '0.5em 0',
-              '--h1-display': 'block',
-              '--h1-margin': '0.5em 0',
-              '--h1-font-size': '1.5em',
-              '--h1-font-weight': 'bold',
-              '--a-color': '#2563eb',
-              '--a-text-decoration': 'underline',
-              '--a-hover-color': '#1d4ed8'
-            }}
-            dangerouslySetInnerHTML={{ __html: cleanedText }} 
-          />
-        );
+        return element;
+      });
+    }
+
+    // If no mentions, render the cleaned text with sanitized HTML support
+    return (
+      <div
+        className="post-content"
+        style={{
+          '--p-display': 'block',
+          '--p-margin': '0.5em 0',
+          '--h1-display': 'block',
+          '--h1-margin': '0.5em 0',
+          '--h1-font-size': '1.5em',
+          '--h1-font-weight': 'bold',
+          '--a-color': '#2563eb',
+          '--a-text-decoration': 'underline',
+          '--a-hover-color': '#1d4ed8'
+        }}
+        dangerouslySetInnerHTML={{ __html: cleanedText }}
+      />
+    );
   }, [sanitizeHTML]);
 
   // State for tracking expanded posts
@@ -1610,37 +1614,37 @@ const handleMentionDetect = async (e, inputKey) => {
   // Render content with mentions and HTML formatting - optimized with useCallback
   const renderContentWithMentions = useCallback((text) => {
     if (!text) return null;
-    
+
     // Clean up ALL @ symbols from mention formats
     let cleanedText = text
       // Remove @ from @[Name](id) format - supports numeric IDs, UUIDs, and usernames
       .replace(/@(\[.+?\]\([a-zA-Z0-9_-]+\))/g, '$1')
       // Remove @ from standalone @Name mentions (but keep the name)
       .replace(/@([^@\s]+(?:\s[^@\s]+)*)/g, '$1');
-    
+
     // Sanitize HTML to only allow safe formatting tags
     cleanedText = sanitizeHTML(cleanedText);
-    
+
     // Handle the clean [Name](id) or [Name](username) format
     // Updated to support both numeric IDs, alphanumeric usernames, and UUIDs with hyphens
     const fullFormatRegex = /\[(.+?)\]\(([a-zA-Z0-9_-]+)\)/g;
-    
+
     const elements = [];
     let lastIndex = 0;
     let match;
-    
+
     // Handle full format mentions [Name](id/username) and make them clickable
     while ((match = fullFormatRegex.exec(cleanedText)) !== null) {
       const start = match.index;
       const [full, name, id] = match;
-      
+
       if (start > lastIndex) {
         elements.push(cleanedText.slice(lastIndex, start));
       }
       elements.push(
-        <Link 
-          href={`/${id}`} 
-          className="text-black hover:text-gray-700 font-bold cursor-pointer bg-blue-50 hover:bg-blue-100 px-1 py-0.5 rounded transition-colors duration-200" 
+        <Link
+          href={`/${id}`}
+          className="text-black hover:text-gray-700 font-bold cursor-pointer bg-blue-50 hover:bg-blue-100 px-1 py-0.5 rounded transition-colors duration-200"
           key={`m-${start}`}
           onMouseEnter={(e) => {
             cancelHidePopup();
@@ -1653,19 +1657,19 @@ const handleMentionDetect = async (e, inputKey) => {
       );
       lastIndex = start + full.length;
     }
-    
+
     if (lastIndex < cleanedText.length) {
       elements.push(cleanedText.slice(lastIndex));
     }
-    
+
     // If we have elements (mentions), we need to handle HTML in each text part
     if (elements.length > 0) {
       return elements.map((element, index) => {
         if (typeof element === 'string') {
           // For text parts, render sanitized HTML using dangerouslySetInnerHTML
           return (
-            <span 
-              key={index} 
+            <span
+              key={index}
               className="post-content"
               style={{
                 '--p-display': 'block',
@@ -1678,17 +1682,17 @@ const handleMentionDetect = async (e, inputKey) => {
                 '--a-text-decoration': 'underline',
                 '--a-hover-color': '#1d4ed8'
               }}
-              dangerouslySetInnerHTML={{ __html: element }} 
+              dangerouslySetInnerHTML={{ __html: element }}
             />
           );
         }
         return element;
       });
     }
-    
+
     // If no mentions, render the cleaned text with sanitized HTML support
     return (
-      <span 
+      <span
         className="post-content"
         style={{
           '--p-display': 'block',
@@ -1701,7 +1705,7 @@ const handleMentionDetect = async (e, inputKey) => {
           '--a-text-decoration': 'underline',
           '--a-hover-color': '#1d4ed8'
         }}
-        dangerouslySetInnerHTML={{ __html: cleanedText }} 
+        dangerouslySetInnerHTML={{ __html: cleanedText }}
       />
     );
   }, [sanitizeHTML]);
@@ -1709,13 +1713,13 @@ const handleMentionDetect = async (e, inputKey) => {
   // Render content with truncation and "See more" functionality (with mention support)
   const renderContentWithTruncation = useCallback((text, postId, maxLength = 100) => {
     if (!text) return null;
-    
+
     const isExpanded = expandedPosts.has(postId);
-    
+
     // Get plain text length for truncation check (remove HTML tags and mentions)
     const plainText = text.replace(/<[^>]*>/g, '').replace(/\[.+?\]\(.+?\)/g, '');
     const shouldTruncate = plainText.length > maxLength && !isExpanded;
-    
+
     // If we need to truncate, truncate the original text
     let displayText = text;
     if (shouldTruncate) {
@@ -1727,10 +1731,10 @@ const handleMentionDetect = async (e, inputKey) => {
       if (truncateAt === 0) truncateAt = maxLength;
       displayText = displayText.substring(0, truncateAt);
     }
-    
+
     // Use renderContentWithMentions to properly display mentions
     const content = renderContentWithMentions(displayText);
-    
+
     return (
       <>
         {content}
@@ -1800,7 +1804,7 @@ const handleMentionDetect = async (e, inputKey) => {
   const handleViewAllComments = (id) => {
     dispatch(getPostById(id)).then((res) => {
       setShowCommentsModal(true);
-      
+
       // Automatically load replies for all comments when modal opens
       if (res?.payload?.data?.comments) {
         res.payload.data.comments.forEach((comment, index) => {
@@ -1820,10 +1824,10 @@ const handleMentionDetect = async (e, inputKey) => {
     const inputKey = `${commentIndex}`;
     const reply = modalReplyInputs[inputKey];
     const hasImage = Array.isArray(modalReplyImages[inputKey]) && modalReplyImages[inputKey].length > 0;
-    
+
     // Process mentions before validation
     const processedReply = processContentForServer(reply);
-    
+
     // Check if there's processed content or images
     if (!processedReply?.trim() && !hasImage) return;
 
@@ -1849,14 +1853,14 @@ const handleMentionDetect = async (e, inputKey) => {
     dispatch(replyToComment(payload))
       .then(() => {
         dispatch(getPostById(basicPostData.id));
-        
+
         // Hide the reply input box by removing it from state
         setModalReplyInputs((prev) => {
           const copy = { ...prev };
           delete copy[inputKey];
           return copy;
         });
-        
+
         // Clear images
         setModalReplyImages((prev) => {
           const copy = { ...prev };
@@ -1865,7 +1869,7 @@ const handleMentionDetect = async (e, inputKey) => {
           delete copy[inputKey];
           return copy;
         });
-        
+
         handleViewAllReplies(comment?.id, commentIndex);
       })
       .catch((error) => {
@@ -1902,7 +1906,7 @@ const handleMentionDetect = async (e, inputKey) => {
 
     dispatch(getCommentReplies(commentId))
       .then((response) => {
-        console.log('response from component',response)
+        console.log('response from component', response)
         if (response && response.payload?.data?.comment?.replies) {
           setModalReplies((prev) => ({
             ...prev,
@@ -1946,19 +1950,19 @@ const handleMentionDetect = async (e, inputKey) => {
             <span className="text-gray-700 text-xs">
               {renderContentWithMentions(reply?.content)}
               {reply?.files?.length > 0 ? (
-                <img 
-                  src={process.env.NEXT_PUBLIC_FILE_PATH + "/reply/" + reply?.files[0]?.file_path}
+                <img
+                  src={getImageUrl(reply?.files[0]?.file_path, 'reply')}
                   width={100}
                   height={100}
                   className="mt-2 cursor-pointer hover:opacity-90 transition-opacity rounded-lg"
                   onClick={() => handleImagePreview(
-                    process.env.NEXT_PUBLIC_FILE_PATH + "/reply/" + reply?.files[0]?.file_path,
-                    [process.env.NEXT_PUBLIC_FILE_PATH + "/reply/" + reply?.files[0]?.file_path],
+                    getImageUrl(reply?.files[0]?.file_path, 'reply'),
+                    [getImageUrl(reply?.files[0]?.file_path, 'reply')],
                     0
                   )}
-                  />
+                />
 
-                ) : ""}
+              ) : ""}
             </span>
           </div>
 
@@ -2025,19 +2029,19 @@ const handleMentionDetect = async (e, inputKey) => {
               )}
             </button>
 
-           
-              <button className="hover:underline cursor-pointer" onClick={() => handleReplyToReply(commentIndex, reply, parentFirstReplyId || reply?.id)} type="button">
-                Reply
-              </button>
-           
+
+            <button className="hover:underline cursor-pointer" onClick={() => handleReplyToReply(commentIndex, reply, parentFirstReplyId || reply?.id)} type="button">
+              Reply
+            </button>
+
           </div>
 
           {/* input for replying to this reply - Facebook Style */}
           {modalReplyInputs[`reply-${commentIndex}-${reply.id}`] !== undefined && (
             <div className="flex items-start mt-3 ml-6">
               {/* User Avatar */}
-              <img 
-                src={ profile?.client?.image ? 
+              <img
+                src={profile?.client?.image ?
                   process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
                   profile?.client?.image : "/common-avator.jpg"
                 }
@@ -2048,7 +2052,7 @@ const handleMentionDetect = async (e, inputKey) => {
                   e.target.src = "/common-avator.jpg";
                 }}
               />
-              
+
               {/* Input Container */}
               <div className="flex-1 bg-gray-100 rounded-2xl border border-gray-200 hover:bg-gray-50 focus-within:bg-white focus-within:border-blue-500 transition-all duration-200 relative" data-mention-anchor="true">
                 <div className="flex items-center px-3 py-2">
@@ -2061,7 +2065,7 @@ const handleMentionDetect = async (e, inputKey) => {
                     onChange={(e) => { setModalReplyInputs((prev) => ({ ...prev, [`reply-${commentIndex}-${reply.id}`]: e.target.value })); handleMentionDetect(e, `reply-${commentIndex}-${reply.id}`); }}
                     onKeyDown={(e) => { const handled = handleMentionKeyDown(e, `reply-${commentIndex}-${reply.id}`); if (!handled && e.key === 'Enter') { e.preventDefault(); handleReplyToReplySubmit(commentIndex, reply.id); } }}
                   />
-                  
+
                   {/* Facebook-style action buttons */}
                   <div className="flex items-center gap-1 ml-2 relative">
                     {/* Emoji button */}
@@ -2077,13 +2081,13 @@ const handleMentionDetect = async (e, inputKey) => {
                         }}
                       >
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                          <path d="M8 1C4.1 1 1 4.1 1 8s3.1 7 7 7 7-3.1 7-7-3.1-7-7-7zM5.5 6.5c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm5 0c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm1.5 4c-.4 1.2-1.5 2-2.8 2.1-.1 0-.1 0-.2 0-.1 0-.1 0-.2 0-1.3-.1-2.4-.9-2.8-2.1-.1-.3.1-.5.4-.5h4.8c.3 0 .5.2.4.5-.4z"/>
+                          <path d="M8 1C4.1 1 1 4.1 1 8s3.1 7 7 7 7-3.1 7-7-3.1-7-7-7zM5.5 6.5c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm5 0c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm1.5 4c-.4 1.2-1.5 2-2.8 2.1-.1 0-.1 0-.2 0-.1 0-.1 0-.2 0-1.3-.1-2.4-.9-2.8-2.1-.1-.3.1-.5.4-.5h4.8c.3 0 .5.2.4.5-.4z" />
                         </svg>
                       </button>
-                      
+
                       {/* Emoji Picker */}
                       {showEmojiPicker === `reply-${commentIndex}-${reply.id}` && (
-                        <div 
+                        <div
                           className="emoji-picker-container absolute bottom-full right-0 mb-2 bg-white border rounded-lg shadow-xl z-50 w-80 max-h-96 overflow-hidden"
                           onClick={(e) => e.stopPropagation()}
                           onMouseDown={(e) => e.stopPropagation()}
@@ -2093,18 +2097,17 @@ const handleMentionDetect = async (e, inputKey) => {
                             {Object.keys(emojiCategories).map((category) => (
                               <button
                                 key={category}
-                                className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                                  activeEmojiCategory === category 
-                                    ? 'bg-blue-500 text-white' 
-                                    : 'bg-white text-gray-600 hover:bg-gray-100'
-                                }`}
+                                className={`px-3 py-1 rounded text-xs font-medium transition-colors ${activeEmojiCategory === category
+                                  ? 'bg-blue-500 text-white'
+                                  : 'bg-white text-gray-600 hover:bg-gray-100'
+                                  }`}
                                 onClick={() => setActiveEmojiCategory(category)}
                               >
                                 {emojiCategories[category].name.split(' ')[0]}
                               </button>
                             ))}
                           </div>
-                          
+
                           {/* Emoji grid */}
                           <div className="p-3 max-h-64 overflow-y-auto">
                             <div className="grid grid-cols-8 gap-1">
@@ -2131,9 +2134,9 @@ const handleMentionDetect = async (e, inputKey) => {
                         </div>
                       )}
                     </div>
-                    
-                  
-                    
+
+
+
                     {/* Camera/Photo button */}
                     <>
                       <input
@@ -2155,7 +2158,7 @@ const handleMentionDetect = async (e, inputKey) => {
                         }}
                       >
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                          <path d="M14.5 2h-13C.7 2 0 2.7 0 3.5v9c0 .8.7 1.5 1.5 1.5h13c.8 0 1.5-.7 1.5-1.5v-9c0-.8-.7-1.5-1.5-1.5zM5 4.5c.8 0 1.5.7 1.5 1.5S5.8 7.5 5 7.5 3.5 6.8 3.5 6 4.2 4.5 5 4.5zM13 12H3l2.5-3 1.5 2 3-4 3 5z"/>
+                          <path d="M14.5 2h-13C.7 2 0 2.7 0 3.5v9c0 .8.7 1.5 1.5 1.5h13c.8 0 1.5-.7 1.5-1.5v-9c0-.8-.7-1.5-1.5-1.5zM5 4.5c.8 0 1.5.7 1.5 1.5S5.8 7.5 5 7.5 3.5 6.8 3.5 6 4.2 4.5 5 4.5zM13 12H3l2.5-3 1.5 2 3-4 3 5z" />
                         </svg>
                       </button>
                     </>
@@ -2190,7 +2193,7 @@ const handleMentionDetect = async (e, inputKey) => {
                 {/* Mention dropdown */}
                 {renderMentionDropdown(`reply-${commentIndex}-${reply.id}`)}
               </div>
-              
+
               {/* Send button - show when there's text or image */}
               {(modalReplyInputs[`reply-${commentIndex}-${reply.id}`]?.trim() || (Array.isArray(modalReplyImages[`reply-${commentIndex}-${reply.id}`]) && modalReplyImages[`reply-${commentIndex}-${reply.id}`].length > 0)) && (
                 <button
@@ -2200,7 +2203,7 @@ const handleMentionDetect = async (e, inputKey) => {
                   title="Send"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
                   </svg>
                 </button>
               )}
@@ -2238,9 +2241,9 @@ const handleMentionDetect = async (e, inputKey) => {
   const handleReplyToReply = (commentIndex, replyOrId, firstLevelReplyId = null) => {
     const replyId = typeof replyOrId === 'object' ? replyOrId?.id : replyOrId;
     const inputKey = `reply-${commentIndex}-${replyId}`;
-    
+
     console.log('🔘 handleReplyToReply called:', { commentIndex, replyOrId, inputKey });
-    
+
     // Pre-fill with @ mention token and focus
     let defaultValue = "";
     if (typeof replyOrId === 'object') {
@@ -2283,15 +2286,15 @@ const handleMentionDetect = async (e, inputKey) => {
     const inputKey = `reply-${commentIndex}-${replyId}`;
     const reply = modalReplyInputs[inputKey];
     const hasImage = Array.isArray(modalReplyImages[inputKey]) && modalReplyImages[inputKey].length > 0;
-    
+
     // Process mentions before validation
     const processedReply = processContentForServer(reply);
-    
+
     // Check if there's processed content or images
     if (!processedReply?.trim() && !hasImage) return;
-    
+
     const comment = basicPostData?.comments?.[commentIndex];
-    
+
     // Find the reply being replied to
     const findReplyInTree = (replies, targetId) => {
       for (const r of replies) {
@@ -2303,9 +2306,9 @@ const handleMentionDetect = async (e, inputKey) => {
       }
       return null;
     };
-    
+
     const targetReply = findReplyInTree(comment.replies || [], replyId);
-    
+
     // Determine parentId based on nesting rules:
     // 1. If replying to main comment (replyId === comment.id), parentId = null (first level)
     // 2. If replying to first-level reply, parentId = replyId (second level)
@@ -2324,10 +2327,10 @@ const handleMentionDetect = async (e, inputKey) => {
       }
     } else {
       // Fallback to original logic
-    const firstParent = modalReplyInputs[`first-parent-${commentIndex}`];
+      const firstParent = modalReplyInputs[`first-parent-${commentIndex}`];
       parentId = firstParent || (replyId === comment.id ? null : replyId);
     }
-    
+
     // Build payload; use FormData when image present
     let payload;
     if (hasImage) {
@@ -2345,14 +2348,14 @@ const handleMentionDetect = async (e, inputKey) => {
     dispatch(replyToComment(payload))
       .then(() => {
         dispatch(getPostById(basicPostData.id));
-        
+
         // Hide the reply input box by removing it from state
         setModalReplyInputs(prev => {
           const copy = { ...prev };
           delete copy[inputKey];
           return copy;
         });
-        
+
         // Clear images
         setModalReplyImages((prev) => {
           const copy = { ...prev };
@@ -2361,7 +2364,7 @@ const handleMentionDetect = async (e, inputKey) => {
           delete copy[inputKey];
           return copy;
         });
-        
+
         handleViewAllReplies(comment?.id, commentIndex);
       })
       .catch((error) => {
@@ -2381,7 +2384,7 @@ const handleMentionDetect = async (e, inputKey) => {
     const newItems = files.map((file) => ({ file, previewUrl: URL.createObjectURL(file), id: `${Date.now()}-${Math.random()}` }));
     setModalReplyImages((prev) => ({
       ...prev,
-      [inputKey]: [ ...(prev[inputKey] || []), ...newItems ],
+      [inputKey]: [...(prev[inputKey] || []), ...newItems],
     }));
     const ref = fileInputRefs.current[inputKey];
     if (ref) ref.value = "";
@@ -2409,11 +2412,11 @@ const handleMentionDetect = async (e, inputKey) => {
   const handleSingleCommentReply = (postId, comment) => {
     const inputKey = `single-reply-${postId}-${comment.id}`;
     console.log('🔘 handleSingleCommentReply called:', { postId, comment, inputKey });
-    
+
     // Set default value with user mention
     const fullName = `${comment?.client?.fname || ''} ${comment?.client?.last_name || ''}`.trim();
     const defaultValue = fullName ? `@${fullName} ` : '';
-    
+
     // Store the mention mapping persistently for processContentForServer
     if (fullName && comment?.client_id) {
       const normalizedName = fullName.toLowerCase().trim().replace(/\s+/g, ' ');
@@ -2422,14 +2425,14 @@ const handleMentionDetect = async (e, inputKey) => {
         name: fullName,
         rawData: comment.client
       });
-      console.log('🔘 Stored mention mapping for reply button:', { 
-        originalName: fullName, 
-        normalizedKey: normalizedName, 
+      console.log('🔘 Stored mention mapping for reply button:', {
+        originalName: fullName,
+        normalizedKey: normalizedName,
         userId: comment.client_id,
         mappingStored: mentionMappingsRef.current.has(normalizedName)
       });
     }
-    
+
     setModalReplyInputs(prev => {
       const next = { ...prev };
       next[inputKey] = prev[inputKey] !== undefined ? "" : defaultValue;
@@ -2452,10 +2455,10 @@ const handleMentionDetect = async (e, inputKey) => {
     const inputKey = `single-reply-${postId}-${commentId}`;
     const reply = modalReplyInputs[inputKey];
     const hasImage = Array.isArray(modalReplyImages[inputKey]) && modalReplyImages[inputKey].length > 0;
-    
+
     // Process mentions before validation
     const processedReply = processContentForServer(reply);
-    
+
     // Check if there's processed content or images
     if (!processedReply?.trim() && !hasImage) return;
 
@@ -2479,14 +2482,14 @@ const handleMentionDetect = async (e, inputKey) => {
         // Refresh posts to show new replies
         dispatch(getPosts());
         dispatch(getGathering());
-        
+
         // Hide the reply input box by removing it from state
         setModalReplyInputs((prev) => {
           const copy = { ...prev };
           delete copy[inputKey];
           return copy;
         });
-        
+
         // Clear images
         setModalReplyImages((prev) => {
           const copy = { ...prev };
@@ -2495,7 +2498,7 @@ const handleMentionDetect = async (e, inputKey) => {
           delete copy[inputKey];
           return copy;
         });
-        
+
         const ref = fileInputRefs.current[inputKey];
         if (ref) ref.value = "";
       })
@@ -2538,27 +2541,27 @@ const handleMentionDetect = async (e, inputKey) => {
     try {
       // Call the getUserProfile API
       const response = await dispatch(getUserProfile(userId));
-      
+
       if (response.payload) {
         const userData = response.payload;
-        
+
         // Format the data for display
         const profileData = {
           id: userData.client?.id || userId,
-          name: userData.client?.display_name || 
-                `${userData.client?.fname || ''} ${userData.client?.last_name || ''}`.trim() || 
-                "Unknown User",
-          image: userData.client?.image 
+          name: userData.client?.display_name ||
+            `${userData.client?.fname || ''} ${userData.client?.last_name || ''}`.trim() ||
+            "Unknown User",
+          image: userData.client?.image
             ? `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${userData.client.image.startsWith('/') ? '' : '/'}${userData.client.image}`
             : "/common-avator.jpg",
-          bio: userData.client?.profile_overview || 
-               userData.client?.tagline || 
-               userData.client?.bio || 
-               "No bio available",
-          location: userData.client?.location || 
-                   userData.client?.address || 
-                   userData.client?.city || null,
-          joinedDate: userData.client?.created_at 
+          bio: userData.client?.profile_overview ||
+            userData.client?.tagline ||
+            userData.client?.bio ||
+            "No bio available",
+          location: userData.client?.location ||
+            userData.client?.address ||
+            userData.client?.city || null,
+          joinedDate: userData.client?.created_at
             ? new Date(userData.client.created_at).getFullYear()
             : "Unknown",
           followersCount: userData.followers_count || 0,
@@ -2570,7 +2573,7 @@ const handleMentionDetect = async (e, inputKey) => {
           education: userData.client?.education || null,
           relationshipStatus: userData.client?.marital_status_name || null
         };
-        
+
         setProfilePopup(prev => ({
           ...prev,
           profileData
@@ -2580,17 +2583,17 @@ const handleMentionDetect = async (e, inputKey) => {
       }
     } catch (error) {
       console.error("Failed to fetch profile data:", error);
-      
+
       // Fallback: try to find user in local data
       let fallbackData = null;
-      
+
       // Check followers first
       const followerData = myFollowers?.find(follower => follower.id == userId);
       if (followerData) {
         fallbackData = {
           id: followerData.id,
           name: followerData.display_name || followerData.name || "Unknown User",
-          image: followerData.image 
+          image: followerData.image
             ? `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${followerData.image.startsWith('/') ? '' : '/'}${followerData.image}`
             : "/common-avator.jpg",
           bio: followerData.bio || "No bio available",
@@ -2603,7 +2606,7 @@ const handleMentionDetect = async (e, inputKey) => {
           mutualFriends: 0
         };
       }
-      
+
       // If still no data, check comments/replies
       if (!fallbackData && basicPostData?.comments) {
         for (const comment of basicPostData.comments) {
@@ -2611,7 +2614,7 @@ const handleMentionDetect = async (e, inputKey) => {
             fallbackData = {
               id: comment.client_id,
               name: `${comment.client_comment?.fname || ''} ${comment.client_comment?.last_name || ''}`.trim() || "Unknown User",
-              image: comment.client_comment?.image 
+              image: comment.client_comment?.image
                 ? `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${comment.client_comment.image.startsWith('/') ? '' : '/'}${comment.client_comment.image}`
                 : "/common-avator.jpg",
               bio: comment.client_comment?.bio || "No bio available",
@@ -2627,7 +2630,7 @@ const handleMentionDetect = async (e, inputKey) => {
           }
         }
       }
-      
+
       // Set fallback or error data
       setProfilePopup(prev => ({
         ...prev,
@@ -2737,19 +2740,19 @@ const handleMentionDetect = async (e, inputKey) => {
         await dispatch(followTo({ user_id: userId }));
         toast.success("Followed successfully!");
       }
-      
+
       // Update the popup data to reflect the change
       setProfilePopup(prev => ({
         ...prev,
         profileData: {
           ...prev.profileData,
           isFollowing: !isCurrentlyFollowing,
-          followersCount: isCurrentlyFollowing 
+          followersCount: isCurrentlyFollowing
             ? prev.profileData.followersCount - 1
             : prev.profileData.followersCount + 1
         }
       }));
-      
+
       // Refresh followers list
       dispatch(getAllFollowers());
     } catch (error) {
@@ -2764,7 +2767,7 @@ const handleMentionDetect = async (e, inputKey) => {
   const handleSendMessage = (userId, userName) => {
     // Hide popup immediately
     hideProfilePopup(true);
-    
+
     // You can implement your messaging system here
     // For now, we'll show a toast message
     toast.info(`Message feature coming soon for ${userName}!`);
@@ -2774,7 +2777,7 @@ const handleMentionDetect = async (e, inputKey) => {
   const handleStatsClick = (type, userId) => {
     // Hide popup immediately
     hideProfilePopup(true);
-    
+
     // Navigate to appropriate page or open modal
     switch (type) {
       case 'posts':
@@ -2856,7 +2859,7 @@ const handleMentionDetect = async (e, inputKey) => {
   // Keyboard navigation for image preview
   useEffect(() => {
     if (!showImagePreview) return;
-    
+
     const handleKeyDown = (event) => {
       switch (event.key) {
         case 'Escape':
@@ -2870,7 +2873,7 @@ const handleMentionDetect = async (e, inputKey) => {
           break;
       }
     };
-    
+
     document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
@@ -2879,11 +2882,11 @@ const handleMentionDetect = async (e, inputKey) => {
 
   // Memoized reactions image component
   const ReactImage = memo((props) => {
-    const {reactLink, reactType, reaction, className, showText, textclass=""} = props;
-    return(
+    const { reactLink, reactType, reaction, className, showText, textclass = "" } = props;
+    return (
       <>
-         {reaction?.type === reactType && (
-           <>
+        {reaction?.type === reactType && (
+          <>
             <Image
               src={reactLink}
               className={className}
@@ -2892,8 +2895,8 @@ const handleMentionDetect = async (e, inputKey) => {
               alt="old club man"
             />
             {showText && <div className={textclass}>{showText}</div>}
-           </>
-          )}
+          </>
+        )}
       </>
     )
   });
@@ -2901,139 +2904,139 @@ const handleMentionDetect = async (e, inputKey) => {
 
   // show reactions counts and reactions
   const showingReactionsIcon = (item, index) => {
-    return(
+    return (
       <span key={index} role="img" aria-label="surprised" className="text-xl">
-            <span className="inline-block">
-              <ReactImage
-                reactLink="/like.png"
-                reactType="like"
-                reaction={item}
-                className="w-4 h-4 mb-[4px] inline-block"
-              />
-              <ReactImage
-                reactLink="/love.png"
-                reactType="love"
-                reaction={item}
-                className="w-4 h-4 mb-[4px] inline-block"
-              />
-              <ReactImage
-                reactLink="/care.png"
-                reactType="care"
-                reaction={item}
-                className="w-4 h-4 mb-[4px] inline-block"
-              />
-              <ReactImage
-                reactLink="/haha.png"
-                reactType="haha"
-                reaction={item}
-                className="w-4 h-4 mb-[4px] inline-block"
-              />
-              <ReactImage
-                reactLink="/wow.png"
-                reactType="wow"
-                reaction={item}
-                className="w-4 h-4 mb-[4px] inline-block"
-              />
-              <ReactImage
-                reactLink="/sad.png"
-                reactType="sad"
-                reaction={item}
-                className="w-4 h-4 mb-[4px] inline-block"
-              />
-              <ReactImage
-                reactLink="/angry.png"
-                reactType="angry"
-                reaction={item}
-                className="w-4 h-4 mb-[4px] inline-block"
-              />
-            </span>
-    </span>
+        <span className="inline-block">
+          <ReactImage
+            reactLink="/like.png"
+            reactType="like"
+            reaction={item}
+            className="w-4 h-4 mb-[4px] inline-block"
+          />
+          <ReactImage
+            reactLink="/love.png"
+            reactType="love"
+            reaction={item}
+            className="w-4 h-4 mb-[4px] inline-block"
+          />
+          <ReactImage
+            reactLink="/care.png"
+            reactType="care"
+            reaction={item}
+            className="w-4 h-4 mb-[4px] inline-block"
+          />
+          <ReactImage
+            reactLink="/haha.png"
+            reactType="haha"
+            reaction={item}
+            className="w-4 h-4 mb-[4px] inline-block"
+          />
+          <ReactImage
+            reactLink="/wow.png"
+            reactType="wow"
+            reaction={item}
+            className="w-4 h-4 mb-[4px] inline-block"
+          />
+          <ReactImage
+            reactLink="/sad.png"
+            reactType="sad"
+            reaction={item}
+            className="w-4 h-4 mb-[4px] inline-block"
+          />
+          <ReactImage
+            reactLink="/angry.png"
+            reactType="angry"
+            reaction={item}
+            className="w-4 h-4 mb-[4px] inline-block"
+          />
+        </span>
+      </span>
     )
   }
 
 
   // liking sections for post
-const likingReactions = (item) => {
-  return(
-    <span className="font-semibold flex gap-1">
-      <ReactImage
-        reactLink="/like.png"
-        reactType="like"
-        reaction={item}
-        className="w-5 h-5 mb-[4px] inline-block"
-        textclass="text-[14px]"
-        showText="Like"
-      />
-      <ReactImage
-         reactLink="/love.png"
-        reactType="love"
-        reaction={item}
-        className="w-5 h-5 mb-[4px] inline-block"
-        textclass="text-red-700 text-[14px]"
-        showText="Love"
-      />
-      <ReactImage
-         reactLink="/care.png"
-        reactType="care"
-        reaction={item}
-        className="w-5 h-5 mb-[4px] inline-block"
-        textclass="text-yellow-700 text-[14px]"
-        showText="Care"
-      />
-      <ReactImage
-         reactLink="/haha.png"
-        reactType="haha"
-        reaction={item}
-        className="w-5 h-5 mb-[4px] inline-block"
-        textclass="text-yellow-700 text-[14px]"
-        showText="Haha"
-      />
-       <ReactImage
-        reactLink="/wow.png"
-        reactType="wow"
-        reaction={item}
-        className="w-5 h-5 mb-[4px] inline-block"
-        textclass="text-yellow-700 text-[14px]"
-        showText="Wow"
-      />
-      <ReactImage
-        reactLink="/sad.png"
-        reactType="sad"
-        reaction={item}
-        className="w-5 h-5 mb-[4px] inline-block"
-        textclass="text-yellow-700 text-[14px]"
-        showText="Sad"
-      />
-      <ReactImage
-        reactLink="/angry.png"
-        reactType="angry"
-        reaction={item}
-        className="w-5 h-5 mb-[4px] inline-block"
-        textclass="text-red-500 text-[14px]"
-        showText="Angry"
-      />
-    </span>
-  )
-}
+  const likingReactions = (item) => {
+    return (
+      <span className="font-semibold flex gap-1">
+        <ReactImage
+          reactLink="/like.png"
+          reactType="like"
+          reaction={item}
+          className="w-5 h-5 mb-[4px] inline-block"
+          textclass="text-[14px]"
+          showText="Like"
+        />
+        <ReactImage
+          reactLink="/love.png"
+          reactType="love"
+          reaction={item}
+          className="w-5 h-5 mb-[4px] inline-block"
+          textclass="text-red-700 text-[14px]"
+          showText="Love"
+        />
+        <ReactImage
+          reactLink="/care.png"
+          reactType="care"
+          reaction={item}
+          className="w-5 h-5 mb-[4px] inline-block"
+          textclass="text-yellow-700 text-[14px]"
+          showText="Care"
+        />
+        <ReactImage
+          reactLink="/haha.png"
+          reactType="haha"
+          reaction={item}
+          className="w-5 h-5 mb-[4px] inline-block"
+          textclass="text-yellow-700 text-[14px]"
+          showText="Haha"
+        />
+        <ReactImage
+          reactLink="/wow.png"
+          reactType="wow"
+          reaction={item}
+          className="w-5 h-5 mb-[4px] inline-block"
+          textclass="text-yellow-700 text-[14px]"
+          showText="Wow"
+        />
+        <ReactImage
+          reactLink="/sad.png"
+          reactType="sad"
+          reaction={item}
+          className="w-5 h-5 mb-[4px] inline-block"
+          textclass="text-yellow-700 text-[14px]"
+          showText="Sad"
+        />
+        <ReactImage
+          reactLink="/angry.png"
+          reactType="angry"
+          reaction={item}
+          className="w-5 h-5 mb-[4px] inline-block"
+          textclass="text-red-500 text-[14px]"
+          showText="Angry"
+        />
+      </span>
+    )
+  }
 
-const reactionsImages = (item) => {
+  const reactionsImages = (item) => {
 
-  const CommonDesign = (props) => {
-    const {onClick, reactLink, className} = props;
-    return(
-      <button
-        className="transform w-6 cursor-pointer hover:scale-125 transition-transform"
-        onClick={() => onClick()}
-      >
-         <ReactImage
+    const CommonDesign = (props) => {
+      const { onClick, reactLink, className } = props;
+      return (
+        <button
+          className="transform w-6 cursor-pointer hover:scale-125 transition-transform"
+          onClick={() => onClick()}
+        >
+          <ReactImage
             reactLink={reactLink}
             className={className}
           />
-      </button>
-    )
-  }
-  return(
-    <div
+        </button>
+      )
+    }
+    return (
+      <div
         className="absolute bottom-full left-0 mb-0 bg-white p-1 rounded-full shadow-lg flex space-x-2 z-10"
       >
         <CommonDesign
@@ -3075,21 +3078,21 @@ const reactionsImages = (item) => {
           onClick={() => handleReaction(item.id, "angry")}
         />
       </div>
-  )
-}
+    )
+  }
 
 
 
   // Memoize posts processing to avoid recalculation on every render
   const processedPosts = useMemo(() => {
     return postsData?.data?.map((item, index) => {
-        const totalCount = item.multiple_reaction_counts.reduce(
-          (sum, dd) => Number(sum) + Number(dd.count),
-          0
-        );
+      const totalCount = item.multiple_reaction_counts.reduce(
+        (sum, dd) => Number(sum) + Number(dd.count),
+        0
+      );
 
-        const itemUrl = item?.background_url;
-        const hasPath = /\/post_background\/.+/.test(itemUrl);
+      const itemUrl = item?.background_url;
+      const hasPath = /\/post_background\/.+/.test(itemUrl);
 
       return { ...item, totalCount, itemUrl, hasPath };
     }) || [];
@@ -3118,7 +3121,7 @@ const reactionsImages = (item) => {
           color: #7c3aed !important;
         }
       `}</style>
-      
+
       {processedPosts?.map((item, index) => {
 
         return (
@@ -3134,13 +3137,13 @@ const reactionsImages = (item) => {
                     //   process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
                     //   item?.client?.image : "/common-avator.jpg"
                     // }
-                    src={ item?.client?.image ?
+                    src={item?.client?.image ?
                       process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
                       item?.client?.image : "/common-avator.jpg"
                     }
                     className="w-full h-full object-cover"
 
-                     alt="oldclubman"
+                    alt="oldclubman"
                     width={1280}
                     height={720}
                   />
@@ -3154,30 +3157,30 @@ const reactionsImages = (item) => {
                     </Link>
                     {item?.shared_post && (
                       <>
-                      <span className="text-gray-500 hidden sm:inline">•</span>
-                      <p className="text-sm text-gray-500">
-                      Shared from {" "}
-                      <span className="font-semibold hover:underline cursor-pointer">
-                      <Link href={`/${item?.shared_post?.client?.username}`}>
-                        {item?.shared_post?.client?.fname + " " + item?.shared_post?.client?.last_name}
-                      </Link>
-                      </span>
-                      </p>
+                        <span className="text-gray-500 hidden sm:inline">•</span>
+                        <p className="text-sm text-gray-500">
+                          Shared from {" "}
+                          <span className="font-semibold hover:underline cursor-pointer">
+                            <Link href={`/${item?.shared_post?.client?.username}`}>
+                              {item?.shared_post?.client?.fname + " " + item?.shared_post?.client?.last_name}
+                            </Link>
+                          </span>
+                        </p>
                       </>
                     )}
-                    
+
                     <span className="text-gray-500 hidden sm:inline">•</span>
-                    
+
                     <p className="text-sm text-gray-500 whitespace-nowrap">
                       {formatCompactTime(item.created_at)}
                     </p>
-                    
+
                     {/* Check-in and location details */}
                     {(() => {
                       // Extract check-in and destination from post_location
                       const checkIn = item?.post_location?.find(loc => loc.post_type === 1);
                       const destination = item?.post_location?.find(loc => loc.post_type === 2);
-                      
+
                       if (checkIn && destination) {
                         return (
                           <>
@@ -3238,34 +3241,34 @@ const reactionsImages = (item) => {
                     ref={dropdownRef}
                     className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl z-20"
                   >
-                    {profile?.client?.id === item?.client?.id && !item?.post_location && 
-                    <button
-                      onClick={() => handleEditPost(item.id)}
-                      className="cursor-pointer flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                     <CiEdit className="mr-2"/>
-                      Edit post
-                    </button> 
+                    {profile?.client?.id === item?.client?.id && !item?.post_location &&
+                      <button
+                        onClick={() => handleEditPost(item.id)}
+                        className="cursor-pointer flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        <CiEdit className="mr-2" />
+                        Edit post
+                      </button>
                     }
                     {profile?.client?.id === item?.client?.id && <button
                       onClick={() => handleOnlyMe(item)}
                       className="cursor-pointer flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
-                      <CiUnlock className="mr-2"/>
+                      <CiUnlock className="mr-2" />
                       {item?.privacy_mode === "public" ? "Only Me" : "Public"}
                     </button>}
                     {profile?.client?.id === item?.client?.id && <button
                       onClick={() => handleDeletePost(item.id)}
                       className="cursor-pointer flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                     >
-                      <MdOutlineDeleteOutline className="mr-2"/>
+                      <MdOutlineDeleteOutline className="mr-2" />
                       Delete post
                     </button>}
                     <button
                       onClick={() => handleReportPost(item.id)}
                       className="cursor-pointer flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                     >
-                      <TbMessageReport className="mr-2"/>
+                      <TbMessageReport className="mr-2" />
                       Report Post
                     </button>
                   </div>
@@ -3274,78 +3277,75 @@ const reactionsImages = (item) => {
             </div>
 
             <div className="post-content">
-              {item?.hasPath ? 
-              <>
-                <div
-                className="relative text-white text-center p-4 w-full min-h-[300px] rounded-lg flex items-center justify-center bg-cover bg-center bg-no-repeat"
-                style={{
-                  backgroundImage: `url(${item.itemUrl})`,
-                }}
-              >
-                <div
-                  className=" dark:text-white py-2 px-6 font-bold  text-sm sm:text-base md:text-[30px]  leading-relaxed  w-full  break-words  overflow-hidden  whitespace-pre-wrap text-center">
+              {item?.hasPath ?
+                <>
+                  <div
+                    className="relative text-white text-center p-4 w-full min-h-[300px] rounded-lg flex items-center justify-center bg-cover bg-center bg-no-repeat"
+                    style={{
+                      backgroundImage: `url(${item.itemUrl})`,
+                    }}
+                  >
+                    <div
+                      className=" dark:text-white py-2 px-6 font-bold  text-sm sm:text-base md:text-[30px]  leading-relaxed  w-full  break-words  overflow-hidden  whitespace-pre-wrap text-center">
+                      {renderContentWithMentions(item?.message)}
+                    </div>
+                  </div>
+
+                </>
+                :
+                <div className="py-2  text-[12px] sm:text-base md:text-lg leading-relaxed max-w-full sm:max-w-prose break-words">
                   {renderContentWithMentions(item?.message)}
                 </div>
-              </div>
 
-              </>
-              : 
-              <div className="py-2  text-[12px] sm:text-base md:text-lg leading-relaxed max-w-full sm:max-w-prose break-words">
-                {renderContentWithMentions(item?.message)}
-                </div>
-              
               }
 
-        {/* map for shwoing mapping data */}
-        {item?.post_location && item?.post_location.length > 0 && (
-          <div className="mb-4">
-            <div
-              ref={setMapContainerRef(item.id, item.post_location)}
-              id={`map-container-${item.id}`}
-              className="w-full rounded-md border border-gray-200"
-              style={{ height: '384px', width: '100%', position: 'relative', zIndex: 0 }}
-            />
-            <div className="mt-2 text-xs text-gray-600">
-              {(() => {
-                const checkIn = item.post_location.find(loc => loc.post_type === 1);
-                const destination = item.post_location.find(loc => loc.post_type === 2);
-                
-                if (checkIn && destination) {
-                  return `Route: ${checkIn.place_name?.split(',')[0] || 'Location'} → ${destination.place_name?.split(',')[0] || 'Location'}`;
-                } else if (checkIn) {
-                  return `Check-in: ${checkIn.place_name || 'Location'}`;
-                } else if (destination) {
-                  return `Destination: ${destination.place_name || 'Location'}`;
-                }
-                return 'Location';
-              })()}
-            </div>
-          </div>
-        )}
+              {/* map for shwoing mapping data */}
+              {item?.post_location && item?.post_location.length > 0 && (
+                <div className="mb-4">
+                  <div
+                    ref={setMapContainerRef(item.id, item.post_location)}
+                    id={`map-container-${item.id}`}
+                    className="w-full rounded-md border border-gray-200"
+                    style={{ height: '384px', width: '100%', position: 'relative', zIndex: 0 }}
+                  />
+                  <div className="mt-2 text-xs text-gray-600">
+                    {(() => {
+                      const checkIn = item.post_location.find(loc => loc.post_type === 1);
+                      const destination = item.post_location.find(loc => loc.post_type === 2);
+
+                      if (checkIn && destination) {
+                        return `Route: ${checkIn.place_name?.split(',')[0] || 'Location'} → ${destination.place_name?.split(',')[0] || 'Location'}`;
+                      } else if (checkIn) {
+                        return `Check-in: ${checkIn.place_name || 'Location'}`;
+                      } else if (destination) {
+                        return `Destination: ${destination.place_name || 'Location'}`;
+                      }
+                      return 'Location';
+                    })()}
+                  </div>
+                </div>
+              )}
 
               {/* Display Post Images */}
               {item?.files && item?.files?.length > 0 && (
                 <div
-                  className={`mt-3 grid ${
-                    item?.files?.length === 1
-                      ? "grid-cols-1"
-                      : item?.files?.length === 2
+                  className={`mt-3 grid ${item?.files?.length === 1
+                    ? "grid-cols-1"
+                    : item?.files?.length === 2
                       ? "grid-cols-2"
                       : item.files?.length >= 3
-                      ? "grid-cols-2"
-                      : ""
-                  } gap-2`}
+                        ? "grid-cols-2"
+                        : ""
+                    } gap-2`}
                 >
                   {item?.files?.map((file, fileIndex) => {
                     // Determine if file is a video by extension
                     const filePath = file.file_path || file.path || file.url || file.file_url || '';
                     const isVideo = /\.(mp4|webm|ogg|mov|avi)$/i.test(filePath);
                     // Build robust base + prefix
-                    const base = process.env.NEXT_PUBLIC_FILE_PATH || '';
-                    const prefix = base ? `${base.replace(/\/+$/, '')}/post/` : '/uploads/post/';
-                    const cleanPath = String(filePath || '').replace(/^\/+/, '');
-                    const src = `${prefix}${cleanPath}`;
-                    
+                    // Build robust base + prefix using helper
+                    const src = getImageUrl(filePath, 'post');
+
                     // Prepare all images for preview
                     const allImages = (item.files || [])
                       .filter(f => {
@@ -3354,18 +3354,16 @@ const reactionsImages = (item) => {
                       })
                       .map(f => {
                         const fPath = f.file_path || f.path || f.url || f.file_url || '';
-                        const cPath = String(fPath || '').replace(/^\/+/, '');
-                        return `${prefix}${cPath}`;
+                        return getImageUrl(fPath, 'post');
                       });
-                    
+
                     const imageIndex = allImages.indexOf(src);
-                    
+
                     return (
                       <div
                         key={fileIndex}
-                        className={`overflow-hidden rounded-lg ${
-                          item.files?.length === 1 ? "" : "h-48"
-                        } bg-gray-100`}
+                        className={`overflow-hidden rounded-lg ${item.files?.length === 1 ? "" : "h-48"
+                          } bg-gray-100`}
                       >
                         {isVideo ? (
                           <video controls className="w-full h-full object-cover">
@@ -3376,9 +3374,8 @@ const reactionsImages = (item) => {
                           <Image
                             src={src}
                             alt="oldclubman"
-                            className={`w-full cursor-pointer hover:opacity-90 transition-opacity ${
-                              item.files?.length === 1 ? "h-auto" : "h-full object-cover"
-                            }`}
+                            className={`w-full cursor-pointer hover:opacity-90 transition-opacity ${item.files?.length === 1 ? "h-auto" : "h-full object-cover"
+                              }`}
                             onClick={() => handleImagePreview(src, allImages, imageIndex)}
                             width={1920}
                             height={1080}
@@ -3400,7 +3397,7 @@ const reactionsImages = (item) => {
                       ?.slice(0, 2)
                       .map((reaction, index) => (
                         showingReactionsIcon(reaction, index)
-                    ))}
+                      ))}
                 </span>
                 {/* <span className="text-sm">{item?.single_reaction?.client?.fname + " " + item?.single_reaction?.client?.last_name + " and " + totalCount }</span> */}
                 <span className="text-sm">{Number(item.totalCount)}</span>
@@ -3448,7 +3445,7 @@ const reactionsImages = (item) => {
                     </div>
                   </button>
                   {showReactionsFor === item.id && (
-                    <div 
+                    <div
                       className="reactions-container"
                       onMouseEnter={() => setShowReactionsFor(item.id)}
                       onMouseLeave={() => setShowReactionsFor(null)}
@@ -3459,7 +3456,7 @@ const reactionsImages = (item) => {
                 </div>
               </div>
               <button className="flex-1 py-1 cursor-pointer text-center text-gray-500 hover:bg-gray-100 rounded-md">
-                <div 
+                <div
                   className="flex items-center justify-center gap-2"
                   onClick={() => {
                     handleViewAllComments(item.id);
@@ -3469,9 +3466,9 @@ const reactionsImages = (item) => {
                 </div>
               </button>
               <button className="flex-1 py-1 cursor-pointer text-center text-gray-500 hover:bg-gray-100 rounded-md">
-                <div 
-                className="flex items-center justify-center gap-2"
-                onClick={() => {handleShare(item?.id)}}
+                <div
+                  className="flex items-center justify-center gap-2"
+                  onClick={() => { handleShare(item?.id) }}
                 >
                   <IoIosShareAlt size={25} /> <span>Share</span>
                 </div>
@@ -3498,7 +3495,7 @@ const reactionsImages = (item) => {
                   <div className="flex">
                     <div className="w-8 h-8 rounded-full overflow-hidden mr-2 mt-2">
                       <img
-                        src={ item?.latest_comment?.client?.image ?
+                        src={item?.latest_comment?.client?.image ?
                           process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
                           item?.latest_comment?.client?.image : "/common-avator.jpg"
                         }
@@ -3516,9 +3513,9 @@ const reactionsImages = (item) => {
                             href={`/${item?.latest_comment?.username}`}
                             className="cursor-pointer hover:underline"
                           >
-                            {item?.latest_comment?.client?.display_name || item?.latest_comment?.client?.fname +" " +item?.latest_comment?.client?.last_name}{" "}
+                            {item?.latest_comment?.client?.display_name || item?.latest_comment?.client?.fname + " " + item?.latest_comment?.client?.last_name}{" "}
                           </Link>
-                          
+
                         </span>
                         <span className="text-gray-700 text-sm">
                           {renderContentWithMentions(item?.latest_comment?.content)}
@@ -3532,18 +3529,17 @@ const reactionsImages = (item) => {
                           })()}
                           {item?.latest_comment?.files?.length > 0 && (() => {
                             const file = item?.latest_comment?.files[0];
-                            const basePath = process.env.NEXT_PUBLIC_FILE_PATH;
                             const filePath = file?.file_path;
-                            
-                            // Try multiple possible paths for comment images
+
+                            // Try multiple possible paths for comment images using helper
                             const possiblePaths = [
-                              `${basePath}/post/${filePath}`,
-                              `${basePath}/reply/${filePath}`,
-                              `${basePath}/comment/${filePath}`
+                              getImageUrl(filePath, 'post'),
+                              getImageUrl(filePath, 'reply'),
+                              getImageUrl(filePath, 'comment')
                             ];
-                            
+
                             return (
-                              <img 
+                              <img
                                 src={possiblePaths[0]} // Start with post path
                                 width={100}
                                 height={100}
@@ -3558,7 +3554,7 @@ const reactionsImages = (item) => {
                                 onError={(e) => {
                                   console.log('🚨 Comment image failed to load:', e.target.src);
                                   const currentSrc = e.target.src;
-                                  
+
                                   if (currentSrc.includes('/post/')) {
                                     console.log('🔄 Trying /reply/ path...');
                                     e.target.src = possiblePaths[1];
@@ -3576,12 +3572,12 @@ const reactionsImages = (item) => {
                         </span>
                       </div>
                       <div className="text-xs text-gray-500 mt-1 flex gap-2">
-                      <span className="text-xs text-gray-500 ml-2">
-                            {formatCompactTime(
-                              item?.latest_comment?.created_at
-                            )}
-                          </span>
-                          <span>•</span>
+                        <span className="text-xs text-gray-500 ml-2">
+                          {formatCompactTime(
+                            item?.latest_comment?.created_at
+                          )}
+                        </span>
+                        <span>•</span>
                         <button
                           className="text-gray-500 hover:underline relative cursor-pointer"
                           onClick={() => setShowCommentReactionsFor(
@@ -3745,7 +3741,7 @@ const reactionsImages = (item) => {
                             }}
                           />
                         </div>
-                        
+
                         {/* Reply Content */}
                         <div className="flex-1">
                           <div className="bg-gray-100 rounded-lg px-3 py-2">
@@ -3760,14 +3756,14 @@ const reactionsImages = (item) => {
                             <div className="text-gray-700 text-sm mt-1">
                               {renderContentWithMentions(reply?.content)}
                               {reply?.files?.length > 0 && (
-                                <img 
-                                  src={process.env.NEXT_PUBLIC_FILE_PATH + "/reply/" + reply?.files[0]?.file_path}
+                                <img
+                                  src={getImageUrl(reply?.files[0]?.file_path, 'reply')}
                                   width={100}
                                   height={100}
                                   className="mt-2 cursor-pointer hover:opacity-90 transition-opacity rounded-lg"
                                   onClick={() => handleImagePreview(
-                                    process.env.NEXT_PUBLIC_FILE_PATH + "/reply/" + reply?.files[0]?.file_path,
-                                    [process.env.NEXT_PUBLIC_FILE_PATH + "/reply/" + reply?.files[0]?.file_path],
+                                    getImageUrl(reply?.files[0]?.file_path, 'reply'),
+                                    [getImageUrl(reply?.files[0]?.file_path, 'reply')],
                                     0
                                   )}
                                   alt="Reply attachment"
@@ -3775,7 +3771,7 @@ const reactionsImages = (item) => {
                               )}
                             </div>
                           </div>
-                          
+
                           {/* Reply Actions */}
                           <div className="flex items-center gap-3 mt-1 ml-2 text-[12px] text-gray-600">
                             <span>{formatCompactTime(reply?.created_at)}</span>
@@ -3900,27 +3896,27 @@ const reactionsImages = (item) => {
                                 </div>
                               )}
                             </button>
-                            <button 
-                              className="hover:underline cursor-pointer" 
+                            <button
+                              className="hover:underline cursor-pointer"
                               onClick={() => handleSingleCommentReply(item.id, item?.latest_comment)}
                               type="button"
                             >
                               Reply
-                        </button>
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
                     ))}
-                </div>
+                  </div>
                 )}
 
                 {/* Reply input for single comment */}
                 {modalReplyInputs[`single-reply-${item.id}-${item?.latest_comment?.id}`] !== undefined && (
                   <div className="flex items-start mt-3 ml-10">
                     {/* User Avatar */}
-                    <img 
+                    <img
                       src={
-                        profile?.image 
+                        profile?.image
                           ? `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${profile.image.startsWith('/') ? '' : '/'}${profile.image}`
                           : "/common-avator.jpg"
                       }
@@ -3948,8 +3944,8 @@ const reactionsImages = (item) => {
                                 </button>
                               </div>
                             ))}
-              </div>
-            )}
+                          </div>
+                        )}
 
                         <input
                           type="text"
@@ -3983,7 +3979,7 @@ const reactionsImages = (item) => {
                             title="Add photo"
                           >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                              <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
                             </svg>
                           </button>
 
@@ -4014,7 +4010,7 @@ const reactionsImages = (item) => {
 
                       {/* Emoji picker */}
                       {showEmojiPicker === `single-reply-${item.id}-${item?.latest_comment?.id}` && (
-                        <div 
+                        <div
                           className="emoji-picker-container absolute left-0 top-full mt-1 bg-white border rounded-lg shadow-xl z-[9999] w-80"
                           onClick={(e) => e.stopPropagation()}
                           onMouseDown={(e) => e.stopPropagation()}
@@ -4025,18 +4021,17 @@ const reactionsImages = (item) => {
                               {Object.entries(emojiCategories).map(([key, category]) => (
                                 <button
                                   key={key}
-                                  className={`px-2 py-1 text-xs rounded ${
-                                    activeEmojiCategory === key 
-                                      ? 'bg-blue-100 text-blue-600' 
-                                      : 'text-gray-600 hover:bg-gray-100'
-                                  }`}
+                                  className={`px-2 py-1 text-xs rounded ${activeEmojiCategory === key
+                                    ? 'bg-blue-100 text-blue-600'
+                                    : 'text-gray-600 hover:bg-gray-100'
+                                    }`}
                                   onClick={() => setActiveEmojiCategory(key)}
                                 >
                                   {category.name.split(' ')[0]}
                                 </button>
                               ))}
                             </div>
-                            
+
                             {/* Emoji grid */}
                             <div className="grid grid-cols-8 gap-1 max-h-48 overflow-y-auto">
                               {emojiCategories[activeEmojiCategory]?.emojis.map((emoji, idx) => (
@@ -4086,7 +4081,7 @@ const reactionsImages = (item) => {
                 <div className="w-8 h-8 rounded-full overflow-hidden mr-2">
                   <img
                     src={
-                      profile?.image 
+                      profile?.image
                         ? `${process.env.NEXT_PUBLIC_CLIENT_FILE_PATH}${profile.image.startsWith('/') ? '' : '/'}${profile.image}`
                         : "/common-avator.jpg"
                     }
@@ -4118,27 +4113,27 @@ const reactionsImages = (item) => {
                       </div>
                     )}
 
-                  <input
-                    type="text"
-                    placeholder="Add a comment..."
+                    <input
+                      type="text"
+                      placeholder="Add a comment..."
                       className="flex-1 bg-transparent focus:outline-none text-sm px-2 py-1"
-                    value={commentInputs[item.id] || ""}
-                    ref={(el) => (inputRefs.current[`post-comment-${item.id}`] = el)}
-                    onChange={(e) => {
-                      setCommentInputs((prev) => ({
-                        ...prev,
-                        [item.id]: e.target.value,
-                      }));
-                      handleMentionDetect(e, `post-comment-${item.id}`);
-                    }}
-                    onKeyDown={(e) => {
-                      const handled = handleMentionKeyDown(e, `post-comment-${item.id}`);
-                      if (!handled && e.key === 'Enter') {
-                        e.preventDefault();
-                        handleCommentSubmit(item.id);
-                      }
-                    }}
-                  />
+                      value={commentInputs[item.id] || ""}
+                      ref={(el) => (inputRefs.current[`post-comment-${item.id}`] = el)}
+                      onChange={(e) => {
+                        setCommentInputs((prev) => ({
+                          ...prev,
+                          [item.id]: e.target.value,
+                        }));
+                        handleMentionDetect(e, `post-comment-${item.id}`);
+                      }}
+                      onKeyDown={(e) => {
+                        const handled = handleMentionKeyDown(e, `post-comment-${item.id}`);
+                        if (!handled && e.key === 'Enter') {
+                          e.preventDefault();
+                          handleCommentSubmit(item.id);
+                        }
+                      }}
+                    />
 
                     {/* Action buttons inside input */}
                     <div className="flex items-center gap-1">
@@ -4150,7 +4145,7 @@ const reactionsImages = (item) => {
                         title="Add photo"
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                          <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
                         </svg>
                       </button>
 
@@ -4167,27 +4162,27 @@ const reactionsImages = (item) => {
                       {/* Send button */}
                       <button
                         className="p-1 text-gray-500 hover:text-blue-500 transition-colors"
-                    onClick={() => handleCommentSubmit(item.id)}
-                    type="button"
+                        onClick={() => handleCommentSubmit(item.id)}
+                        type="button"
                         title="Send"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <line x1="22" y1="2" x2="11" y2="13"></line>
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <line x1="22" y1="2" x2="11" y2="13"></line>
                           <polygon points="22,2 15,22 11,13 2,9 22,2"></polygon>
-                    </svg>
-                  </button>
-                </div>
-              </div>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
 
                   {/* Hidden file input for photo upload */}
                   <input
@@ -4204,7 +4199,7 @@ const reactionsImages = (item) => {
 
                   {/* Emoji picker */}
                   {showEmojiPicker === `post-comment-${item.id}` && (
-                    <div 
+                    <div
                       className="emoji-picker-container absolute left-0 top-full mt-1 bg-white border rounded-lg shadow-xl z-[9999] w-80"
                       onClick={(e) => e.stopPropagation()}
                       onMouseDown={(e) => e.stopPropagation()}
@@ -4213,20 +4208,19 @@ const reactionsImages = (item) => {
                         {/* Emoji categories */}
                         <div className="flex gap-1 mb-2 border-b pb-2">
                           {Object.entries(emojiCategories).map(([key, category]) => (
-                  <button
+                            <button
                               key={key}
-                              className={`px-2 py-1 text-xs rounded ${
-                                activeEmojiCategory === key 
-                                  ? 'bg-blue-100 text-blue-600' 
-                                  : 'text-gray-600 hover:bg-gray-100'
-                              }`}
+                              className={`px-2 py-1 text-xs rounded ${activeEmojiCategory === key
+                                ? 'bg-blue-100 text-blue-600'
+                                : 'text-gray-600 hover:bg-gray-100'
+                                }`}
                               onClick={() => setActiveEmojiCategory(key)}
                             >
                               {category.name.split(' ')[0]}
                             </button>
                           ))}
                         </div>
-                        
+
                         {/* Emoji grid */}
                         <div className="grid grid-cols-8 gap-1 max-h-48 overflow-y-auto">
                           {emojiCategories[activeEmojiCategory]?.emojis.map((emoji, idx) => (
@@ -4245,7 +4239,7 @@ const reactionsImages = (item) => {
                               }}
                             >
                               {emoji}
-                  </button>
+                            </button>
                           ))}
                         </div>
                       </div>
@@ -4262,7 +4256,7 @@ const reactionsImages = (item) => {
 
 
 
-{/* comment modal */}
+      {/* comment modal */}
       {showCommentsModal && basicPostData && (
         <div
           className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50"
@@ -4291,7 +4285,7 @@ const reactionsImages = (item) => {
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-10 h-10 rounded-full overflow-hidden">
                   <img
-                    src={ basicPostData?.client?.image ?
+                    src={basicPostData?.client?.image ?
                       process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
                       basicPostData?.client?.image : "/common-avator.jpg"
                     }
@@ -4315,7 +4309,7 @@ const reactionsImages = (item) => {
                     {moment(basicPostData?.created_at).format("MMM DD") +
                       " at " +
                       moment(basicPostData.created_at).format("HH:MM A")}{" "}
-                        <span>•</span>
+                    <span>•</span>
 
                     {basicPostData.privacy_mode === "public" ? (
                       <FaGlobeAmericas className="mt-[3px]" />
@@ -4326,48 +4320,45 @@ const reactionsImages = (item) => {
                 </div>
               </div>
               {/* Post message */}
-              {/\/post_background\/.+/.test(basicPostData?.background_url) ? 
-              <>
-                <div 
-                className="relative text-white p-4 text-center text-[40px] w-full min-h-[300px] rounded-lg flex items-center justify-center bg-cover bg-center bg-no-repeat"
-                style={{
-                  backgroundImage: `url(${basicPostData?.background_url})`,
-                }}
-              >
-              
-                {basicPostData?.message}
-                
-               
-              </div>
-              </>
-              :  
-              <div className="text-gray-800 mb-4 break-words">
-                {renderContentWithMentions(basicPostData.message)}
-              </div>
-              
+              {/\/post_background\/.+/.test(basicPostData?.background_url) ?
+                <>
+                  <div
+                    className="relative text-white p-4 text-center text-[40px] w-full min-h-[300px] rounded-lg flex items-center justify-center bg-cover bg-center bg-no-repeat"
+                    style={{
+                      backgroundImage: `url(${basicPostData?.background_url})`,
+                    }}
+                  >
+
+                    {basicPostData?.message}
+
+
+                  </div>
+                </>
+                :
+                <div className="text-gray-800 mb-4 break-words">
+                  {renderContentWithMentions(basicPostData.message)}
+                </div>
+
               }
-             
+
               {/* Post images if any */}
               {basicPostData.files && basicPostData.files.length > 0 && (
                 <div
-                  className={`mt-3 grid cursor-pointer ${
-                    basicPostData.files.length === 1
-                      ? "grid-cols-1"
-                      : basicPostData.files.length >= 2
+                  className={`mt-3 grid cursor-pointer ${basicPostData.files.length === 1
+                    ? "grid-cols-1"
+                    : basicPostData.files.length >= 2
                       ? "grid-cols-2"
                       : ""
-                  } gap-2 mb-4`}
+                    } gap-2 mb-4`}
                 >
                   {basicPostData.files.map((file, fileIndex) => {
                     // Determine if file is a video by extension
                     const filePath = file.file_path || file.path || file.url || file.file_url || '';
                     const isVideo = /\.(mp4|webm|ogg|mov|avi)$/i.test(filePath);
                     // Build robust base + prefix
-                    const base = process.env.NEXT_PUBLIC_FILE_PATH || '';
-                    const prefix = base ? `${base.replace(/\/+$/, '')}/post/` : '/uploads/post/';
-                    const cleanPath = String(filePath || '').replace(/^\/+/, '');
-                    const src = `${prefix}${cleanPath}`;
-                    
+                    // Build robust base + prefix
+                    const src = getImageUrl(filePath, 'post');
+
                     // Prepare all images for preview
                     const allImages = (basicPostData.files || [])
                       .filter(f => {
@@ -4376,18 +4367,16 @@ const reactionsImages = (item) => {
                       })
                       .map(f => {
                         const fPath = f.file_path || f.path || f.url || f.file_url || '';
-                        const cPath = String(fPath || '').replace(/^\/+/, '');
-                        return `${prefix}${cPath}`;
+                        return getImageUrl(fPath, 'post');
                       });
-                    
+
                     const imageIndex = allImages.indexOf(src);
-                    
+
                     return (
                       <div
                         key={fileIndex}
-                        className={`overflow-hidden rounded-lg ${
-                          basicPostData.files.length === 1 ? "max-h-96" : "h-48"
-                        } bg-gray-100`}
+                        className={`overflow-hidden rounded-lg ${basicPostData.files.length === 1 ? "max-h-96" : "h-48"
+                          } bg-gray-100`}
                       >
                         {isVideo ? (
                           <video controls className="w-full h-full object-cover">
@@ -4420,7 +4409,7 @@ const reactionsImages = (item) => {
                     {(() => {
                       const checkIn = basicPostData.post_location.find(loc => loc.post_type === 1);
                       const destination = basicPostData.post_location.find(loc => loc.post_type === 2);
-                      
+
                       if (checkIn && destination) {
                         return `Route: ${checkIn.place_name?.split(',')[0] || 'Location'} → ${destination.place_name?.split(',')[0] || 'Location'}`;
                       } else if (checkIn) {
@@ -4494,19 +4483,19 @@ const reactionsImages = (item) => {
                       </div>
                     </button>
                     {showReactionsFor === basicPostData.id && (
-                       <div 
-                       className="reactions-container"
-                       onMouseEnter={() => setShowReactionsFor(basicPostData.id)}
-                       onMouseLeave={() => setShowReactionsFor(null)}
-                     >
-                       {reactionsImages(basicPostData)}
-                     </div>
+                      <div
+                        className="reactions-container"
+                        onMouseEnter={() => setShowReactionsFor(basicPostData.id)}
+                        onMouseLeave={() => setShowReactionsFor(null)}
+                      >
+                        {reactionsImages(basicPostData)}
+                      </div>
                     )}
                   </div>
                 </div>
-                <button 
-                 onClick={() => {handleShare(basicPostData?.id)}}
-                className="flex-1 py-1 cursor-pointer text-center text-gray-500 hover:bg-gray-100 rounded-md">
+                <button
+                  onClick={() => { handleShare(basicPostData?.id) }}
+                  className="flex-1 py-1 cursor-pointer text-center text-gray-500 hover:bg-gray-100 rounded-md">
                   <div className="flex items-center justify-center gap-2">
                     <IoMdShareAlt /> <span>Share</span>
                   </div>
@@ -4523,13 +4512,13 @@ const reactionsImages = (item) => {
               {/* Comments Section */}
               <h4 className="font-semibold mb-4 text-lg">Comments</h4>
               {basicPostData?.comments &&
-              basicPostData?.comments?.length > 0 ? (
+                basicPostData?.comments?.length > 0 ? (
                 basicPostData?.comments?.map((c, i) => (
                   <div key={i} className="mb-4 flex items-start relative">
                     <div className="relative mr-3">
                       <div className="w-9 h-9 rounded-full overflow-hidden">
                         <img
-                          src={ c?.client?.image ?
+                          src={c?.client?.image ?
                             process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
                             c?.client?.image : "/common-avator.jpg"
                           }
@@ -4541,7 +4530,7 @@ const reactionsImages = (item) => {
                         />
                       </div>
                       {/* Thread line */}
-        {/* <div className="absolute border h-100 left-[18px] top-[36px] bottom-0 w-px"></div> */}
+                      {/* <div className="absolute border h-100 left-[18px] top-[36px] bottom-0 w-px"></div> */}
                     </div>
                     <div className="flex-1">
                       <div className="bg-gray-100 p-3 rounded-2xl relative border border-gray-200">
@@ -4583,61 +4572,61 @@ const reactionsImages = (item) => {
                           onClick={() => handleModalCommentLike(c)}
                           type="button"
                         >
-                           {!c.single_reaction ? (
-                        <>
-                          <span>Like</span>
-                        </>
-                      ) : (
-                        <span className="inline-block">
-                          {c?.single_reaction?.type === "like" && (
-                            <span className="font-semibold">
-                              <span className="text-blue-500 text-[12px]">Like</span>
+                          {!c.single_reaction ? (
+                            <>
+                              <span>Like</span>
+                            </>
+                          ) : (
+                            <span className="inline-block">
+                              {c?.single_reaction?.type === "like" && (
+                                <span className="font-semibold">
+                                  <span className="text-blue-500 text-[12px]">Like</span>
+                                </span>
+                              )}
+                              {c?.single_reaction?.type === "love" && (
+                                <span className="font-semibold">
+                                  <span className="text-red-700 text-[12px]">
+                                    Love
+                                  </span>
+                                </span>
+                              )}
+                              {c?.single_reaction?.type === "care" && (
+                                <span className="font-semibold">
+                                  <span className="text-yellow-700 text-[12px]">
+                                    Care
+                                  </span>
+                                </span>
+                              )}
+                              {c?.single_reaction?.type === "haha" && (
+                                <span className="font-semibold">
+                                  <span className="text-yellow-700 text-[12px]">
+                                    Haha
+                                  </span>
+                                </span>
+                              )}
+                              {c?.single_reaction?.type === "wow" && (
+                                <span className="font-semibold">
+                                  <span className="text-yellow-700 text-[12px]">
+                                    Wow
+                                  </span>
+                                </span>
+                              )}
+                              {c?.single_reaction?.type === "sad" && (
+                                <span className="font-semibold">
+                                  <span className="text-yellow-700 text-[12px]">
+                                    Sad
+                                  </span>
+                                </span>
+                              )}
+                              {c?.single_reaction?.type === "angry" && (
+                                <span className="font-semibold">
+                                  <span className="text-red-500 text-[12px]">
+                                    Angry
+                                  </span>
+                                </span>
+                              )}
                             </span>
                           )}
-                          {c?.single_reaction?.type === "love" && (
-                            <span className="font-semibold">
-                              <span className="text-red-700 text-[12px]">
-                                Love
-                              </span>
-                            </span>
-                          )}
-                          {c?.single_reaction?.type === "care" && (
-                            <span className="font-semibold">
-                              <span className="text-yellow-700 text-[12px]">
-                                Care
-                              </span>
-                            </span>
-                          )}
-                          {c?.single_reaction?.type === "haha" && (
-                            <span className="font-semibold">
-                              <span className="text-yellow-700 text-[12px]">
-                                Haha
-                              </span>
-                            </span>
-                          )}
-                          {c?.single_reaction?.type === "wow" && (
-                            <span className="font-semibold">
-                              <span className="text-yellow-700 text-[12px]">
-                                Wow
-                              </span>
-                            </span>
-                          )}
-                          {c?.single_reaction?.type === "sad" && (
-                            <span className="font-semibold">
-                              <span className="text-yellow-700 text-[12px]">
-                                Sad
-                              </span>
-                            </span>
-                          )}
-                          {c?.single_reaction?.type === "angry" && (
-                            <span className="font-semibold">
-                              <span className="text-red-500 text-[12px]">
-                                Angry
-                              </span>
-                            </span>
-                          )}
-                        </span>
-                      )}
                           {showCommentReactionsFor === c.id && (
                             <div
                               ref={commentReactionRef}
@@ -4712,7 +4701,7 @@ const reactionsImages = (item) => {
                         <span>•</span>
                         <button
                           className="hover:underline cursor-pointer"
-                      onClick={() => handleReplyToReply(i, c)}
+                          onClick={() => handleReplyToReply(i, c)}
                           type="button"
                         >
                           Reply
@@ -4722,8 +4711,8 @@ const reactionsImages = (item) => {
                       {modalReplyInputs[`reply-${i}-${c.id}`] !== undefined && (
                         <div className="flex items-start mt-3 ml-2">
                           {/* User Avatar */}
-                          <img 
-                            src={ profile?.client?.image ? 
+                          <img
+                            src={profile?.client?.image ?
                               process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
                               profile?.client?.image : "/common-avator.jpg"
                             }
@@ -4734,34 +4723,34 @@ const reactionsImages = (item) => {
                               e.target.src = "/common-avator.jpg";
                             }}
                           />
-                          
+
                           {/* Input Container */}
                           <div className="flex-1 bg-gray-100 rounded-2xl border border-gray-200 hover:bg-gray-50 focus-within:bg-white focus-within:border-blue-500 transition-all duration-200 relative" data-mention-anchor="true">
                             <div className="flex items-center px-3 py-2">
-                          <input
-                            type="text"
+                              <input
+                                type="text"
                                 className="flex-1 bg-transparent focus:outline-none text-sm placeholder-gray-500"
                                 placeholder={`Reply to ${c?.client_comment?.fname || ""}...`}
-                            value={modalReplyInputs[`reply-${i}-${c.id}`] || ""}
-                            ref={(el) => (inputRefs.current[`reply-${i}-${c.id}`] = el)}
-                            onChange={(e) =>
-                              { setModalReplyInputs((prev) => ({
-                                  ...prev,
-                                  [`reply-${i}-${c.id}`]: e.target.value,
-                                }));
-                                handleMentionDetect(e, `reply-${i}-${c.id}`);
-                              }
-                            }
-                            onKeyDown={(e) => {
-                              const handled = handleMentionKeyDown(e, `reply-${i}-${c.id}`);
-                              if (!handled && e.key === 'Enter') {
-                                e.preventDefault();
-                                handleReplyToReplySubmit(i, c.id);
-                              }
-                            }}
-                          />
-                              
-                                                            {/* Facebook-style action buttons */}
+                                value={modalReplyInputs[`reply-${i}-${c.id}`] || ""}
+                                ref={(el) => (inputRefs.current[`reply-${i}-${c.id}`] = el)}
+                                onChange={(e) => {
+                                  setModalReplyInputs((prev) => ({
+                                    ...prev,
+                                    [`reply-${i}-${c.id}`]: e.target.value,
+                                  }));
+                                  handleMentionDetect(e, `reply-${i}-${c.id}`);
+                                }
+                                }
+                                onKeyDown={(e) => {
+                                  const handled = handleMentionKeyDown(e, `reply-${i}-${c.id}`);
+                                  if (!handled && e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleReplyToReplySubmit(i, c.id);
+                                  }
+                                }}
+                              />
+
+                              {/* Facebook-style action buttons */}
                               <div className="flex items-center gap-1 ml-2 relative">
                                 {/* Emoji button */}
                                 <div className="relative">
@@ -4769,20 +4758,20 @@ const reactionsImages = (item) => {
                                     type="button"
                                     className={`w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700 ${showEmojiPicker === `reply-${i}-${c.id}` ? 'bg-blue-200' : ''}`}
                                     title="Choose an emoji"
-                                                                            onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                          toggleEmojiPicker(`reply-${i}-${c.id}`);
-                                        }}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      toggleEmojiPicker(`reply-${i}-${c.id}`);
+                                    }}
                                   >
                                     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                                      <path d="M8 1C4.1 1 1 4.1 1 8s3.1 7 7 7 7-3.1 7-7-3.1-7-7-7zM5.5 6.5c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm5 0c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm1.5 4c-.4 1.2-1.5 2-2.8 2.1-.1 0-.1 0-.2 0-.1 0-.1 0-.2 0-1.3-.1-2.4-.9-2.8-2.1-.1-.3.1-.5.4-.5h4.8c.3 0 .5.2.4.5-.4z"/>
+                                      <path d="M8 1C4.1 1 1 4.1 1 8s3.1 7 7 7 7-3.1 7-7-3.1-7-7-7zM5.5 6.5c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm5 0c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm1.5 4c-.4 1.2-1.5 2-2.8 2.1-.1 0-.1 0-.2 0-.1 0-.1 0-.2 0-1.3-.1-2.4-.9-2.8-2.1-.1-.3.1-.5.4-.5h4.8c.3 0 .5.2.4.5-.4z" />
                                     </svg>
                                   </button>
-                                  
+
                                   {/* Emoji Picker - positioned relative to emoji button */}
                                   {showEmojiPicker === `reply-${i}-${c.id}` && (
-                                    <div 
+                                    <div
                                       className="emoji-picker-container absolute bottom-full right-0 mb-2 bg-white border rounded-lg shadow-xl z-50 w-80 max-h-96 overflow-hidden"
                                       onClick={(e) => e.stopPropagation()}
                                       onMouseDown={(e) => e.stopPropagation()}
@@ -4792,18 +4781,17 @@ const reactionsImages = (item) => {
                                         {Object.keys(emojiCategories).map((category) => (
                                           <button
                                             key={category}
-                                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                                              activeEmojiCategory === category 
-                                                ? 'bg-blue-500 text-white' 
-                                                : 'bg-white text-gray-600 hover:bg-gray-100'
-                                            }`}
+                                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${activeEmojiCategory === category
+                                              ? 'bg-blue-500 text-white'
+                                              : 'bg-white text-gray-600 hover:bg-gray-100'
+                                              }`}
                                             onClick={() => setActiveEmojiCategory(category)}
                                           >
                                             {emojiCategories[category].name.split(' ')[0]}
                                           </button>
                                         ))}
                                       </div>
-                                      
+
                                       {/* Emoji grid */}
                                       <div className="p-3 max-h-64 overflow-y-auto">
                                         <div className="grid grid-cols-8 gap-1">
@@ -4830,7 +4818,7 @@ const reactionsImages = (item) => {
                                     </div>
                                   )}
                                 </div>
-                                
+
                                 {/* Camera/Photo button */}
                                 <>
                                   <input
@@ -4852,11 +4840,11 @@ const reactionsImages = (item) => {
                                     }}
                                   >
                                     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                                      <path d="M14.5 2h-13C.7 2 0 2.7 0 3.5v9c0 .8.7 1.5 1.5 1.5h13c.8 0 1.5-.7 1.5-1.5v-9c0-.8-.7-1.5-1.5-1.5zM5 4.5c.8 0 1.5.7 1.5 1.5S5.8 7.5 5 7.5 3.5 6.8 3.5 6 4.2 4.5 5 4.5zM13 12H3l2.5-3 1.5 2 3-4 3 5z"/>
+                                      <path d="M14.5 2h-13C.7 2 0 2.7 0 3.5v9c0 .8.7 1.5 1.5 1.5h13c.8 0 1.5-.7 1.5-1.5v-9c0-.8-.7-1.5-1.5-1.5zM5 4.5c.8 0 1.5.7 1.5 1.5S5.8 7.5 5 7.5 3.5 6.8 3.5 6 4.2 4.5 5 4.5zM13 12H3l2.5-3 1.5 2 3-4 3 5z" />
                                     </svg>
                                   </button>
                                 </>
-                                
+
                               </div>
                             </div>
 
@@ -4883,13 +4871,13 @@ const reactionsImages = (item) => {
                                 </div>
                               </div>
                             )}
-                            
+
                             {/* Mention dropdown */}
                             {renderMentionDropdown(`reply-${i}-${c.id}`)}
-                            
+
 
                           </div>
-                          
+
                           {/* Send button - show when there's text or image */}
                           {(modalReplyInputs[`reply-${i}-${c.id}`]?.trim() || (Array.isArray(modalReplyImages[`reply-${i}-${c.id}`]) && modalReplyImages[`reply-${i}-${c.id}`].length > 0)) && (
                             <button
@@ -4899,7 +4887,7 @@ const reactionsImages = (item) => {
                               title="Send"
                             >
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
                               </svg>
                             </button>
                           )}
@@ -4928,7 +4916,7 @@ const reactionsImages = (item) => {
                               ? "Loading..."
                               : modalReplies[i]?.length > 0
                                 ? "Hide replies"
-                              : `View all replies ${c.replies_count ? `(${c.replies_count})` : ''}`}
+                                : `View all replies ${c.replies_count ? `(${c.replies_count})` : ''}`}
                           </button>
                         </div>
                       )}
@@ -4945,7 +4933,7 @@ const reactionsImages = (item) => {
                       })()?.map((reply, ri, repliesArray) => (
                         <div className="relative flex mt-2 ml-8" key={ri}>
                           {/* Horizontal line from parent comment profile to reply profile */}
-              {/* <div className="absolute border -left-15 top-[14px] w-10 h-px bg-gray-200"></div> */}
+                          {/* <div className="absolute border -left-15 top-[14px] w-10 h-px bg-gray-200"></div> */}
                           {/* Vertical line connecting from parent profile down */}
                           {/* {ri < repliesArray.length - 1 && (
                             <div className="absolute -left-[50px] top-[14px] bottom-0 w-px bg-gray-200"></div>
@@ -4962,7 +4950,7 @@ const reactionsImages = (item) => {
                             />
 
                           </div>
-              {/* <div className="absolute border left-[12px] top-[36px] bottom-0 w-px bg-gray-500"></div> */}
+                          {/* <div className="absolute border left-[12px] top-[36px] bottom-0 w-px bg-gray-500"></div> */}
 
                           <div className="flex flex-col w-full">
                             <div className="bg-gray-50 w-full p-2 rounded-2xl border border-gray-200 flex flex-col">
@@ -4983,23 +4971,23 @@ const reactionsImages = (item) => {
                               </span>
                               <span className="text-gray-700 text-xs">
                                 {renderContentWithMentions(reply.content)}
-                              {reply?.files?.length > 0 ? (
-                              <img 
-                                src={process.env.NEXT_PUBLIC_FILE_PATH + "/reply/" + reply?.files[0]?.file_path}
-                                width={100}
-                                height={100}
-                                className="mt-2 cursor-pointer hover:opacity-90 transition-opacity rounded-lg"
-                                onClick={() => handleImagePreview(
-                                  process.env.NEXT_PUBLIC_FILE_PATH + "/reply/" + reply?.files[0]?.file_path,
-                                  [process.env.NEXT_PUBLIC_FILE_PATH + "/reply/" + reply?.files[0]?.file_path],
-                                  0
-                                )}
-                                />
+                                {reply?.files?.length > 0 ? (
+                                  <img
+                                    src={getImageUrl(reply?.files[0]?.file_path, 'reply')}
+                                    width={100}
+                                    height={100}
+                                    className="mt-2 cursor-pointer hover:opacity-90 transition-opacity rounded-lg"
+                                    onClick={() => handleImagePreview(
+                                      getImageUrl(reply?.files[0]?.file_path, 'reply'),
+                                      [getImageUrl(reply?.files[0]?.file_path, 'reply')],
+                                      0
+                                    )}
+                                  />
 
-                              ) : ""}
+                                ) : ""}
                               </span>
                             </div>
-                            
+
                             {/* Reply actions row */}
                             <div className="flex items-center gap-3 mt-1 ml-2 text-[12px] text-gray-600">
                               <span className="text-gray-500">{formatCompactTime(reply.created_at)}</span>
@@ -5150,8 +5138,8 @@ const reactionsImages = (item) => {
                             {modalReplyInputs[`reply-${i}-${reply.id}`] !== undefined && (
                               <div className="flex items-start mt-3 ml-6">
                                 {/* User Avatar */}
-                                <img 
-                                  src={ profile?.client?.image ? 
+                                <img
+                                  src={profile?.client?.image ?
                                     process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
                                     profile?.client?.image : "/common-avator.jpg"
                                   }
@@ -5162,7 +5150,7 @@ const reactionsImages = (item) => {
                                     e.target.src = "/common-avator.jpg";
                                   }}
                                 />
-                                
+
                                 {/* Input Container */}
                                 <div className="flex-1 bg-gray-100 rounded-2xl border border-gray-200 hover:bg-gray-50 focus-within:bg-white focus-within:border-blue-500 transition-all duration-200 relative" data-mention-anchor="true">
                                   <div className="flex items-center px-3 py-2">
@@ -5187,7 +5175,7 @@ const reactionsImages = (item) => {
                                         }
                                       }}
                                     />
-                                    
+
                                     {/* Facebook-style action buttons */
                                     }
                                     <div className="flex items-center gap-1 ml-2 relative">
@@ -5204,13 +5192,13 @@ const reactionsImages = (item) => {
                                           }}
                                         >
                                           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                                            <path d="M8 1C4.1 1 1 4.1 1 8s3.1 7 7 7 7-3.1 7-7-3.1-7-7-7zM5.5 6.5c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm5 0c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm1.5 4c-.4 1.2-1.5 2-2.8 2.1-.1 0-.1 0-.2 0-.1 0-.1 0-.2 0-1.3-.1-2.4-.9-2.8-2.1-.1-.3.1-.5.4-.5h4.8c.3 0 .5.2.4.5-.4z"/>
+                                            <path d="M8 1C4.1 1 1 4.1 1 8s3.1 7 7 7 7-3.1 7-7-3.1-7-7-7zM5.5 6.5c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm5 0c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm1.5 4c-.4 1.2-1.5 2-2.8 2.1-.1 0-.1 0-.2 0-.1 0-.1 0-.2 0-1.3-.1-2.4-.9-2.8-2.1-.1-.3.1-.5.4-.5h4.8c.3 0 .5.2.4.5-.4z" />
                                           </svg>
                                         </button>
-                                        
+
                                         {/* Emoji Picker */}
                                         {showEmojiPicker === `reply-${i}-${reply.id}` && (
-                                          <div 
+                                          <div
                                             className="emoji-picker-container absolute bottom-full right-0 mb-2 bg-white border rounded-lg shadow-xl z-50 w-80 max-h-96 overflow-hidden"
                                             onClick={(e) => e.stopPropagation()}
                                             onMouseDown={(e) => e.stopPropagation()}
@@ -5220,18 +5208,17 @@ const reactionsImages = (item) => {
                                               {Object.keys(emojiCategories).map((category) => (
                                                 <button
                                                   key={category}
-                                                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                                                    activeEmojiCategory === category 
-                                                      ? 'bg-blue-500 text-white' 
-                                                      : 'bg-white text-gray-600 hover:bg-gray-100'
-                                                  }`}
+                                                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${activeEmojiCategory === category
+                                                    ? 'bg-blue-500 text-white'
+                                                    : 'bg-white text-gray-600 hover:bg-gray-100'
+                                                    }`}
                                                   onClick={() => setActiveEmojiCategory(category)}
                                                 >
                                                   {emojiCategories[category].name.split(' ')[0]}
                                                 </button>
                                               ))}
                                             </div>
-                                            
+
                                             {/* Emoji grid */}
                                             <div className="p-3 max-h-64 overflow-y-auto">
                                               <div className="grid grid-cols-8 gap-1">
@@ -5258,7 +5245,7 @@ const reactionsImages = (item) => {
                                           </div>
                                         )}
                                       </div>
-                                      
+
                                       {/* Camera/Photo button */}
                                       <>
                                         <input
@@ -5280,15 +5267,15 @@ const reactionsImages = (item) => {
                                           }}
                                         >
                                           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                                            <path d="M14.5 2h-13C.7 2 0 2.7 0 3.5v9c0 .8.7 1.5 1.5 1.5h13c.8 0 1.5-.7 1.5-1.5v-9c0-.8-.7-1.5-1.5-1.5zM5 4.5c.8 0 1.5.7 1.5 1.5S5.8 7.5 5 7.5 3.5 6.8 3.5 6 4.2 4.5 5 4.5zM13 12H3l2.5-3 1.5 2 3-4 3 5z"/>
+                                            <path d="M14.5 2h-13C.7 2 0 2.7 0 3.5v9c0 .8.7 1.5 1.5 1.5h13c.8 0 1.5-.7 1.5-1.5v-9c0-.8-.7-1.5-1.5-1.5zM5 4.5c.8 0 1.5.7 1.5 1.5S5.8 7.5 5 7.5 3.5 6.8 3.5 6 4.2 4.5 5 4.5zM13 12H3l2.5-3 1.5 2 3-4 3 5z" />
                                           </svg>
                                         </button>
                                       </>
-                                      
+
                                     </div>
                                   </div>
 
-                                {/* Selected image previews (threaded reply) under input */}
+                                  {/* Selected image previews (threaded reply) under input */}
                                   {Array.isArray(modalReplyImages[`reply-${i}-${reply.id}`]) && modalReplyImages[`reply-${i}-${reply.id}`].length > 0 && (
                                     <div className="px-3 pb-2">
                                       <div className="flex flex-wrap gap-2">
@@ -5315,8 +5302,8 @@ const reactionsImages = (item) => {
                                   {/* Mention dropdown */}
                                   {renderMentionDropdown(`reply-${i}-${reply.id}`)}
                                 </div>
-                                
-                                
+
+
 
                                 {/* Send button - show when there's text or image */}
                                 {(modalReplyInputs[`reply-${i}-${reply.id}`]?.trim() || (Array.isArray(modalReplyImages[`reply-${i}-${reply.id}`]) && modalReplyImages[`reply-${i}-${reply.id}`].length > 0)) && (
@@ -5327,7 +5314,7 @@ const reactionsImages = (item) => {
                                     title="Send"
                                   >
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                                      <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                                      <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
                                     </svg>
                                   </button>
                                 )}
@@ -5346,133 +5333,133 @@ const reactionsImages = (item) => {
               )}
 
 
-              
+
               {/* **********************************************************
             comments end
             *************************************************************** */}
             </div>
-            
-           <div className="relative">
-             {/* Mention dropdown */}
-           <div className="absolute left-20 bottom-65">
-                
+
+            <div className="relative">
+              {/* Mention dropdown */}
+              <div className="absolute left-20 bottom-65">
+
                 {renderMentionDropdown(`modal-comment-${basicPostData.id}`)}
-                 </div>
-             {/* Comment input at bottom */}
-             <div className="p-4 bg-gray-50 flex items-center gap-2 ">
-            
-             
-              <div className="w-9 h-9 rounded-full overflow-hidden">
-                <img
-                  src={ profile?.client?.image ? 
-                    process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
-                    profile?.client?.image : "/common-avator.jpg"
-                  }
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = "/common-avator.jpg";
-                  }}
-                />
               </div>
-               
-              <div className="relative flex-1" data-mention-anchor="true">
+              {/* Comment input at bottom */}
+              <div className="p-4 bg-gray-50 flex items-center gap-2 ">
 
-                <div className="w-full border rounded-full px-2 py-1 text-sm bg-white flex items-center gap-2 focus-within:ring-2 focus-within:ring-blue-400 relative">
-                {/* Combined input container so images appear inside */}
-                
-                  {/* Thumbnails inside the input */}
-                  {Array.isArray(modalReplyImages[`modal-comment-${basicPostData.id}`]) && modalReplyImages[`modal-comment-${basicPostData.id}`].length > 0 && (
-                    <div className="flex items-center gap-1 max-w-32 overflow-x-auto">
-                      {modalReplyImages[`modal-comment-${basicPostData.id}`].map((img, idx) => (
-                        <div key={img.id || idx} className="relative w-7 h-7 flex-shrink-0">
-                          <img src={img.previewUrl} className="w-7 h-7 object-cover rounded" alt="preview" />
-                          <button
-                            type="button"
-                            className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white text-[10px] leading-4 text-red-600 border"
-                            onClick={() => clearReplyImage(`modal-comment-${basicPostData.id}`, idx)}
-                            title="Remove"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
 
-                  <input
-                    type="text"
-                    placeholder="Write a comment..."
-                    value={commentInputs[basicPostData.id] || ""}
-                    ref={(el) => (inputRefs.current[`modal-comment-${basicPostData.id}`] = el)}
-                    onChange={(e) => {
-                      setCommentInputs((prev) => ({
-                        ...prev,
-                        [basicPostData.id]: e.target.value,
-                      }));
-                      handleMentionDetect(e, `modal-comment-${basicPostData.id}`);
+                <div className="w-9 h-9 rounded-full overflow-hidden">
+                  <img
+                    src={profile?.client?.image ?
+                      process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
+                      profile?.client?.image : "/common-avator.jpg"
+                    }
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "/common-avator.jpg";
                     }}
-                    onKeyDown={(e) => {
-                      const handled = handleMentionKeyDown(e, `modal-comment-${basicPostData.id}`);
-                      if (!handled && e.key === 'Enter') {
-                        e.preventDefault();
-                        handleCommentSubmit(basicPostData.id);
-                      }
-                    }}
-                    className="flex-1 bg-transparent outline-none border-0 px-2 py-1"
                   />
+                </div>
 
-                  {/* Inline action buttons (emoji, GIF, photo, sticker) */}
-                  <div className="flex items-center gap-1">
-                    {/* Emoji button */}
-                    <button
-                      type="button"
-                      className={`w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700 ${showEmojiPicker === `modal-comment-${basicPostData.id}` ? 'bg-blue-200' : ''}`}
-                      title="Choose an emoji"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        toggleEmojiPicker(`modal-comment-${basicPostData.id}`);
+                <div className="relative flex-1" data-mention-anchor="true">
+
+                  <div className="w-full border rounded-full px-2 py-1 text-sm bg-white flex items-center gap-2 focus-within:ring-2 focus-within:ring-blue-400 relative">
+                    {/* Combined input container so images appear inside */}
+
+                    {/* Thumbnails inside the input */}
+                    {Array.isArray(modalReplyImages[`modal-comment-${basicPostData.id}`]) && modalReplyImages[`modal-comment-${basicPostData.id}`].length > 0 && (
+                      <div className="flex items-center gap-1 max-w-32 overflow-x-auto">
+                        {modalReplyImages[`modal-comment-${basicPostData.id}`].map((img, idx) => (
+                          <div key={img.id || idx} className="relative w-7 h-7 flex-shrink-0">
+                            <img src={img.previewUrl} className="w-7 h-7 object-cover rounded" alt="preview" />
+                            <button
+                              type="button"
+                              className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white text-[10px] leading-4 text-red-600 border"
+                              onClick={() => clearReplyImage(`modal-comment-${basicPostData.id}`, idx)}
+                              title="Remove"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <input
+                      type="text"
+                      placeholder="Write a comment..."
+                      value={commentInputs[basicPostData.id] || ""}
+                      ref={(el) => (inputRefs.current[`modal-comment-${basicPostData.id}`] = el)}
+                      onChange={(e) => {
+                        setCommentInputs((prev) => ({
+                          ...prev,
+                          [basicPostData.id]: e.target.value,
+                        }));
+                        handleMentionDetect(e, `modal-comment-${basicPostData.id}`);
                       }}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                        <path d="M8 1C4.1 1 1 4.1 1 8s3.1 7 7 7 7-3.1 7-7-3.1-7-7-7zM5.5 6.5c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm5 0c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm1.5 4c-.4 1.2-1.5 2-2.8 2.1-.1 0-.1 0-.2 0-.1 0-.1 0-.2 0-1.3-.1-2.4-.9-2.8-2.1-.1-.3.1-.5.4-.5h4.8c.3 0 .5.2.4.5-.4z"/>
-                      </svg>
-                    </button>
+                      onKeyDown={(e) => {
+                        const handled = handleMentionKeyDown(e, `modal-comment-${basicPostData.id}`);
+                        if (!handled && e.key === 'Enter') {
+                          e.preventDefault();
+                          handleCommentSubmit(basicPostData.id);
+                        }
+                      }}
+                      className="flex-1 bg-transparent outline-none border-0 px-2 py-1"
+                    />
 
-
-                    {/* Photo attach */}
-                    <>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        style={{ display: 'none' }}
-                        ref={(el) => (fileInputRefs.current[`modal-comment-${basicPostData.id}`] = el)}
-                        onChange={(e) => handleReplyImageChange(e, `modal-comment-${basicPostData.id}`)}
-                      />
+                    {/* Inline action buttons (emoji, GIF, photo, sticker) */}
+                    <div className="flex items-center gap-1">
+                      {/* Emoji button */}
                       <button
                         type="button"
-                        className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
-                        title="Attach a photo"
+                        className={`w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700 ${showEmojiPicker === `modal-comment-${basicPostData.id}` ? 'bg-blue-200' : ''}`}
+                        title="Choose an emoji"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          handleReplyImageClick(`modal-comment-${basicPostData.id}`);
+                          toggleEmojiPicker(`modal-comment-${basicPostData.id}`);
                         }}
                       >
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                          <path d="M14.5 2h-13C.7 2 0 2.7 0 3.5v9c0 .8.7 1.5 1.5 1.5h13c.8 0 1.5-.7 1.5-1.5v-9c0-.8-.7-1.5-1.5-1.5zM5 4.5c.8 0 1.5.7 1.5 1.5S5.8 7.5 5 7.5 3.5 6.8 3.5 6 4.2 4.5 5 4.5zM13 12H3l2.5-3 1.5 2 3-4 3 5z"/>
+                          <path d="M8 1C4.1 1 1 4.1 1 8s3.1 7 7 7 7-3.1 7-7-3.1-7-7-7zM5.5 6.5c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm5 0c.6 0 1-.4 1-1s-.4-1-1-1-1 .4-1 1 .4 1 1 1zm1.5 4c-.4 1.2-1.5 2-2.8 2.1-.1 0-.1 0-.2 0-.1 0-.1 0-.2 0-1.3-.1-2.4-.9-2.8-2.1-.1-.3.1-.5.4-.5h4.8c.3 0 .5.2.4.5-.4z" />
                         </svg>
                       </button>
-                    </>
 
+
+                      {/* Photo attach */}
+                      <>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          style={{ display: 'none' }}
+                          ref={(el) => (fileInputRefs.current[`modal-comment-${basicPostData.id}`] = el)}
+                          onChange={(e) => handleReplyImageChange(e, `modal-comment-${basicPostData.id}`)}
+                        />
+                        <button
+                          type="button"
+                          className="w-7 h-7 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
+                          title="Attach a photo"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleReplyImageClick(`modal-comment-${basicPostData.id}`);
+                          }}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M14.5 2h-13C.7 2 0 2.7 0 3.5v9c0 .8.7 1.5 1.5 1.5h13c.8 0 1.5-.7 1.5-1.5v-9c0-.8-.7-1.5-1.5-1.5zM5 4.5c.8 0 1.5.7 1.5 1.5S5.8 7.5 5 7.5 3.5 6.8 3.5 6 4.2 4.5 5 4.5zM13 12H3l2.5-3 1.5 2 3-4 3 5z" />
+                          </svg>
+                        </button>
+                      </>
+
+                    </div>
                   </div>
-                </div>
 
-                {/* Emoji Picker for comment */}
+                  {/* Emoji Picker for comment */}
                   {showEmojiPicker === `modal-comment-${basicPostData.id}` && (
-                    <div 
+                    <div
                       className="emoji-picker-container absolute bottom-full right-0 mb-2 bg-white border rounded-lg shadow-xl z-50 w-80 max-h-96 overflow-hidden"
                       onClick={(e) => e.stopPropagation()}
                       onMouseDown={(e) => e.stopPropagation()}
@@ -5481,11 +5468,10 @@ const reactionsImages = (item) => {
                         {Object.keys(emojiCategories).map((category) => (
                           <button
                             key={category}
-                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                              activeEmojiCategory === category 
-                                ? 'bg-blue-500 text-white' 
-                                : 'bg-white text-gray-600 hover:bg-gray-100'
-                            }`}
+                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${activeEmojiCategory === category
+                              ? 'bg-blue-500 text-white'
+                              : 'bg-white text-gray-600 hover:bg-gray-100'
+                              }`}
                             onClick={() => setActiveEmojiCategory(category)}
                           >
                             {emojiCategories[category].name.split(' ')[0]}
@@ -5517,17 +5503,17 @@ const reactionsImages = (item) => {
                     </div>
                   )}
 
-                  
+
+                </div>
+                <button
+                  onClick={() => handleCommentSubmit(basicPostData.id)}
+                  className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-full text-sm font-semibold disabled:opacity-50"
+                  disabled={!((commentInputs[basicPostData.id] && commentInputs[basicPostData.id].trim()) || (Array.isArray(modalReplyImages[`modal-comment-${basicPostData.id}`]) && modalReplyImages[`modal-comment-${basicPostData.id}`].length > 0))}
+                >
+                  Post
+                </button>
               </div>
-              <button
-                onClick={() => handleCommentSubmit(basicPostData.id)}
-                className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-full text-sm font-semibold disabled:opacity-50"
-                disabled={!((commentInputs[basicPostData.id] && commentInputs[basicPostData.id].trim()) || (Array.isArray(modalReplyImages[`modal-comment-${basicPostData.id}`]) && modalReplyImages[`modal-comment-${basicPostData.id}`].length > 0))}
-              >
-                Post
-              </button>
             </div>
-           </div>
           </div>
         </div>
       )}
@@ -5543,7 +5529,7 @@ const reactionsImages = (item) => {
             >
               ×
             </button>
-            
+
             {/* Previous button */}
             {previewImages.length > 1 && currentImageIndex > 0 && (
               <button
@@ -5553,7 +5539,7 @@ const reactionsImages = (item) => {
                 ‹
               </button>
             )}
-            
+
             {/* Next button */}
             {previewImages.length > 1 && currentImageIndex < previewImages.length - 1 && (
               <button
@@ -5563,14 +5549,14 @@ const reactionsImages = (item) => {
                 ›
               </button>
             )}
-            
+
             {/* Image */}
             <img
               src={previewImage}
               alt="Preview"
               className="max-w-full max-h-full object-contain"
             />
-            
+
             {/* Image counter */}
             {previewImages.length > 1 && (
               <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white bg-black bg-opacity-50 px-3 py-1 rounded">
@@ -5652,7 +5638,7 @@ const reactionsImages = (item) => {
                 </div>
               </div>
 
-            
+
 
               {/* Profile details */}
               <div className="space-y-2 text-sm text-gray-600 mb-4">
@@ -5667,7 +5653,7 @@ const reactionsImages = (item) => {
                 {profilePopup.profileData.education && (
                   <div className="flex items-center gap-2">
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/>
+                      <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
                     </svg>
                     <span>Studied at {profilePopup.profileData.education}</span>
                   </div>
@@ -5691,7 +5677,7 @@ const reactionsImages = (item) => {
                 {profilePopup.profileData.mutualFriends > 0 && (
                   <div className="flex items-center gap-2">
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
+                      <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
                     </svg>
                     <span>{profilePopup.profileData.mutualFriends} mutual friends</span>
                   </div>
@@ -5716,7 +5702,7 @@ const reactionsImages = (item) => {
                   View Profile
                 </Link>
                 {profilePopup.profileData.isFollowing ? (
-                  <button 
+                  <button
                     className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 transition-colors font-medium text-sm disabled:opacity-50"
                     onClick={() => handleFollowToggle(profilePopup.profileData.id, true)}
                     disabled={followLoading}
@@ -5731,7 +5717,7 @@ const reactionsImages = (item) => {
                     )}
                   </button>
                 ) : (
-                  <button 
+                  <button
                     className="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors font-medium text-sm disabled:opacity-50"
                     onClick={() => handleFollowToggle(profilePopup.profileData.id, false)}
                     disabled={followLoading}
@@ -5747,7 +5733,7 @@ const reactionsImages = (item) => {
                   </button>
                 )}
               </div>
-              
+
               {/* Message button (secondary row) */}
               {/* <div className="mt-2">
                 <button 
@@ -5764,7 +5750,7 @@ const reactionsImages = (item) => {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
           )}
-          
+
           {/* Popup arrow */}
           <div className="absolute bottom-0 left-1/2 transform translate-y-full -translate-x-1/2">
             <div className="w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-white"></div>

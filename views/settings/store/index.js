@@ -203,15 +203,13 @@ export const getPostBackgrounds = createAsyncThunk( 'settings/getPostBackgrounds
 
 // work settings in edit details page
 export const saveWork = createAsyncThunk( 'settings/saveWork', async (data) => {
-  const result = axios.post( `/client/save_work`, data)
-  .then((res) => {
-      const resData = res.data.data;
-      return resData;
-  })
-  .catch((err) => {
-      errorResponse(err);
-  })
-  return result;
+  try {
+    const res = await axios.post( `/client/save_work`, data);
+    return res.data.data;
+  } catch (err) {
+    errorResponse(err);
+    throw err; // Re-throw so the thunk properly rejects
+  }
 } )
 
 export const updateWork = createAsyncThunk( 'settings/updateWork', async (data) => {
@@ -240,15 +238,13 @@ export const deleteWork = createAsyncThunk( 'settings/deleteWork', async (id) =>
 
 // education settings in edit details page
 export const saveEducation = createAsyncThunk( 'settings/saveEducation', async (data) => {
-  const result = axios.post( `/client/save_education`, data)
-  .then((res) => {
-      const resData = res.data.data;
-      return resData;
-  })
-  .catch((err) => {
-      errorResponse(err);
-  })
-  return result;
+  try {
+    const res = await axios.post( `/client/save_education`, data);
+    return res.data.data;
+  } catch (err) {
+    errorResponse(err);
+    throw err; // Re-throw so the thunk properly rejects
+  }
 } )
 
 export const updateEducation = createAsyncThunk( 'settings/updateEducation', async (data) => {

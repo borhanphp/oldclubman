@@ -7,6 +7,7 @@ import { FaGlobeAmericas, FaLock } from "react-icons/fa";
 import { SlLike } from "react-icons/sl";
 import { IoMdShareAlt } from "react-icons/io";
 import { FaRegComment } from "react-icons/fa6";
+import { getImageUrl } from "@/utility";
 
 const CommentModal = ({
   isOpen,
@@ -77,7 +78,7 @@ const CommentModal = ({
           <div className="flex items-center gap-2 mb-2">
             <div className="w-10 h-10 rounded-full overflow-hidden">
               <img
-                src={ basicPostData?.client?.image ?
+                src={basicPostData?.client?.image ?
                   process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
                   basicPostData?.client?.image : "/common-avator.jpg"
                 }
@@ -102,7 +103,7 @@ const CommentModal = ({
                 {moment(basicPostData?.created_at).format("MMM DD") +
                   " at " +
                   moment(basicPostData.created_at).format("HH:MM A")} {" "}
-                    <span>•</span>
+                <span>•</span>
 
                 {basicPostData.privacy_mode === "public" ? (
                   <FaGlobeAmericas className="mt-[3px]" />
@@ -113,43 +114,42 @@ const CommentModal = ({
             </div>
           </div>
           {/* Post message */}
-          {/\/post_background\/.+/.test(basicPostData?.background_url) ? 
-          <>
-            <div 
-            className="relative text-white p-4 text-center text-[40px] w-full min-h-[300px] rounded-lg flex items-center justify-center bg-cover bg-center bg-no-repeat"
-            style={{
-              backgroundImage: `url(${basicPostData?.background_url})`,
-            }}
-          >
-          
-            {basicPostData?.message}
-            
-           
-          </div>
-          </>
-          :  
-          <div className="text-gray-800 mb-4 break-words">
-            {renderContentWithMentions(basicPostData.message)}
-          </div>
+          {/\/post_background\/.+/.test(basicPostData?.background_url) ?
+            <>
+              <div
+                className="relative text-white p-4 text-center text-[40px] w-full min-h-[300px] rounded-lg flex items-center justify-center bg-cover bg-center bg-no-repeat"
+                style={{
+                  backgroundImage: `url(${basicPostData?.background_url})`,
+                }}
+              >
+
+                {basicPostData?.message}
+
+
+              </div>
+            </>
+            :
+            <div className="text-gray-800 mb-4 break-words">
+              {renderContentWithMentions(basicPostData.message)}
+            </div>
           }
-         
+
           {/* Post images if any */}
           {basicPostData.files && basicPostData.files.length > 0 && (
             <div
-              className={`mt-3 grid cursor-pointer ${
-                basicPostData.files.length === 1
-                  ? "grid-cols-1"
-                  : basicPostData.files.length >= 2
+              className={`mt-3 grid cursor-pointer ${basicPostData.files.length === 1
+                ? "grid-cols-1"
+                : basicPostData.files.length >= 2
                   ? "grid-cols-2"
                   : ""
-              } gap-2 mb-4`}
+                } gap-2 mb-4`}
             >
               {basicPostData.files.map((file, fileIndex) => {
                 // Determine if file is a video by extension
                 const filePath = file.file_path || file.path || file.url || file.file_url || '';
                 const isVideo = /\.(mp4|webm|ogg|mov|avi)$/i.test(filePath);
-                const src = process.env.NEXT_PUBLIC_FILE_PATH + "/" + filePath;
-                
+                const src = getImageUrl(filePath, 'post');
+
                 // Prepare all images for preview
                 const allImages = basicPostData.files
                   .filter(f => {
@@ -158,17 +158,16 @@ const CommentModal = ({
                   })
                   .map(f => {
                     const fPath = f.file_path || f.path || f.url || f.file_url || '';
-                    return process.env.NEXT_PUBLIC_FILE_PATH + "/" + fPath;
+                    return getImageUrl(fPath, 'post');
                   });
-                
+
                 const imageIndex = allImages.indexOf(src);
-                
+
                 return (
                   <div
                     key={fileIndex}
-                    className={`overflow-hidden rounded-lg ${
-                      basicPostData.files.length === 1 ? "max-h-96" : "h-48"
-                    } bg-gray-100`}
+                    className={`overflow-hidden rounded-lg ${basicPostData.files.length === 1 ? "max-h-96" : "h-48"
+                      } bg-gray-100`}
                   >
                     {isVideo ? (
                       <video controls className="w-full h-full object-cover">
@@ -249,19 +248,19 @@ const CommentModal = ({
                   </div>
                 </button>
                 {showReactionsFor === basicPostData.id && (
-                   <div 
-                   className="reactions-container"
-                   onMouseEnter={() => setShowReactionsFor(basicPostData.id)}
-                   onMouseLeave={() => setShowReactionsFor(null)}
-                 >
-                   {reactionsImages(basicPostData)}
-                 </div>
+                  <div
+                    className="reactions-container"
+                    onMouseEnter={() => setShowReactionsFor(basicPostData.id)}
+                    onMouseLeave={() => setShowReactionsFor(null)}
+                  >
+                    {reactionsImages(basicPostData)}
+                  </div>
                 )}
               </div>
             </div>
-            <button 
-             onClick={() => {handleShare(basicPostData?.id)}}
-            className="flex-1 py-1 cursor-pointer text-center text-gray-500 hover:bg-gray-100 rounded-md">
+            <button
+              onClick={() => { handleShare(basicPostData?.id) }}
+              className="flex-1 py-1 cursor-pointer text-center text-gray-500 hover:bg-gray-100 rounded-md">
               <div className="flex items-center justify-center gap-2">
                 <IoMdShareAlt /> <span>Share</span>
               </div>
@@ -271,13 +270,13 @@ const CommentModal = ({
           {/* Comments Section */}
           <h4 className="font-semibold mb-4 text-lg">Comments</h4>
           {basicPostData?.comments &&
-          basicPostData?.comments?.length > 0 ? (
+            basicPostData?.comments?.length > 0 ? (
             basicPostData?.comments?.map((c, i) => (
               <div key={i} className="mb-4 flex items-start">
                 <div className="relative mr-3">
                   <div className="w-9 h-9 rounded-full overflow-hidden">
                     <img
-                      src={ c?.client?.image ?
+                      src={c?.client?.image ?
                         process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
                         c?.client?.image : "/common-avator.jpg"
                       }
@@ -328,61 +327,61 @@ const CommentModal = ({
                       onClick={() => handleModalCommentLike(c)}
                       type="button"
                     >
-                       {!c.single_reaction ? (
-                    <>
-                      <span>Like</span>
-                    </>
-                  ) : (
-                    <span className="inline-block">
-                      {c?.single_reaction?.type === "like" && (
-                        <span className="font-semibold">
-                          <span className="text-blue-500 text-[12px]">Like</span>
+                      {!c.single_reaction ? (
+                        <>
+                          <span>Like</span>
+                        </>
+                      ) : (
+                        <span className="inline-block">
+                          {c?.single_reaction?.type === "like" && (
+                            <span className="font-semibold">
+                              <span className="text-blue-500 text-[12px]">Like</span>
+                            </span>
+                          )}
+                          {c?.single_reaction?.type === "love" && (
+                            <span className="font-semibold">
+                              <span className="text-red-700 text-[12px]">
+                                Love
+                              </span>
+                            </span>
+                          )}
+                          {c?.single_reaction?.type === "care" && (
+                            <span className="font-semibold">
+                              <span className="text-yellow-700 text-[12px]">
+                                Care
+                              </span>
+                            </span>
+                          )}
+                          {c?.single_reaction?.type === "haha" && (
+                            <span className="font-semibold">
+                              <span className="text-yellow-700 text-[12px]">
+                                Haha
+                              </span>
+                            </span>
+                          )}
+                          {c?.single_reaction?.type === "wow" && (
+                            <span className="font-semibold">
+                              <span className="text-yellow-700 text-[12px]">
+                                Wow
+                              </span>
+                            </span>
+                          )}
+                          {c?.single_reaction?.type === "sad" && (
+                            <span className="font-semibold">
+                              <span className="text-yellow-700 text-[12px]">
+                                Sad
+                              </span>
+                            </span>
+                          )}
+                          {c?.single_reaction?.type === "angry" && (
+                            <span className="font-semibold">
+                              <span className="text-red-500 text-[12px]">
+                                Angry
+                              </span>
+                            </span>
+                          )}
                         </span>
                       )}
-                      {c?.single_reaction?.type === "love" && (
-                        <span className="font-semibold">
-                          <span className="text-red-700 text-[12px]">
-                            Love
-                          </span>
-                        </span>
-                      )}
-                      {c?.single_reaction?.type === "care" && (
-                        <span className="font-semibold">
-                          <span className="text-yellow-700 text-[12px]">
-                            Care
-                          </span>
-                        </span>
-                      )}
-                      {c?.single_reaction?.type === "haha" && (
-                        <span className="font-semibold">
-                          <span className="text-yellow-700 text-[12px]">
-                            Haha
-                          </span>
-                        </span>
-                      )}
-                      {c?.single_reaction?.type === "wow" && (
-                        <span className="font-semibold">
-                          <span className="text-yellow-700 text-[12px]">
-                            Wow
-                          </span>
-                        </span>
-                      )}
-                      {c?.single_reaction?.type === "sad" && (
-                        <span className="font-semibold">
-                          <span className="text-yellow-700 text-[12px]">
-                            Sad
-                          </span>
-                        </span>
-                      )}
-                      {c?.single_reaction?.type === "angry" && (
-                        <span className="font-semibold">
-                          <span className="text-red-500 text-[12px]">
-                            Angry
-                          </span>
-                        </span>
-                      )}
-                    </span>
-                  )}
                       {showCommentReactionsFor === c.id && (
                         <div
                           ref={commentReactionRef}
@@ -476,13 +475,13 @@ const CommentModal = ({
                         placeholder={`Reply to ${c?.client_comment?.fname || ""}`}
                         value={modalReplyInputs[`reply-${i}-${c.id}`] || ""}
                         ref={(el) => (inputRefs.current[`reply-${i}-${c.id}`] = el)}
-                        onChange={(e) =>
-                          { setModalReplyInputs((prev) => ({
-                              ...prev,
-                              [`reply-${i}-${c.id}`]: e.target.value,
-                            }));
-                            handleMentionDetect(e, `reply-${i}-${c.id}`);
-                          }
+                        onChange={(e) => {
+                          setModalReplyInputs((prev) => ({
+                            ...prev,
+                            [`reply-${i}-${c.id}`]: e.target.value,
+                          }));
+                          handleMentionDetect(e, `reply-${i}-${c.id}`);
+                        }
                         }
                         onKeyDown={(e) => {
                           const handled = handleMentionKeyDown(e, `reply-${i}-${c.id}`);
@@ -547,7 +546,7 @@ const CommentModal = ({
                         <img
                           src={
                             process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
-                              reply?.client_comment?.image || "/common-avator.jpg"
+                            reply?.client_comment?.image || "/common-avator.jpg"
                           }
                           className="w-full h-full object-cover"
                         />
@@ -573,7 +572,7 @@ const CommentModal = ({
                             {renderContentWithMentions(reply.content || reply.text)}
                           </span>
                         </div>
-                        
+
                         {/* Reply actions row */}
                         <div className="flex items-center gap-2 mt-1 ml-2 text-[12px] text-gray-600">
                           <span>{formatCompactTime(reply.created_at)}</span>
@@ -790,7 +789,7 @@ const CommentModal = ({
         <div className="p-4 bg-gray-50 flex items-center gap-2">
           <div className="w-9 h-9 rounded-full overflow-hidden">
             <img
-              src={ profile?.client?.image ? 
+              src={profile?.client?.image ?
                 process.env.NEXT_PUBLIC_CLIENT_FILE_PATH +
                 profile?.client?.image : "/common-avator.jpg"
               }

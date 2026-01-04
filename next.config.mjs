@@ -34,11 +34,22 @@ const nextConfig = {
         hostname: 'api.oldclubman.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'd154q69kxu0fuf.cloudfront.net',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'oldclub-bucket.s3.amazonaws.com',
+        pathname: '/**',
+      },
+
     ],
     // Fallback for older config
     domains: [
-      'images.unsplash.com', 
-      'localhost', 
+      'images.unsplash.com',
+      'localhost',
       'oldclubman.com',
       'test-api.oldclubman.com',
       'api.oldclubman.com',
