@@ -9,7 +9,6 @@ import api from "@/helpers/axios";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from 'react-redux';
 import { getMyProfile } from '@/views/settings/store';
-import Intro from "@/components/common/Intro";
 import BodyLayout from "@/components/common/BodyLayout";
 
 const categories = [
@@ -19,13 +18,82 @@ const categories = [
   { key: "electronics", label: "Electronics", icon: <FaShoppingBag /> },
 ];
 
+// Marketplace-specific Intro component with gradient banner
+const MarketplaceIntro = ({ profile }) => {
+  // Helper function to get client image URL without duplication
+  const getClientImageUrl = (imagePath, fallback = "/common-avator.jpg") => {
+    if (!imagePath) return fallback;
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
+    }
+    return process.env.NEXT_PUBLIC_FILE_PATH + imagePath;
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      {/* Gradient Banner - matching wallet design */}
+      <div className="bg-gradient-to-r from-purple-600 via-pink-500 to-pink-400 p-4 text-white relative">
+        <div className="text-xs font-medium opacity-90 mb-1">Total Listings Value</div>
+        <div className="text-2xl font-bold">
+          ৳{((profile?.sale_posts_count || 0) * 1000).toLocaleString()} <span className="text-sm font-normal opacity-80">BDT</span>
+        </div>
+        <div className="text-xs opacity-80 mt-1">{profile?.sale_posts_count || 0} Active Listings</div>
+        {/* Decorative circle */}
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/20 rounded-full"></div>
+      </div>
+
+      {/* Profile Section */}
+      <div className="flex flex-col items-center pt-4 pb-2">
+        <div className="w-16 h-16 rounded-full overflow-hidden bg-blue-100 mb-3 ring-2 ring-white shadow-md -mt-10 relative z-10">
+          <img
+            src={getClientImageUrl(profile?.client?.image)}
+            alt="Profile"
+            className="w-full h-full object-cover"
+          />
+        </div>
+
+        <h2 className="text-lg font-bold text-gray-800 mb-1">
+          {profile?.client ? profile?.client?.fname + " " + profile?.client?.last_name : "Loading..."}
+        </h2>
+
+        {/* Stats Row */}
+        <div className="flex justify-between items-center w-full px-6 border-b border-gray-100 pb-4 mt-2">
+          <div className="text-center flex-1">
+            <div className="font-bold text-lg text-gray-800">{profile?.post?.total || 0}</div>
+            <div className="text-gray-400 text-xs">Post</div>
+          </div>
+
+          <div className="h-8 w-px bg-gray-200"></div>
+
+          <div className="text-center flex-1">
+            <div className="font-bold text-lg text-blue-500">{profile?.followers || 0}</div>
+            <div className="text-blue-400 text-xs">Followers</div>
+          </div>
+
+          <div className="h-8 w-px bg-gray-200"></div>
+
+          <div className="text-center flex-1">
+            <div className="font-bold text-lg text-gray-800">{profile?.following || 0}</div>
+            <div className="text-gray-400 text-xs">Following</div>
+          </div>
+        </div>
+
+        <Link href={`/${profile?.client?.username}`} className="w-full py-2.5 text-blue-500 text-center text-sm font-medium hover:bg-blue-50 transition-colors">
+          View Profile
+        </Link>
+      </div>
+    </div>
+  );
+};
+
 const ProfileSidebar = ({ profile }) => {
   return (
-    <Intro />
+    <MarketplaceIntro profile={profile} />
   );
 };
 
 const Sidebar = ({
+  profile,
   search,
   setSearch,
   onCreateListing,
@@ -38,9 +106,9 @@ const Sidebar = ({
 }) => {
   return (
     <aside className="w-[320px] shrink-0 bg-white border-r border-gray-200 h-screen sticky top-0 overflow-y-auto shadow-sm">
-      {/* Profile Intro */}
+      {/* Profile Intro with Gradient Banner */}
       <div className="mb-2">
-        <Intro />
+        <MarketplaceIntro profile={profile} />
       </div>
       <div className="p-5">
         {/* Header */}
@@ -446,6 +514,7 @@ export default function MarketplacePage() {
       <div className="min-h-screen bg-gray-50 rounded-lg overflow-hidden">
         <div className="flex">
           <Sidebar
+            profile={profile}
             search={search}
             setSearch={setSearch}
             onCreateListing={onCreateListing}
