@@ -1034,7 +1034,7 @@ const MessagingContent = () => {
             <div className={`flex flex-col border-r border-gray-200 ${showSidebar ? 'block' : 'hidden'} md:block ${showSidebar ? 'w-full md:w-auto' : ''} absolute md:relative z-30 md:z-auto bg-white h-full`}>
 
               {/* Content area */}
-              <div className="w-full sm:w-80 flex flex-col bg-gray-50">
+              <div className="w-full sm:w-80 flex flex-col bg-gray-50 h-full overflow-hidden">
                 {/* Tabs */}
                 <div className="flex items-center justify-center gap-3 p-3 bg-gradient-to-r from-blue-600 to-blue-700 border-b border-blue-800">
                   <button
