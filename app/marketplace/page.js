@@ -9,91 +9,19 @@ import api from "@/helpers/axios";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from 'react-redux';
 import { getMyProfile } from '@/views/settings/store';
+import { getWalletBalance } from '@/views/wallet/store';
 import BodyLayout from "@/components/common/BodyLayout";
 
-const categories = [
-  { key: "vehicles", label: "Vehicles", icon: <FaBoxes /> },
-  { key: "property_rentals", label: "Property Rentals", icon: <FaHome /> },
-  { key: "apparel", label: "Apparel", icon: <FaTags /> },
-  { key: "electronics", label: "Electronics", icon: <FaShoppingBag /> },
-];
 
-// Marketplace-specific Intro component with gradient banner
-const MarketplaceIntro = ({ profile }) => {
-  // Helper function to get client image URL without duplication
-  const getClientImageUrl = (imagePath, fallback = "/common-avator.jpg") => {
-    if (!imagePath) return fallback;
-    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-      return imagePath;
-    }
-    return process.env.NEXT_PUBLIC_FILE_PATH + imagePath;
-  };
 
-  return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      {/* Gradient Banner - matching wallet design */}
-      <div className="bg-gradient-to-r from-purple-600 via-pink-500 to-pink-400 p-4 text-white relative">
-        <div className="text-xs font-medium opacity-90 mb-1">Total Listings Value</div>
-        <div className="text-2xl font-bold">
-          ৳{((profile?.sale_posts_count || 0) * 1000).toLocaleString()} <span className="text-sm font-normal opacity-80">BDT</span>
-        </div>
-        <div className="text-xs opacity-80 mt-1">{profile?.sale_posts_count || 0} Active Listings</div>
-        {/* Decorative circle */}
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/20 rounded-full"></div>
-      </div>
+import Intro from "@/components/common/Intro";
 
-      {/* Profile Section */}
-      <div className="flex flex-col items-center pt-4 pb-2">
-        <div className="w-16 h-16 rounded-full overflow-hidden bg-blue-100 mb-3 ring-2 ring-white shadow-md -mt-10 relative z-10">
-          <img
-            src={getClientImageUrl(profile?.client?.image)}
-            alt="Profile"
-            className="w-full h-full object-cover"
-          />
-        </div>
 
-        <h2 className="text-lg font-bold text-gray-800 mb-1">
-          {profile?.client ? profile?.client?.fname + " " + profile?.client?.last_name : "Loading..."}
-        </h2>
 
-        {/* Stats Row */}
-        <div className="flex justify-between items-center w-full px-6 border-b border-gray-100 pb-4 mt-2">
-          <div className="text-center flex-1">
-            <div className="font-bold text-lg text-gray-800">{profile?.post?.total || 0}</div>
-            <div className="text-gray-400 text-xs">Post</div>
-          </div>
-
-          <div className="h-8 w-px bg-gray-200"></div>
-
-          <div className="text-center flex-1">
-            <div className="font-bold text-lg text-blue-500">{profile?.followers || 0}</div>
-            <div className="text-blue-400 text-xs">Followers</div>
-          </div>
-
-          <div className="h-8 w-px bg-gray-200"></div>
-
-          <div className="text-center flex-1">
-            <div className="font-bold text-lg text-gray-800">{profile?.following || 0}</div>
-            <div className="text-gray-400 text-xs">Following</div>
-          </div>
-        </div>
-
-        <Link href={`/${profile?.client?.username}`} className="w-full py-2.5 text-blue-500 text-center text-sm font-medium hover:bg-blue-50 transition-colors">
-          View Profile
-        </Link>
-      </div>
-    </div>
-  );
-};
-
-const ProfileSidebar = ({ profile }) => {
-  return (
-    <MarketplaceIntro profile={profile} />
-  );
-};
 
 const Sidebar = ({
   profile,
+  giftCardTotalValue,
   search,
   setSearch,
   onCreateListing,
@@ -105,39 +33,40 @@ const Sidebar = ({
   onBrowseAll,
 }) => {
   return (
-    <aside className="w-[320px] shrink-0 bg-white border-r border-gray-200 h-screen sticky top-0 overflow-y-auto shadow-sm">
-      {/* Profile Intro with Gradient Banner */}
-      <div className="mb-2">
-        <MarketplaceIntro profile={profile} />
-      </div>
-      <div className="p-5">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Marketplace</h1>
-          <p className="text-sm text-gray-500">Find great deals near you</p>
-        </div>
+    <>
 
-        {/* Search */}
-        <div className="relative mb-6">
-          <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search products..."
-            className="w-full pl-11 pr-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm placeholder-gray-400"
-          />
-        </div>
+      <aside className="w-full shrink-0 bg-white border-r border-gray-200 h-screen sticky top-0 overflow-y-auto shadow-sm">
+        {/* Profile Intro with Gradient Banner */}
 
-        {/* Primary nav */}
-        <nav className="space-y-1 mb-6">
-          <button
-            onClick={onBrowseAll}
-            className="w-full text-left flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-gray-50 transition-colors group"
-          >
-            <FaShoppingBag className="text-blue-600 group-hover:text-blue-700" />
-            <span className="text-gray-700 group-hover:text-gray-900 font-medium">Browse all</span>
-          </button>
-          {/* <button className="w-full text-left flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-gray-50 transition-colors group">
+
+        <div className="p-5">
+          {/* Header */}
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">Marketplace</h1>
+            <p className="text-sm text-gray-500">Find great deals near you</p>
+          </div>
+
+          {/* Search */}
+          <div className="relative mb-6">
+            <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search products..."
+              className="w-full pl-11 pr-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm placeholder-gray-400"
+            />
+          </div>
+
+          {/* Primary nav */}
+          <nav className="space-y-1 mb-6">
+            <button
+              onClick={onBrowseAll}
+              className="w-full text-left flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-gray-50 transition-colors group"
+            >
+              <FaShoppingBag className="text-blue-600 group-hover:text-blue-700" />
+              <span className="text-gray-700 group-hover:text-gray-900 font-medium">Browse all</span>
+            </button>
+            {/* <button className="w-full text-left flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-gray-50 transition-colors group">
             <FaBell className="text-gray-500 group-hover:text-gray-700" />
             <span className="text-gray-600 group-hover:text-gray-900">Notifications</span>
           </button>
@@ -149,191 +78,193 @@ const Sidebar = ({
             <FaTags className="text-gray-500 group-hover:text-gray-700" />
             <span className="text-gray-600 group-hover:text-gray-900">Buying</span>
           </button> */}
-          <Link href="/marketplace/selling/listings" className="w-full text-left flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-gray-50 transition-colors group">
-            <FaBoxes className="text-gray-500 group-hover:text-gray-700" />
-            <span className="text-gray-600 group-hover:text-gray-900">Selling</span>
-          </Link>
-        </nav>
+            <Link href="/marketplace/selling/listings" className="w-full text-left flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-gray-50 transition-colors group">
+              <FaBoxes className="text-gray-500 group-hover:text-gray-700" />
+              <span className="text-gray-600 group-hover:text-gray-900">Selling</span>
+            </Link>
+          </nav>
 
-        {/* Create listing */}
-        <button
-          onClick={onCreateListing}
-          className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition-all shadow-md hover:shadow-lg font-semibold mb-6"
-        >
-          <IoAddCircle className="text-xl" />
-          <span>Create new listing</span>
-        </button>
+          {/* Create listing */}
+          <button
+            onClick={onCreateListing}
+            className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition-all shadow-md hover:shadow-lg font-semibold mb-6"
+          >
+            <IoAddCircle className="text-xl" />
+            <span>Create new listing</span>
+          </button>
 
-        {/* Filters Section */}
-        <div className="space-y-6 border-t border-gray-200 pt-6">
-          {/* Categories */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">Category</label>
-            <select
-              value={filters.category_id || ""}
-              onChange={(e) => setFilters({ ...filters, category_id: e.target.value || undefined })}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23374151%22%20d%3D%22M6%209L1%204h10z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_12px_center] bg-no-repeat"
-            >
-              <option value="">All Categories</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name || cat.title || cat.category_name || `Category ${cat.id}`}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Location Filters */}
-          <div>
-            <label className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-2">
-              <FaMapMarkerAlt className="text-gray-500" />
-              <span>Location</span>
-            </label>
-            <div className="space-y-2">
+          {/* Filters Section */}
+          <div className="space-y-6 border-t border-gray-200 pt-6">
+            {/* Categories */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">Category</label>
               <select
-                value={filters.country_id || ""}
-                onChange={(e) => setFilters({ ...filters, country_id: e.target.value || undefined, state_id: undefined, city_id: undefined })}
+                value={filters.category_id || ""}
+                onChange={(e) => setFilters({ ...filters, category_id: e.target.value || undefined })}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23374151%22%20d%3D%22M6%209L1%204h10z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_12px_center] bg-no-repeat"
+              >
+                <option value="">All Categories</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name || cat.title || cat.category_name || `Category ${cat.id}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Location Filters */}
+            <div>
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-2">
+                <FaMapMarkerAlt className="text-gray-500" />
+                <span>Location</span>
+              </label>
+              <div className="space-y-2">
+                <select
+                  value={filters.country_id || ""}
+                  onChange={(e) => setFilters({ ...filters, country_id: e.target.value || undefined, state_id: undefined, city_id: undefined })}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                >
+                  <option value="">Select Country</option>
+                  <option value="18">Bangladesh</option>
+                </select>
+                <select
+                  value={filters.state_id || ""}
+                  onChange={(e) => setFilters({ ...filters, state_id: e.target.value || undefined, city_id: undefined })}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:cursor-not-allowed"
+                  disabled={!filters.country_id}
+                >
+                  <option value="">Select State</option>
+                </select>
+                <select
+                  value={filters.city_id || ""}
+                  onChange={(e) => setFilters({ ...filters, city_id: e.target.value || undefined })}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:cursor-not-allowed"
+                  disabled={!filters.state_id}
+                >
+                  <option value="">Select City</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Price Range */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">Price Range</label>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <input
+                    type="number"
+                    value={filters.min_price || ""}
+                    onChange={(e) => setFilters({ ...filters, min_price: e.target.value || undefined })}
+                    placeholder="Min"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  />
+                </div>
+                <div>
+                  <input
+                    type="number"
+                    value={filters.max_price || ""}
+                    onChange={(e) => setFilters({ ...filters, max_price: e.target.value || undefined })}
+                    placeholder="Max"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Condition */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">Condition</label>
+              <select
+                value={filters.condition || ""}
+                onChange={(e) => setFilters({ ...filters, condition: e.target.value || undefined })}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               >
-                <option value="">Select Country</option>
-                <option value="18">Bangladesh</option>
+                <option value="">All Conditions</option>
+                <option value="1">New</option>
+                <option value="2">Like New</option>
+                <option value="3">Good</option>
+                <option value="4">Fair</option>
+                <option value="5">For Parts</option>
               </select>
+            </div>
+
+            {/* Availability */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">Availability</label>
               <select
-                value={filters.state_id || ""}
-                onChange={(e) => setFilters({ ...filters, state_id: e.target.value || undefined, city_id: undefined })}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:cursor-not-allowed"
-                disabled={!filters.country_id}
+                value={filters.availability || ""}
+                onChange={(e) => setFilters({ ...filters, availability: e.target.value || undefined })}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               >
-                <option value="">Select State</option>
-              </select>
-              <select
-                value={filters.city_id || ""}
-                onChange={(e) => setFilters({ ...filters, city_id: e.target.value || undefined })}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:cursor-not-allowed"
-                disabled={!filters.state_id}
-              >
-                <option value="">Select City</option>
+                <option value="">All</option>
+                <option value="1">In Stock</option>
+                <option value="2">Out of Stock</option>
+                <option value="3">Available Soon</option>
               </select>
             </div>
-          </div>
 
-          {/* Price Range */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">Price Range</label>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <input
-                  type="number"
-                  value={filters.min_price || ""}
-                  onChange={(e) => setFilters({ ...filters, min_price: e.target.value || undefined })}
-                  placeholder="Min"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                />
-              </div>
-              <div>
-                <input
-                  type="number"
-                  value={filters.max_price || ""}
-                  onChange={(e) => setFilters({ ...filters, max_price: e.target.value || undefined })}
-                  placeholder="Max"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                />
+            {/* Meetup Preferences */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-3">Meetup Options</label>
+              <div className="space-y-2.5">
+                <label className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors group">
+                  <input
+                    type="checkbox"
+                    checked={filters.public_meetup === "1"}
+                    onChange={(e) => setFilters({ ...filters, public_meetup: e.target.checked ? "1" : undefined })}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                  />
+                  <span className="text-sm text-gray-700 group-hover:text-gray-900">Public Meetup</span>
+                </label>
+                <label className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors group">
+                  <input
+                    type="checkbox"
+                    checked={filters.door_pickup === "1"}
+                    onChange={(e) => setFilters({ ...filters, door_pickup: e.target.checked ? "1" : undefined })}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                  />
+                  <span className="text-sm text-gray-700 group-hover:text-gray-900">Door Pickup</span>
+                </label>
+                <label className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors group">
+                  <input
+                    type="checkbox"
+                    checked={filters.door_dropoff === "1"}
+                    onChange={(e) => setFilters({ ...filters, door_dropoff: e.target.checked ? "1" : undefined })}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                  />
+                  <span className="text-sm text-gray-700 group-hover:text-gray-900">Door Dropoff</span>
+                </label>
               </div>
             </div>
-          </div>
 
-          {/* Condition */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">Condition</label>
-            <select
-              value={filters.condition || ""}
-              onChange={(e) => setFilters({ ...filters, condition: e.target.value || undefined })}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            >
-              <option value="">All Conditions</option>
-              <option value="1">New</option>
-              <option value="2">Like New</option>
-              <option value="3">Good</option>
-              <option value="4">Fair</option>
-              <option value="5">For Parts</option>
-            </select>
-          </div>
-
-          {/* Availability */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">Availability</label>
-            <select
-              value={filters.availability || ""}
-              onChange={(e) => setFilters({ ...filters, availability: e.target.value || undefined })}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            >
-              <option value="">All</option>
-              <option value="1">In Stock</option>
-              <option value="2">Out of Stock</option>
-              <option value="3">Available Soon</option>
-            </select>
-          </div>
-
-          {/* Meetup Preferences */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-3">Meetup Options</label>
-            <div className="space-y-2.5">
-              <label className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors group">
-                <input
-                  type="checkbox"
-                  checked={filters.public_meetup === "1"}
-                  onChange={(e) => setFilters({ ...filters, public_meetup: e.target.checked ? "1" : undefined })}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
-                />
-                <span className="text-sm text-gray-700 group-hover:text-gray-900">Public Meetup</span>
-              </label>
-              <label className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors group">
-                <input
-                  type="checkbox"
-                  checked={filters.door_pickup === "1"}
-                  onChange={(e) => setFilters({ ...filters, door_pickup: e.target.checked ? "1" : undefined })}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
-                />
-                <span className="text-sm text-gray-700 group-hover:text-gray-900">Door Pickup</span>
-              </label>
-              <label className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors group">
-                <input
-                  type="checkbox"
-                  checked={filters.door_dropoff === "1"}
-                  onChange={(e) => setFilters({ ...filters, door_dropoff: e.target.checked ? "1" : undefined })}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
-                />
-                <span className="text-sm text-gray-700 group-hover:text-gray-900">Door Dropoff</span>
-              </label>
+            {/* SKU Search */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">SKU</label>
+              <input
+                type="text"
+                value={filters.sku || ""}
+                onChange={(e) => setFilters({ ...filters, sku: e.target.value || undefined })}
+                placeholder="Enter SKU code"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400"
+              />
             </div>
-          </div>
 
-          {/* SKU Search */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">SKU</label>
-            <input
-              type="text"
-              value={filters.sku || ""}
-              onChange={(e) => setFilters({ ...filters, sku: e.target.value || undefined })}
-              placeholder="Enter SKU code"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400"
-            />
+            {/* Clear Filters */}
+            <button
+              onClick={() => {
+                setSearch("");
+                setFilters({});
+                setSelectedCategory("");
+              }}
+              className="w-full py-2.5 px-4 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors border border-gray-200"
+            >
+              Clear All Filters
+            </button>
           </div>
-
-          {/* Clear Filters */}
-          <button
-            onClick={() => {
-              setSearch("");
-              setFilters({});
-              setSelectedCategory("");
-            }}
-            className="w-full py-2.5 px-4 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors border border-gray-200"
-          >
-            Clear All Filters
-          </button>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
+
   );
 };
 
@@ -417,6 +348,7 @@ export default function MarketplacePage() {
   const router = useRouter();
   const dispatch = useDispatch();
   const { profile } = useSelector(({ settings }) => settings);
+  const { giftCardTotalValue } = useSelector(({ wallet }) => wallet);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState({});
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -426,6 +358,7 @@ export default function MarketplacePage() {
 
   useEffect(() => {
     dispatch(getMyProfile());
+    dispatch(getWalletBalance());
   }, [dispatch]);
 
   // Fetch categories on mount
@@ -512,20 +445,30 @@ export default function MarketplacePage() {
   return (
     <BodyLayout>
       <div className="min-h-screen bg-gray-50 rounded-lg overflow-hidden">
+
         <div className="flex">
-          <Sidebar
-            profile={profile}
-            search={search}
-            setSearch={setSearch}
-            onCreateListing={onCreateListing}
-            filters={filters}
-            setFilters={setFilters}
-            selectedCategory={selectedCategory}
-            setSelectedCategory={setSelectedCategory}
-            categories={categories}
-            onBrowseAll={handleBrowseAll}
-          />
-          <main className="flex-1">
+
+          <div className="w-full lg:w-1/4 mb-1 lg:mb-0 lg:pr-2">
+            <Intro />
+
+          </div>
+
+          <main className="flex w-full lg:w-3/4">
+            <div>
+              <Sidebar
+                profile={profile}
+                giftCardTotalValue={giftCardTotalValue}
+                search={search}
+                setSearch={setSearch}
+                onCreateListing={onCreateListing}
+                filters={filters}
+                setFilters={setFilters}
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+                categories={categories}
+                onBrowseAll={handleBrowseAll}
+              />
+            </div>
             <div className="px-6 py-4">
               <ListingGrid items={items} loading={loading} />
             </div>

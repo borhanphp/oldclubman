@@ -645,10 +645,11 @@ const MessagingContent = () => {
     // Remove leading slashes
     cleanPath = cleanPath.replace(/^\/+/, '');
 
-    // Get base URL without /api suffix
-    const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/api\/?$/, '');
+    // Get base URL without /api suffix and remove trailing slashes
+    const apiUrl = (process.env.NEXT_PUBLIC_FILE_PATH || '').replace(/\/+$/, '');
+    // const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/api\/?$/, '');
 
-    // Construct final URL
+    // Construct final URL with single slash between base URL and path
     const fullUrl = `${apiUrl}/${cleanPath}`;
 
     console.log('🖼️ Image URL:', { original: imagePath, cleaned: cleanPath, final: fullUrl });
@@ -1039,8 +1040,8 @@ const MessagingContent = () => {
                 <div className="flex items-center justify-center gap-3 p-3 bg-gradient-to-r from-blue-600 to-blue-700 border-b border-blue-800">
                   <button
                     className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 ${activeTab === 'chats'
-                        ? 'bg-white text-blue-600 shadow-lg'
-                        : 'bg-blue-500 bg-opacity-50 text-white hover:bg-opacity-70'
+                      ? 'bg-white text-blue-600 shadow-lg'
+                      : 'bg-blue-500 bg-opacity-50 text-white hover:bg-opacity-70'
                       }`}
                     onClick={() => handleTabChange('chats')}
                   >
@@ -1049,8 +1050,8 @@ const MessagingContent = () => {
                   </button>
                   <button
                     className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 ${activeTab === 'contacts'
-                        ? 'bg-white text-blue-600 shadow-lg'
-                        : 'bg-blue-500 bg-opacity-50 text-white hover:bg-opacity-70'
+                      ? 'bg-white text-blue-600 shadow-lg'
+                      : 'bg-blue-500 bg-opacity-50 text-white hover:bg-opacity-70'
                       }`}
                     onClick={() => handleTabChange('contacts')}
                   >
@@ -1338,8 +1339,8 @@ const MessagingContent = () => {
                           {/* Only render message bubble if there's content or file/image/video */}
                           {(message.content || ((message.type === 'file' || message.type === 'image' || message.type === 'video') && fileInfo)) && (
                             <div className={`max-w-[75%] md:max-w-sm lg:max-w-lg ${isCurrentUser
-                                ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl rounded-br-md shadow-md'
-                                : 'bg-white border border-gray-200 rounded-2xl rounded-bl-md shadow-sm'
+                              ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl rounded-br-md shadow-md'
+                              : 'bg-white border border-gray-200 rounded-2xl rounded-bl-md shadow-sm'
                               } p-3 md:p-3.5 hover:shadow-lg transition-all duration-200`}>
                               {(message.type === 'file' || message.type === 'image' || message.type === 'video') && fileInfo && (
                                 <div className="mb-2">
@@ -1389,8 +1390,8 @@ const MessagingContent = () => {
                                         <button
                                           onClick={() => handleFileDownload(getImageUrl(fileInfo.path), fileInfo.name)}
                                           className={`ml-2 text-xs px-3 py-1.5 rounded-md font-medium transition-all ${isCurrentUser
-                                              ? 'bg-white text-blue-600 hover:bg-blue-50'
-                                              : 'bg-blue-500 text-white hover:bg-blue-600'
+                                            ? 'bg-white text-blue-600 hover:bg-blue-50'
+                                            : 'bg-blue-500 text-white hover:bg-blue-600'
                                             } shadow-sm`}
                                         >
                                           Download
@@ -1529,8 +1530,8 @@ const MessagingContent = () => {
                     />
                     <button
                       className={`p-2.5 md:p-3 rounded-xl transition-all duration-200 shadow-sm ${(newMessage.trim() || selectedFile)
-                          ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-lg transform hover:scale-105'
-                          : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-lg transform hover:scale-105'
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                         }`}
                       onClick={handleSendMessage}
                       disabled={!newMessage.trim() && !selectedFile}

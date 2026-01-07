@@ -521,8 +521,9 @@ const ChatBox = ({ user, currentChat, onClose }) => {
     // Remove leading slashes
     cleanPath = cleanPath.replace(/^\/+/, '');
 
-    // Get base URL without /api suffix
-    const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/api\/?$/, '');
+    // Get base URL without /api suffix and remove trailing slashes
+    const apiUrl = (process.env.NEXT_PUBLIC_FILE_PATH || '').replace(/\/+$/, '');
+    // const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/api\/?$/, '');
 
     // Construct final URL
     const fullUrl = `${apiUrl}/${cleanPath}`;
@@ -602,8 +603,8 @@ const ChatBox = ({ user, currentChat, onClose }) => {
                 >
                   <div
                     className={`max-w-[70%] rounded-lg px-2 py-1 ${String(msg?.user_id) === String(profile?.client?.id)
-                        ? 'bg-blue-600 text-white rounded-br-none'
-                        : 'bg-gray-200 text-gray-800 rounded-bl-none'
+                      ? 'bg-blue-600 text-white rounded-br-none'
+                      : 'bg-gray-200 text-gray-800 rounded-bl-none'
                       }`}
                   >
                     {/* Render images and files */}
