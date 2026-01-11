@@ -76,6 +76,23 @@ const PostCommentsModal = ({
 
     const commentReactionRef = useRef(null);
 
+    // Strip HTML tags helper for background posts
+    const stripHtmlTags = useCallback((html) => {
+        if (!html) return "";
+        // Remove HTML tags and decode entities
+        const stripped = html
+            .replace(/<br\s*\/?>/gi, '\n')  // Convert <br> to newlines
+            .replace(/<\/p>\s*<p>/gi, '\n') // Convert paragraph breaks to newlines
+            .replace(/<[^>]*>/g, '')         // Remove all other HTML tags
+            .replace(/&nbsp;/g, ' ')         // Replace &nbsp; with spaces
+            .replace(/&amp;/g, '&')          // Decode &amp;
+            .replace(/&lt;/g, '<')           // Decode &lt;
+            .replace(/&gt;/g, '>')           // Decode &gt;
+            .replace(/\n{3,}/g, '\n\n')      // Collapse multiple newlines
+            .trim();
+        return stripped;
+    }, []);
+
     // Format time helper
     const formatCompactTime = useCallback((timestamp) => {
         if (!timestamp) return "";
@@ -506,7 +523,7 @@ const PostCommentsModal = ({
                             className="relative text-white p-4 text-center text-[40px] w-full min-h-[300px] rounded-lg flex items-center justify-center bg-cover bg-center bg-no-repeat"
                             style={{ backgroundImage: `url(${basicPostData?.background_url})` }}
                         >
-                            {basicPostData?.message}
+                            {stripHtmlTags(basicPostData?.message)}
                         </div>
                     ) : (
                         <div className="text-gray-800 mb-4 break-words">
