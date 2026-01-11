@@ -938,11 +938,18 @@ const PostModal = () => {
   }, [checkInLocation, routeDestination, travelFrom, travelTo, showLocationModal]);
 
   const handleBackgroundSelect = (background) => {
+    const editor = messageEditorRef.current;
+    if (!editor) return;
 
-    const plainText = getPlainTextFromHtml(messageEditorRef.current.innerHTML || "");
-    messageEditorRef.current.innerText = "";
+    // Get the current plain text content
+    const plainText = getPlainTextFromHtml(editor.innerHTML || "");
 
-    dispatch(bindPostData({ ...basicPostData, message: plainText + " " }));
+    // Set the plain text content directly (don't clear the editor)
+    // This preserves the text when switching between backgrounds
+    editor.innerText = plainText;
+
+    // Update Redux state
+    dispatch(bindPostData({ ...basicPostData, message: plainText }));
     setSelectedBackground(background);
   };
 

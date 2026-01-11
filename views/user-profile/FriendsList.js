@@ -50,40 +50,47 @@ const FriendsList = () => {
     dispatch(unFollowTo({ following_id: id }))
   }
 
-  const FriendCard = ({ friend }) => (
+  const FriendCard = ({ friend }) => {
+    // For followers tab: friend.follower_client contains the follower's info
+    // For following tab: friend.following_client contains the person being followed
+    const clientData = friend?.following_client || friend?.follower_client;
+    const clientImage = clientData?.image;
+    const clientName = `${clientData?.fname || ''} ${clientData?.last_name || ''}`.trim();
+    const clientTagline = clientData?.tagline || friend?.tagline || 'No tagline';
+    const clientUsername = clientData?.username;
 
-    <div className="col-span-1">
-      <div className="bg-white rounded-lg p-4 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
-        <div className="flex items-center space-x-4">
-          <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
-            <img
-              src={friend?.image ? process.env.NEXT_PUBLIC_FILE_PATH + friend?.image : "/common-avator.jpg"}
-              alt={friend?.fname}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "/common-avator.jpg";
-              }}
-            />
+    return (
+      <div className="col-span-1">
+        <div className="bg-white rounded-lg p-4 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center space-x-4">
+            <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
+              <img
+                src={clientImage ? process.env.NEXT_PUBLIC_FILE_PATH + clientImage : "/common-avator.jpg"}
+                alt={clientName}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "/common-avator.jpg";
+                }}
+              />
+            </div>
+            <div>
+              <Link href={`/${clientUsername || ''}`} className="hover:underline">
+                <h3 className="font-semibold text-gray-900">{clientName || 'Unknown User'}</h3>
+              </Link>
+              <p className="text-sm text-gray-500">{clientTagline}</p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-semibold text-gray-900">{friend?.follower_client?.fname} {friend?.follower_client?.last_name}</h3>
-            <p className="text-sm text-gray-500">{friend?.tagline || 'No tagline'}</p>
+          <div className="flex items-center space-x-2">
+            <button onClick={() => { handleFollow(clientData?.id || friend?.id) }} className="px-3 py-1 cursor-pointer bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors flex items-center space-x-2">
+              <FaUserPlus className="text-sm" />
+              <span>{followLoading ? "Following..." : "Follow"}</span>
+            </button>
           </div>
-        </div>
-        <div className="flex items-center space-x-2">
-
-
-          <button onClick={() => { handleFollow(friend?.id) }} className="px-3 py-1 cursor-pointer bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors flex items-center space-x-2">
-            <FaUserPlus className="text-sm" />
-            <span>{followLoading ? "Following..." : "Follow"}</span>
-          </button>
-
         </div>
       </div>
-    </div>
-
-  );
+    );
+  };
 
 
   const friendsToDisplay = activeTab === 'followers' ? (userFollowers || []) : (userFollowing || []);
@@ -115,8 +122,8 @@ const FriendsList = () => {
                   key={tab?.id}
                   onClick={() => setActiveTab(tab?.id)}
                   className={`py-4 px-1 cursor-pointer border-b-2 font-medium text-sm ${activeTab === tab?.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                     }`}
                 >
                   {tab?.label}
