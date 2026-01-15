@@ -1016,35 +1016,44 @@ const PostList = ({ postsData }) => {
     }
   }, [buildMentionCandidates]);
 
-  const getInputValueByKey = (inputKey) => {
+  const getInputValueByKey = useCallback((inputKey) => {
     if (inputKey.startsWith("reply-") || inputKey.startsWith("single-reply-")) {
       return modalReplyInputs[inputKey] || "";
     }
-    if (inputKey.startsWith("modal-comment-") || inputKey.startsWith("post-comment-")) {
-      const parts = inputKey.split("-");
-      const postId = parts[parts.length - 1];
+    if (inputKey.startsWith("modal-comment-")) {
+      const postId = inputKey.replace("modal-comment-", "");
       return commentInputs[postId] || "";
     }
+    if (inputKey.startsWith("post-comment-")) {
+      const postId = inputKey.replace("post-comment-", "");
+      return commentInputs[postId] || "";
+    }
+    // Fallback for other formats
     const parts = inputKey.split("-");
     const postId = parts[parts.length - 1];
     return commentInputs[postId] || "";
-  };
+  }, [modalReplyInputs, commentInputs]);
 
-  const setInputValueByKey = (inputKey, value) => {
+  const setInputValueByKey = useCallback((inputKey, value) => {
     if (inputKey.startsWith("reply-") || inputKey.startsWith("single-reply-")) {
       setModalReplyInputs((prev) => ({ ...prev, [inputKey]: value }));
       return;
     }
-    if (inputKey.startsWith("modal-comment-") || inputKey.startsWith("post-comment-")) {
-      const parts = inputKey.split("-");
-      const postId = parts[parts.length - 1];
+    if (inputKey.startsWith("modal-comment-")) {
+      const postId = inputKey.replace("modal-comment-", "");
       setCommentInputs((prev) => ({ ...prev, [postId]: value }));
       return;
     }
+    if (inputKey.startsWith("post-comment-")) {
+      const postId = inputKey.replace("post-comment-", "");
+      setCommentInputs((prev) => ({ ...prev, [postId]: value }));
+      return;
+    }
+    // Fallback for other formats
     const parts = inputKey.split("-");
     const postId = parts[parts.length - 1];
     setCommentInputs((prev) => ({ ...prev, [postId]: value }));
-  };
+  }, []);
 
   const calculateCaretOffset = useCallback((inputElement, selectionStart, value) => {
     if (!inputElement) return { left: 0 };
@@ -1156,7 +1165,7 @@ const PostList = ({ postsData }) => {
         input.setSelectionRange(newCaret, newCaret);
       }
     }, 0);
-  }, [resetMentionState]);
+  }, [resetMentionState, getInputValueByKey, setInputValueByKey]);
 
   // Handle infinite scrolling in mention dropdown
   useEffect(() => {
@@ -3320,8 +3329,28 @@ const PostList = ({ postsData }) => {
 
                 </>
                 :
-                <div className="py-2  text-[12px] sm:text-base md:text-lg leading-relaxed max-w-full sm:max-w-prose break-words">
-                  {renderContentWithMentions(item?.message)}
+                <div className="py-2 text-[12px] sm:text-base md:text-lg leading-relaxed max-w-full sm:max-w-prose break-words">
+                  {/* Post message with line clamping */}
+                  <div
+                    className={expandedPosts.has(item.id) ? '' : 'line-clamp-2'}
+                    style={!expandedPosts.has(item.id) ? {
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden'
+                    } : {}}
+                  >
+                    {renderContentWithMentions(item?.message)}
+                  </div>
+                  {/* See more / See less button */}
+                  {item?.message && item.message.length > 150 && (
+                    <button
+                      className="text-gray-500 hover:text-gray-700 hover:underline text-sm mt-1 cursor-pointer"
+                      onClick={() => togglePostExpansion(item.id)}
+                    >
+                      {expandedPosts.has(item.id) ? 'See less' : 'See more'}
+                    </button>
+                  )}
                 </div>
 
               }
@@ -4105,9 +4134,9 @@ const PostList = ({ postsData }) => {
                     }}
                   />
                 </div>
-                <div className="flex-grow relative" data-mention-anchor="true">
+                <div className="flex-grow relative overflow-visible" data-mention-anchor="true">
                   {/* Combined input container with image previews */}
-                  <div className="w-full border rounded-full px-2 py-1 text-sm bg-gray-100 flex items-center gap-2 focus-within:ring-2 focus-within:ring-blue-400 relative">
+                  <div className="w-full border rounded-full px-2 py-1 text-sm bg-gray-100 flex items-center gap-2 focus-within:ring-2 focus-within:ring-blue-400 relative overflow-visible">
                     {/* Photo thumbnails inside the input */}
                     {Array.isArray(modalReplyImages[`post-comment-${item.id}`]) && modalReplyImages[`post-comment-${item.id}`].length > 0 && (
                       <div className="flex items-center gap-1 max-w-32 overflow-x-auto">

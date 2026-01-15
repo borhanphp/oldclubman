@@ -891,42 +891,84 @@ const PostCommentsModal = ({
                                 onError={(e) => { e.target.src = "/common-avator.jpg"; }}
                             />
                         </div>
-                        <div className="flex-1 bg-white border border-gray-300 rounded-full px-4 py-2 flex items-center gap-2">
-                            <input
-                                type="text"
-                                className="flex-1 focus:outline-none text-sm"
-                                placeholder="Write a comment..."
-                                value={commentInputs[basicPostData.id] || ""}
-                                ref={(el) => { if (inputRefs.current) inputRefs.current[`modal-comment-${basicPostData.id}`] = el; }}
-                                onChange={(e) => {
-                                    setCommentInputs((prev) => ({ ...prev, [basicPostData.id]: e.target.value }));
-                                    if (handleMentionDetect) handleMentionDetect(e, `modal-comment-${basicPostData.id}`);
-                                }}
-                                onKeyDown={(e) => {
-                                    const handled = handleMentionKeyDown?.(e, `modal-comment-${basicPostData.id}`);
-                                    if (!handled && e.key === 'Enter') {
-                                        e.preventDefault();
-                                        handleCommentSubmit(basicPostData.id);
-                                    }
-                                }}
-                            />
-                            {/* Photo upload button */}
-                            <button
-                                type="button"
-                                className="p-1 text-gray-500 hover:text-blue-600 transition-colors"
-                                onClick={() => handleReplyImageClick?.(`modal-comment-${basicPostData.id}`)}
-                                title="Add photo"
-                            >
-                                <FaCamera size={18} />
-                            </button>
-                            <input
-                                type="file"
-                                accept="image/*"
-                                multiple
-                                className="hidden"
-                                ref={(el) => { if (fileInputRefs?.current) fileInputRefs.current[`modal-comment-${basicPostData.id}`] = el; }}
-                                onChange={(e) => handleReplyImageChange?.(e, `modal-comment-${basicPostData.id}`)}
-                            />
+                        <div className="flex-1 relative overflow-visible" data-mention-anchor="true">
+                            {/* Mention Dropdown - positioned above the input */}
+                            {renderMentionDropdown && mentionOpenFor === `modal-comment-${basicPostData.id}` && (
+                                <div
+                                    style={{
+                                        position: 'absolute',
+                                        bottom: '48px',
+                                        left: 0,
+                                        width: '100%',
+                                        zIndex: 11000,
+                                    }}
+                                >
+                                    <div
+                                        className="bg-white border rounded-md shadow-xl max-h-56 overflow-auto"
+                                        style={{ width: '100%' }}
+                                    >
+                                        {mentionOptions?.map((u, idx) => (
+                                            <div
+                                                key={u.id}
+                                                className={`flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100 ${idx === mentionActiveIndex ? 'bg-gray-100' : ''}`}
+                                                onMouseDown={(e) => {
+                                                    e.preventDefault();
+                                                    if (insertMentionToken) insertMentionToken(u, `modal-comment-${basicPostData.id}`);
+                                                }}
+                                            >
+                                                <img src={u.avatar} className="w-8 h-8 rounded-full object-cover" alt={u.name} />
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-medium">{u.name}</span>
+                                                    <span className="text-xs text-gray-500">{u.source === 'api' ? 'From API' : u.source}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {mentionLoading && (
+                                            <div className="flex items-center justify-center py-2 border-t">
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                                                <span className="ml-2 text-xs text-gray-500">Loading...</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                            <div className="bg-white border border-gray-300 rounded-full px-4 py-2 flex items-center gap-2 overflow-visible">
+                                <input
+                                    type="text"
+                                    className="flex-1 focus:outline-none text-sm"
+                                    placeholder="Write a comment..."
+                                    value={commentInputs[basicPostData.id] || ""}
+                                    ref={(el) => { if (inputRefs.current) inputRefs.current[`modal-comment-${basicPostData.id}`] = el; }}
+                                    onChange={(e) => {
+                                        setCommentInputs((prev) => ({ ...prev, [basicPostData.id]: e.target.value }));
+                                        if (handleMentionDetect) handleMentionDetect(e, `modal-comment-${basicPostData.id}`);
+                                    }}
+                                    onKeyDown={(e) => {
+                                        const handled = handleMentionKeyDown?.(e, `modal-comment-${basicPostData.id}`);
+                                        if (!handled && e.key === 'Enter') {
+                                            e.preventDefault();
+                                            handleCommentSubmit(basicPostData.id);
+                                        }
+                                    }}
+                                />
+                                {/* Photo upload button */}
+                                <button
+                                    type="button"
+                                    className="p-1 text-gray-500 hover:text-blue-600 transition-colors"
+                                    onClick={() => handleReplyImageClick?.(`modal-comment-${basicPostData.id}`)}
+                                    title="Add photo"
+                                >
+                                    <FaCamera size={18} />
+                                </button>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    className="hidden"
+                                    ref={(el) => { if (fileInputRefs?.current) fileInputRefs.current[`modal-comment-${basicPostData.id}`] = el; }}
+                                    onChange={(e) => handleReplyImageChange?.(e, `modal-comment-${basicPostData.id}`)}
+                                />
+                            </div>
                         </div>
                         <button
                             onClick={() => handleCommentSubmit(basicPostData.id)}

@@ -3,6 +3,8 @@ import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { StoreProvider } from "@/redux/StoreProvider";
 import ClientPreloader from "@/components/common/ClientPreloader";
+import { VideoUploadProvider } from "@/contexts/VideoUploadContext";
+import VideoUploadIndicator from "@/components/common/VideoUploadIndicator";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,16 +24,18 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <StoreProvider>
-      <html lang="en">
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
-          <ClientPreloader />
-          <Toaster position="top-right" reverseOrder={false} />
-          {children}
-        </body>
-      </html>
+      <VideoUploadProvider>
+        <html lang="en">
+          <body
+            className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+          >
+            <ClientPreloader />
+            <Toaster position="top-right" reverseOrder={false} />
+            <VideoUploadIndicator />
+            {children}
+          </body>
+        </html>
+      </VideoUploadProvider>
     </StoreProvider>
   );
 }
-

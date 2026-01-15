@@ -10,12 +10,14 @@ import toast from 'react-hot-toast';
 import { MdPhotoAlbum, MdPhotoLibrary } from 'react-icons/md';
 import { LuMapPinCheckInside } from 'react-icons/lu';
 import { getImageUrl } from '@/utility';
+import { useVideoUpload } from '@/contexts/VideoUploadContext';
 
 const PostModal = () => {
   const { profile, backgroundOptions } = useSelector(({ settings }) => settings)
   const { basicPostData, loading, isPostModalOpen } = useSelector(({ gathering }) => gathering)
   const dispatch = useDispatch();
   const { id } = basicPostData;
+  const { startUpload, isUploading } = useVideoUpload();
   const [filePreviews, setFilePreviews] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPrivacyDropdown, setShowPrivacyDropdown] = useState(false);
@@ -1397,6 +1399,11 @@ const PostModal = () => {
         formData.append('background_url', selectedBackground?.image?.path);
       }
 
+      // Check if post contains video files
+      const hasVideoFiles = basicPostData.files?.some(file =>
+        file instanceof File && file.type.startsWith('video/')
+      );
+
       // Add files if present
       if (basicPostData.files?.length > 0) {
         basicPostData.files.forEach((file, index) => {
@@ -1411,6 +1418,40 @@ const PostModal = () => {
         formData.append('removefiles', removeFiles);
       }
 
+      // If post contains video, use background upload
+      if (hasVideoFiles) {
+        // Close modal immediately and reset state
+        dispatch(bindPostData(initialPostData));
+        setFilePreviews([]);
+        setRemoveFiles([]);
+        setSelectedBackground(null);
+        setBackgroundScrollIndex(0);
+        setShowCheckIn(false);
+        setShowRoute(false);
+        setShowLocationModal(false);
+        setCheckInLocation(null);
+        setPlaceSearchQuery('');
+        setPlaceSearchResults([]);
+        setTravelFrom(null);
+        setTravelTo(null);
+        setTravelFromQuery('');
+        setTravelToQuery('');
+        setTravelFromResults([]);
+        setTravelToResults([]);
+        resetRoute();
+        resetCheckIn();
+        dispatch(setPostModalOpen(false));
+        setIsSubmitting(false);
+
+        // Start background upload (fire and forget)
+        startUpload(formData, id || null).catch((error) => {
+          console.error('Background video upload failed:', error);
+        });
+
+        return;
+      }
+
+      // For non-video posts, use the existing synchronous approach
       const action = id ? updatePost({ id, ...Object.fromEntries(formData) }) : storePost(formData);
       dispatch(action)
         .then(() => {
