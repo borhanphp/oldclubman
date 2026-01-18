@@ -22,6 +22,7 @@ import {
   FaIdCard,
   FaHome,
   FaWallet,
+  FaGift,
 } from "react-icons/fa";
 import { logout } from "@/utility";
 import { useDispatch, useSelector } from "react-redux";
@@ -500,6 +501,16 @@ const SocialNavbar = () => {
               </div>
             </div>
 
+            {/* Home */}
+            <Link
+              href="/"
+              className="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md mb-1"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <FaHome className="mr-3 text-gray-600" />
+              <span className="font-medium">Home</span>
+            </Link>
+
             {/* Marketplace */}
             <Link
               href="/marketplace"
@@ -508,6 +519,26 @@ const SocialNavbar = () => {
             >
               <FaShoppingBag className="mr-3 text-gray-600" />
               <span className="font-medium">Marketplace</span>
+            </Link>
+
+            {/* NFC Card */}
+            <Link
+              href="/user/nfc"
+              className="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md mb-1"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <FaIdCard className="mr-3 text-gray-600" />
+              <span className="font-medium">NFC Card</span>
+            </Link>
+
+            {/* Gift Cards */}
+            <Link
+              href="/user/wallet/gift-cards"
+              className="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md mb-1"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <FaGift className="mr-3 text-gray-600" />
+              <span className="font-medium">Gift Cards</span>
             </Link>
 
             {/* Account Section */}
@@ -542,20 +573,6 @@ const SocialNavbar = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <span>Bank</span>
-              </Link>
-            </div>
-
-            {/* Card Section */}
-            <div className="border-t border-gray-200 my-2 pt-2">
-              <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">
-                Card
-              </div>
-              <Link
-                href="/user/nfc"
-                className="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <span>NFC CARD</span>
               </Link>
             </div>
 

@@ -1399,11 +1399,6 @@ const PostModal = () => {
         formData.append('background_url', selectedBackground?.image?.path);
       }
 
-      // Check if post contains video files
-      const hasVideoFiles = basicPostData.files?.some(file =>
-        file instanceof File && file.type.startsWith('video/')
-      );
-
       // Add files if present
       if (basicPostData.files?.length > 0) {
         basicPostData.files.forEach((file, index) => {
@@ -1418,73 +1413,37 @@ const PostModal = () => {
         formData.append('removefiles', removeFiles);
       }
 
-      // If post contains video, use background upload
-      if (hasVideoFiles) {
-        // Close modal immediately and reset state
-        dispatch(bindPostData(initialPostData));
-        setFilePreviews([]);
-        setRemoveFiles([]);
-        setSelectedBackground(null);
-        setBackgroundScrollIndex(0);
-        setShowCheckIn(false);
-        setShowRoute(false);
-        setShowLocationModal(false);
-        setCheckInLocation(null);
-        setPlaceSearchQuery('');
-        setPlaceSearchResults([]);
-        setTravelFrom(null);
-        setTravelTo(null);
-        setTravelFromQuery('');
-        setTravelToQuery('');
-        setTravelFromResults([]);
-        setTravelToResults([]);
-        resetRoute();
-        resetCheckIn();
-        dispatch(setPostModalOpen(false));
-        setIsSubmitting(false);
+      // Use background upload for all posts (closes modal immediately with processing notification)
+      // Close modal immediately and reset state
+      dispatch(bindPostData(initialPostData));
+      setFilePreviews([]);
+      setRemoveFiles([]);
+      setSelectedBackground(null);
+      setBackgroundScrollIndex(0);
+      setShowCheckIn(false);
+      setShowRoute(false);
+      setShowLocationModal(false);
+      setCheckInLocation(null);
+      setPlaceSearchQuery('');
+      setPlaceSearchResults([]);
+      setTravelFrom(null);
+      setTravelTo(null);
+      setTravelFromQuery('');
+      setTravelToQuery('');
+      setTravelFromResults([]);
+      setTravelToResults([]);
+      resetRoute();
+      resetCheckIn();
+      dispatch(setPostModalOpen(false));
+      setIsSubmitting(false);
 
-        // Start background upload (fire and forget)
-        startUpload(formData, id || null).catch((error) => {
-          console.error('Background video upload failed:', error);
-        });
+      // Start background upload (fire and forget)
+      startUpload(formData, id || null).catch((error) => {
+        console.error('Background post upload failed:', error);
+      });
 
-        return;
-      }
-
-      // For non-video posts, use the existing synchronous approach
-      const action = id ? updatePost({ id, ...Object.fromEntries(formData) }) : storePost(formData);
-      dispatch(action)
-        .then(() => {
-          dispatch(getGathering());
-          dispatch(getPosts());
-          dispatch(bindPostData(initialPostData));
-          setFilePreviews([]);
-          setRemoveFiles([]);
-          setSelectedBackground(null);
-          setBackgroundScrollIndex(0);
-          setShowCheckIn(false);
-          setShowRoute(false);
-          setShowLocationModal(false);
-          setCheckInLocation(null);
-          setPlaceSearchQuery('');
-          setPlaceSearchResults([]);
-          setTravelFrom(null);
-          setTravelTo(null);
-          setTravelFromQuery('');
-          setTravelToQuery('');
-          setTravelFromResults([]);
-          setTravelToResults([]);
-          resetRoute();
-          resetCheckIn();
-          dispatch(setPostModalOpen(false));
-          if (params?.id) {
-            dispatch(getUserProfile(params?.id));
-          }
-          dispatch(getMyProfile());
-        });
     } catch (error) {
       console.error('Error posting:', error);
-    } finally {
       setIsSubmitting(false);
     }
   };

@@ -21,7 +21,7 @@ const VideoUploadIndicator = () => {
                         <FaSpinner className="w-6 h-6 text-blue-500 animate-spin" />
                     </div>
                     <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">Processing video...</p>
+                        <p className="text-sm font-medium text-gray-900">Processing post...</p>
                         <p className="text-xs text-gray-500">Your post is being uploaded</p>
                     </div>
                     <button
@@ -38,10 +38,10 @@ const VideoUploadIndicator = () => {
             {notification && (
                 <div
                     className={`rounded-lg shadow-xl border p-4 flex items-center gap-3 min-w-[280px] animate-slide-up ${notification.type === 'success'
-                            ? 'bg-green-50 border-green-200'
-                            : notification.type === 'error'
-                                ? 'bg-red-50 border-red-200'
-                                : 'bg-blue-50 border-blue-200'
+                        ? 'bg-green-50 border-green-200'
+                        : notification.type === 'error'
+                            ? 'bg-red-50 border-red-200'
+                            : 'bg-blue-50 border-blue-200'
                         }`}
                 >
                     {notification.type === 'success' ? (
@@ -53,10 +53,10 @@ const VideoUploadIndicator = () => {
                     )}
                     <div className="flex-1">
                         <p className={`text-sm font-medium ${notification.type === 'success'
-                                ? 'text-green-800'
-                                : notification.type === 'error'
-                                    ? 'text-red-800'
-                                    : 'text-blue-800'
+                            ? 'text-green-800'
+                            : notification.type === 'error'
+                                ? 'text-red-800'
+                                : 'text-blue-800'
                             }`}>
                             {notification.message}
                         </p>
@@ -64,10 +64,10 @@ const VideoUploadIndicator = () => {
                     <button
                         onClick={clearNotification}
                         className={`p-1 transition-colors ${notification.type === 'success'
-                                ? 'text-green-400 hover:text-green-600'
-                                : notification.type === 'error'
-                                    ? 'text-red-400 hover:text-red-600'
-                                    : 'text-blue-400 hover:text-blue-600'
+                            ? 'text-green-400 hover:text-green-600'
+                            : notification.type === 'error'
+                                ? 'text-red-400 hover:text-red-600'
+                                : 'text-blue-400 hover:text-blue-600'
                             }`}
                         title="Dismiss"
                     >
