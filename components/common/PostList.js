@@ -38,7 +38,7 @@ import Link from "next/link";
 import { CiEdit, CiUnlock } from "react-icons/ci";
 import { MdOutlineDeleteOutline } from "react-icons/md";
 import { TbMessageReport } from "react-icons/tb";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { getMyProfile, getUserProfile, getUserProfileByUsername, getAllFollowers, followTo, unFollowTo } from "@/views/settings/store";
 import toast from "react-hot-toast";
 import Image from "next/image";
@@ -63,6 +63,7 @@ const PostList = ({ postsData }) => {
   const { profile, myFollowers } = useSelector(({ settings }) => settings);
   const dispatch = useDispatch();
   const params = useParams();
+  const router = useRouter();
   const mapRefs = useRef({});
   const mapInstances = useRef({});
 
@@ -3182,6 +3183,7 @@ const PostList = ({ postsData }) => {
                     alt="oldclubman"
                     width={1280}
                     height={720}
+                    unoptimized={true}
                   />
                 </div>
                 <div>
@@ -3432,9 +3434,13 @@ const PostList = ({ postsData }) => {
                             alt="oldclubman"
                             className={`w-full cursor-pointer hover:opacity-90 transition-opacity ${item.files?.length === 1 ? "h-auto" : "h-full object-cover"
                               }`}
-                            onClick={() => handleImagePreview(src, allImages, imageIndex)}
+                            onClick={() => {
+                              // Navigate to post details page with image query param
+                              router.push(`/post/${item.id}?image=${imageIndex}`);
+                            }}
                             width={1920}
                             height={1080}
+                            unoptimized={true}
                           />
                         )}
                       </div>
@@ -4383,21 +4389,73 @@ const PostList = ({ postsData }) => {
             <p className="text-gray-600 text-center mb-6">
               Are you sure you want to share this post to your timeline?
             </p>
-            <div className="flex gap-3">
-              <button
-                onClick={cancelShare}
-                disabled={isSharing}
-                className={`flex-1 px-4 py-2 rounded-lg transition-colors ${isSharing ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmShare}
-                disabled={isSharing}
-                className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${isSharing ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
-              >
-                {isSharing ? 'Sharing...' : 'Share Now'}
-              </button>
+            <div className="flex flex-col gap-3">
+              {/* Top Row: Facebook and Copy Link */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    // Share to Facebook
+                    const postUrl = `${window.location.origin}/post/${postToShare}`;
+                    const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`;
+                    window.open(facebookShareUrl, '_blank', 'width=600,height=400');
+                    cancelShare();
+                  }}
+                  disabled={isSharing}
+                  className={`flex-1 flex text-nowrap items-center justify-center gap-2 px-4 py-3 text-white rounded-lg transition-colors ${isSharing ? 'bg-blue-400 cursor-not-allowed' : 'bg-[#1877F2] hover:bg-[#166FE5]'}`}
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                  </svg>
+                  <span className="hidden sm:inline">Share with Facebook</span>
+                  <span className="sm:hidden">Facebook</span>
+                </button>
+                <button
+                  onClick={async () => {
+                    // Copy link to clipboard
+                    const postUrl = `${window.location.origin}/post/${postToShare}`;
+
+                    try {
+                      await navigator.clipboard.writeText(postUrl);
+                      alert('Link copied to clipboard!');
+                    } catch (err) {
+                      // Fallback for older browsers
+                      const textArea = document.createElement('textarea');
+                      textArea.value = postUrl;
+                      document.body.appendChild(textArea);
+                      textArea.select();
+                      document.execCommand('copy');
+                      document.body.removeChild(textArea);
+                      alert('Link copied to clipboard!');
+                    }
+                    cancelShare();
+                  }}
+                  disabled={isSharing}
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-colors ${isSharing ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  Copy Link
+                </button>
+              </div>
+
+              {/* Bottom Row: Cancel and Share Now */}
+              <div className="flex gap-3">
+                <button
+                  onClick={cancelShare}
+                  disabled={isSharing}
+                  className={`flex-1 px-4 py-2 rounded-lg transition-colors ${isSharing ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmShare}
+                  disabled={isSharing}
+                  className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${isSharing ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+                >
+                  {isSharing ? 'Sharing...' : 'Share Now'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
