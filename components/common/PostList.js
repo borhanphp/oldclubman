@@ -8,10 +8,17 @@ import {
   FaComment,
   FaLock,
   FaGlobeAmericas,
+  FaFacebookMessenger,
+  FaLink,
+  FaUserFriends,
+  FaUsers,
+  FaBookOpen,
+  FaTimes
 } from "react-icons/fa";
 import { SlLike } from "react-icons/sl";
-import { IoIosShareAlt, IoMdShareAlt } from "react-icons/io";
+import { IoIosShareAlt, IoMdShareAlt, IoLogoWhatsapp } from "react-icons/io";
 import { FaRegComment } from "react-icons/fa6";
+import { BsMessenger } from "react-icons/bs";
 import { useDispatch, useSelector } from "react-redux";
 import {
   bindPostData,
@@ -4379,9 +4386,11 @@ const PostList = ({ postsData }) => {
       )}
 
       {/* Share Confirmation Modal */}
+      {/* Share Confirmation Modal */}
+      {/* Share Confirmation Modal */}
       {showShareModal && (
         <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 border border-gray-400">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 border border-gray-400 shadow-2xl">
             <div className="flex items-center justify-center mb-4">
               <IoIosShareAlt size={48} className="text-blue-600" />
             </div>
@@ -4389,73 +4398,68 @@ const PostList = ({ postsData }) => {
             <p className="text-gray-600 text-center mb-6">
               Are you sure you want to share this post to your timeline?
             </p>
-            <div className="flex flex-col gap-3">
-              {/* Top Row: Facebook and Copy Link */}
-              <div className="flex gap-3">
+
+            {/* New External Share Buttons */}
+            <div className="mb-6">
+              <div className="flex justify-center gap-6 pb-2">
+                {/* Facebook (External) */}
                 <button
                   onClick={() => {
-                    // Share to Facebook
                     const postUrl = `${window.location.origin}/post/${postToShare}`;
                     const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`;
                     window.open(facebookShareUrl, '_blank', 'width=600,height=400');
-                    cancelShare();
                   }}
-                  disabled={isSharing}
-                  className={`flex-1 flex text-nowrap items-center justify-center gap-2 px-4 py-3 text-white rounded-lg transition-colors ${isSharing ? 'bg-blue-400 cursor-not-allowed' : 'bg-[#1877F2] hover:bg-[#166FE5]'}`}
+                  className="flex flex-col items-center flex-shrink-0 w-16 gap-2 group"
                 >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                  </svg>
-                  <span className="hidden sm:inline">Share with Facebook</span>
-                  <span className="sm:hidden">Facebook</span>
+                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-gray-200 transition-colors text-gray-800">
+                    <span className="font-bold text-xl text-blue-600">f</span>
+                  </div>
+                  <span className="text-xs text-gray-600 font-medium">Facebook</span>
                 </button>
+
+                {/* Copy Link */}
                 <button
                   onClick={async () => {
-                    // Copy link to clipboard
                     const postUrl = `${window.location.origin}/post/${postToShare}`;
-
                     try {
                       await navigator.clipboard.writeText(postUrl);
-                      alert('Link copied to clipboard!');
+                      toast.success('Link copied!');
                     } catch (err) {
-                      // Fallback for older browsers
                       const textArea = document.createElement('textarea');
                       textArea.value = postUrl;
                       document.body.appendChild(textArea);
                       textArea.select();
                       document.execCommand('copy');
                       document.body.removeChild(textArea);
-                      alert('Link copied to clipboard!');
+                      toast.success('Link copied!');
                     }
-                    cancelShare();
                   }}
-                  disabled={isSharing}
-                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-colors ${isSharing ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
+                  className="flex flex-col items-center flex-shrink-0 w-16 gap-2 group"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  Copy Link
+                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-gray-200 transition-colors text-gray-800">
+                    <FaLink size={20} />
+                  </div>
+                  <span className="text-xs text-gray-600 font-medium">Copy link</span>
                 </button>
               </div>
+            </div>
 
-              {/* Bottom Row: Cancel and Share Now */}
-              <div className="flex gap-3">
-                <button
-                  onClick={cancelShare}
-                  disabled={isSharing}
-                  className={`flex-1 px-4 py-2 rounded-lg transition-colors ${isSharing ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmShare}
-                  disabled={isSharing}
-                  className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${isSharing ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
-                >
-                  {isSharing ? 'Sharing...' : 'Share Now'}
-                </button>
-              </div>
+            {/* Internal Share Actions */}
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={confirmShare}
+                disabled={isSharing}
+                className={`w-full px-4 py-3 text-white rounded-lg transition-colors ${isSharing ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+              >
+                {isSharing ? 'Sharing...' : 'Share Now (Internal)'}
+              </button>
+              <button
+                onClick={cancelShare}
+                disabled={isSharing}
+                className="w-full px-4 py-2 text-gray-500 hover:text-gray-700 transition-colors text-sm"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>
