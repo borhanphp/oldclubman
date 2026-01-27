@@ -13,7 +13,8 @@ import {
   FaUserFriends,
   FaUsers,
   FaBookOpen,
-  FaTimes
+  FaTimes,
+  FaRegSmile
 } from "react-icons/fa";
 import { SlLike } from "react-icons/sl";
 import { IoIosShareAlt, IoMdShareAlt, IoLogoWhatsapp } from "react-icons/io";
@@ -126,6 +127,7 @@ const PostList = ({ postsData }) => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [postToShare, setPostToShare] = useState(null);
   const [isSharing, setIsSharing] = useState(false);
+  const [shareMessage, setShareMessage] = useState("");
   const isSharingRef = useRef(false);
   const [showImagePreview, setShowImagePreview] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
@@ -2562,6 +2564,7 @@ const PostList = ({ postsData }) => {
 
   const handleShare = (post_id) => {
     setPostToShare(post_id);
+    setShareMessage(""); // Reset message
     setShowShareModal(true);
   };
 
@@ -2847,12 +2850,18 @@ const PostList = ({ postsData }) => {
     isSharingRef.current = true;
     setIsSharing(true);
 
-    dispatch(sharePost({ post_id: postToShare }))
+    const payload = {
+      post_id: postToShare,
+      message: shareMessage
+    };
+
+    dispatch(sharePost(payload))
       .then(() => {
         dispatch(getPosts());
         toast.success("Shared Successfully");
         setShowShareModal(false);
         setPostToShare(null);
+        setShareMessage("");
       })
       .catch((error) => {
         console.error('Share failed:', error);
@@ -3364,6 +3373,86 @@ const PostList = ({ postsData }) => {
 
               }
 
+              {/* Shared Post Container */}
+              {item?.shared_post && (
+                <div className="mt-3 border border-gray-300 rounded-xl overflow-hidden mx-0 sm:mx-0">
+                  <div className="p-3 pb-2">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100 flex-shrink-0">
+                        <img
+                          src={getClientImageUrl(item?.shared_post?.client?.image)}
+                          className="w-full h-full object-cover"
+                          onError={(e) => { e.currentTarget.src = "/common-avator.jpg"; }}
+                        />
+                      </div>
+                      <div className="flex flex-col">
+                        <Link href={`/${item?.shared_post?.client?.username}`} className="font-semibold text-sm hover:underline text-gray-900">
+                          {item?.shared_post?.client?.display_name || `${item?.shared_post?.client?.fname} ${item?.shared_post?.client?.last_name}`}
+                        </Link>
+                        <span className="text-xs text-gray-500">
+                          {formatCompactTime(item.shared_post.created_at)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap mb-2">
+                      {renderContentWithMentions(item?.shared_post?.message)}
+                    </div>
+                  </div>
+
+                  {/* Shared Post Files (Simplified View) */}
+                  {item?.files?.length > 0 && (
+                    <div className="bg-gray-100">
+                      {(() => {
+                        const firstFile = item.files[0];
+                        const filePath = firstFile.file_path || firstFile.path || firstFile.url || firstFile.file_url || '';
+                        const isVideo = /\.(mp4|webm|ogg|mov|avi)$/i.test(filePath);
+                        const src = getImageUrl(filePath, 'post');
+
+                        const allImages = (item.files || [])
+                          .filter(f => {
+                            const fPath = f.file_path || f.path || f.url || f.file_url || '';
+                            return !/\.(mp4|webm|ogg|mov|avi)$/i.test(fPath);
+                          })
+                          .map(f => {
+                            const fPath = f.file_path || f.path || f.url || f.file_url || '';
+                            return getImageUrl(fPath, 'post');
+                          });
+
+                        const imageIndex = allImages.indexOf(src);
+
+                        return (
+                          <div className="w-full h-full relative">
+                            {isVideo ? (
+                              <video src={src} className="w-full h-full object-cover" controls />
+                            ) : (
+                              <Image
+                                src={src}
+                                alt="oldclubman"
+                                className={`w-full cursor-pointer hover:opacity-90 transition-opacity ${item.files?.length === 1 ? "h-auto" : "h-full object-cover"
+                                  }`}
+                                onClick={() => {
+                                  // Navigate to post details page with image query param
+                                  router.push(`/post/${item?.shared_post?.id}?image=${imageIndex}`);
+                                }}
+                                width={1920}
+                                height={1080}
+                                unoptimized={true}
+                              />
+                            )}
+                            {item.files.length > 1 && (
+                              <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
+                                +{item.files.length - 1} more
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* map for shwoing mapping data */}
               {item?.post_location && item?.post_location.length > 0 && (
                 <div className="mb-4">
@@ -3392,7 +3481,7 @@ const PostList = ({ postsData }) => {
               )}
 
               {/* Display Post Images */}
-              {item?.files && item?.files?.length > 0 && (
+              {!item?.shared_post && item?.files && item?.files?.length > 0 && (
                 <div
                   className={`mt-3 grid ${item?.files?.length === 1
                     ? "grid-cols-1"
@@ -4389,77 +4478,180 @@ const PostList = ({ postsData }) => {
       {/* Share Confirmation Modal */}
       {/* Share Confirmation Modal */}
       {showShareModal && (
-        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 border border-gray-400 shadow-2xl">
-            <div className="flex items-center justify-center mb-4">
-              <IoIosShareAlt size={48} className="text-blue-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-center mb-2">Share Post</h3>
-            <p className="text-gray-600 text-center mb-6">
-              Are you sure you want to share this post to your timeline?
-            </p>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl w-full max-w-[500px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
 
-            {/* New External Share Buttons */}
-            <div className="mb-6">
-              <div className="flex justify-center gap-6 pb-2">
-                {/* Facebook (External) */}
-                <button
-                  onClick={() => {
-                    const postUrl = `${window.location.origin}/post/${postToShare}`;
-                    const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`;
-                    window.open(facebookShareUrl, '_blank', 'width=600,height=400');
-                  }}
-                  className="flex flex-col items-center flex-shrink-0 w-16 gap-2 group"
-                >
-                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-gray-200 transition-colors text-gray-800">
-                    <span className="font-bold text-xl text-blue-600">f</span>
-                  </div>
-                  <span className="text-xs text-gray-600 font-medium">Facebook</span>
-                </button>
-
-                {/* Copy Link */}
-                <button
-                  onClick={async () => {
-                    const postUrl = `${window.location.origin}/post/${postToShare}`;
-                    try {
-                      await navigator.clipboard.writeText(postUrl);
-                      toast.success('Link copied!');
-                    } catch (err) {
-                      const textArea = document.createElement('textarea');
-                      textArea.value = postUrl;
-                      document.body.appendChild(textArea);
-                      textArea.select();
-                      document.execCommand('copy');
-                      document.body.removeChild(textArea);
-                      toast.success('Link copied!');
-                    }
-                  }}
-                  className="flex flex-col items-center flex-shrink-0 w-16 gap-2 group"
-                >
-                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-gray-200 transition-colors text-gray-800">
-                    <FaLink size={20} />
-                  </div>
-                  <span className="text-xs text-gray-600 font-medium">Copy link</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Internal Share Actions */}
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={confirmShare}
-                disabled={isSharing}
-                className={`w-full px-4 py-3 text-white rounded-lg transition-colors ${isSharing ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
-              >
-                {isSharing ? 'Sharing...' : 'Share Now (Internal)'}
-              </button>
+            {/* Header */}
+            <div className="relative border-b border-gray-200 px-4 py-4 flex items-center justify-center shrink-0">
+              <h3 className="text-xl font-bold text-gray-900">Share</h3>
               <button
                 onClick={cancelShare}
-                disabled={isSharing}
-                className="w-full px-4 py-2 text-gray-500 hover:text-gray-700 transition-colors text-sm"
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition-colors"
               >
-                Cancel
+                <FaTimes className="text-gray-600 text-lg" />
               </button>
+            </div>
+
+            <div className="overflow-y-auto custom-scrollbar">
+              <div className="p-4">
+                {/* Profile Section */}
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-100 shrink-0">
+                    <img
+                      src={getClientImageUrl(profile?.client?.image)}
+                      alt={profile?.client?.display_name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { e.target.src = "/common-avator.jpg"; }}
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-bold text-gray-900 text-[17px]">
+                      {profile?.client?.display_name || profile?.client?.fname}
+                    </span>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded font-semibold">Feed</span>
+                      <div className="flex items-center gap-1 bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded font-semibold">
+                        <FaGlobeAmericas className="text-[10px]" />
+                        <span>Public</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Input Area */}
+                <div className="mb-4">
+                  <textarea
+                    placeholder="Say something about this..."
+                    className="w-full text-lg placeholder-gray-500 border-none focus:ring-0 focus:outline-none resize-none min-h-[80px] p-0"
+                    value={shareMessage}
+                    onChange={(e) => setShareMessage(e.target.value)}
+                  />
+                  <div className="flex justify-between items-center mt-2">
+                    <button className="text-gray-400 hover:text-gray-600">
+                      {/* <FaRegSmile className="text-2xl" /> */}
+                    </button>
+                    <button
+                      onClick={confirmShare}
+                      disabled={isSharing}
+                      className={`px-8 py-2 rounded-lg font-semibold text-white text-[15px] transition-colors ${isSharing ? 'bg-blue-400 cursor-not-allowed' : 'bg-[#0866FF] hover:bg-blue-700'
+                        }`}
+                    >
+                      {isSharing ? 'Sharing...' : 'Share now'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-gray-200"></div>
+
+              {/* Send in Messenger */}
+              {/* <div className="p-4">
+                <h4 className="font-semibold text-gray-900 mb-4 text-[17px]">Send in Messenger</h4>
+                <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                  {myFollowers && myFollowers.length > 0 ? (
+                    myFollowers.slice(0, 10).map((follower, idx) => (
+                      <div key={idx} className="flex flex-col items-center gap-1 min-w-[70px] cursor-pointer group">
+                        <div className="w-14 h-14 rounded-full overflow-hidden border border-gray-100 group-hover:opacity-90 transition-opacity">
+                          <img
+                            src={getClientImageUrl(follower?.follower_client?.image)}
+                            alt={follower?.follower_client?.fname}
+                            className="w-full h-full object-cover"
+                            onError={(e) => { e.target.src = "/common-avator.jpg"; }}
+                          />
+                        </div>
+                        <span className="text-xs text-center text-gray-500 leading-tight line-clamp-2 w-full">
+                          {follower?.follower_client?.fname || "User"}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    // Fallback/Placeholder if no followers
+                    [1, 2, 3, 4, 5].map((_, i) => (
+                      <div key={i} className="flex flex-col items-center gap-1 min-w-[70px] cursor-pointer">
+                        <div className="w-14 h-14 rounded-full bg-gray-200 flex items-center justify-center">
+                          <span className="text-gray-400 text-xs">User</span>
+                        </div>
+                        <span className="text-xs text-center text-gray-500">Friend {i + 1}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div> */}
+
+              {/* Share to */}
+              <div className="p-4 pt-0">
+                <h4 className="font-semibold text-gray-900 mb-4 text-[17px]">Share to</h4>
+                <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+
+                  {/* WhatsApp */}
+                  <button
+                    onClick={() => {
+                      const postUrl = `${window.location.origin}/post/${postToShare}`;
+                      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(postUrl)}`;
+                      window.open(whatsappUrl, '_blank');
+                    }}
+                    className="flex flex-col items-center gap-2 min-w-[80px] cursor-pointer group"
+                  >
+                    <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-gray-200 transition-colors">
+                      <IoLogoWhatsapp className="text-2xl text-black" />
+                    </div>
+                    <span className="text-xs text-gray-600 font-medium">WhatsApp</span>
+                  </button>
+
+                  {/* Facebook */}
+                  <button
+                    onClick={() => {
+                      const postUrl = `${window.location.origin}/post/${postToShare}`;
+                      const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`;
+                      window.open(facebookShareUrl, '_blank', 'width=600,height=400');
+                    }}
+                    className="flex flex-col items-center gap-2 min-w-[80px] cursor-pointer group"
+                  >
+                    <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-gray-200 transition-colors">
+                      <span className="font-bold text-xl text-blue-600">f</span>
+                    </div>
+                    <span className="text-xs text-gray-600 font-medium">Facebook</span>
+                  </button>
+
+                  {/* Your Story */}
+                  {/* <div className="flex flex-col items-center gap-2 min-w-[80px] cursor-pointer group">
+                    <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-gray-200 transition-colors">
+                      <FaBookOpen className="text-2xl text-black" />
+                    </div>
+                    <span className="text-xs text-gray-600 font-medium">Your story</span>
+                  </div> */}
+
+                  {/* Copy Link */}
+                  <button
+                    onClick={async () => {
+                      const postUrl = `${window.location.origin}/post/${postToShare}`;
+                      try {
+                        await navigator.clipboard.writeText(postUrl);
+                        toast.success('Link copied!');
+                      } catch (err) {
+                        // Fallback
+                        const textArea = document.createElement('textarea');
+                        textArea.value = postUrl;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        toast.success('Link copied!');
+                      }
+                    }}
+                    className="flex flex-col items-center gap-2 min-w-[80px] cursor-pointer group"
+                  >
+                    <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-gray-200 transition-colors">
+                      <FaLink className="text-2xl text-black" />
+                    </div>
+                    <span className="text-xs text-gray-600 font-medium">Copy link</span>
+                  </button>
+
+
+
+
+                </div>
+              </div>
             </div>
           </div>
         </div>
