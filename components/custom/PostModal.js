@@ -1285,7 +1285,7 @@ const PostModal = () => {
   };
 
   const handleRemoveFile = (idToRemove) => {
-    const previewToRemove = filePreviews.find(preview => preview.id === idToRemove);
+    const previewToRemove = filePreviews?.find(preview => preview.id === idToRemove);
     if (previewToRemove) {
       // If the file has an id (existing file), add to removeFiles
       if (previewToRemove.id && typeof previewToRemove.id === 'number') {
@@ -1438,7 +1438,8 @@ const PostModal = () => {
       setIsSubmitting(false);
 
       // Start background upload (fire and forget)
-      startUpload(formData, id || null).catch((error) => {
+      // Pass basicPostData.files to help identify/upload videos
+      startUpload(formData, id || null, basicPostData.files || []).catch((error) => {
         console.error('Background post upload failed:', error);
       });
 
